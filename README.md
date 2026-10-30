@@ -11,9 +11,12 @@
 | mira | THERMOTEK, OSA, MDT 및 PID 연동 |
 | others | Keithley, FPGA 출력·광자수 측정, 모터, XY/XYZ 스캔 |
 | CCD | 로컬 ThorCam/Dummy, 연속·N장 촬영, uint16 TIFF/PNG 저장, ROI 이온 검출 |
+| CCD → EC oven | 171/174 선택, CH1 전류·전압 표시, 릴레이·EC 셔터 연동, 이온 조건 또는 10분 timeout 후 OFF |
 | workflow | `main(devices)` Python 파일을 실행하고 공통 핸들로 완료·실패·취소 처리 |
 
 장비별 세부 동작은 [장비 가이드](docs/DEVICE_GUIDE_KO.md), CCD와 조건 판정은 [CCD 가이드](docs/CCD_GUIDE_KO.md)를 참고하세요.
+
+EC 오븐은 [오븐 로딩 안내](docs/OVEN_LOADING_KO.md)를 참고하세요. 기본 서버 등록 이름은 `oven_psu` / `oven_relays`, 출력은 CH1입니다. EC 171은 5.000 V / 1.30 A, EC 174는 5.000 V / 1.40 A이며 기본 `shutter_2`의 실제 연결을 화면에서 확인한 뒤 시작합니다. Flip mirror는 조작하지 않습니다. 자동 종료는 정상 동작 중인 클라이언트와 통신에 의존하며 하드웨어 watchdog을 대신하지 않습니다.
 
 ## 설치 및 실행
 
@@ -88,7 +91,7 @@ start_lab_remote_gui.bat
 - ThorCam 프로그램, 카메라 드라이버, Thorlabs .NET SDK를 해당 PC에 설치합니다. 이 저장소에 제조사 DLL을 포함하지 않았습니다.
 - CCD 탭에서 `Thorcam`과 카메라 serial을 선택/입력하고 DLL 디렉터리를 지정합니다. 기본 경로는 `C:/Program Files/Thorlabs/Scientific Imaging/ThorCam/`입니다.
 - `Dummy`는 SDK/실제 카메라 없이 밝은 영역 3개를 생성합니다.
-- CCD는 로컬로 연결되며 **flip mirror·오븐·셔터가 없어도 동작**합니다. 이온 조건 만족이 해당 장비의 자동 OFF를 의미하지 않습니다.
+- CCD는 로컬로 연결되며 **flip mirror·오븐·셔터가 없어도 동작**합니다. 일반 CCD Wait for ions는 장비를 끄지 않습니다. EC oven 로딩 작업을 시작한 경우에만 해당 작업이 PSU OFF와 셔터 닫기를 처리합니다.
 - 단색 16bit 영상이 대상입니다. EMCCD·컬러 카메라·하드웨어 TTL 트리거는 현재 통합 범위가 아닙니다.
 
 ## CCD 화면 조작
@@ -127,7 +130,7 @@ def main(devices):
         ccd.stop_acquisition().wait()
 ```
 
-새 프레임부터 연속 조건을 판단하며 timeout·취소·연결 오류를 구분합니다. 다른 장비의 정지/셔터 닫기/오븐 OFF는 workflow에서 명시적으로 호출해야 합니다. 현재 그 장비들과의 자동 연동은 구현하지 않았습니다.
+새 프레임부터 연속 조건을 판단하며 timeout·취소·연결 오류를 구분합니다. 위 일반 CCD 대기 예제는 다른 장비를 제어하지 않습니다. EC 오븐의 자동 가동·종료에는 별도 `devices.ccd().load_oven(...)` 또는 CCD 화면의 Oven ON을 사용하세요. Flip mirror 자동 연동은 포함하지 않습니다.
 
 예제: [조건 대기](labremote/workflow/ccd_wait_for_ions.py), [조건이 만족될 때까지 반복](labremote/workflow/ccd_repeat_until_ions.py).
 

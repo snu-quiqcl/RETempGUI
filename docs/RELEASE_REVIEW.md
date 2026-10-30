@@ -39,7 +39,7 @@
 - 실제 PC에 호환 InstrumentServer 소스와 ThorCam SDK/드라이버가 있어야 합니다. 이 저장소는 제조사 DLL과 InstrumentServer 전체를 포함하지 않습니다.
 - 카메라 serial/DLL 경로, 장비 서버 주소, FPGA COM 및 모터 서버 설정은 환경에 맞게 지정해야 합니다.
 - 실제 CCD 영상 방향, bit depth, threshold, 노출과 연속 촬영/중단, 물리적 latency는 현장에서 확인해야 합니다.
-- CCD는 flip mirror·오븐·셔터 없이 동작합니다. 이온 검출 조건과 이들 장비의 자동 OFF/닫기 연결은 아직 구현하지 않았습니다.
+- CCD는 flip mirror·오븐·셔터 없이 동작합니다. 이 최초 검토 이후 EC 오븐 자동 가동/종료 operation이 추가되었습니다. 현재 범위는 [오븐 로딩 안내](OVEN_LOADING_KO.md)를 참고하세요.
 - 자동 테스트 통과는 실제 장비 전체의 무오류 동작 보증을 뜻하지 않습니다.
 
 > 이후 배포 정책 변경: `tests/`와 `server_deploy_latest/`는 로컬에만 보존하며 Git에서 제외합니다. 위 테스트 결과는 당시 로컬 지원 폴더를 포함한 검증 기록입니다. 새 clone에서의 검증 범위는 현재 README를 따릅니다.

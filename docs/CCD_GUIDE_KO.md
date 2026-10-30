@@ -84,7 +84,7 @@ UI는 약 30Hz로 최신 화면을 표시합니다. 모든 촬영 프레임을 �
 
 ## 이번 범위에 포함되지 않은 장비 제어
 
-첨부 코드의 oven/shutter/399 flip mirror TCP 제어를 CCD 내부에 자동 연결하지 않았습니다. CCD는 로컬이고, 이 장비들은 별도 장비 API/workflow 동작으로 연결해야 합니다. EMCCD 분기는 원본에서도 미구현이어서 이번 통합 대상이 아닙니다. 하드웨어 TTL 트리거와 기존 oven 자동 off 기능은 이온 결과를 소비하는 별도 장비 연동 단계로 남아 있습니다.
+CCD 영상·검출은 로컬로 실행합니다. EC 오븐과 셔터는 별도 QCoDeS operation을 통해 CCD 화면의 EC oven 기능과 연동했습니다. [오븐 로딩 안내](OVEN_LOADING_KO.md)를 참고하세요. 일반 Wait for ions만 실행하면 다른 장비를 끄지 않으며, Oven ON 또는 load_oven 작업에서만 자동 OFF/닫기를 처리합니다. Flip mirror·하드웨어 TTL 트리거·EMCCD는 이번 기능에 포함하지 않습니다.
 
 ## 검증
 

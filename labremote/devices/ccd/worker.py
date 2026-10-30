@@ -31,6 +31,8 @@ class CCDWorker(QtCore.QThread):
         self._preview_lock = threading.Lock()
         self._preview = None
         self.available = False
+        self.backend_name = ''
+        self.sensor_shape = (0, 0)
         self.connection_error = False
         self._process = None
         self._pipe = None
@@ -40,6 +42,10 @@ class CCDWorker(QtCore.QThread):
     def submit(self, action, args=None, group=None):
         handle = ExecutionHandle('CCD_'+action.upper(), None, group)
         handle.arguments = dict(args or {})
+        oven = getattr(self, 'oven_runner', None)
+        if oven is not None and oven.running() and group is not oven.group and action not in ('stop', 'disconnect', 'save'):
+            handle.finish(RuntimeError('CCD is reserved by oven loading; stop the oven task first'))
+            return handle
         if group is not None: group.add(handle)
         with self._handles_lock:
             if self._closing:
@@ -151,6 +157,8 @@ class CCDWorker(QtCore.QThread):
                         msg = self._pipe.recv()
                         if msg[0] == 'ready':
                             self.available = True
+                            self.backend_name = msg[1]['backend']
+                            self.sensor_shape = tuple(msg[1]['shape'])
                             self.connection_error = False
                             self.connected.emit(msg[1])
                             if connect_handle:
@@ -218,3 +226,16 @@ class CCDAPI:
     def save(self, path, *, sequence=False, roi_only=False):
         return self._submit('save', path=str(path), sequence=sequence, roi_only=roi_only)
     def cancel(self): self.worker.cancel_backgrounds()
+
+    def load_oven(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=False,
+                  threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None):
+        runner = getattr(self.worker, 'oven_runner', None)
+        if runner is None: raise RuntimeError('Use the CCD panel oven connections first')
+        return runner.start(isotope, shutter=shutter, shutter_confirmed=shutter_confirmed,
+                            threshold=threshold, min_area=min_area, target=target,
+                            consecutive_frames=consecutive_frames, roi=roi, parent=self.group)
+
+    def stop_oven(self):
+        runner = getattr(self.worker, 'oven_runner', None)
+        if runner is None: raise RuntimeError('No oven loader attached')
+        return runner.cancel()

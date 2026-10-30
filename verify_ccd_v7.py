@@ -76,6 +76,9 @@ def main():
         assert panel.canvas.mapToGlobal(QtCore.QPoint()).x()+panel.canvas.width() <= panel.controls_scroll.mapToGlobal(QtCore.QPoint()).x()
         panel.canvas.autoRange(); app.processEvents()
         window.grab().save(str(output/'ccd_tab.png'))
+        panel.controls_scroll.ensureWidgetVisible(panel.oven_panel)
+        app.processEvents()
+        window.grab().save(str(output/'ccd_oven_panel.png'))
         # Switching tabs must not stop analysis or workflow conditions.
         window.device_tabs.setCurrentWidget(window.workflow_tab)
         app.processEvents()
@@ -109,6 +112,15 @@ def main():
             worker = p.worker
             if hasattr(worker, 'wait'): worker.wait(8000)
         window.hide()
+        # Drain Qt-owned objects while QApplication is still alive, rather than
+        # letting pyqtgraph/event filters be destroyed at interpreter shutdown.
+        app.removeEventFilter(window.wheel_filter)
+        for timer in window.findChildren(QtCore.QTimer):timer.stop()
+        for worker in {p.worker for p in window._panels()}:
+            worker.deleteLater()
+        window.deleteLater()
+        QtCore.QCoreApplication.sendPostedEvents(None, QtCore.QEvent.DeferredDelete)
+        app.processEvents()
 
 
 if __name__ == '__main__': main()

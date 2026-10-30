@@ -28,7 +28,7 @@ class CCDViewBox(pg.ViewBox):
 class CCDTab(QtWidgets.QWidget):
     log_message = QtCore.pyqtSignal(str)
 
-    def __init__(self, parent=None, options=None):
+    def __init__(self, parent=None, options=None, endpoint=None):
         super().__init__(parent)
         self.options = dict(options or {})
         self.worker = CCDWorker()
@@ -136,6 +136,15 @@ class CCDTab(QtWidgets.QWidget):
         wait.clicked.connect(self._wait)
         cancel.clicked.connect(lambda: self._watch.request_cancel() if self._watch else None)
         side.addWidget(analysis)
+
+        from labremote.devices.oven.panel import OvenPanel
+        if endpoint is None:
+            from labremote.config.settings import load_settings
+            endpoint = lambda: (load_settings()['server_host'], load_settings()['server_port'])
+        self.oven_panel = OvenPanel(self, endpoint, self)
+        self.oven_panel.log_message.connect(self.log_message.emit)
+        self.oven_panel.active_changed.connect(lambda active: [w.setEnabled(not active) for w in (connection_group, camera_group, analysis)])
+        side.insertWidget(2, self.oven_panel)
 
         display_group = QtWidgets.QGroupBox('Display')
         display = QtWidgets.QGridLayout(display_group)
@@ -315,7 +324,8 @@ class CCDTab(QtWidgets.QWidget):
         path, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save CCD image', str(Path(self.directory.text())/'capture.tif'), 'TIFF (*.tif);;PNG (*.png)')
         if path: self.api.save(path, sequence=self.save_sequence.isChecked(), roi_only=self.save_roi.isChecked())
 
-    def still_running(self): return self.worker.isRunning()
+    def still_running(self): return self.worker.isRunning() or self.oven_panel.still_running()
     def shutdown(self):
         self.timer.stop()
+        self.oven_panel.shutdown()
         self.worker.shutdown()

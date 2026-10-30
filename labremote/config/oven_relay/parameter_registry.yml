@@ -1,0 +1,29 @@
+schema_version: 1
+parameters:
+- pattern: oven_relay.IDN
+  kind: json_object
+  writable: false
+  verification: none
+- pattern: oven_relay.selected_oven
+  kind: string
+  writable: true
+  verification: readback
+  choices:
+  - EA_174
+  - EA_171
+  - EC_174
+  - EC_171
+- pattern: oven_relay.shutter_1
+  kind: string
+  writable: true
+  verification: readback
+  choices:
+  - OPEN
+  - CLOSED
+- pattern: oven_relay.shutter_2
+  kind: string
+  writable: true
+  verification: readback
+  choices:
+  - OPEN
+  - CLOSED

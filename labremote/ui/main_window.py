@@ -107,7 +107,7 @@ class Window(QtWidgets.QMainWindow):
         self.log = QtWidgets.QPlainTextEdit(); self.log.setReadOnly(True); self.log.setMaximumHeight(120)
         layout.addWidget(self.log)
         from labremote.devices.ccd.tab import CCDTab
-        self.ccd_tab = CCDTab(self, cfg.get('ccd_options', {}))
+        self.ccd_tab = CCDTab(self, cfg.get('ccd_options', {}), endpoint=self._endpoint)
         self.ccd_tab.log_message.connect(self.log.appendPlainText)
         self.device_tabs.insertTab(self.device_tabs.indexOf(self.workflow_tab), self.ccd_tab, 'CCD')
         self.scroll = QtWidgets.QScrollArea(); self.scroll.setWidgetResizable(True); self.scroll.setWidget(content)
@@ -184,7 +184,7 @@ class Window(QtWidgets.QMainWindow):
         panels[name]=panel;tabs.addTab(panel,name)
 
     def _panels(self):
-        return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab]
+        return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels()
 
     def _bindings(self):
         bindings = {family+':'+name:(family,p.worker.operation_bridge)
