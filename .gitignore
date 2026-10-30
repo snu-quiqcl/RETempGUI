@@ -70,3 +70,6 @@ id_ed25519
 
 # Local InstrumentServer source
 instrumentserver-remote_entanglement/
+
+# Local launcher
+/start_lab_remote_gui.bat
