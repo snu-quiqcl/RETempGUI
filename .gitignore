@@ -67,3 +67,6 @@ id_ed25519
 # Local support folders: retain on disk, transfer separately if needed
 /server_deploy_latest/
 /tests/
+
+# Local InstrumentServer source
+instrumentserver-remote_entanglement/
