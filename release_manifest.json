@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "CCD EC oven loading operations",
+  "revision_note": "Latch oven I/O failures and verify live connection",
   "files": [
     {
       "path": ".gitattributes",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/OVEN_LOADING_KO.md",
-      "bytes": 5623,
-      "sha256": "c358fbd52cb648a715ff67baaffbb1521600e24cf624ecd83612c6d6b73ad719"
+      "bytes": 7024,
+      "sha256": "c4df8515e6af3760ff2d906cd1db8cf289d1785b2ad774e9c960bae52b68eb88"
     },
     {
       "path": "docs/OVEN_REVIEW.md",
@@ -509,13 +509,13 @@
     },
     {
       "path": "labremote/devices/oven/panel.py",
-      "bytes": 9262,
-      "sha256": "d02a5cc96c39f7dd3887d54335523492c56baa1b235ffe088d7f99fa637a7276"
+      "bytes": 9466,
+      "sha256": "975ed5731eb0caeec5ef25aa1809d256df0d15a20f647064c0f3405b93e9c1b1"
     },
     {
       "path": "labremote/devices/oven/runner.py",
-      "bytes": 7576,
-      "sha256": "a048ca247097ddd4d56875bbcb692e2baa32123769ee7fbac601e16029f2e7c3"
+      "bytes": 7793,
+      "sha256": "62780da10740ea8cf630cca06fa91e2b7e7116317630adce158c150a361c4b53"
     },
     {
       "path": "labremote/devices/oven/settings.py",
@@ -524,8 +524,8 @@
     },
     {
       "path": "labremote/devices/oven/worker.py",
-      "bytes": 875,
-      "sha256": "0de4211278593fa4f20ed17aac104c6623b4f1737e716e0a0954d92c2ac9ce6a"
+      "bytes": 2007,
+      "sha256": "2f03307c260c46d80331a6cc9239714cd64c1509238a135ea5c3ca344c4fbaa7"
     },
     {
       "path": "labremote/devices/sg384/__init__.py",

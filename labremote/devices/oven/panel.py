@@ -91,8 +91,8 @@ class OvenPanel(QtWidgets.QGroupBox):
         except Exception as exc:self._failure('OVEN_CONNECT',str(exc))
 
     def _connected(self):
-        if self.psu.ps is not None and self.relays.ps is not None:
-            self.state.setText('Oven devices connected · output unchanged')
+        if all(w.ps is not None and not w.io_fault and not w.connection_error for w in (self.psu,self.relays)):
+            self.state.setText('Oven devices connected · live readback verified · output unchanged')
 
     def _start(self):
         if self.task.running():return
@@ -117,7 +117,7 @@ class OvenPanel(QtWidgets.QGroupBox):
 
     def _failure(self,label,error):
         self.measured.setText('CH1 measured: unavailable / last reading invalid')
-        self.state.setText(f'{label}: {error}')
+        self.state.setText(f'{label}: {error}\n장비 오류 시 자동 조회/ON 중지. 서버 연결 복구 후 Connect oven devices를 다시 누르세요.')
         self.log_message.emit(f'{label}: {error}')
 
     def _task_changed(self,label,handle):
@@ -145,7 +145,7 @@ class OvenPanel(QtWidgets.QGroupBox):
         self.active_changed.emit(active)
         for widget in (self.connect_button,self.psu_name,self.relay_name,self.isotope,self.shutter,self.confirmed):
             widget.setEnabled(not active and not self._closing)
-        ready=all(w.ps is not None and not w.connection_error and not w._closing for w in (self.psu,self.relays))
+        ready=all(w.ps is not None and not w.connection_error and not w.io_fault and not w._closing for w in (self.psu,self.relays))
         self.start_button.setEnabled(ready and self.ccd_panel.connected and self.confirmed.isChecked() and not active and not self._closing)
         if self._closing:
             if not active and not self._stop_requested:

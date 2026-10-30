@@ -25,6 +25,8 @@ class OvenLoadTask(WorkflowTask):
         with _TASK_LOCK:
             try:
                 if self.running(): raise RuntimeError('Oven loading is already running or stopping')
+                if self.psu.io_fault or self.relays.io_fault:
+                    raise ConnectionError('Recover the server device connection, then Connect oven devices again; live response verification is required')
                 if type(isotope) is not int or isotope not in (171, 174): raise ValueError('Select 171 or 174')
                 if shutter not in ('shutter_1', 'shutter_2') or shutter_confirmed is not True:
                     raise ValueError('Confirm the EC shutter wiring in the CCD oven panel first')

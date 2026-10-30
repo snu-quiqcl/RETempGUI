@@ -1,6 +1,6 @@
 # CCD 화면에서 EC 오븐으로 이온 로딩
 
-서버에 등록된 E3631A `oven_psu`와 RPiOven `oven_relays`를 사용합니다. 제공된 QCoDeS 드라이버의 parameter get/set 계약을 사용하며 서버나 Raspberry Pi에 자동 배포하지 않습니다. 기본 InstrumentServer 주소는 앱 상단 Host/Port입니다. Connect oven devices는 장비 ID 조회만 하며 출력을 켜거나 릴레이를 바꾸지 않습니다.
+서버에 등록된 E3631A `oven_psu`와 RPiOven `oven_relays`를 사용합니다. 제공된 QCoDeS 드라이버의 parameter get/set 계약을 사용하며 서버나 Raspberry Pi에 자동 배포하지 않습니다. 기본 InstrumentServer 주소는 앱 상단 Host/Port입니다. Connect oven devices는 ID와 실제 PSU 출력 상태·측정 전압/전류, 릴레이 상태를 읽어서 연결을 검증합니다. 출력을 켜거나 릴레이를 바꾸지 않습니다.
 
 ## 설정과 사용
 
@@ -54,3 +54,11 @@ def main(devices):
 오븐 task 중에는 충돌하는 CCD 연결·설정·추가 촬영 작업을 거부합니다. 명시적인 CCD stop/disconnect는 허용되며 진행 중인 이온 대기를 실패시켜 오븐 종료 처리로 이어집니다. 장비를 별도의 앱/서버 클라이언트에서 동시에 조작하는 것은 보호하지 못합니다.
 
 장비 이름과 확인한 셔터 선택은 `labremote/config/oven.local.json`에 저장합니다. 기존 `*.local.json` 규칙으로 Git에서 제외됩니다. 다른 UI PC에서도 같은 선택을 유지하려면 이 파일을 직접 복사하거나 화면에서 다시 설정하세요. 서버 드라이버 폴더 구조, 기존 실행 배치 파일과 Git 설정은 이번 기능 추가로 변경하지 않습니다.
+
+## PSU 시리얼 오류 복구
+
+E3631A 드라이버는 timeout/불완전 응답 때 서버의 serial 핸들을 닫습니다. 이후 `connection invalid`는 첫 오류의 후속 결과입니다. UI의 Connect는 기존 원격 인스턴스에 붙는 동작이므로 닫힌 serial 핸들을 재생성하지 않습니다. 장비 전면에서 출력 상태를 확인하고 필요하면 수동 OFF한 뒤, 서버에서 oven_psu 인스턴스를 명시적으로 재생성하거나 다른 실험을 정지한 상태에서 서버를 재시작해야 합니다.
+
+장비 operation 오류가 발생하면 자동 조회와 새 오븐 로딩을 중지합니다. 서버를 복구한 다음 Connect oven devices를 눌러 실제 응답이 확인되어야 재개합니다. STOP/OFF 및 셔터 닫기 시도는 이 제한과 별개로 유지합니다. ON이나 실패한 설정 쓰기를 자동 재시도하지 않습니다.
+
+`get_idn()`은 캐시된 정보여서 기존 Connect 성공만으로 RS-232 통신 정상 여부를 알 수 없었습니다. 현재 연결 검사에는 실제 readback이 포함됩니다. 설정이 맞는데도 `SYST:ERR?`가 응답하지 않는 원인은 현장의 질의 응답/동일 포트 사용/케이블 상태 확인이 필요하며 timeout 증가나 오류 조회 생략으로 숨기지 않습니다.
