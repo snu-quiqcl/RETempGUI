@@ -227,7 +227,7 @@ class CCDAPI:
         return self._submit('save', path=str(path), sequence=sequence, roi_only=roi_only)
     def cancel(self): self.worker.cancel_backgrounds()
 
-    def load_oven(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=False,
+    def load_oven(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=None,
                   threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None):
         runner = getattr(self.worker, 'oven_runner', None)
         if runner is None: raise RuntimeError('Use the CCD panel oven connections first')

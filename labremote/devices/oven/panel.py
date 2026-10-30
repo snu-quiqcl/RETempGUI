@@ -35,24 +35,21 @@ class OvenPanel(QtWidgets.QGroupBox):
         self.isotope = QtWidgets.QComboBox();self.isotope.addItems(['171','174'])
         self.shutter = QtWidgets.QComboBox();self.shutter.addItems(['shutter_2','shutter_1'])
         self.shutter.setCurrentText(config['shutter'])
-        self.confirmed = QtWidgets.QCheckBox('선택한 EC 셔터 연결 확인')
-        self.confirmed.setChecked(config['shutter_confirmed'])
-        self.shutter.currentTextChanged.connect(lambda _:self.confirmed.setChecked(False))
         self.profile = QtWidgets.QLabel()
         self.isotope.currentTextChanged.connect(self._profile)
         self._profile()
         self.start_button = QtWidgets.QPushButton('Oven ON · load EC ions')
         self.stop_button = QtWidgets.QPushButton('STOP / Oven OFF')
-        self.measured = QtWidgets.QLabel('CH1 measured: — V / — A')
+        self.measured = QtWidgets.QLabel('CH1 현재 측정값: — V / — A')
         self.state = QtWidgets.QLabel(config_error or 'Connect oven PSU/relay and real CCD. No automatic connection.')
         self.state.setWordWrap(True)
         warning = QtWidgets.QLabel('E3631A OFF는 전체 출력에 적용됩니다. CH2/CH3는 0으로 설정합니다. Flip mirror는 조작하지 않습니다.')
         warning.setWordWrap(True)
         for row,(label,widget) in enumerate((('PSU instrument',self.psu_name),('Relay instrument',self.relay_name),('EC isotope',self.isotope),('EC shutter',self.shutter))):
             grid.addWidget(QtWidgets.QLabel(label),row,0);grid.addWidget(widget,row,1)
-        for row,widget in enumerate((self.confirmed,self.profile,warning,self.connect_button),4):grid.addWidget(widget,row,0,1,2)
-        grid.addWidget(self.start_button,8,0);grid.addWidget(self.stop_button,8,1)
-        grid.addWidget(self.measured,9,0,1,2);grid.addWidget(self.state,10,0,1,2)
+        for row,widget in enumerate((self.profile,warning,self.connect_button),4):grid.addWidget(widget,row,0,1,2)
+        grid.addWidget(self.start_button,7,0);grid.addWidget(self.stop_button,7,1)
+        grid.addWidget(self.measured,8,0,1,2);grid.addWidget(self.state,9,0,1,2)
         self.connect_button.clicked.connect(self._connect)
         self.start_button.clicked.connect(self._start)
         self.stop_button.clicked.connect(self._stop)
@@ -71,11 +68,11 @@ class OvenPanel(QtWidgets.QGroupBox):
 
     def _profile(self):
         voltage,current=PROFILES['EC_'+self.isotope.currentText()]
-        self.profile.setText(f'CH1 limit: {voltage:.3f} V / {current:.2f} A · timeout 600 s')
+        self.profile.setText(f'CH1 설정 제한: {voltage:.3f} V / {current:.2f} A · timeout 600 s')
 
     def _config(self):
         return dict(psu_name=self.psu_name.text().strip(),relay_name=self.relay_name.text().strip(),
-                    shutter=self.shutter.currentText(),shutter_confirmed=self.confirmed.isChecked())
+                    shutter=self.shutter.currentText())
 
     def _connect(self):
         if self.task.running() or self.psu.has_requests() or self.relays.has_requests():return
@@ -100,7 +97,7 @@ class OvenPanel(QtWidgets.QGroupBox):
             save_settings(self._config())
             panel=self.ccd_panel
             self.handle=self.task.start(int(self.isotope.currentText()),shutter=self.shutter.currentText(),
-                shutter_confirmed=self.confirmed.isChecked(),threshold=panel.threshold.value(),min_area=panel.area.value(),
+                threshold=panel.threshold.value(),min_area=panel.area.value(),
                 target=panel.target.value(),consecutive_frames=panel.consecutive.value(),
                 roi=tuple(w.value() for w in panel.roi) if panel.roi_enabled.isChecked() else None)
             self._tick()
@@ -116,7 +113,7 @@ class OvenPanel(QtWidgets.QGroupBox):
             DeviceAPI(self.relays)._submit('OVEN_SHUTTER_CLOSE',lambda w:relay.close_shutter(w.ps,shutter))
 
     def _failure(self,label,error):
-        self.measured.setText('CH1 measured: unavailable / last reading invalid')
+        self.measured.setText('CH1 현재 측정값: 조회 실패 (유효한 값 없음)')
         self.state.setText(f'{label}: {error}\n장비 오류 시 자동 조회/ON 중지. 서버 연결 복구 후 Connect oven devices를 다시 누르세요.')
         self.log_message.emit(f'{label}: {error}')
 
@@ -128,7 +125,7 @@ class OvenPanel(QtWidgets.QGroupBox):
 
     def _progress(self,state):
         if 'voltage_v' in state and 'current_a' in state:
-            self.measured.setText(f"CH1 measured: {state['voltage_v']:.4f} V / {state['current_a']:.4f} A · {state.get('output','')}")
+            self.measured.setText(f"CH1 현재 측정값: {state['voltage_v']:.4f} V / {state['current_a']:.4f} A · {state.get('output','')}")
         if 'phase' in state:
             phase=state['phase']
             if 'remaining_s' in state:phase+=f" · {state['remaining_s']:.0f} s remaining"
@@ -143,10 +140,10 @@ class OvenPanel(QtWidgets.QGroupBox):
         import time
         active=self.task.running()
         self.active_changed.emit(active)
-        for widget in (self.connect_button,self.psu_name,self.relay_name,self.isotope,self.shutter,self.confirmed):
+        for widget in (self.connect_button,self.psu_name,self.relay_name,self.isotope,self.shutter):
             widget.setEnabled(not active and not self._closing)
         ready=all(w.ps is not None and not w.connection_error and not w.io_fault and not w._closing for w in (self.psu,self.relays))
-        self.start_button.setEnabled(ready and self.ccd_panel.connected and self.confirmed.isChecked() and not active and not self._closing)
+        self.start_button.setEnabled(ready and self.ccd_panel.connected and not active and not self._closing)
         if self._closing:
             if not active and not self._stop_requested:
                 self._stop_requested=True

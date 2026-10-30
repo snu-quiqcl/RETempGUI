@@ -71,15 +71,11 @@ class CCDTab(QtWidgets.QWidget):
         connection = QtWidgets.QGridLayout(connection_group)
         self.backend = QtWidgets.QComboBox(); self.backend.addItems(['Thorcam', 'Dummy'])
         self.backend.setCurrentText(self.options.get('backend', 'Thorcam'))
-        self.serial = QtWidgets.QLineEdit(self.options.get('serial', '')); self.serial.setPlaceholderText('Camera serial (optional for one camera)')
-        self.dll = QtWidgets.QLineEdit(self.options.get('dll_path', '')); self.dll.setPlaceholderText('ThorCam DLL directory (default if empty)')
         self.connect_button = QtWidgets.QPushButton('Connect local CCD')
         self.disconnect_button = QtWidgets.QPushButton('Disconnect')
         connection.addWidget(self.backend, 0, 0, 1, 2)
-        connection.addWidget(self.serial, 1, 0, 1, 2)
-        connection.addWidget(self.dll, 2, 0, 1, 2)
-        connection.addWidget(self.connect_button, 3, 0)
-        connection.addWidget(self.disconnect_button, 3, 1)
+        connection.addWidget(self.connect_button, 1, 0)
+        connection.addWidget(self.disconnect_button, 1, 1)
         side.addWidget(connection_group)
         self.connect_button.clicked.connect(self._connect)
         self.disconnect_button.clicked.connect(lambda: self.api.disconnect())
@@ -212,7 +208,10 @@ class CCDTab(QtWidgets.QWidget):
     def connected(self): return self.worker.available
 
     def settings(self):
-        return {'backend': self.backend.currentText(), 'serial': self.serial.text().strip(), 'dll_path': self.dll.text().strip()}
+        # Keep optional camera settings in the local settings file, not UI fields.
+        return {'backend': self.backend.currentText(),
+                'serial': str(self.options.get('serial') or '').strip(),
+                'dll_path': str(self.options.get('dll_path') or '').strip()}
 
     def _connect(self):
         if not self.worker.isRunning():

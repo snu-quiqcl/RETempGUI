@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Latch oven I/O failures and verify live connection",
+  "revision_note": "Simplify CCD controls and separate measured values",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 13460,
-      "sha256": "92644b67644ab73d7339fe7fb08e7688ac97dfb9e6d01110ba03078b3b92e7da"
+      "bytes": 13587,
+      "sha256": "5a2fddeca4c41196043f67a88b292b0402debd5c156ee141580a7426fa2b8182"
     },
     {
       "path": "check_public_files.py",
@@ -29,8 +29,8 @@
     },
     {
       "path": "docs/CCD_GUIDE_KO.md",
-      "bytes": 9288,
-      "sha256": "7d934b2646933911d98f43b33a27d8867f899730158eae1536f67740892dad2d"
+      "bytes": 9431,
+      "sha256": "765d8184e2d7f59dade78f989f440f67b0d9b855b5d5e61c73f26ad174936638"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -39,13 +39,13 @@
     },
     {
       "path": "docs/LOCAL_SETUP_KO.md",
-      "bytes": 7070,
-      "sha256": "96c0de53d4ca64acb84f63cbb79fa8d67421c6f3c2691e8402a1a49be314a455"
+      "bytes": 7055,
+      "sha256": "c60e20b46cdf8f666e4d5c09997e2fb6e2b1ce796aba2bcb01223a17236cf5e9"
     },
     {
       "path": "docs/OVEN_LOADING_KO.md",
-      "bytes": 7024,
-      "sha256": "c4df8515e6af3760ff2d906cd1db8cf289d1785b2ad774e9c960bae52b68eb88"
+      "bytes": 7690,
+      "sha256": "eabfb2ab39f471e94ccfb5f3349975bdb02a8d71b6663931a7de0231a6b3ad19"
     },
     {
       "path": "docs/OVEN_REVIEW.md",
@@ -304,8 +304,8 @@
     },
     {
       "path": "labremote/devices/ccd/tab.py",
-      "bytes": 18983,
-      "sha256": "c97228bfd8d38bb9bcd50bbb4d3719ad4500497378ec23a151a9a2207e4ab080"
+      "bytes": 18740,
+      "sha256": "8b945553171fe625c600d78a5599f72b77d333006fda3163694e8abede62ceaf"
     },
     {
       "path": "labremote/devices/ccd/vendor/QuIQCL_ThorCam.py",
@@ -324,8 +324,8 @@
     },
     {
       "path": "labremote/devices/ccd/worker.py",
-      "bytes": 12733,
-      "sha256": "64c5d41718b0659a1dc725928fff5b08313fa5d63ef13fc059b14465330b5391"
+      "bytes": 12973,
+      "sha256": "3e16de872db8502fcd8cc3ed31cf1f2fc68c82a2fe781a3eb9291d146b8d0e96"
     },
     {
       "path": "labremote/devices/dds4/__init__.py",
@@ -509,18 +509,18 @@
     },
     {
       "path": "labremote/devices/oven/panel.py",
-      "bytes": 9466,
-      "sha256": "975ed5731eb0caeec5ef25aa1809d256df0d15a20f647064c0f3405b93e9c1b1"
+      "bytes": 9279,
+      "sha256": "d824749cf9a4d3e463b541258bbe7816e1c37666c1b7504b99866a63b770f3e9"
     },
     {
       "path": "labremote/devices/oven/runner.py",
-      "bytes": 7793,
-      "sha256": "62780da10740ea8cf630cca06fa91e2b7e7116317630adce158c150a361c4b53"
+      "bytes": 7955,
+      "sha256": "f0e30b959da9f3c83e268653adf33f0a34bef88d6952b5df4a77a0aa492c2f95"
     },
     {
       "path": "labremote/devices/oven/settings.py",
-      "bytes": 1123,
-      "sha256": "0f1229c90b788c285f68ba05d3cff57da877406e43f217f9721126fdc110f582"
+      "bytes": 1005,
+      "sha256": "7e652ef1d5e198496cff94a1978df2d8dd3c698b3a9874314db3bb33741ef6ff"
     },
     {
       "path": "labremote/devices/oven/worker.py",
@@ -1314,8 +1314,8 @@
     },
     {
       "path": "labremote/workflow/load_ec_ions.py",
-      "bytes": 480,
-      "sha256": "defa02d7033e133548f32c04c79a5ebf0180730fd75a0232ee693c2160f3d8a1"
+      "bytes": 441,
+      "sha256": "ddbf4ae3ace67a11b65400599b74d34c4f30c21ee5121e7b534f1a0ad91636b0"
     },
     {
       "path": "labremote/workflow/mdt_pid.py",

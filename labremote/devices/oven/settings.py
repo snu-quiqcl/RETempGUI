@@ -6,7 +6,7 @@ LOCAL = Path(__file__).resolve().parents[2]/'config'/'oven.local.json'
 PROFILES = {'EA_174': (5., .75), 'EA_171': (5., .75),
             'EC_174': (5., 1.4), 'EC_171': (5., 1.30)}
 DEFAULTS = {'psu_name': 'oven_psu', 'relay_name': 'oven_relays',
-            'shutter': 'shutter_2', 'shutter_confirmed': False}
+            'shutter': 'shutter_2'}
 
 
 def load_settings():
@@ -17,8 +17,6 @@ def load_settings():
     result.update({key: value for key, value in data.items() if key in DEFAULTS})
     if result['shutter'] not in ('shutter_1', 'shutter_2'):
         raise ValueError('Select shutter_1 or shutter_2 in oven.local.json')
-    if type(result['shutter_confirmed']) is not bool:
-        raise ValueError('shutter_confirmed must be boolean')
     return result
 
 

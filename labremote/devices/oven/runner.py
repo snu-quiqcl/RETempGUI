@@ -20,16 +20,17 @@ class OvenLoadTask(WorkflowTask):
         self._cleaning = False
         self.ccd.oven_runner = self
 
-    def start(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=False,
+    def start(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=None,
               threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None, parent=None):
+        # shutter_confirmed is accepted only for compatibility with older workflows.
         with _TASK_LOCK:
             try:
                 if self.running(): raise RuntimeError('Oven loading is already running or stopping')
                 if self.psu.io_fault or self.relays.io_fault:
                     raise ConnectionError('Recover the server device connection, then Connect oven devices again; live response verification is required')
                 if type(isotope) is not int or isotope not in (171, 174): raise ValueError('Select 171 or 174')
-                if shutter not in ('shutter_1', 'shutter_2') or shutter_confirmed is not True:
-                    raise ValueError('Confirm the EC shutter wiring in the CCD oven panel first')
+                if shutter not in ('shutter_1', 'shutter_2'):
+                    raise ValueError('Select shutter_1 or shutter_2')
                 if not self.ccd.available: raise ConnectionError('Connect the CCD first')
                 if getattr(self.ccd, 'backend_name', '') != 'Thorcam':
                     raise ValueError('Real oven loading requires Thorcam, not Dummy CCD')

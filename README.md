@@ -16,7 +16,7 @@
 
 장비별 세부 동작은 [장비 가이드](docs/DEVICE_GUIDE_KO.md), CCD와 조건 판정은 [CCD 가이드](docs/CCD_GUIDE_KO.md)를 참고하세요.
 
-EC 오븐은 [오븐 로딩 안내](docs/OVEN_LOADING_KO.md)를 참고하세요. 기본 서버 등록 이름은 `oven_psu` / `oven_relays`, 출력은 CH1입니다. EC 171은 5.000 V / 1.30 A, EC 174는 5.000 V / 1.40 A이며 기본 `shutter_2`의 실제 연결을 화면에서 확인한 뒤 시작합니다. Flip mirror는 조작하지 않습니다. 자동 종료는 정상 동작 중인 클라이언트와 통신에 의존하며 하드웨어 watchdog을 대신하지 않습니다.
+EC 오븐은 [오븐 로딩 안내](docs/OVEN_LOADING_KO.md)를 참고하세요. 기본 서버 등록 이름은 `oven_psu` / `oven_relays`, 출력은 CH1입니다. EC 171은 5.000 V / 1.30 A, EC 174는 5.000 V / 1.40 A이며 기본 EC 셔터는 `shutter_2`이며 별도 확인 체크박스 없이 시작합니다. Flip mirror는 조작하지 않습니다. 자동 종료는 정상 동작 중인 클라이언트와 통신에 의존하며 하드웨어 watchdog을 대신하지 않습니다.
 
 ## 설치 및 실행
 
@@ -89,7 +89,7 @@ start_lab_remote_gui.bat
 ### 4. 실제 CCD
 
 - ThorCam 프로그램, 카메라 드라이버, Thorlabs .NET SDK를 해당 PC에 설치합니다. 이 저장소에 제조사 DLL을 포함하지 않았습니다.
-- CCD 탭에서 `Thorcam`과 카메라 serial을 선택/입력하고 DLL 디렉터리를 지정합니다. 기본 경로는 `C:/Program Files/Thorlabs/Scientific Imaging/ThorCam/`입니다.
+- CCD 탭에서는 `Thorcam`을 선택합니다. 카메라 serial과 DLL 입력칸은 표시하지 않으며, 필요한 경우 로컬 `client_settings.json`의 `ccd_options.serial`과 `ccd_options.dll_path`로 지정합니다. 기본 경로는 `C:/Program Files/Thorlabs/Scientific Imaging/ThorCam/`입니다.
 - `Dummy`는 SDK/실제 카메라 없이 밝은 영역 3개를 생성합니다.
 - CCD는 로컬로 연결되며 **flip mirror·오븐·셔터가 없어도 동작**합니다. 일반 CCD Wait for ions는 장비를 끄지 않습니다. EC oven 로딩 작업을 시작한 경우에만 해당 작업이 PSU OFF와 셔터 닫기를 처리합니다.
 - 단색 16bit 영상이 대상입니다. EMCCD·컬러 카메라·하드웨어 TTL 트리거는 현재 통합 범위가 아닙니다.

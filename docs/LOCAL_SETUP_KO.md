@@ -12,7 +12,7 @@
 | `server_deploy_latest/KDC101/serials.local.json` | 모터 이름별 실제 USB 시리얼 | 실제 모터 서버에 배포된 `KDC101.py`와 같은 폴더 |
 | `local_settings.bat` | Conda 환경·설치 경로, 외부 InstrumentServer 소스 경로, 선택적 서버 override | UI PC 저장소 루트. 복사 후 해당 PC에 맞게 경로 확인 |
 | `labremote/config/client_settings.json` | 저장된 UI 상태와 CCD 옵션(카메라 serial/DLL/저장 경로 포함 가능) | 기존 설정을 그대로 쓸 때만 UI PC의 동일 경로. 앱을 종료한 상태로 복사 |
-| `labremote/config/oven.local.json` | 오븐 장비 이름과 EC 셔터 선택·연결 확인 | CCD 오븐 설정 후 생성. 같은 연결 구성을 유지할 UI PC에 직접 복사하거나 화면에서 다시 설정 |
+| `labremote/config/oven.local.json` | 오븐 장비 이름과 EC 셔터 선택 | CCD 오븐 설정 후 생성. 같은 연결 구성을 유지할 UI PC에 직접 복사하거나 화면에서 다시 설정 |
 
 이번 이전 작업은 첫 두 파일에 기존 IP·12개 모터 시리얼을 보존합니다. `local_settings.bat`도 기본 실행 설정으로 준비합니다. `client_settings.json`은 앱 사용 후 생성되는 선택 파일이므로 아직 없을 수 있습니다.
 
