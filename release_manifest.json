@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Simplify CCD controls and separate measured values",
+  "revision_note": "Remove redundant oven queries; preserve actual measurements",
   "files": [
     {
       "path": ".gitattributes",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/OVEN_LOADING_KO.md",
-      "bytes": 7690,
-      "sha256": "eabfb2ab39f471e94ccfb5f3349975bdb02a8d71b6663931a7de0231a6b3ad19"
+      "bytes": 8675,
+      "sha256": "40e921597b3d305af80d354c0f366fd7742ed7ad2b09d46329c84c6aa24b72d1"
     },
     {
       "path": "docs/OVEN_REVIEW.md",
@@ -204,8 +204,8 @@
     },
     {
       "path": "labremote/config/oven_psu/parameter_registry.yml",
-      "bytes": 1845,
-      "sha256": "04c2df116063666259fe0402b655aa12a161893084883c51ec5012afd4ae49d2"
+      "bytes": 1817,
+      "sha256": "729ff890566b47ccd84b5c290ee6fbb8eec53383a5a24e3d9a0c6e35c137ff06"
     },
     {
       "path": "labremote/config/oven_relay/device_config.yml",

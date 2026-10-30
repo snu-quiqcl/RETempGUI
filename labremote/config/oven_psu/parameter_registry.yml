@@ -14,21 +14,21 @@ parameters:
 - pattern: oven_psu.tracking_enabled
   kind: string
   writable: true
-  verification: readback
+  verification: none
   choices:
   - 'ON'
   - 'OFF'
 - pattern: oven_psu.ch1_voltage
   kind: number
   writable: true
-  verification: readback
+  verification: none
   minimum: 0
   maximum: 5
   abs_tolerance: 0.01
 - pattern: oven_psu.ch1_current
   kind: number
   writable: true
-  verification: readback
+  verification: none
   minimum: 0
   maximum: 1.4
   abs_tolerance: 0.001
@@ -43,14 +43,14 @@ parameters:
 - pattern: oven_psu.ch2_voltage
   kind: number
   writable: true
-  verification: readback
+  verification: none
   minimum: 0
   maximum: 25
   abs_tolerance: 0.01
 - pattern: oven_psu.ch2_current
   kind: number
   writable: true
-  verification: readback
+  verification: none
   minimum: 0
   maximum: 1
   abs_tolerance: 0.001
@@ -65,14 +65,14 @@ parameters:
 - pattern: oven_psu.ch3_voltage
   kind: number
   writable: true
-  verification: readback
+  verification: none
   minimum: -25
   maximum: 0
   abs_tolerance: 0.01
 - pattern: oven_psu.ch3_current
   kind: number
   writable: true
-  verification: readback
+  verification: none
   minimum: 0
   maximum: 1
   abs_tolerance: 0.001
