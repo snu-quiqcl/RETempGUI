@@ -85,6 +85,7 @@ class OvenLoadTask(WorkflowTask):
         watch = None
         error = None
         result = None
+        ramp_current = 0.
         try:
             self.publish(phase='PSU OFF / current verification', route=s['route'], timeout_s=self.timeout_s)
             self._operation(self.psu, 'OVEN_OFF', power.off)
@@ -103,8 +104,17 @@ class OvenLoadTask(WorkflowTask):
             remaining = max(.001, self._deadline-time.monotonic())
             watch = ccd.wait_for_ions(s['target'], consecutive_frames=s['consecutive_frames'], timeout_s=remaining)
             next_sample = 0
+            next_step = 0
             while not watch.done.wait(.05):
                 self.check()
+                if ramp_current < current and time.monotonic() >= next_step:
+                    # Record the attempted level before I/O so interrupted writes
+                    # also have a conservative starting point for shutdown.
+                    ramp_current = round(min(current, ramp_current + power.RAMP_STEP_A), 6)
+                    self._operation(self.psu, 'OVEN_RAMP_UP', power.set_current, ramp_current)
+                    self.publish(ramp_current_a=ramp_current)
+                    next_step = time.monotonic() + power.RAMP_INTERVAL_S
+                    if watch.done.is_set(): break
                 if time.monotonic() >= next_sample:
                     sample = self._operation(self.psu, 'OVEN_READBACK', power.read_snapshot)
                     self.publish(**sample, remaining_s=max(0.,self._deadline-time.monotonic()))
@@ -118,11 +128,12 @@ class OvenLoadTask(WorkflowTask):
         finally:
             self._cleaning = True
             if watch is not None and not watch.done.is_set():watch.request_cancel()
-            self.publish(phase='Stopping: PSU OFF / shutter CLOSED')
+            self.publish(phase='Stopping: current ramp down / PSU OFF / shutter CLOSED')
             failures = []
             # Independent, uncancelled operations: attempt BOTH even if one fails.
             for worker, label, fn, args in (
-                (self.psu, 'OVEN_OFF', power.off, ()),
+                (self.psu, 'OVEN_OFF', power.off if self.psu.io_fault else power.ramp_down,
+                 () if self.psu.io_fault else (ramp_current,)),
                 (self.relays, 'OVEN_SHUTTER_CLOSE', relay.close_shutter, (s['shutter'],))):
                 try:self._operation(worker, label, fn, *args, cleanup=True)
                 except Exception as exc:failures.append(f'{label}: {exc}')

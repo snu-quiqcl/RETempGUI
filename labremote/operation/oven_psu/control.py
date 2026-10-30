@@ -2,6 +2,25 @@ import time
 from labremote.runtime.io import Context
 
 OFF_CURRENT_TIMEOUT_S = 5.
+RAMP_STEP_A = .15
+RAMP_INTERVAL_S = .4
+
+
+def set_current(p, current):
+    Context().assign(p.ch1_current, current)
+
+
+def ramp_down(p, start_current):
+    """Uncancelled cleanup operation; always attempt OFF if ramping fails."""
+    ctx = Context()
+    try:
+        value = start_current
+        while value > 0:
+            value = round(max(0., value - RAMP_STEP_A), 6)
+            ctx.assign(p.ch1_current, value)
+            ctx.wait(RAMP_INTERVAL_S)
+    finally:
+        off(p)
 
 
 def off(p):
@@ -27,7 +46,7 @@ def configure(p, voltage, current):
     for ch in (2, 3):
         ctx.assign(getattr(p, f'ch{ch}_current'), 0.)
         ctx.assign(getattr(p, f'ch{ch}_voltage'), 0.)
-    ctx.assign(p.ch1_current, current)
+    ctx.assign(p.ch1_current, 0.)
     ctx.assign(p.ch1_voltage, voltage)
     return {'voltage_limit_v': voltage, 'current_limit_a': current}
 
@@ -36,11 +55,9 @@ def on(p, voltage, current):
     ctx = Context()
     if ctx.acquire(p.output_enabled) != 'OFF' or ctx.acquire(p.tracking_enabled) != 'OFF':
         raise RuntimeError('Unexpected PSU output/tracking state before oven ON')
-    for ch in (2, 3):
-        if abs(ctx.acquire(getattr(p, f'ch{ch}_voltage'))) > .01 or abs(ctx.acquire(getattr(p, f'ch{ch}_current'))) > .001:
-            raise RuntimeError('Unused PSU output setpoints must be zero')
-    if abs(ctx.acquire(p.ch1_voltage)-voltage) > .01 or abs(ctx.acquire(p.ch1_current)-current) > .001:
-        raise RuntimeError('CH1 setpoints changed before oven ON')
+    # configure() has already written the channel limits under workflow ownership.
+    # Do not query VOLT?/CURR? here: legacy loading does not use setpoint reads.
+    # Successful writes are not represented as verified device settings.
     ctx.assign(p.output_enabled, 'ON')
 
 

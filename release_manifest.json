@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Remove redundant oven queries; preserve actual measurements",
+  "revision_note": "Remove channel setpoint queries from oven loading",
   "files": [
     {
       "path": ".gitattributes",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/OVEN_LOADING_KO.md",
-      "bytes": 8675,
-      "sha256": "40e921597b3d305af80d354c0f366fd7742ed7ad2b09d46329c84c6aa24b72d1"
+      "bytes": 10412,
+      "sha256": "fb2b0cab48203be7c29a3d1ad295b682bca42753e9ee132f786107f0314ca0d7"
     },
     {
       "path": "docs/OVEN_REVIEW.md",
@@ -514,8 +514,8 @@
     },
     {
       "path": "labremote/devices/oven/runner.py",
-      "bytes": 7955,
-      "sha256": "f0e30b959da9f3c83e268653adf33f0a34bef88d6952b5df4a77a0aa492c2f95"
+      "bytes": 8746,
+      "sha256": "1536df43a21170c25a0d068311b470dafce852aa1758ab40134eca86d2225b4b"
     },
     {
       "path": "labremote/devices/oven/settings.py",
@@ -944,8 +944,8 @@
     },
     {
       "path": "labremote/operation/oven_psu/control.py",
-      "bytes": 2129,
-      "sha256": "c978a38b8dba720379663cb1af5c55f74a0cdc73b9ecac1f78d4602db24af5f2"
+      "bytes": 2519,
+      "sha256": "3a146d32d0c73143610c69922d50badaa8adeebdb96532c1a28dd9f500c67489"
     },
     {
       "path": "labremote/operation/oven_relay/__init__.py",
