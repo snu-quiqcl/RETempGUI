@@ -1,0 +1,17 @@
+schema_version: 1
+defaults:
+  channels:
+    CH1:
+      limits:
+        max_voltage_v: 5.0
+        max_current_a: 1.0
+    CH2:
+      limits:
+        max_voltage_v: 5.0
+        max_current_a: 3.0
+    CH3:
+      limits:
+        max_voltage_v: 5.0
+        max_current_a: 3.0
+instruments:
+  keithley_ps: {}

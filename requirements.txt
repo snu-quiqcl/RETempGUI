@@ -1,0 +1,5 @@
+# Windows / Python 3.11 client + local CCD
+-c constraints-tested.txt
+-r requirements_client.txt
+-r requirements_ccd.txt
+# The laboratory's instrumentserver fork is installed separately; see README.MD.

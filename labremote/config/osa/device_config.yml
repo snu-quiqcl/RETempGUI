@@ -1,0 +1,7 @@
+schema_version: 1
+defaults:
+  acquisition:
+    interval_s: 0.3
+    timeout_s: 95
+instruments:
+  aq6373: {}

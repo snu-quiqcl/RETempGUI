@@ -1,0 +1,5 @@
+# Install into the same environment used by start_lab_remote_gui.bat.
+# Other v6 dependencies (PyQt5, numpy, Pillow) remain required.
+opencv-python-headless==4.10.0.84
+pyqtgraph==0.13.7
+pythonnet>=3.0,<4

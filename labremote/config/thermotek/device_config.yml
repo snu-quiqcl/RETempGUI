@@ -1,0 +1,6 @@
+schema_version: 1
+defaults:
+  acquisition:
+    interval_s: 6
+instruments:
+  t257p: {}

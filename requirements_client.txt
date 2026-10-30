@@ -1,0 +1,19 @@
+PyQt5
+PyYAML
+numpy
+matplotlib
+pyzmq
+# instrumentserver.client supplied by the local checkout or environment
+
+pyserial  # local FPGA COM transport
+
+scipy  # PID spectral fit and scan MFD fit
+Pillow  # quantitative TIFF / PNG image saving
+
+# Dependencies imported by the laboratory InstrumentServer client fork.
+# The fork's source itself remains a separate install/checkout.
+qcodes
+QtPy
+jsonschema
+pandas
+bokeh

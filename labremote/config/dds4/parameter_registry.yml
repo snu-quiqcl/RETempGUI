@@ -1,0 +1,47 @@
+schema_version: 1
+parameters:
+- pattern: dds4.status_json
+  kind: json_object
+  writable: false
+  verification: none
+  required_values:
+    api_version: 2
+    settings_source: last_transmitted_not_readback
+- pattern: dds4.ch*.frequency_hz
+  kind: number
+  writable: true
+  verification: readback
+  minimum: 10000000.0
+  maximum: 400000000.0
+  abs_tolerance: 1
+  nullable_readback: true
+  unknown_readbacks: []
+- pattern: dds4.ch*.phase_deg
+  kind: number
+  writable: true
+  verification: readback
+  minimum: 0
+  maximum: 360
+  abs_tolerance: 0.01
+  nullable_readback: true
+  unknown_readbacks: []
+- pattern: dds4.ch*.vva_level
+  kind: int
+  writable: true
+  verification: readback
+  minimum: 0
+  maximum: 1000
+  abs_tolerance: 0
+  nullable_readback: true
+  unknown_readbacks:
+  - -1
+- pattern: dds4.ch*.output_enabled
+  kind: int
+  writable: true
+  verification: readback
+  minimum: 0
+  maximum: 1
+  abs_tolerance: 0
+  nullable_readback: true
+  unknown_readbacks:
+  - -1

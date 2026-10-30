@@ -1,0 +1,5 @@
+schema_version: 1
+defaults: {}
+instruments:
+  ds1052e_EA: {}
+  ds1052e_EC: {}

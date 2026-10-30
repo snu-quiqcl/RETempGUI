@@ -1,0 +1,18 @@
+# Direct dependency versions used for the release verification (Python 3.11).
+# This is not a lock of every transitive dependency.
+PyQt5==5.15.11
+PyYAML==6.0.3
+numpy==2.4.2
+matplotlib==3.10.8
+pyzmq==27.1.0
+pyserial==3.5
+scipy==1.17.1
+Pillow==12.1.1
+opencv-python-headless==4.10.0.84
+pyqtgraph==0.13.7
+pythonnet==3.2.1
+qcodes==0.55.0
+QtPy==2.4.3
+jsonschema==4.26.0
+pandas==3.0.1
+bokeh==3.8.2

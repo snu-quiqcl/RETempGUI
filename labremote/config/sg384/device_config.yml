@@ -1,0 +1,52 @@
+schema_version: 1
+defaults:
+  reference:
+    source: external
+    frequency_hz: 10000000
+  rf_operation:
+    max_step_vpp: 0.01
+    interval_s: 0.2
+    low_power_dbm:
+      BNC: -40.0
+      N: -40.0
+  display:
+    frequency_unit: MHz
+    power_unit: dBm
+  shared:
+    preset:
+      frequency_hz: null
+      phase_deg: null
+  outputs:
+    BNC:
+      preset:
+        power_dbm: null
+      limits:
+        max_power_dbm: null
+        max_power_vpp: null
+        frequency_min_hz: 0
+        frequency_max_hz: 62500000.0
+    N:
+      preset:
+        power_dbm: null
+      limits:
+        max_power_dbm: null
+        max_power_vpp: null
+        frequency_min_hz: 950000.0
+        frequency_max_hz: 4050000000.0
+instruments:
+  sg384_EA:
+    outputs:
+      BNC:
+        limits:
+          max_power_vpp: 0.16
+      N:
+        limits:
+          max_power_vpp: 0.16
+  sg384_EC:
+    outputs:
+      BNC:
+        limits:
+          max_power_vpp: 0.19
+      N:
+        limits:
+          max_power_vpp: 0.19

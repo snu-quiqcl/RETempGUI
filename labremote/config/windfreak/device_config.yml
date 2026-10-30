@@ -1,0 +1,76 @@
+schema_version: 1
+defaults:
+  reference:
+    source: external
+    frequency_hz: 10000000
+  rf_operation:
+    max_step_vpp: 0.1
+    interval_s: 0.2
+    low_power_dbm: -50.0
+  channels:
+    A:
+      preset:
+        frequency_hz: null
+        power_dbm: null
+        phase_step_deg: null
+      limits:
+        max_power_dbm: null
+    B:
+      preset:
+        frequency_hz: null
+        power_dbm: null
+        phase_step_deg: null
+      limits:
+        max_power_dbm: null
+instruments:
+  synthhd_760:
+    reference:
+      source: internal
+      frequency_hz: 10000000
+    channels:
+      A:
+        preset:
+          frequency_hz: null
+          power_dbm: null
+        limits:
+          max_power_dbm: 5
+      B:
+        preset:
+          frequency_hz: null
+          power_dbm: null
+        limits:
+          max_power_dbm: 5
+  synthhd_2g:
+    reference:
+      source: external
+      frequency_hz: 10000000
+    channels:
+      A:
+        preset:
+          frequency_hz: null
+          power_dbm: null
+        limits:
+          max_power_dbm: 5
+      B:
+        preset:
+          frequency_hz: null
+          power_dbm: null
+        limits:
+          max_power_dbm: 5
+  synthhd_3g:
+    reference:
+      source: external
+      frequency_hz: 10000000
+    channels:
+      A:
+        preset:
+          frequency_hz: null
+          power_dbm: null
+        limits:
+          max_power_dbm: 5
+      B:
+        preset:
+          frequency_hz: null
+          power_dbm: null
+        limits:
+          max_power_dbm: 5

@@ -1,0 +1,57 @@
+{
+  "server_host": "127.0.0.1",
+  "server_port": 5555,
+  "operation_detailed_logging": false,
+  "windfreak_channel_names": {},
+  "windfreak_names": [
+    "synthhd_760",
+    "synthhd_2g",
+    "synthhd_3g"
+  ],
+  "sg384_names": [
+    "sg384_EA",
+    "sg384_EC"
+  ],
+  "anapico_names": [
+    "apsyn420_7g"
+  ],
+  "dds4_names": [
+    "dds4"
+  ],
+  "ds1052e_names": [
+    "ds1052e_EA",
+    "ds1052e_EC"
+  ],
+  "mso7054_names": [
+    "mso7054"
+  ],
+  "thermotek_names": [
+    "t257p"
+  ],
+  "keithley_names": [
+    "keithley_ps"
+  ],
+  "osa_names": [
+    "aq6373"
+  ],
+  "mdt_names": [
+    "mdt693b"
+  ],
+  "fpga_names": [
+    "fpga_local"
+  ],
+  "motors_names": [
+    "EA_px",
+    "EA_py",
+    "EA_pz",
+    "EA_sx",
+    "EA_sy",
+    "EA_sz",
+    "EC_px",
+    "EC_py",
+    "EC_pz",
+    "EC_sx",
+    "EC_sy",
+    "EC_sz"
+  ]
+}

@@ -1,0 +1,146 @@
+schema_version: 1
+parameters:
+- pattern: osa.frequency_start_thz
+  kind: number
+  writable: true
+  verification: readback
+  minimum: 10
+  maximum: 856.5
+  abs_tolerance: 1.0e-05
+- pattern: osa.frequency_stop_thz
+  kind: number
+  writable: true
+  verification: readback
+  minimum: 10
+  maximum: 856.5
+  abs_tolerance: 1.0e-05
+- pattern: osa.reference_level_dbm
+  kind: number
+  writable: true
+  verification: readback
+  minimum: -100
+  maximum: 30
+  abs_tolerance: 0.11
+- pattern: osa.db_per_div
+  kind: number
+  writable: true
+  verification: readback
+  minimum: 0.1
+  maximum: 20
+  abs_tolerance: 0.01
+- pattern: osa.auto_reference
+  kind: bool
+  writable: true
+  verification: readback
+- pattern: osa.trace_name
+  kind: string
+  writable: true
+  verification: readback
+  choices:
+  - TRA
+  - TRB
+  - TRC
+  - TRD
+  - TRE
+  - TRF
+  - TRG
+- pattern: osa.client_operation_version
+  kind: int
+  writable: false
+  verification: none
+  choices:
+  - 2
+  monitor: false
+- pattern: osa.connected
+  kind: bool
+  writable: false
+  verification: none
+  choices:
+  - true
+  monitor: false
+- pattern: osa.acquisition_active
+  kind: bool
+  writable: false
+  verification: none
+  monitor: false
+- pattern: osa.io_timeout_s
+  kind: number
+  writable: false
+  verification: none
+  monitor: false
+- pattern: osa.identity
+  kind: string
+  writable: false
+  verification: none
+  monitor: false
+- pattern: osa.operation_complete
+  kind: int
+  writable: false
+  verification: none
+  choices:
+  - 1
+  readback_parser: int
+  monitor: false
+- pattern: osa.spectrum
+  kind: osa_spectrum
+  writable: false
+  verification: none
+  monitor: false
+- pattern: osa.horizontal_unit
+  kind: string
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+  choices:
+  - FREQUENCY
+- pattern: osa.sweep_mode
+  kind: string
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+  choices:
+  - SINGLE
+- pattern: osa.clear_status
+  kind: bool
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+  choices:
+  - true
+- pattern: osa.abort
+  kind: bool
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+  choices:
+  - true
+- pattern: osa.data_format
+  kind: string
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+  choices:
+  - ASCII
+- pattern: osa.sweep_start
+  kind: bool
+  writable: true
+  readable: false
+  verification: readback
+  readback_path: operation_complete
+  choices:
+  - true
+  monitor: false
+- pattern: osa.zero_once
+  kind: bool
+  writable: true
+  readable: false
+  verification: readback
+  readback_path: operation_complete
+  choices:
+  - true
+  monitor: false

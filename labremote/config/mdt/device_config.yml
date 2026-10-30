@@ -1,0 +1,28 @@
+schema_version: 1
+defaults:
+  limits:
+    min_voltage: 0
+    max_voltage: 75
+  pid_defaults:
+    axis: X
+    osa_name: aq6373
+    target_thz: 0.0
+    kp_v_per_ghz: 0.0
+    ki_v_per_ghz_s: 0.0
+    kd_v_s_per_ghz: 0.0
+    derivative_filter_s: 2.0
+    polarity: 1
+    capture_ghz: 10.0
+    deadband_ghz: 0.005
+    min_v: 0.0
+    max_v: 75.0
+    max_step_v: 0.2
+    max_slew_v_per_s: 1.0
+    min_peak_dbm: -75.0
+    minimum_snr_db: 6.0
+    max_gap_s: 90.0
+    average_count: 10
+    use_fit: false
+    lease_s: 10.0
+instruments:
+  mdt693b: {}

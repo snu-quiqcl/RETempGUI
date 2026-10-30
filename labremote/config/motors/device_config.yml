@@ -1,0 +1,35 @@
+schema_version: 1
+defaults:
+  connection:
+    host: 127.0.0.1
+    port: 5555
+    timeout_s: 210
+    um_per_server_unit: 1000
+  limits:
+    min_position: 0
+    max_position: 12
+instruments:
+  EA_px:
+    instrument: EA_px
+  EA_py:
+    instrument: EA_py
+  EA_pz:
+    instrument: EA_pz
+  EA_sx:
+    instrument: EA_sx
+  EA_sy:
+    instrument: EA_sy
+  EA_sz:
+    instrument: EA_sz
+  EC_px:
+    instrument: EC_px
+  EC_py:
+    instrument: EC_py
+  EC_pz:
+    instrument: EC_pz
+  EC_sx:
+    instrument: EC_sx
+  EC_sy:
+    instrument: EC_sy
+  EC_sz:
+    instrument: EC_sz

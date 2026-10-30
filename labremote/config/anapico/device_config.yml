@@ -1,0 +1,19 @@
+schema_version: 1
+defaults:
+  reference:
+    source: external
+    frequency_hz: 10000000
+  preset:
+    frequency_hz: null
+    phase_deg: null
+  output:
+    expected_fixed_power_dbm: null
+    max_allowed_power_dbm: null
+instruments:
+  apsyn420_7g:
+    preset:
+      frequency_hz: null
+      phase_deg: null
+    output:
+      expected_fixed_power_dbm: null
+      max_allowed_power_dbm: null

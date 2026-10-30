@@ -1,0 +1,40 @@
+schema_version: 1
+parameters:
+- pattern: mdt.client_operation_version
+  kind: int
+  writable: false
+  verification: none
+  choices:
+  - 1
+  monitor: false
+- pattern: mdt.output_limit_v
+  kind: number
+  writable: false
+  verification: none
+- pattern: mdt.software_minimum
+  kind: number
+  writable: false
+  verification: none
+- pattern: mdt.software_maximum
+  kind: number
+  writable: false
+  verification: none
+- pattern: mdt.*.minimum
+  kind: number
+  writable: false
+  verification: none
+- pattern: mdt.*.maximum
+  kind: number
+  writable: false
+  verification: none
+- pattern: mdt.*.voltage
+  kind: number
+  writable: true
+  verification: readback
+  minimum: 0
+  maximum: 150
+  abs_tolerance: 0.25
+- pattern: mdt.master_scan_enabled
+  kind: bool
+  writable: true
+  verification: readback

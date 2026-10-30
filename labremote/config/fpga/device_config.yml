@@ -1,0 +1,27 @@
+schema_version: 1
+defaults:
+  connection:
+    serial_port: ''
+  acquisition:
+    interval_s: 0.5
+    channel: 0
+    exposure_ms: 100
+  scan_defaults:
+    x_start_um: 5990
+    x_stop_um: 6010
+    x_step_um: 1
+    y_start_um: 5990
+    y_stop_um: 6010
+    y_step_um: 1
+    z_start_um: 5990
+    z_stop_um: 6010
+    z_step_um: 1
+    z_um_per_unit: 1000
+    exposure_ms: 1
+    average: 10
+    settle_ms: 100
+    x_um_per_unit: 1000
+    y_um_per_unit: 1000
+    directory: logs/fiber_scan
+instruments:
+  fpga_local: {}

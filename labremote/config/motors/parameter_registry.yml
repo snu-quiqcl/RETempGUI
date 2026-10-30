@@ -1,0 +1,46 @@
+schema_version: 1
+parameters:
+- pattern: motors.status
+  kind: motor_status
+  writable: false
+  verification: none
+- pattern: motors.position
+  kind: number
+  writable: true
+  verification: readback
+  minimum: 0
+  maximum: 12
+  abs_tolerance: 0.001
+  monitor: false
+- pattern: motors.open_request
+  kind: bool
+  choices:
+  - true
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+- pattern: motors.close_request
+  kind: bool
+  choices:
+  - true
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+- pattern: motors.home_request
+  kind: bool
+  choices:
+  - true
+  writable: true
+  readable: false
+  verification: none
+  monitor: false
+- pattern: motors.stop_request
+  kind: bool
+  choices:
+  - true
+  writable: true
+  readable: false
+  verification: none
+  monitor: false

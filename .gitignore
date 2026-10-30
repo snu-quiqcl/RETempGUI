@@ -1,0 +1,69 @@
+# Python / IDE / local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+.venv/
+venv/
+.idea/
+.vscode/
+*.egg-info/
+build/
+dist/
+
+# Machine-specific settings (examples stay tracked)
+local_settings.bat
+.env
+.env.*
+!.env.example
+labremote/config/client_settings.json
+labremote/config/client_settings.tmp
+
+# Measurements and generated verification output
+logs/
+data/
+verification_v7/
+.verification/
+*_preview.png
+*.log
+*.jsonl
+*.tif
+*.tiff
+*.npz
+*.npy
+*.csv
+*.pkl
+*.tmp
+tests/automation_*/
+tests/tmp*/
+tests/architecture-*/
+tests/review_verification.json
+
+# Local packaging / desktop artifacts
+*.zip
+*.7z
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Private hardware maps and local deployment settings
+labremote/config/local_hardware.json
+**/serials.local.json
+*.local.json
+*.local.yml
+*.local.yaml
+serverConfig.yml
+serverConfig.yaml
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Local support folders: retain on disk, transfer separately if needed
+/server_deploy_latest/
+/tests/
