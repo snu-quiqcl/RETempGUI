@@ -96,12 +96,11 @@ class MotorScanRunner(WorkflowTask):
                         if z is not None:record.update(iz=iz,z_position_um=float(z_position),z_target_native=zt,z_actual_native=z_actual)
                         writer.writerow(record)
                         file.flush();self.publish(phase='POINT',points=points,point=[ix,iy,count],iz=iz)
-            self.check();self.publish(phase='FITTING')
-            for iz in range(len(zs) if z is not None else 1):
-                self.check()
-                try:plane_fit=fit_profiles(xs,ys,counts[iz] if z is not None else counts)
+                self.check();self.publish(phase='FITTING',point=None)
+                try:plane_fit=fit_profiles(xs,ys,plane)
                 except Exception as exc:plane_fit={'error':str(exc)}
                 fits.append(dict(iz=iz,z_um=float(zs[iz]) if z is not None else None,fit=plane_fit))
+                self.publish(z_fits=fits if z is not None else [],fit=plane_fit)
             fit=fits[-1]['fit']
             self.check()
         except Exception as exc:

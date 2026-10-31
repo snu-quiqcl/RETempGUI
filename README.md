@@ -211,7 +211,10 @@ python verify_release.py --suite all
 
 ## MFF101 flipper와 EC 셔터
 
-`others → flip`에서 5개 MFF101 중 하나를 선택해 Position 1/2로 이동하고,
+`others → flip`에서 `서버 flipper 목록 불러오기`로 실제 서버 이름을 조회하고,
+원하는 MFF101을 선택해 Position 1/2로 이동합니다. `EA / EC 경로 설정`에서 목표 위치를 지정해
+Git에서 제외된 `labremote/config/flip.local.json`에 저장합니다. 저장만으로 이동하지 않습니다.
+
 기존 oven_relays.shutter_2를 함께 제어합니다. Linux 서버 드라이버/YAML,
 USB 포트 확인, EA/EC 매핑 설정은 [설치 안내](docs/FLIP_SETUP_KO.md)를 참고하세요.
 자동 광로 전환은 기본 OFF이며 실제 매핑을 지정한 후 활성화합니다.
@@ -221,3 +224,14 @@ USB 포트 확인, EA/EC 매핑 설정은 [설치 안내](docs/FLIP_SETUP_KO.md)
 이온 1개 이상 검출 시 오븐을 종료하는 예제와 UI PC의 시퀀서 파일을 실행하는
 `devices.fpga().run_sequence_file(...)` API를 제공합니다.
 [사용법과 예제 파일](docs/WORKFLOW_CCD_FPGA_KO.md)을 참고하세요.
+
+
+### Scan / scope / CCD display updates
+
+- Fixed scan tabs: Scan EA collection (`EA_px/py/pz`), Scan EA excitation (`EA_sx/sy/sz`), Scan EC collection (`EC_px/py/pz`), Scan EC excitation (`EC_sx/sy/sz`). Existing default PMT associations are preserved (0, 3, 1, 2 in this tab order).
+- Current motor positions are displayed in micrometres. Conversion factors remain in `scan_defaults`; the conversion editors have been removed from the UI. Idle visible tabs read status through the operation queue; active scans reuse move readbacks. `(last)` marks a readback older than three seconds.
+- `Load last scan settings` restores ranges, steps, exposure, average, settle time, PMT, Z-scan enable and save directory from the last scan started in that tab. Settings are stored in ignored `labremote/config/scan_EA_px.local.json`, `scan_EA_sx.local.json`, `scan_EC_px.local.json`, and `scan_EC_sx.local.json`. Copy these privately only if you want to transfer previous settings.
+- `Move Z` moves to an absolute Z target without enabling Z scan or connecting the FPGA. The Z motor must be connected and free of active workflows.
+- XYZ scans show MFD X and MFD Y versus Z below the image, updated after each completed XY plane. Failed or unavailable fits are gaps, not zero-width measurements. Individual Start/Stop controls remain; the FPGA-wide Start/Stop all scan buttons were removed.
+- DS1052E/MSO7054 waveform refresh reuses axes and line objects, while preserving physical V/div, fit-to-data and manual-limit modes.
+- CCD zoom-out is limited to the full sensor view, with padding only as needed to preserve square pixels at the viewport aspect ratio. Fit image restores this view; live frames retain zoom.

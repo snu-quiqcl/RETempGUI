@@ -100,18 +100,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
             from labremote.ui.motor_scan_tab import MotorScanTab
             self.automation_tabs.addTab(self.input_tab,'Input counts')
             self.scan_tabs=[MotorScanTab(self.worker,bindings,n,self) for n in range(1,5)]
-            for n,panel in enumerate(self.scan_tabs,1):self.automation_tabs.addTab(panel,'Scan '+str(n))
-            controls=QtWidgets.QHBoxLayout();root.insertLayout(0,controls)
-            self.start_scans_btn=QtWidgets.QPushButton('Start all scans');self.stop_scans_btn=QtWidgets.QPushButton('Stop all scans')
-            controls.addWidget(self.start_scans_btn);controls.addWidget(self.stop_scans_btn)
-            self.start_scans_btn.clicked.connect(self.start_all_scans)
-            self.stop_scans_btn.clicked.connect(lambda:self.api.stop_scan())
-
-    def start_all_scans(self):
-        try:
-            requests=[panel.request() for panel in self.scan_tabs if not self.worker.scan_runners[panel.number].running()]
-            for x,y,settings,z in requests:self.api.start_scan(x,y,settings,z_motor=z)
-        except Exception as exc:self._failure('START_SCANS',str(exc))
+            for panel in self.scan_tabs:self.automation_tabs.addTab(panel,panel.title)
 
     def _button(self,layout,text,callback):
         button=QtWidgets.QPushButton(text);button.clicked.connect(lambda _:callback());self.buttons.append(button)

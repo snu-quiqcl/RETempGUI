@@ -398,31 +398,36 @@ class DS1052ETab(QtWidgets.QWidget):
         # 2 Vpp signal still represents 2 Vpp when its vertical sensitivity
         # changes; to reproduce zoom, set display limits from the actual
         # V/div captured alongside each waveform, not from min/max(data).
-        self.fig.clear()
-        ax1=self.fig.add_subplot(111)
-        self.plot_axes={self.channels[0]:ax1}
-        for index,ch in enumerate(self.channels[1:]):
-            axis=ax1.twinx()
-            axis.spines['right'].set_position(('axes',1+index*.16))
-            axis.grid(False)
-            self.plot_axes[ch]=axis
-        ax1.set_xlabel('Time (s)')
-        ax1.grid(True,alpha=.25)
-        handles=[]
-        for ch in self.channels:
-            axis=self.plot_axes[ch]
-            side='left' if ch=='CH1' else 'right'
-            axis.set_ylabel(f'{ch} Voltage (V)',color=COLORS[ch])
-            axis.tick_params(axis='y',colors=COLORS[ch])
-            axis.spines[side].set_color(COLORS[ch])
-            if ch in self.traces:
-                t,v=self.traces[ch]
-                h,=axis.plot(t,v,label=ch,lw=1.3,color=COLORS[ch])
-                handles.append(h)
-        if handles:
-            ax1.legend(handles,[h.get_label() for h in handles],loc='upper right')
+        if not hasattr(self,'plot_lines'):
+            ax1=self.fig.add_subplot(111)
+            self.plot_axes={self.channels[0]:ax1};self.plot_lines={}
+            for index,ch in enumerate(self.channels[1:]):
+                axis=ax1.twinx();axis.spines['right'].set_position(('axes',1+index*.16))
+                axis.grid(False);self.plot_axes[ch]=axis
+            ax1.set_xlabel('Time (s)');ax1.grid(True,alpha=.25)
+            for ch,axis in self.plot_axes.items():
+                side='left' if ch==self.channels[0] else 'right'
+                axis.set_ylabel(f'{ch} Voltage (V)',color=COLORS[ch])
+                axis.tick_params(axis='y',colors=COLORS[ch]);axis.spines[side].set_color(COLORS[ch])
+                self.plot_lines[ch],=axis.plot([],[],label=ch,lw=1.3,color=COLORS[ch])
+            ax1.legend(list(self.plot_lines.values()),list(self.plot_lines),loc='upper right')
+        ax1=self.plot_axes[self.channels[0]]
+        for ch,line in self.plot_lines.items():
+            line.set_data(*self.traces.get(ch,([],[])))
+            line.set_visible(ch in self.traces)
+            self.plot_axes[ch].relim(visible_only=True)
 
         mode=self.plot_mode.currentIndex() if hasattr(self,'plot_mode') else 0
+        if mode!=getattr(self,'_last_plot_mode',None):
+            from matplotlib.ticker import AutoLocator
+            for ch,axis in self.plot_axes.items():
+                axis.yaxis.set_major_locator(AutoLocator())
+                axis.set_ylabel(f'{ch} Voltage (V)',color=COLORS[ch])
+            self._last_plot_mode=mode
+        if mode in (0,1):
+            for axis in self.plot_axes.values():
+                axis.set_autoscalex_on(True);axis.set_autoscaley_on(mode==1)
+                axis.autoscale_view(scalex=True,scaley=mode==1)
         if mode==0:  # Match the physical 8-division display per channel.
             for ch,axis in self.plot_axes.items():
                 item=self.trace_scales.get(ch,{})

@@ -9,6 +9,30 @@ from .worker import CCDWorker, CCDAPI
 
 class CCDViewBox(pg.ViewBox):
     """Wheel zoom, left-button pan, middle-button rectangle zoom."""
+    def set_sensor_shape(self,shape):
+        self.sensor_shape=(int(shape[0]),int(shape[1]))
+        self._sensor_limits()
+
+    def _sensor_limits(self):
+        if not hasattr(self,'sensor_shape'):return
+        height,width=self.sensor_shape
+        # Preserve square pixels while fitting the full sensor to any viewport.
+        ratio=max(1.,self.width())/max(1.,self.height())
+        span_x=max(width,height*ratio);span_y=max(height,width/ratio)
+        self.setLimits(xMin=(width-span_x)/2,xMax=(width+span_x)/2,
+                       yMin=(height-span_y)/2,yMax=(height+span_y)/2,
+                       minXRange=1,minYRange=1,maxXRange=span_x,maxYRange=span_y)
+
+    def fit_sensor(self):
+        if not hasattr(self,'sensor_shape'):return
+        self._sensor_limits()
+        height,width=self.sensor_shape
+        self.setRange(xRange=(0,width),yRange=(0,height),padding=0)
+
+    def resizeEvent(self,event):
+        super().resizeEvent(event)
+        self._sensor_limits()
+
     def mouseDragEvent(self, event, axis=None):
         if event.button() != QtCore.Qt.MiddleButton or axis is not None:
             return super().mouseDragEvent(event, axis=axis)
@@ -169,7 +193,7 @@ class CCDTab(QtWidgets.QWidget):
         self.markers = pg.ScatterPlotItem(symbol='o', size=14, pen=pg.mkPen('r', width=2), brush=None)
         self.canvas.addItem(self.markers)
         image_layout.addWidget(self.canvas, 1)
-        fit.clicked.connect(lambda: self.canvas.autoRange())
+        fit.clicked.connect(self.canvas.getViewBox().fit_sensor)
         self.color.currentTextChanged.connect(self._colormap)
         for widget in (self.auto_levels, self.flip_h, self.flip_v, self.markers_enabled): widget.toggled.connect(self._needs_redraw)
         for widget in (self.low, self.high): widget.valueChanged.connect(self._needs_redraw)
@@ -226,6 +250,8 @@ class CCDTab(QtWidgets.QWidget):
         self.frames.setMaximum(info['max_frames'])
         self.roi[2].setValue(info['shape'][1]); self.roi[3].setValue(info['shape'][0])
         self._last_frame = None
+        self.canvas.getViewBox().set_sensor_shape(info['shape'])
+        self.canvas.getViewBox().fit_sensor()
         self.condition.setText('Condition: not evaluated')
         self._detection()
 
@@ -293,7 +319,9 @@ class CCDTab(QtWidgets.QWidget):
         levels = (snapshot['raw_min'], snapshot['raw_max']) if self.auto_levels.isChecked() else (self.low.value(), self.high.value())
         if levels[1] <= levels[0]: levels = (levels[0], levels[0]+1)
         self.image.setImage(image, autoLevels=False, levels=levels)
-        if first_frame: self.canvas.autoRange()
+        if first_frame:
+            self.canvas.getViewBox().set_sensor_shape(image.shape)
+            self.canvas.getViewBox().fit_sensor()
         centers = snapshot['centers'].copy()
         if len(centers) and self.markers_enabled.isChecked():
             if self.flip_h.isChecked(): centers[:, 0] = image.shape[1]-1-centers[:, 0]

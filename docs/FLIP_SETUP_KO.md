@@ -1,6 +1,7 @@
 # MFF101 5대 + EC 셔터
 
-`others → flip` 탭에서 flip_1~flip_5를 선택해 연결하고 Position 1/2 버튼으로 이동합니다.
+`others → flip` 탭에서 서버 목록을 불러오고 실제 서버 장비 이름을 선택해 연결합니다.
+예를 들어 `EA_PMT`, `FLIP_399`를 그대로 사용하며 `flip_1`~`flip_5`로 이름을 바꿀 필요가 없습니다.
 다섯 개의 창을 열지 않고 하나의 선택창과 상태표를 사용합니다.
 각 장비는 독립적인 operation 큐를 사용하고 GUI 스레드는 통신 응답을 기다리지 않습니다.
 
@@ -17,6 +18,7 @@ UI는 최신 RETempGUI 소스를 적용합니다. 이번 변경 경로:
 - `labremote/operation/flip/` 전체
 - `labremote/config/flip/` 전체
 - `labremote/config/flip.example.json`
+- `labremote/runtime/discovery.py`
 - `labremote/ui/main_window.py`
 - `labremote/devices/oven/runner.py`
 - `labremote/devices/oven/panel.py`
@@ -28,23 +30,30 @@ flipper 서버 주소는 flip 탭에서 별도로 지정합니다. 설정은 Git
 ## 수동 제어
 
 1. flipper 서버 host/port를 입력합니다.
-2. flip_1 선택 → 선택 장비 연결. 나머지도 같은 방법으로 연결합니다.
-3. 움직일 한 대를 선택하고 현재 위치 읽기 또는 Position 1/2를 누릅니다.
-4. Position 1/2의 실제 광로 의미는 현장에서 확인합니다. 자동으로 IN/OUT이라고 가정하지 않습니다.
-5. EC 셔터 연결은 메인 창의 서버 주소와 CCD 오븐의 relay instrument 이름을 사용합니다.
+2. `서버 flipper 목록 불러오기`를 누릅니다. 서버의 장비 목록과 Blueprint 드라이버 정보에서 MFF101/MFF002를 구분합니다. 이 단계는 장비를 움직이지 않습니다.
+3. 실제 서버 이름 선택 → `선택 장비 연결`. 경로에 사용할 나머지 장비도 같은 방법으로 연결합니다.
+4. 움직일 한 대를 선택하고 현재 위치 읽기 또는 Position 1/2를 누릅니다.
+5. Position 1/2의 실제 광로 의미는 현장에서 확인합니다. 자동으로 IN/OUT이라고 가정하지 않습니다.
+6. EC 셔터 연결은 메인 창의 서버 주소와 CCD 오븐의 relay instrument 이름을 사용합니다.
    실제 제어 파라미터는 `oven_relays.shutter_2`입니다. 별도의 셔터 USB 드라이버는 만들지 않습니다.
 
 오븐과 셔터는 같은 worker를 공유합니다. 오븐 로딩/자동 경로 이동 중 수동 제어를 막으며,
 flipper/셔터 명령이 남아 있으면 오븐 로딩 시작을 거부합니다. 셔터의 읽기는 릴레이 GPIO
 상태이며 물리적 개폐 센서의 보증은 아닙니다. 외부의 다른 클라이언트까지 잠그지는 않습니다.
 
-## EA / EC 자동 전환 준비
+## EA / EC 경로 설정
 
 `flip.example.json`은 자동 전환 OFF와 빈 EA/EC 매핑을 제공합니다.
 EA/EC의 각 flip 위치를 확인하기 전에는 자동으로 움직이지 않습니다.
-`flip.local.json`의 `routes.EA` 또는 `routes.EC`에는 해당 경로에 필요한
+`EA / EC 경로 설정` 버튼을 눌러 각 장비의 EA/EC 목표를 `이동 안 함`, `Position 1`, `Position 2` 중 선택하고 저장합니다. 저장은 이동 명령을 보내지 않습니다.
+EC 포획 시작 시 적용하려면 같은 창의 자동 적용 체크박스를 켭니다. 빈 EC 경로는 자동 적용할 수 없습니다.
+서버 목록에서 사라진 장비는 경로에서 제거하거나 서버 이름을 확인한 뒤 다시 조회해야 합니다.
+
+UI 설정은 `flip.local.json`의 `routes.EA` 또는 `routes.EC`에 저장되며, 해당 경로에 필요한
 장비 이름을 key, 목표 Position 1 또는 2를 value로 넣습니다. 지정하지 않은 장비는 움직이지 않습니다.
 필요한 모든 장비가 매핑에 포함되었는지는 실제 광로를 기준으로 확인해야 합니다.
+서버 host/port를 변경하여 조회하면 기존 경로와 저장 목록은 초기화되고 자동 적용은 OFF가 됩니다. 새 서버에 맞게 다시 설정하세요.
+설정 파일은 Git에서 제외되므로 다른 UI PC로 옮길 때 `labremote/config/flip.local.json`을 직접 복사하세요. 이번 서버 이름 조회 기능에는 Linux 서버 코드 교체가 필요하지 않습니다.
 
 수동 `EA 경로 적용` / `EC 경로 적용`은 셔터를 닫고 매핑된 장비를 순서대로 이동합니다.
 완료 후에도 셔터는 닫힌 상태입니다. 미설정 매핑은 이동 없이 오류를 표시합니다.

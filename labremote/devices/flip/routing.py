@@ -8,6 +8,7 @@ from .settings import load_settings
 class FlipRouting:
     def __init__(self,workers,oven):
         self.workers,self.oven=workers,oven
+        self.available_names=None
         self.task=RouteTask(self)
 
     def plan(self,chamber,automatic=False):
@@ -19,7 +20,13 @@ class FlipRouting:
         if self.task.running():raise RuntimeError('Flipper routing is already running')
         plan=[]
         for name,position in sorted(route.items()):
-            worker=self.workers[name]
+            if self.available_names is not None and name not in self.available_names:
+                raise ConnectionError(name+' is missing from the current server list; reload and check routes')
+            worker=self.workers.get(name)
+            if worker is None:raise ConnectionError('Discover and connect server flipper '+name+' before routing')
+            expected=(config.get('host'),config.get('port'),name)
+            if config.get('host') and worker._execution_device!=expected:
+                raise ConnectionError(name+' is connected to a different server; reconnect before routing')
             if worker.ps is None or worker.connection_error or worker.has_requests():
                 raise ConnectionError('Connect idle '+name+' before routing')
             plan.append((name,position))

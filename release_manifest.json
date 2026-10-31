@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Accept MFF002 hardware identity",
+  "revision_note": "Server-discovered flipper names and local EA/EC route editor",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 14291,
-      "sha256": "ffd925e92854fecb35071afc24d54c3654e09d068e117529e739781ba4c4ee64"
+      "bytes": 16269,
+      "sha256": "2cf37ee95211372817149ac9c6e2cb1dadb1048921a8c953bb0f91312333b902"
     },
     {
       "path": "check_public_files.py",
@@ -39,8 +39,8 @@
     },
     {
       "path": "docs/FLIP_SETUP_KO.md",
-      "bytes": 4375,
-      "sha256": "5eb50fc060c4e76a34fc14c29d2819b5a7a776c27eddce098d63f9c08892cb53"
+      "bytes": 5762,
+      "sha256": "55eed21d981e1e587fe9ce3eb872859a4052fe0e84dc8b918a986a81aca22e47"
     },
     {
       "path": "docs/LOCAL_SETUP_KO.md",
@@ -139,8 +139,8 @@
     },
     {
       "path": "labremote/config/flip.example.json",
-      "bytes": 109,
-      "sha256": "0ca8f338f6e8abc83d0242f920e21509eb50c672558d614944bd61472a0c1fd0"
+      "bytes": 127,
+      "sha256": "4a91212b7a91579c068e942d34b81ceac51105c6c6bf48c7b4bdcda71a25f05c"
     },
     {
       "path": "labremote/config/flip/device_config.yml",
@@ -329,8 +329,8 @@
     },
     {
       "path": "labremote/devices/ccd/tab.py",
-      "bytes": 18740,
-      "sha256": "8b945553171fe625c600d78a5599f72b77d333006fda3163694e8abede62ceaf"
+      "bytes": 19963,
+      "sha256": "c756973fc63016804aba18ba2896273397f9ba6456c94976cbd39588e418119c"
     },
     {
       "path": "labremote/devices/ccd/vendor/QuIQCL_ThorCam.py",
@@ -379,8 +379,8 @@
     },
     {
       "path": "labremote/devices/ds1052e/tab.py",
-      "bytes": 26071,
-      "sha256": "de71601c53342da503d9270f59b175aa6a82e2285f4af426c23300460f5af6c0"
+      "bytes": 26784,
+      "sha256": "a50e516b90580c88b259a05e492d41383a49b30f0ea839b3d847bb1e054a940d"
     },
     {
       "path": "labremote/devices/ds1052e/worker.py",
@@ -394,23 +394,23 @@
     },
     {
       "path": "labremote/devices/flip/routing.py",
-      "bytes": 2208,
-      "sha256": "f306db806034f05256c677368f15bc7957a94e46c7818566f53b1a5366879aaf"
+      "bytes": 2861,
+      "sha256": "6037161df4070884e58f5f14fe2211436491d42e3d276a2bfc30bd2528b59d05"
     },
     {
       "path": "labremote/devices/flip/settings.py",
-      "bytes": 1264,
-      "sha256": "a930b7ea3b729063cc271c1cef9b3cafd3fb313a8aabeb3b99d5e2daf4509482"
+      "bytes": 1917,
+      "sha256": "18fafcfde5a5719952668cd618bd64e87da5bbc63782b7d0d58977f1b5ccc787"
     },
     {
       "path": "labremote/devices/flip/tab.py",
-      "bytes": 8976,
-      "sha256": "9e0684d11ac9b922dde7342df761ee79e7c6aa77f9706e6476833e3a2c5efe76"
+      "bytes": 17143,
+      "sha256": "2d3dc6e249f1e01b15eb24e8a204165d13a8588833df2f61e9e77ae186aa93f2"
     },
     {
       "path": "labremote/devices/flip/worker.py",
-      "bytes": 500,
-      "sha256": "7f0b1b234209b094243a3506e1fa35f35c3fe00af3feaa588fcffdc5a97c3502"
+      "bytes": 896,
+      "sha256": "a9a5e7f27cd83bb053137ec7022b1d622340996fe0026edc70ec8b75ad86a1f6"
     },
     {
       "path": "labremote/devices/fpga/__init__.py",
@@ -1169,8 +1169,8 @@
     },
     {
       "path": "labremote/runtime/discovery.py",
-      "bytes": 4672,
-      "sha256": "e5695188bbccafdefc77ed654646840abbc86b81eb3a90817cecb0fa5a6945d7"
+      "bytes": 4737,
+      "sha256": "98469f61b681bcea23a0c9189e2fdf6d5a53fce1957fb9e7cee69b858c40be05"
     },
     {
       "path": "labremote/runtime/errors.py",
@@ -1199,8 +1199,8 @@
     },
     {
       "path": "labremote/runtime/motor_scan_runner.py",
-      "bytes": 12505,
-      "sha256": "84757d2e17b20bd02b1ad4813b00da87c2f15b90c7937edd7a0a6e615e88567b"
+      "bytes": 12475,
+      "sha256": "57fec7b70bc870f3fa8be43e6b20893bfaa583a52d150c821a377ec8437ca860"
     },
     {
       "path": "labremote/runtime/network.py",
@@ -1264,8 +1264,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 16857,
-      "sha256": "ac724f2c42ee623e3d66e55fb0e9a7adf5995a1d4b5eac31a28c7ae469a6f812"
+      "bytes": 16053,
+      "sha256": "5c61289d9572d7e3e67689e9ab7d5c6e19d4c12407ffde4ad3e91d25ad0e66d5"
     },
     {
       "path": "labremote/ui/equipment_tab.py",
@@ -1289,8 +1289,8 @@
     },
     {
       "path": "labremote/ui/motor_scan_tab.py",
-      "bytes": 12080,
-      "sha256": "407ced3d4564873bc63699cc6b7ea42a962d2f2260fcfc195ae3826c28b7a64d"
+      "bytes": 18565,
+      "sha256": "fbcfa3fed0b4eb1b3297e8d821b6d8a7cd4ea4ced3bce74493908bbd39661bbb"
     },
     {
       "path": "labremote/ui/motor_tab.py",
