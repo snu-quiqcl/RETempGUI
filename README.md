@@ -208,3 +208,16 @@ python verify_release.py --suite all
 이전 v3/v4/v5/v6/v7 복사본, ZIP, 로그, 측정 데이터, 테스트 임시 디렉터리, 생성된 PNG/NPZ/CSV, `__pycache__`, `.pyc`, PC별 저장 설정을 배포본에서 제외했습니다. 재생성되는 파일은 `.gitignore`로 제외합니다. 원본과 과거 작업 자료는 기존 작업 디렉터리의 별도 보관 폴더에 남깁니다.
 
 두 폴더를 이미 추적하던 저장소에서는 이번 변경이 GitHub Desktop에 삭제 항목으로 표시됩니다. 이는 Git 추적 해제이며 이 PC의 실제 파일은 남아 있습니다. 기존 다른 checkout에서 이 변경을 pull하면 그곳의 추적 파일은 삭제될 수 있으므로, 필요한 서버 드라이버·테스트는 먼저 별도 백업하세요. 과거 커밋의 파일은 별도 기록 정리 전까지 남습니다.
+
+## MFF101 flipper와 EC 셔터
+
+`others → flip`에서 5개 MFF101 중 하나를 선택해 Position 1/2로 이동하고,
+기존 oven_relays.shutter_2를 함께 제어합니다. Linux 서버 드라이버/YAML,
+USB 포트 확인, EA/EC 매핑 설정은 [설치 안내](docs/FLIP_SETUP_KO.md)를 참고하세요.
+자동 광로 전환은 기본 OFF이며 실제 매핑을 지정한 후 활성화합니다.
+
+## CCD 포획과 FPGA 시퀀서 파일 workflow
+
+이온 1개 이상 검출 시 오븐을 종료하는 예제와 UI PC의 시퀀서 파일을 실행하는
+`devices.fpga().run_sequence_file(...)` API를 제공합니다.
+[사용법과 예제 파일](docs/WORKFLOW_CCD_FPGA_KO.md)을 참고하세요.

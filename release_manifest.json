@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Remove channel setpoint queries from oven loading",
+  "revision_note": "Accept MFF002 hardware identity",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 13587,
-      "sha256": "5a2fddeca4c41196043f67a88b292b0402debd5c156ee141580a7426fa2b8182"
+      "bytes": 14291,
+      "sha256": "ffd925e92854fecb35071afc24d54c3654e09d068e117529e739781ba4c4ee64"
     },
     {
       "path": "check_public_files.py",
@@ -36,6 +36,11 @@
       "path": "docs/DEVICE_GUIDE_KO.md",
       "bytes": 40935,
       "sha256": "6c7c76eb0498e78f27d7d9ace969ebf1d06306265339c3cb911a56c2ab53d080"
+    },
+    {
+      "path": "docs/FLIP_SETUP_KO.md",
+      "bytes": 4375,
+      "sha256": "5eb50fc060c4e76a34fc14c29d2819b5a7a776c27eddce098d63f9c08892cb53"
     },
     {
       "path": "docs/LOCAL_SETUP_KO.md",
@@ -63,6 +68,11 @@
       "sha256": "bbaada00ae3b226908b9b6118fe1b721e28c480db39fb0ce3a0c8f553b8dc278"
     },
     {
+      "path": "docs/WORKFLOW_CCD_FPGA_KO.md",
+      "bytes": 4664,
+      "sha256": "9b9bb2ac61f8a89e6f9a9f9bf1b5b0db3f4887290940e27f33a92a3cc7ebf80d"
+    },
+    {
       "path": "lab_remote_gui.py",
       "bytes": 151,
       "sha256": "021cf8e32a125437c4fbcb20454657b30e03fba0540ed8fd7c4092343b926982"
@@ -79,8 +89,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 26716,
-      "sha256": "42b48a696cf6afcdf3fd8eb9d6c3a134b631fc4e1cc99109477cc3904ffb1b61"
+      "bytes": 27498,
+      "sha256": "91170a1b39fad427c0f68c543478138b404c671b7b7ce1f50a0e48338370338e"
     },
     {
       "path": "labremote/config/__init__.py",
@@ -128,14 +138,29 @@
       "sha256": "75e36d3415729856761555f1df91bf3150c2642d3351f31506f853abbf6e5367"
     },
     {
+      "path": "labremote/config/flip.example.json",
+      "bytes": 109,
+      "sha256": "0ca8f338f6e8abc83d0242f920e21509eb50c672558d614944bd61472a0c1fd0"
+    },
+    {
+      "path": "labremote/config/flip/device_config.yml",
+      "bytes": 47,
+      "sha256": "a71eaeec32148050428e0774a64fec14f2e39b31d2c75ed3fb257cca8dbd8f1c"
+    },
+    {
+      "path": "labremote/config/flip/parameter_registry.yml",
+      "bytes": 214,
+      "sha256": "f954bd7f032156ad15180a3f2b7730fb1fc8a6f083f7c4e9dd673344bf61c0ab"
+    },
+    {
       "path": "labremote/config/fpga/device_config.yml",
       "bytes": 538,
       "sha256": "aca7ddc6237fba3a8faf3287671df4977d0d00a8bee715feef4cfe40949559af"
     },
     {
       "path": "labremote/config/fpga/parameter_registry.yml",
-      "bytes": 1284,
-      "sha256": "827dfdc6fe210b1abd3221d5b996ce4deb4e12a29311af3636be94a54520fb4e"
+      "bytes": 1510,
+      "sha256": "fb715b51d8ebdd3bf1d9bce61c02e43ca02e9259d55fabd389ac09f0c6fcf76d"
     },
     {
       "path": "labremote/config/keithley/device_config.yml",
@@ -363,19 +388,44 @@
       "sha256": "b13c0be96d6136cec3e9efb4c10749194f107d4e77a3ece356d1452526c7ea8d"
     },
     {
+      "path": "labremote/devices/flip/__init__.py",
+      "bytes": 73,
+      "sha256": "de9a0c161ae6f6e105c22bf8d9b9820f38773e0e28d360f72a5730450221d340"
+    },
+    {
+      "path": "labremote/devices/flip/routing.py",
+      "bytes": 2208,
+      "sha256": "f306db806034f05256c677368f15bc7957a94e46c7818566f53b1a5366879aaf"
+    },
+    {
+      "path": "labremote/devices/flip/settings.py",
+      "bytes": 1264,
+      "sha256": "a930b7ea3b729063cc271c1cef9b3cafd3fb313a8aabeb3b99d5e2daf4509482"
+    },
+    {
+      "path": "labremote/devices/flip/tab.py",
+      "bytes": 8976,
+      "sha256": "9e0684d11ac9b922dde7342df761ee79e7c6aa77f9706e6476833e3a2c5efe76"
+    },
+    {
+      "path": "labremote/devices/flip/worker.py",
+      "bytes": 500,
+      "sha256": "7f0b1b234209b094243a3506e1fa35f35c3fe00af3feaa588fcffdc5a97c3502"
+    },
+    {
       "path": "labremote/devices/fpga/__init__.py",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "path": "labremote/devices/fpga/adapter.py",
-      "bytes": 2078,
-      "sha256": "f8a8b7fbb9b980fba142889b684d8f0eec04fbf0b29eddd2a71924dcfa26914e"
+      "bytes": 3690,
+      "sha256": "bc2836230a7ac552fb7d020b81591936ad99fd29edb1c259e585c9d8131c4ed9"
     },
     {
       "path": "labremote/devices/fpga/controller.py",
-      "bytes": 7984,
-      "sha256": "791d01e9a14cc4292c7c726e5120bee3719f0a788e3efb8c34b49e68c0eb2690"
+      "bytes": 10471,
+      "sha256": "e584faf146778b190b13ba714fc4e5b201893bff0d6c02719cfbb75fd9c7e5a9"
     },
     {
       "path": "labremote/devices/fpga/monitor.py",
@@ -386,6 +436,11 @@
       "path": "labremote/devices/fpga/scan_model.py",
       "bytes": 3368,
       "sha256": "411811a08a76bd5021eaf4c2751f67681ff9a8c09922513a2f38685295c68cf8"
+    },
+    {
+      "path": "labremote/devices/fpga/sequence_file.py",
+      "bytes": 1891,
+      "sha256": "0e21bcd59037071af757523cb8b4de2c4c3c40379474a0c72cf7df2cbf734cbe"
     },
     {
       "path": "labremote/devices/fpga/vendor/ArtyS7_v1_02.py",
@@ -509,13 +564,13 @@
     },
     {
       "path": "labremote/devices/oven/panel.py",
-      "bytes": 9279,
-      "sha256": "d824749cf9a4d3e463b541258bbe7816e1c37666c1b7504b99866a63b770f3e9"
+      "bytes": 9322,
+      "sha256": "ef0e6641900f3ed5d4e7a4b78ad3408610b6e60096700d94fae35c44e5712303"
     },
     {
       "path": "labremote/devices/oven/runner.py",
-      "bytes": 8746,
-      "sha256": "1536df43a21170c25a0d068311b470dafce852aa1758ab40134eca86d2225b4b"
+      "bytes": 9664,
+      "sha256": "2fd77f509817e072a104abf8e66b2927b171022921979940e912dbfc0d88b869"
     },
     {
       "path": "labremote/devices/oven/settings.py",
@@ -713,6 +768,21 @@
       "sha256": "9913d8966c6c82f9d6dbecd3e8d86e34a9567b3302469980d2f7e9026f11c89d"
     },
     {
+      "path": "labremote/operation/flip/__init__.py",
+      "bytes": 26,
+      "sha256": "2d5915d4d9808a06aca06dd7d9d59346e2f5de8bd23a346c4cbcbb0d3bd176d3"
+    },
+    {
+      "path": "labremote/operation/flip/control.py",
+      "bytes": 228,
+      "sha256": "7667481841398016566b20310f9ef79a5d94243851041f974a60b0b2aa732f8b"
+    },
+    {
+      "path": "labremote/operation/flip/read_snapshot.py",
+      "bytes": 113,
+      "sha256": "d912152299d21bfce6b363f5ed37183bdf1d24e81dc0ceffd60f13c8258b1359"
+    },
+    {
       "path": "labremote/operation/fpga/__init__.py",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -731,6 +801,11 @@
       "path": "labremote/operation/fpga/read_snapshot.py",
       "bytes": 282,
       "sha256": "b202dea24c40dde4cefb1de62f78549092fc0175fca8683914749affe0419860"
+    },
+    {
+      "path": "labremote/operation/fpga/run_sequence_file.py",
+      "bytes": 179,
+      "sha256": "b01435f084908ac3cf89c2d9d5b37377ddc148c40b2c2fb77a1aaa9d65d5b799"
     },
     {
       "path": "labremote/operation/fpga/set_output.py",
@@ -1178,6 +1253,11 @@
       "sha256": "da84a854a620ffeec2cdc62f75b8a66e94d6aca98984cf6ae9d5796af4421006"
     },
     {
+      "path": "labremote/sequence_examples/pmt_exposure.py",
+      "bytes": 547,
+      "sha256": "4d5569b1c02ef53a92de8f729271b99eec8bc9eb9bbc31d24b7d356d704a8387"
+    },
+    {
       "path": "labremote/ui/__init__.py",
       "bytes": 79,
       "sha256": "8699729e40d7662ca386783d71a50ca83696b592157b6c42b4343630422a991b"
@@ -1204,8 +1284,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 13349,
-      "sha256": "7d13f96d69a23bcb32c2db6400ed3468fa30eb275fb087d1b697f4b3935fcd06"
+      "bytes": 13713,
+      "sha256": "ccd3b1b7b95c103b3a453550b0dc83fd0c28ab52c843676f61e21a64ab956acc"
     },
     {
       "path": "labremote/ui/motor_scan_tab.py",
@@ -1318,6 +1398,16 @@
       "sha256": "ddbf4ae3ace67a11b65400599b74d34c4f30c21ee5121e7b534f1a0ad91636b0"
     },
     {
+      "path": "labremote/workflow/load_one_ion.py",
+      "bytes": 473,
+      "sha256": "101317cf4be97eec18c7968c171984d45f55e19f1fbbda2439e7a49970fca981"
+    },
+    {
+      "path": "labremote/workflow/load_one_ion_then_fpga.py",
+      "bytes": 639,
+      "sha256": "ceab619f743cb1e7787ad491b026086d1c00a7569d531264652d639d0cee3f78"
+    },
+    {
       "path": "labremote/workflow/mdt_pid.py",
       "bytes": 480,
       "sha256": "22ac80f0f04a7f6c8a735e197310868b95f04136bd727ba9035cb6934fbada57"
@@ -1371,6 +1461,11 @@
       "path": "labremote/workflow/read_windfreak.py",
       "bytes": 271,
       "sha256": "4ca7c3650861a96476e85128cbee27e8394ba28eafe5a3c43b525bcc8e544e7c"
+    },
+    {
+      "path": "labremote/workflow/run_fpga_sequence_file.py",
+      "bytes": 583,
+      "sha256": "cc023f3842e8b63b1eb490dcd7c2d87b89a25e5ce80739ef5a638d1447f26eae"
     },
     {
       "path": "labremote/workflow/set_anapico.py",

@@ -494,6 +494,17 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def run_sequence_file(self, path, *, parameters=None, timeout_s=30., max_rows=4096):
+        """Run a trusted builder file on the local FPGA worker, never a new serial connection."""
+        from labremote.devices.fpga.sequence_file import validate_request
+        from labremote.operation.fpga.run_sequence_file import run_sequence_file
+        request=validate_request(path,parameters,timeout_s,max_rows)
+        def execute(w):
+            if w.waveform_runner.running() or any(r.running() for r in w.scan_runners.values()):
+                raise RuntimeError('Stop FPGA repeat measurement / motor scans before running a sequence file')
+            return run_sequence_file(w.ps,request)
+        return self._submit('RUN_SEQUENCE_FILE',execute,arguments=request)
+
     def start_scan(self, x_motor, y_motor, settings=None, *, z_motor=None):
         settings=dict(settings or {});number=settings.get('scan',1)
         if type(number) is not int or number not in self.worker.scan_runners:raise ValueError('Scan must be 1, 2, 3 or 4')

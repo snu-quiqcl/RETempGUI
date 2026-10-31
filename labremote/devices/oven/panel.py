@@ -43,7 +43,7 @@ class OvenPanel(QtWidgets.QGroupBox):
         self.measured = QtWidgets.QLabel('CH1 현재 측정값: — V / — A')
         self.state = QtWidgets.QLabel(config_error or 'Connect oven PSU/relay and real CCD. No automatic connection.')
         self.state.setWordWrap(True)
-        warning = QtWidgets.QLabel('E3631A OFF는 전체 출력에 적용됩니다. CH2/CH3는 0으로 설정합니다. Flip mirror는 조작하지 않습니다.')
+        warning = QtWidgets.QLabel('E3631A OFF는 전체 출력에 적용됩니다. CH2/CH3는 0으로 설정합니다. Flipper 자동 전환은 로컬 매핑을 활성화한 경우에만 수행합니다.')
         warning.setWordWrap(True)
         for row,(label,widget) in enumerate((('PSU instrument',self.psu_name),('Relay instrument',self.relay_name),('EC isotope',self.isotope),('EC shutter',self.shutter))):
             grid.addWidget(QtWidgets.QLabel(label),row,0);grid.addWidget(widget,row,1)

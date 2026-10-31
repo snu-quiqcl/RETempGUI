@@ -19,6 +19,7 @@ class OvenLoadTask(WorkflowTask):
         self._deadline = None
         self._cleaning = False
         self.ccd.oven_runner = self
+        self.flip_routing = None
 
     def start(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=None,
               threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None, parent=None):
@@ -26,6 +27,12 @@ class OvenLoadTask(WorkflowTask):
         with _TASK_LOCK:
             try:
                 if self.running(): raise RuntimeError('Oven loading is already running or stopping')
+                flip_plan=()
+                if self.flip_routing is not None:
+                    if self.flip_routing.task.running() or any(w.has_requests() for w in self.flip_routing.workers.values()):
+                        raise RuntimeError('Finish flipper operations before oven loading')
+                    flip_plan=self.flip_routing.plan('EC',automatic=True)
+                if self.relays.has_requests():raise RuntimeError('Finish shutter operations before oven loading')
                 if self.psu.io_fault or self.relays.io_fault:
                     raise ConnectionError('Recover the server device connection, then Connect oven devices again; live response verification is required')
                 if type(isotope) is not int or isotope not in (171, 174): raise ValueError('Select 171 or 174')
@@ -47,7 +54,9 @@ class OvenLoadTask(WorkflowTask):
             settings = dict(isotope=isotope, route=f'EC_{isotope}', shutter=shutter,
                             threshold=threshold, min_area=min_area, target=target,
                             consecutive_frames=consecutive_frames, roi=roi)
-            return self.launch(self._execute, (self.psu, self.relays), settings, parent)
+            settings['flip_plan']=flip_plan
+            flips=tuple(self.flip_routing.workers[name] for name,_ in flip_plan)
+            return self.launch(self._execute, (self.psu, self.relays,*flips), settings, parent)
 
     def check(self):
         super().check()
@@ -90,6 +99,10 @@ class OvenLoadTask(WorkflowTask):
             self.publish(phase='PSU OFF / current verification', route=s['route'], timeout_s=self.timeout_s)
             self._operation(self.psu, 'OVEN_OFF', power.off)
             self._operation(self.relays, 'OVEN_SHUTTER_CLOSE', relay.close_shutter, s['shutter'])
+            from labremote.operation.flip.control import move as flip_move
+            for name,position in s['flip_plan']:
+                self.check()
+                self._operation(self.flip_routing.workers[name],'FLIP_ROUTE_MOVE',flip_move,position)
             ccd = CCDAPI(self.ccd, group=self.group)
             self.call(ccd.stop_acquisition())
             self.call(ccd.configure_detection(threshold=s['threshold'], min_area=s['min_area'], target=s['target'], roi=s['roi']))

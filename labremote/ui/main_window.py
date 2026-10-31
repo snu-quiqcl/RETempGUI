@@ -109,6 +109,11 @@ class Window(QtWidgets.QMainWindow):
         from labremote.devices.ccd.tab import CCDTab
         self.ccd_tab = CCDTab(self, cfg.get('ccd_options', {}), endpoint=self._endpoint)
         self.ccd_tab.log_message.connect(self.log.appendPlainText)
+        from labremote.devices.flip.tab import FlipTab
+        self.flip_tab=FlipTab(self.ccd_tab.oven_panel,self._endpoint,self)
+        self.flip_tab.log_message.connect(self.log.appendPlainText)
+        self.ccd_tab.oven_panel.task.flip_routing=self.flip_tab.routing
+        self.others_tabs.addTab(self.flip_tab,'flip')
         self.device_tabs.insertTab(self.device_tabs.indexOf(self.workflow_tab), self.ccd_tab, 'CCD')
         self.scroll = QtWidgets.QScrollArea(); self.scroll.setWidgetResizable(True); self.scroll.setWidget(content)
         self.setCentralWidget(self.scroll)
@@ -184,7 +189,7 @@ class Window(QtWidgets.QMainWindow):
         panels[name]=panel;tabs.addTab(panel,name)
 
     def _panels(self):
-        return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels()
+        return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()
 
     def _bindings(self):
         bindings = {family+':'+name:(family,p.worker.operation_bridge)

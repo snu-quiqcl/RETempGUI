@@ -1,5 +1,15 @@
 schema_version: 1
 parameters:
+- pattern: fpga.sequence_request
+  kind: json_object
+  writable: true
+  verification: none
+  monitor: false
+- pattern: fpga.sequence_result
+  kind: json_object
+  writable: false
+  verification: none
+  monitor: false
 - pattern: fpga.states
   kind: json_object
   writable: false

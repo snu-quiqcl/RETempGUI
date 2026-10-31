@@ -1,0 +1,12 @@
+schema_version: 1
+parameters:
+- pattern: flip.IDN
+  kind: json_object
+  writable: false
+  verification: none
+- pattern: flip.position
+  kind: int
+  writable: true
+  minimum: 1
+  maximum: 2
+  verification: readback

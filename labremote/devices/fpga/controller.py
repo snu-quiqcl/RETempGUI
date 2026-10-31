@@ -177,3 +177,51 @@ class Controller:
                 raise
         return {'channel': channel, 'ms': actual_ms, 'count': rows[0][2],
                 'timings_ms': dict(timings)}
+
+    def run_sequence_file(self, request, cancelled):
+        from .sequence_file import build, validate_request
+        request=validate_request(**request)
+        def check():
+            if cancelled.is_set():raise InterruptedError('Sequence cancelled')
+        check()
+        program,digest=build(request)
+        check();self._idle()
+        rows=[]
+        def length():
+            value=self.device.fifo_data_length()
+            if type(value) is not int or not 0<=value<=65535:raise RuntimeError('Invalid FIFO length')
+            return value
+        def read(count):
+            chunk=self.device.read_fifo_data(count)
+            if not isinstance(chunk,list) or len(chunk)!=count or any(len(row)!=4 for row in chunk):
+                raise RuntimeError('Invalid FIFO records')
+            return chunk
+        try:
+            # Discard previous results only after the new file builds successfully.
+            stale=length()
+            while stale:
+                check();count=min(stale,512);read(count);stale-=count
+            check();program.program(show=False,target=self.device)
+            check();self.device.start_sequencer()
+            deadline=time.monotonic()+request['timeout_s']
+            while True:
+                check()
+                if time.monotonic()>=deadline:raise TimeoutError('FPGA sequence timeout')
+                status=self.device.sequencer_running_status()
+                if status not in ('running','stopped'):raise RuntimeError('Invalid sequencer status')
+                available=length()
+                if len(rows)+available>request['max_rows']:raise RuntimeError('Sequence result exceeds max_rows')
+                while available:
+                    check()
+                    if time.monotonic()>=deadline:raise TimeoutError('FPGA sequence timeout')
+                    count=min(available,512);rows.extend(read(count));available-=count
+                if status=='stopped':break
+                time.sleep(.01)
+        except Exception as error:
+            try:
+                self.device.stop_sequencer()
+                if self.device.sequencer_running_status()!='stopped':raise RuntimeError('Sequencer stop not confirmed')
+            except Exception as cleanup:
+                raise RuntimeError('Sequence failed; STOP not confirmed: '+str(cleanup)) from error
+            raise
+        return {'path':request['path'],'sha256':digest,'rows':rows,'stopped':True}

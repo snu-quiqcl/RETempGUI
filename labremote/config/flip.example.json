@@ -1,0 +1,9 @@
+{
+  "host": "",
+  "port": 5556,
+  "auto_route": false,
+  "routes": {
+    "EA": {},
+    "EC": {}
+  }
+}
