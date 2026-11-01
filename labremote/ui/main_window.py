@@ -49,7 +49,10 @@ class WheelToMainScroll(QtCore.QObject):
 
 
 
-class Window(QtWidgets.QMainWindow):
+from labremote.ui.experiment_shell import ExperimentShellMixin
+from labremote.ui.detail_window import MainTabs
+
+class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
@@ -77,8 +80,8 @@ class Window(QtWidgets.QMainWindow):
         self.manual_family = QtWidgets.QComboBox(); self.manual_family.addItems(list(self.family_tabs))
         add = QtWidgets.QPushButton('Add device')
         for w in (QtWidgets.QLabel('Host'),self.discovery_host,QtWidgets.QLabel('Port'),self.discovery_port,self.rescan_btn,self.manual_family,self.manual_name,add): row.addWidget(w)
-        layout.addWidget(server)
-        self.device_tabs = QtWidgets.QTabWidget()
+        # Server settings are reparented into a detail window below.
+        self.device_tabs = MainTabs()
         self.windfreak_subtabs = QtWidgets.QTabWidget()
         self.rf_tabs=QtWidgets.QTabWidget()
         self.oscillo_tabs=QtWidgets.QTabWidget()
@@ -96,7 +99,7 @@ class Window(QtWidgets.QMainWindow):
         self.oscillo_tabs.addTab(mso_tabs,'MSO7054')
         self.mira_tabs=QtWidgets.QTabWidget();self.others_tabs=QtWidgets.QTabWidget()
         self.device_tabs.addTab(self.mira_tabs,'mira');self.device_tabs.addTab(self.others_tabs,'others')
-        for family,title,parent in [('thermotek','THERMOTEK',self.mira_tabs),('keithley','Keithley',self.others_tabs),('osa','OSA',self.mira_tabs),('mdt','MDT',self.mira_tabs),('fpga','FPGA',self.others_tabs)]:
+        for family,title,parent in [('thermotek','THERMOTEK',self.mira_tabs),('keithley','Keithley',self.others_tabs),('osa','OSA',self.mira_tabs),('mdt','MDT',self.mira_tabs),('fpga','FPGA',self.device_tabs)]:
             tabs=QtWidgets.QTabWidget();self.family_subtabs[family]=tabs;parent.addTab(tabs,title)
         from labremote.ui.motor_tab import MotorTab
         self.motor_tab=MotorTab(self,endpoint=self._endpoint);self.family_subtabs['motors']=self.motor_tab
@@ -105,7 +108,8 @@ class Window(QtWidgets.QMainWindow):
         self.device_tabs.addTab(self.workflow_tab, 'workflow')
         layout.addWidget(self.device_tabs)
         self.log = QtWidgets.QPlainTextEdit(); self.log.setReadOnly(True); self.log.setMaximumHeight(120)
-        layout.addWidget(self.log)
+        log_button=QtWidgets.QPushButton('이벤트 로그 보기 / 숨기기');layout.addWidget(log_button)
+        layout.addWidget(self.log);self.log.hide();log_button.clicked.connect(lambda:self.log.setVisible(not self.log.isVisible()))
         from labremote.devices.ccd.tab import CCDTab
         self.ccd_tab = CCDTab(self, cfg.get('ccd_options', {}), endpoint=self._endpoint)
         self.ccd_tab.log_message.connect(self.log.appendPlainText)
@@ -114,6 +118,8 @@ class Window(QtWidgets.QMainWindow):
         self.flip_tab.log_message.connect(self.log.appendPlainText)
         self.ccd_tab.oven_panel.task.flip_routing=self.flip_tab.routing
         self.others_tabs.addTab(self.flip_tab,'flip')
+        self.discovery_host.textChanged.connect(self.flip_tab.invalidate_server_list)
+        self.discovery_port.valueChanged.connect(self.flip_tab.invalidate_server_list)
         self.device_tabs.insertTab(self.device_tabs.indexOf(self.workflow_tab), self.ccd_tab, 'CCD')
         self.scroll = QtWidgets.QScrollArea(); self.scroll.setWidgetResizable(True); self.scroll.setWidget(content)
         self.setCentralWidget(self.scroll)
@@ -124,13 +130,14 @@ class Window(QtWidgets.QMainWindow):
         self.discovery_worker.failure.connect(self._discovery_error)
         self.discovery_worker.start()
         self.rescan_btn.clicked.connect(self._scan)
-        add.clicked.connect(lambda: self._add_family(self.manual_family.currentText(),self.manual_name.text().strip()))
+        add.clicked.connect(lambda:self.register_equipment(self.manual_family.currentText(),self.manual_name.text().strip()))
         for name in (*configured_instrument_names('windfreak'), *cfg.get('windfreak_names', [])):
             self._add(name)
         for family in ('sg384','anapico','dds4','ds1052e','mso7054','thermotek','keithley','osa','mdt','fpga','motors'):
             for name in (*configured_instrument_names(family), *cfg.get(family+'_names', [])):
                 self._add_family(family,name)
         self.close_timer = QtCore.QTimer(self); self.close_timer.timeout.connect(self._close_ready)
+        self.setup_experiment_shell(server)
 
     def _logging(self, enabled):
         self.cfg['operation_detailed_logging'] = enabled
@@ -140,7 +147,8 @@ class Window(QtWidgets.QMainWindow):
 
     def _scan(self):
         self.rescan_btn.setEnabled(False)
-        self.discovery_worker.scan(*self._endpoint())
+        self._scan_endpoint=self._endpoint()
+        self.discovery_worker.scan(*self._scan_endpoint)
 
     def _discovery_error(self, message):
         self.rescan_btn.setEnabled(True)
@@ -149,9 +157,18 @@ class Window(QtWidgets.QMainWindow):
     def _discovered(self, devices):
         self.rescan_btn.setEnabled(True)
         if self._closing: return
+        endpoint=getattr(self,'_scan_endpoint',self._endpoint())
+        if endpoint!=self._endpoint():
+            self.log.appendPlainText('Server address changed; rescan the current server.');return
+        self.flip_tab.accept_server_devices(endpoint,devices)
+        candidates=[]
         for d in devices:
-            family={'windfreak_synthhd':'windfreak','srs_sg384':'sg384','anapico_apsyn420':'anapico','dds4_ad9912_vva':'dds4','rigol_ds1052e':'ds1052e','rigol_mso7054':'mso7054','thermotek_t257p':'thermotek','keithley_2231a':'keithley','yokogawa_aq6373':'osa','mdt693b':'mdt'}.get(d.family)
-            if family: self._add_family(family,d.name)
+            family={'windfreak_synthhd':'windfreak','srs_sg384':'sg384','anapico_apsyn420':'anapico','dds4_ad9912_vva':'dds4','rigol_ds1052e':'ds1052e','rigol_mso7054':'mso7054','thermotek_t257p':'thermotek','keithley_2231a':'keithley','yokogawa_aq6373':'osa','mdt693b':'mdt','thorlabs_mff':'flip'}.get(d.family)
+            if family:
+                from labremote.config.equipment import FAMILY_GROUP
+                candidates.append(dict(family=family,name=d.name,group=FAMILY_GROUP[family],enabled=False))
+                if family in self.family_tabs and self.equipment_enabled(family,d.name):self._add_family(family,d.name)
+        self._equipment_candidates=candidates
         self.log.appendPlainText('Discovery complete: supported devices added.')
 
     def _add(self, name):
@@ -200,10 +217,15 @@ class Window(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         if not self._closing:
+            if self.profile_dirty:
+                answer=QtWidgets.QMessageBox.question(self,'Configuration','변경한 장비 구성을 저장할까요?',QtWidgets.QMessageBox.Save|QtWidgets.QMessageBox.Discard|QtWidgets.QMessageBox.Cancel)
+                if answer==QtWidgets.QMessageBox.Cancel or (answer==QtWidgets.QMessageBox.Save and not self.save_equipment()):event.ignore();return
             if not self.workflow_tab.confirm_close():
                 event.ignore()
                 return
             self._closing = True
+            self.connection_queue.clear()
+            for detail in [*self.detail_windows.values(),self.connection_settings_window]:detail.setEnabled(False)
             self.workflow_tab.shutdown()
             self.discovery_worker.shutdown()
             self.centralWidget().setEnabled(False)
@@ -215,7 +237,7 @@ class Window(QtWidgets.QMainWindow):
             save_settings(self.cfg)
             self.close_timer.start(100)
         if self._running(): event.ignore()
-        else: event.accept()
+        else:self.close_equipment_windows();event.accept()
 
     def _running(self):
         return self.workflow_tab.still_running() or self.discovery_worker.isRunning() or any(p.still_running() for p in self._panels())

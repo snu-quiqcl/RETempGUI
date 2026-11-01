@@ -6,15 +6,17 @@ from .settings import load_settings
 
 
 class FlipRouting:
-    def __init__(self,workers,oven):
+    def __init__(self,workers,oven,endpoint=None):
         self.workers,self.oven=workers,oven
-        self.available_names=None
+        self.available_names=None;self.endpoint=endpoint
         self.task=RouteTask(self)
 
     def plan(self,chamber,automatic=False):
         if chamber not in ('EA','EC'):raise ValueError('Chamber must be EA or EC')
         config=load_settings()
         if automatic and not config['auto_route']:return ()
+        if self.endpoint is not None and (config.get('host'),config.get('port'))!=self.endpoint():
+            raise ConnectionError('Main server changed; reload flippers and check route settings')
         route=config['routes'].get(chamber,{})
         if not route:raise ValueError(chamber+' flipper mapping is not configured; no movement')
         if self.task.running():raise RuntimeError('Flipper routing is already running')

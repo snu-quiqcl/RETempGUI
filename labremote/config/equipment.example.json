@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "name": "기본 실험 구성",
+  "devices": [
+    {
+      "family": "windfreak",
+      "name": "synthhd_760",
+      "group": "RF",
+      "enabled": true
+    },
+    {
+      "family": "windfreak",
+      "name": "synthhd_2g",
+      "group": "RF",
+      "enabled": true
+    },
+    {
+      "family": "windfreak",
+      "name": "synthhd_3g",
+      "group": "RF",
+      "enabled": true
+    },
+    {
+      "family": "sg384",
+      "name": "sg384_EA",
+      "group": "RF",
+      "enabled": true
+    },
+    {
+      "family": "sg384",
+      "name": "sg384_EC",
+      "group": "RF",
+      "enabled": true
+    },
+    {
+      "family": "anapico",
+      "name": "apsyn420_7g",
+      "group": "RF",
+      "enabled": true
+    },
+    {
+      "family": "dds4",
+      "name": "dds4",
+      "group": "RF",
+      "enabled": true
+    },
+    {
+      "family": "thermotek",
+      "name": "t257p",
+      "group": "미라",
+      "enabled": true
+    },
+    {
+      "family": "osa",
+      "name": "aq6373",
+      "group": "미라",
+      "enabled": true
+    },
+    {
+      "family": "mdt",
+      "name": "mdt693b",
+      "group": "미라",
+      "enabled": true
+    },
+    {
+      "family": "fpga",
+      "name": "fpga_local",
+      "group": "FPGA",
+      "enabled": true
+    },
+    {
+      "family": "ds1052e",
+      "name": "ds1052e_EA",
+      "group": "오실로스코프",
+      "enabled": true
+    },
+    {
+      "family": "ds1052e",
+      "name": "ds1052e_EC",
+      "group": "오실로스코프",
+      "enabled": true
+    },
+    {
+      "family": "mso7054",
+      "name": "mso7054",
+      "group": "오실로스코프",
+      "enabled": true
+    },
+    {
+      "family": "keithley",
+      "name": "keithley_ps",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EA_px",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EA_py",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EA_pz",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EA_sx",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EA_sy",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EA_sz",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EC_px",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EC_py",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EC_pz",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EC_sx",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EC_sy",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "motors",
+      "name": "EC_sz",
+      "group": "기타",
+      "enabled": true
+    },
+    {
+      "family": "ccd",
+      "name": "ccd_local",
+      "group": "CCD",
+      "enabled": true
+    },
+    {
+      "family": "oven_psu",
+      "name": "oven_psu",
+      "group": "기타",
+      "enabled": false
+    },
+    {
+      "family": "oven_relay",
+      "name": "oven_relays",
+      "group": "기타",
+      "enabled": false
+    }
+  ]
+}

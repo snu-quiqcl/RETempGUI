@@ -6,17 +6,20 @@
 
 | 화면 | 기능 |
 |---|---|
-| RF | Windfreak, SG384, AnaPico, DDS 설정·조회·출력 제어 |
-| oscillo | DS1052E/MSO7054 파형과 측정값 조회 |
-| mira | THERMOTEK, OSA, MDT 및 PID 연동 |
-| others | Keithley, FPGA 출력·광자수 측정, 모터, XY/XYZ 스캔 |
-| CCD | 로컬 ThorCam/Dummy, 연속·N장 촬영, uint16 TIFF/PNG 저장, ROI 이온 검출 |
+| 메인 탭 | 전체 장비 구성 파일, 그룹 연결, 상세 창 열기 |
+| Monitor 탭 | 추후 구성용 빈 화면 |
+| RF 상세 창 | Windfreak, SG384, AnaPico, DDS 설정·조회·출력 제어 |
+| 오실로스코프 상세 창 | DS1052E/MSO7054 파형과 측정값 조회 |
+| 미라 상세 창 | THERMOTEK, OSA, MDT 및 PID 연동 |
+| 기타 상세 창 | Keithley, 모터, flipper / 셔터 |
+| FPGA 상세 창 | FPGA 출력·광자수 측정, XY/XYZ 스캔 |
+| CCD 상세 창 | 로컬 ThorCam/Dummy, 연속·N장 촬영, uint16 TIFF/PNG 저장, ROI 이온 검출 |
 | CCD → EC oven | 171/174 선택, CH1 전류·전압 표시, 릴레이·EC 셔터 연동, 이온 조건 또는 10분 timeout 후 OFF |
-| workflow | `main(devices)` Python 파일을 실행하고 공통 핸들로 완료·실패·취소 처리 |
+| Workflow 탭 | `main(devices)` Python 파일을 실행하고 공통 핸들로 완료·실패·취소 처리 |
 
 장비별 세부 동작은 [장비 가이드](docs/DEVICE_GUIDE_KO.md), CCD와 조건 판정은 [CCD 가이드](docs/CCD_GUIDE_KO.md)를 참고하세요.
 
-EC 오븐은 [오븐 로딩 안내](docs/OVEN_LOADING_KO.md)를 참고하세요. 기본 서버 등록 이름은 `oven_psu` / `oven_relays`, 출력은 CH1입니다. EC 171은 5.000 V / 1.30 A, EC 174는 5.000 V / 1.40 A이며 기본 EC 셔터는 `shutter_2`이며 별도 확인 체크박스 없이 시작합니다. Flip mirror는 조작하지 않습니다. 자동 종료는 정상 동작 중인 클라이언트와 통신에 의존하며 하드웨어 watchdog을 대신하지 않습니다.
+EC 오븐은 [오븐 로딩 안내](docs/OVEN_LOADING_KO.md)를 참고하세요. 기본 서버 등록 이름은 `oven_psu` / `oven_relays`, 출력은 CH1입니다. EC 171은 5.000 V / 1.30 A, EC 174는 5.000 V / 1.40 A이며 기본 EC 셔터는 `shutter_2`이며 별도 확인 체크박스 없이 시작합니다. Flipper 자동 경로는 로컬 매핑을 명시적으로 활성화한 경우에만 적용합니다. 자동 종료는 정상 동작 중인 클라이언트와 통신에 의존하며 하드웨어 watchdog을 대신하지 않습니다.
 
 ## 설치 및 실행
 
@@ -211,7 +214,8 @@ python verify_release.py --suite all
 
 ## MFF101 flipper와 EC 셔터
 
-`others → flip`에서 `서버 flipper 목록 불러오기`로 실제 서버 이름을 조회하고,
+Flipper는 메인 창 상단 QCoDeS InstrumentServer 주소를 공유합니다.
+상단 `Rescan server devices` 또는 `others → flip`의 `서버 flipper 목록 불러오기`로 실제 서버 이름을 조회하고,
 원하는 MFF101을 선택해 Position 1/2로 이동합니다. `EA / EC 경로 설정`에서 목표 위치를 지정해
 Git에서 제외된 `labremote/config/flip.local.json`에 저장합니다. 저장만으로 이동하지 않습니다.
 
@@ -235,3 +239,16 @@ USB 포트 확인, EA/EC 매핑 설정은 [설치 안내](docs/FLIP_SETUP_KO.md)
 - XYZ scans show MFD X and MFD Y versus Z below the image, updated after each completed XY plane. Failed or unavailable fits are gaps, not zero-width measurements. Individual Start/Stop controls remain; the FPGA-wide Start/Stop all scan buttons were removed.
 - DS1052E/MSO7054 waveform refresh reuses axes and line objects, while preserving physical V/div, fit-to-data and manual-limit modes.
 - CCD zoom-out is limited to the full sensor view, with padding only as needed to preserve square pixels at the viewport aspect ratio. Fit image restores this view; live frames retain zoom.
+
+
+## 실험 중심 메인 화면과 Configuration
+
+메인은 `메인 / Workflow / Monitor`로 구성됩니다. RF·미라·CCD·FPGA·오실로스코프·기타
+상세 제어는 버튼으로 별도 창을 엽니다. 창을 닫아도 연결·촬영·작업은 유지됩니다.
+Workflow API와 장비별 설정, operation 실행 방식은 기존 그대로입니다.
+
+`Configuration`에서 전체 장비 구성을 불러오고 표에서 편집한 뒤 저장할 수 있습니다.
+`labremote/config/equipment.local.json`의 사용 체크는 그룹/전체 연결 대상을 지정합니다.
+개인 파일은 Git에서 제외되며, 공개 형식은 [equipment.example.json](labremote/config/equipment.example.json)입니다.
+수동으로 연결한 장비는 기존처럼 workflow에서 사용할 수 있습니다.
+자세한 사용법과 연결/종료 동작은 [실험 UI 안내](docs/EXPERIMENT_UI_KO.md)를 참고하세요.

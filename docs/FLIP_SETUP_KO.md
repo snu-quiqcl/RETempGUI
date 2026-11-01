@@ -24,13 +24,13 @@ UI는 최신 RETempGUI 소스를 적용합니다. 이번 변경 경로:
 - `labremote/devices/oven/panel.py`
 
 기존 `oven_psu` 드라이버와 전류 ramp 작업 코드는 이번에 변경하지 않습니다.
-flipper 서버 주소는 flip 탭에서 별도로 지정합니다. 설정은 Git에서 제외된
+Flipper는 메인 창 상단 InstrumentServer의 Host/Port를 사용합니다. Flip 탭에는 별도 서버 입력이 없습니다. 경로 설정은 Git에서 제외된
 `labremote/config/flip.local.json`에 저장됩니다. 실제 주소·USB serial은 공개 예제에 넣지 않습니다.
 
 ## 수동 제어
 
-1. flipper 서버 host/port를 입력합니다.
-2. `서버 flipper 목록 불러오기`를 누릅니다. 서버의 장비 목록과 Blueprint 드라이버 정보에서 MFF101/MFF002를 구분합니다. 이 단계는 장비를 움직이지 않습니다.
+1. 메인 창 상단 InstrumentServer에 flipper가 등록된 QCoDeS 서버 Host/Port를 입력합니다.
+2. 상단 `Rescan server devices` 또는 flip 탭의 `서버 flipper 목록 불러오기`를 누릅니다. 서버의 장비 목록과 Blueprint 드라이버 정보에서 MFF101/MFF002를 구분합니다. 이 단계는 장비를 움직이지 않습니다.
 3. 실제 서버 이름 선택 → `선택 장비 연결`. 경로에 사용할 나머지 장비도 같은 방법으로 연결합니다.
 4. 움직일 한 대를 선택하고 현재 위치 읽기 또는 Position 1/2를 누릅니다.
 5. Position 1/2의 실제 광로 의미는 현장에서 확인합니다. 자동으로 IN/OUT이라고 가정하지 않습니다.
@@ -52,7 +52,7 @@ EC 포획 시작 시 적용하려면 같은 창의 자동 적용 체크박스를
 UI 설정은 `flip.local.json`의 `routes.EA` 또는 `routes.EC`에 저장되며, 해당 경로에 필요한
 장비 이름을 key, 목표 Position 1 또는 2를 value로 넣습니다. 지정하지 않은 장비는 움직이지 않습니다.
 필요한 모든 장비가 매핑에 포함되었는지는 실제 광로를 기준으로 확인해야 합니다.
-서버 host/port를 변경하여 조회하면 기존 경로와 저장 목록은 초기화되고 자동 적용은 OFF가 됩니다. 새 서버에 맞게 다시 설정하세요.
+메인 서버 Host/Port를 변경하여 조회하면 기존 경로와 저장 목록은 초기화되고 자동 적용은 OFF가 됩니다. 새 서버에 맞게 다시 설정하세요.
 설정 파일은 Git에서 제외되므로 다른 UI PC로 옮길 때 `labremote/config/flip.local.json`을 직접 복사하세요. 이번 서버 이름 조회 기능에는 Linux 서버 코드 교체가 필요하지 않습니다.
 
 수동 `EA 경로 적용` / `EC 경로 적용`은 셔터를 닫고 매핑된 장비를 순서대로 이동합니다.
@@ -74,3 +74,6 @@ EA 오븐 로딩, 포획 후 flipper 복귀, 각 광로의 정확한 이동 순�
 
 드라이버 근거: [pylablib MFF](https://pylablib.readthedocs.io/en/latest/.apidoc/pylablib.devices.Thorlabs.html),
 [Thorlabs APT](https://www.thorlabs.com/Software/Motion%20Control/APT_Communications_Protocol_v40.pdf).
+
+FPGA 출력·광자수·Scan 화면은 `others` 안이 아니라 최상위 `FPGA` 탭에 있습니다.
+목록 조회는 12초(클라이언트 생성자에는 12000 ms) timeout을 사용합니다.

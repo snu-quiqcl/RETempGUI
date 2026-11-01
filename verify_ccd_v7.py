@@ -75,11 +75,14 @@ def main():
         assert np.allclose(view.viewRange(), zoom_range), 'Live frames reset user zoom'
         assert panel.canvas.mapToGlobal(QtCore.QPoint()).x()+panel.canvas.width() <= panel.controls_scroll.mapToGlobal(QtCore.QPoint()).x()
         panel.canvas.autoRange(); app.processEvents()
-        window.grab().save(str(output/'ccd_tab.png'))
+        window.detail_windows['CCD'].grab().save(str(output/'ccd_tab.png'))
         panel.controls_scroll.ensureWidgetVisible(panel.oven_panel)
         app.processEvents()
-        window.grab().save(str(output/'ccd_oven_panel.png'))
+        window.detail_windows['CCD'].grab().save(str(output/'ccd_oven_panel.png'))
         # Switching tabs must not stop analysis or workflow conditions.
+        window.detail_windows['CCD'].close()
+        assert not panel.isVisible(), 'Closing CCD detail window must hide it'
+        assert panel.worker.available, 'Hiding the CCD window disconnected the camera'
         window.device_tabs.setCurrentWidget(window.workflow_tab)
         app.processEvents()
         hidden = panel.api.wait_for_ions(3, consecutive_frames=3, timeout_s=3).wait(4)

@@ -14,18 +14,19 @@ class FlipTab(QtWidgets.QWidget):
     def __init__(self,oven,endpoint,parent=None):
         super().__init__(parent)
         self.oven,self.endpoint=oven,endpoint
+        self._current_endpoint=self.endpoint()
         self.workers={};self._rows={};self._discovering=False;self._listed_endpoint=None;self._server_names=[]
-        self.routing=FlipRouting(self.workers,oven)
+        self.routing=FlipRouting(self.workers,oven,endpoint=lambda:self._current_endpoint)
         self._closing=False
         layout=QtWidgets.QVBoxLayout(self)
-        self.host=QtWidgets.QLineEdit();self.host.setPlaceholderText('Linux flipper server host')
-        self.port=QtWidgets.QSpinBox();self.port.setRange(1,65535);self.port.setValue(5556)
+        layout.addWidget(QtWidgets.QLabel('메인 InstrumentServer의 서버 주소와 포트를 사용합니다.'))
+        self._request_endpoint=None
         self.selected=QtWidgets.QComboBox();self.selected.setMinimumWidth(200)
         error='';config={'names':[],'routes':{}}
         try:
-            config=load_settings();self.host.setText(config['host']);self.port.setValue(config['port'])
+            config=load_settings()
         except Exception as exc:error=str(exc)
-        form=QtWidgets.QFormLayout();form.addRow('Flipper server',self.host);form.addRow('Port',self.port)
+        form=QtWidgets.QFormLayout()
         form.addRow('선택한 flipper',self.selected);layout.addLayout(form)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         self.discover_button=QtWidgets.QPushButton('서버 flipper 목록 불러오기');row.addWidget(self.discover_button)
@@ -92,10 +93,10 @@ class FlipTab(QtWidgets.QWidget):
             self._guard()
             if self._discovering:return
             if any(w.has_requests() for w in self.workers.values()):raise RuntimeError('Wait for flipper operations to finish')
-            endpoint=(self.host.text().strip(),self.port.value())
-            if not endpoint[0]:raise ValueError('Enter Linux flipper server host')
+            endpoint=self.endpoint()
+            if not endpoint[0]:raise ValueError('Enter the main InstrumentServer host')
             save_endpoint(*endpoint)
-            self._discovering=True;self._listed_endpoint=endpoint
+            self._discovering=True;self._request_endpoint=endpoint;self._listed_endpoint=endpoint
             self.state.setText('서버 장비 목록 조회 중…');self._tick()
             self.discoverer.scan(*endpoint)
         except Exception as exc:self._failure('FLIP_DISCOVERY',str(exc))
@@ -103,6 +104,8 @@ class FlipTab(QtWidgets.QWidget):
     def _discovered(self,descriptors):
         self._discovering=False
         if self._closing:return
+        if self._request_endpoint!=self.endpoint():
+            self.invalidate_server_list();self.state.setText('메인 서버가 변경되었습니다. 목록을 다시 조회하세요.');return
         if self.oven.task.running() or self.routing.task.running():
             self._listed_endpoint=None;self.state.setText('장비 작업이 시작되어 목록 갱신을 보류했습니다. 작업 후 다시 조회하세요.');return
         previous=self.selected.currentText()
@@ -118,6 +121,20 @@ class FlipTab(QtWidgets.QWidget):
         self.state.setText(f'MFF flipper {len(self._server_names)}개 발견. 실제 서버 이름으로 연결합니다. 경로 설정은 별도로 저장하세요.')
         self._tick()
 
+    def invalidate_server_list(self,*args):
+        self._current_endpoint=self.endpoint()
+        self._listed_endpoint=None;self._server_names=[];self.routing.available_names=set()
+        self._tick()
+
+    def accept_server_devices(self,endpoint,descriptors):
+        # The main Rescan button can populate this tab without another request.
+        if self._closing or self._discovering or endpoint!=self.endpoint():return
+        if self.oven.task.running() or self.routing.task.running():return
+        try:save_endpoint(*endpoint)
+        except Exception as exc:self._failure('FLIP_SETTINGS',str(exc));return
+        self._request_endpoint=self._listed_endpoint=endpoint
+        self._discovered(descriptors)
+
     def _discovery_failed(self,message):
         self._discovering=False;self._listed_endpoint=None;self._server_names=[];self.routing.available_names=set()
         self._failure('FLIP_DISCOVERY',message);self._tick()
@@ -125,7 +142,7 @@ class FlipTab(QtWidgets.QWidget):
     def _edit_routes(self):
         try:
             self._guard()
-            if self._discovering or self._listed_endpoint!=(self.host.text().strip(),self.port.value()):
+            if self._discovering or self._listed_endpoint!=self.endpoint():
                 raise RuntimeError('Load the current server flipper list first')
             config=load_settings()
             dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('EA / EC flipper 경로 설정');dialog.resize(620,380)
@@ -158,7 +175,7 @@ class FlipTab(QtWidgets.QWidget):
 
     def _save_routes(self,routes,automatic):
         self._guard()
-        endpoint=(self.host.text().strip(),self.port.value())
+        endpoint=self.endpoint()
         if self._discovering or self._listed_endpoint!=endpoint:raise RuntimeError('Reload the current server list')
         missing={n for route in routes.values() for n in route}-set(self._server_names)
         if missing:raise ValueError('Remove missing flippers from routes: '+', '.join(sorted(missing)))
@@ -177,19 +194,22 @@ class FlipTab(QtWidgets.QWidget):
     def _connect(self):
         try:
             self._guard()
-            if not self.host.text().strip():raise ValueError('Enter Linux flipper server host')
-            if self._discovering or self._listed_endpoint!=(self.host.text().strip(),self.port.value()) or self.selected.currentText() not in self._server_names:
+            if not self.endpoint()[0]:raise ValueError('Enter the main InstrumentServer host')
+            if self._discovering or self._listed_endpoint!=self.endpoint() or self.selected.currentText() not in self._server_names:
                 raise RuntimeError('Load the current server list and select a flipper first')
-            save_endpoint(self.host.text().strip(),self.port.value())
-            DeviceAPI(self.workers[self.selected.currentText()]).connect(self.host.text().strip(),self.port.value(),self.selected.currentText())
+            save_endpoint(*self.endpoint())
+            DeviceAPI(self.workers[self.selected.currentText()]).connect(*self.endpoint(),self.selected.currentText())
         except Exception as exc:self._failure('FLIP_CONNECT',str(exc))
 
     def _selected_action(self,action,position=None):
         try:
             self._guard();worker=self.workers[self.selected.currentText()]
             if action=='DISCONNECT':DeviceAPI(worker).disconnect();return
+            if worker._execution_device is None or worker._execution_device[:2]!=self.endpoint():
+                raise RuntimeError('Reconnect the flipper to the current main server')
             def execute(w):
                 self._guard()
+                if w._execution_device[:2]!=self._current_endpoint:raise RuntimeError('Main server changed; reconnect flipper')
                 return move(w.ps,position) if action=='MOVE' else Context().acquire(w.ps.position)
             DeviceAPI(worker)._submit('FLIP_'+action,execute)
         except Exception as exc:self._failure('FLIP',str(exc))
@@ -230,13 +250,11 @@ class FlipTab(QtWidgets.QWidget):
         active=self._closing or self.oven.task.running() or self.routing.task.running()
         worker=self.workers.get(self.selected.currentText())
         idle=not active and not self._discovering and worker is not None and not worker.has_requests()
-        self.connect_button.setEnabled(idle and self.selected.currentText() in self._server_names and self._listed_endpoint==(self.host.text().strip(),self.port.value()));self.selected.setEnabled(not active and not self._discovering)
+        self.connect_button.setEnabled(idle and self.selected.currentText() in self._server_names and self._listed_endpoint==self.endpoint());self.selected.setEnabled(not active and not self._discovering)
         self.disconnect_button.setEnabled(idle and worker is not None and worker.ps is not None)
-        for b in (self.pos1,self.pos2,self.read_button):b.setEnabled(idle and self.selected.currentText() in self._server_names and worker is not None and worker.ps is not None and not worker.connection_error)
-        self.host.setEnabled(not active and not self._discovering and not any(w.ps is not None or w.has_requests() for w in self.workers.values()))
-        self.port.setEnabled(self.host.isEnabled())
+        for b in (self.pos1,self.pos2,self.read_button):b.setEnabled(idle and self.selected.currentText() in self._server_names and worker is not None and worker.ps is not None and worker._execution_device is not None and worker._execution_device[:2]==self.endpoint() and not worker.connection_error)
         self.discover_button.setEnabled(not active and not self._discovering and not any(w.has_requests() for w in self.workers.values()))
-        self.route_settings_button.setEnabled(not active and not self._discovering and self._listed_endpoint==(self.host.text().strip(),self.port.value()))
+        self.route_settings_button.setEnabled(not active and not self._discovering and self._listed_endpoint==self.endpoint())
         relay=self.oven.relays
         self.shutter_connect.setEnabled(not active and not relay.has_requests())
         for b in (self.shutter_read,self.shutter_open,self.shutter_close):b.setEnabled(not active and not relay.has_requests() and relay.ps is not None and not relay.io_fault)

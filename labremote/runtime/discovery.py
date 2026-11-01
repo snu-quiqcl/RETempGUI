@@ -75,7 +75,8 @@ class DiscoveryWorker(QtCore.QThread):
             cli = None
             try:
                 from labremote.runtime.transport import Client
-                cli = Client(host=host, port=port, timeout=20)
+                # Client constructor timeout is milliseconds, including during connect().
+                cli = Client(host=host, port=port, timeout=12000)
                 configure_client_timeout(cli, 12)
                 names = cli.list_instruments()
                 if isinstance(names, dict):
