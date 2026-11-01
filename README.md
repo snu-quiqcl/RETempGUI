@@ -261,3 +261,5 @@ FPGA 포트 검색·기억, 화면 영역 기반 CCD 연속 검출, Configuratio
 ## 설정 파일 역할 분리
 
 [설정 구조 및 이전 안내](docs/CONFIGURATION.md)를 참고하세요. 공개 기본값과 PC별 `*.local.json`을 구분하고, 장비 / 메인 UI / operation 설정을 각 폴더에서 관리합니다. 메인의 중복 상세 제어창 버튼은 제거했으며 상단 **장비** 메뉴에서 기존 상세 창을 엽니다.
+
+CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](docs/FLIP_DISPLAY_KO.md)를 참고하세요.

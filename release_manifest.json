@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Separate device, UI and operation configuration; preserve existing effective values",
+  "revision_note": "CCD image level controls and flipper direction labels with optional local thumbnails",
   "files": [
     {
       "path": ".gitattributes",
@@ -9,13 +9,13 @@
     },
     {
       "path": ".gitignore",
-      "bytes": 1201,
-      "sha256": "c93cccc840fe2997c5ff0ff7741c1db93e1f82b309febb8bbd34d054b45d673e"
+      "bytes": 1283,
+      "sha256": "fe93b5e452b28e3d1c4db3e7bbab9d7bea29ad6f32155c3a38a5f4f8a4e4fdd2"
     },
     {
       "path": "README.md",
-      "bytes": 18516,
-      "sha256": "905c3317005544c4233e3ff46cd0d4688bf010ccc55d4f8c9b8c1313e9d0b004"
+      "bytes": 18644,
+      "sha256": "be747a41d335771ad9520b5ea00424c23a81b832b2c5804daa31c411f3120efa"
     },
     {
       "path": "check_public_files.py",
@@ -56,6 +56,11 @@
       "path": "docs/EXPERIMENT_UI_KO.md",
       "bytes": 4981,
       "sha256": "e97d018c9ca423e34442f6c920d6a05d8b29aade58647d340f3eb69d752405b6"
+    },
+    {
+      "path": "docs/FLIP_DISPLAY_KO.md",
+      "bytes": 2301,
+      "sha256": "cc4c64b3e653c6517bd4f5e7b30148ea0f56f3b897580efc5a7d954006e075c9"
     },
     {
       "path": "docs/FLIP_SETUP_KO.md",
@@ -353,6 +358,11 @@
       "sha256": "2fb405b9fe7031be0407f980f4204116fcaa6490d4eb122ae182605aacfa46a8"
     },
     {
+      "path": "labremote/config/ui/flipper_display.json",
+      "bytes": 4,
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f"
+    },
+    {
       "path": "labremote/devices/__init__.py",
       "bytes": 130,
       "sha256": "abefb7e451cea57eeccc6bebfe652df51e72af558a363e003154ce33b3bccf5f"
@@ -394,8 +404,8 @@
     },
     {
       "path": "labremote/devices/ccd/tab.py",
-      "bytes": 22644,
-      "sha256": "0b7eab696dff925c67c018ec700078376ef880cf9183a28c37325e6434c8ccc6"
+      "bytes": 23548,
+      "sha256": "0109cedab600c1bb97e463412465fbd6c2cca62a43ed1d580543d3e79cfea17d"
     },
     {
       "path": "labremote/devices/ccd/vendor/QuIQCL_ThorCam.py",
@@ -458,6 +468,11 @@
       "sha256": "de9a0c161ae6f6e105c22bf8d9b9820f38773e0e28d360f72a5730450221d340"
     },
     {
+      "path": "labremote/devices/flip/display.py",
+      "bytes": 1438,
+      "sha256": "c3fb89cd55559aa8966ee88eee22358d5acdd2293aecd4857cb357b9b0fa9d92"
+    },
+    {
       "path": "labremote/devices/flip/routing.py",
       "bytes": 3098,
       "sha256": "58b3ecbee3ce0007021d9e1529246cbbc11b95a21fd94bb9f257ff1aebede4bc"
@@ -469,8 +484,8 @@
     },
     {
       "path": "labremote/devices/flip/tab.py",
-      "bytes": 24171,
-      "sha256": "1b9e647f7b2f5fd6bc697a538e2a5185509d7a6ee9d98bc7d113f6af2b296249"
+      "bytes": 27088,
+      "sha256": "cb15d56201fe6130ac8422f0f491450cc747c7c7756d20e59ada88d6edac7dcd"
     },
     {
       "path": "labremote/devices/flip/worker.py",

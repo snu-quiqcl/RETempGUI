@@ -71,5 +71,8 @@ id_ed25519
 # Local InstrumentServer source
 instrumentserver-remote_entanglement/
 
+# Private flipper direction photos
+/labremote/config/ui/flipper_images.local/
+
 # Local launcher
 /start_lab_remote_gui.bat

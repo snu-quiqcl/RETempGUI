@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from collections import deque
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
+from .display import load_display
 from labremote.api.devices import DeviceAPI
 from labremote.runtime.io import Context
 from labremote.operation.flip.control import move
@@ -34,7 +35,15 @@ class FlipTab(QtWidgets.QWidget):
         self.discover_button=QtWidgets.QPushButton('서버 flipper 목록 불러오기');row.addWidget(self.discover_button)
         self.connect_all_button=QtWidgets.QPushButton('Flipper 전체 연결');row.addWidget(self.connect_all_button)
         self.connect_all_button.clicked.connect(self._connect_all)
-        self.cards_layout=QtWidgets.QVBoxLayout();layout.addLayout(self.cards_layout)
+        self.display_reload=QtWidgets.QPushButton('별명 / 이미지 새로고침');row.addWidget(self.display_reload)
+        self.display_reload.clicked.connect(self._reload_display)
+        self.display_config={}
+        try:self.display_config=load_display()
+        except Exception as exc:error=str(exc)
+        self.cards_scroll=QtWidgets.QScrollArea();self.cards_scroll.setWidgetResizable(True)
+        cards_widget=QtWidgets.QWidget();self.cards_layout=QtWidgets.QVBoxLayout(cards_widget)
+        self.cards_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.cards_scroll.setWidget(cards_widget);layout.addWidget(self.cards_scroll,1)
         self.empty_label=QtWidgets.QLabel('서버 flipper 목록을 불러오면 장비별 버튼이 표시됩니다.');self.cards_layout.addWidget(self.empty_label)
         # Legacy entry points remain callable; no table or shared move buttons are displayed.
         self.route_settings_button=QtWidgets.QPushButton(self)
@@ -50,7 +59,7 @@ class FlipTab(QtWidgets.QWidget):
         self.ea=QtWidgets.QPushButton(self);self.ec=QtWidgets.QPushButton(self)
         self.ea.hide();self.ec.hide()
         self.state=QtWidgets.QLabel(error or '서버 목록을 불러온 뒤 장비를 선택하세요. 자동 경로는 로컬 설정을 사용합니다. 포획 workflow는 현재 EC 전용입니다.')
-        self.state.setWordWrap(True);layout.addWidget(self.state);layout.addStretch()
+        self.state.setWordWrap(True);layout.addWidget(self.state)
         self.discover_button.clicked.connect(self._discover)
         self.route_settings_button.clicked.connect(self._edit_routes)
         self.discoverer=FlipDiscoveryWorker(self)
@@ -78,20 +87,60 @@ class FlipTab(QtWidgets.QWidget):
         if name in self.workers:return
         worker=FlipWorker();self.workers[name]=worker
         box=QtWidgets.QGroupBox(name);row=QtWidgets.QGridLayout(box)
-        status=QtWidgets.QLabel('Disconnected / 목록 확인 필요');status.setWordWrap(True);row.addWidget(status,0,0,1,5)
-        buttons={}
-        for col,(key,title) in enumerate((('connect','연결'),('disconnect','연결 해제'),('read','위치 읽기'),('pos1','Position 1'),('pos2','Position 2'))):
-            button=QtWidgets.QPushButton(title);row.addWidget(button,1,col);buttons[key]=button
+        status=QtWidgets.QLabel('Disconnected / 목록 확인 필요');status.setWordWrap(True);row.addWidget(status,0,0,1,2)
+        buttons={};toolbar=QtWidgets.QHBoxLayout();row.addLayout(toolbar,1,0,1,2)
+        for key,title in (('connect','연결'),('disconnect','연결 해제'),('read','위치 읽기')):
+            button=QtWidgets.QPushButton(title);toolbar.addWidget(button);buttons[key]=button
+        aliases={};images={}
+        for col,position in enumerate((1,2)):
+            key='pos'+str(position);button=QtWidgets.QPushButton('Position '+str(position))
+            button.setMinimumHeight(58)
+            font=button.font();font.setPointSize(max(12,font.pointSize()+2));font.setBold(True);button.setFont(font)
+            row.addWidget(button,2,col);buttons[key]=button
+            label=QtWidgets.QLabel();label.setAlignment(QtCore.Qt.AlignCenter);label.setWordWrap(True)
+            label.setTextFormat(QtCore.Qt.PlainText);row.addWidget(label,3,col);aliases[position]=label
+            image=QtWidgets.QLabel();image.setAlignment(QtCore.Qt.AlignCenter)
+            image.setFixedHeight(110);row.addWidget(image,4,col);images[position]=image
+            row.setColumnStretch(col,1)
         buttons['connect'].clicked.connect(lambda _,n=name:self._connect_named(n))
         buttons['disconnect'].clicked.connect(lambda _,n=name:self._named_action(n,'DISCONNECT'))
         buttons['read'].clicked.connect(lambda _,n=name:self._named_action(n,'READ'))
         buttons['pos1'].clicked.connect(lambda _,n=name:self._named_action(n,'MOVE',1))
         buttons['pos2'].clicked.connect(lambda _,n=name:self._named_action(n,'MOVE',2))
-        self.cards[name]=dict(box=box,status=status,buttons=buttons,error='')
+        self.cards[name]=dict(box=box,status=status,buttons=buttons,aliases=aliases,images=images,error='')
+        self._apply_display(name)
         self.cards_layout.addWidget(box);self.empty_label.hide()
         worker.failure.connect(lambda action,message,n=name:self._failure(n+' '+action,message))
         worker.handle_changed.connect(lambda h,n=name:self._result(n,h))
         worker.start()
+
+    def _apply_display(self, name):
+        card=self.cards[name]
+        for position in (1,2):
+            cfg=self.display_config.get(name,{}).get(str(position),{})
+            card['aliases'][position].setText(cfg.get('label') or '방향 이름 미설정')
+            image=card['images'][position];image.clear();image.hide()
+            path=cfg.get('image')
+            if path:
+                # Decode a bounded thumbnail; no camera or instrument I/O.
+                reader=QtGui.QImageReader(path);reader.setAutoTransform(True)
+                size=reader.size()
+                if size.isValid():reader.setScaledSize(size.scaled(240,100,QtCore.Qt.KeepAspectRatio))
+                pixels=reader.read()
+                if pixels.isNull():
+                    image.setText('이미지를 읽을 수 없습니다');image.setToolTip(path)
+                else:
+                    image.setPixmap(QtGui.QPixmap.fromImage(pixels).scaled(240,100,QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
+                    image.setToolTip(path)
+                image.show()
+
+    def _reload_display(self):
+        try:
+            config=load_display()
+            self.display_config=config
+            for name in self.cards:self._apply_display(name)
+            self.state.setText('별명 / 이미지 갱신 완료 · 장비 이동 없음')
+        except Exception as exc:self._failure('FLIP_DISPLAY',str(exc))
 
     def _discover(self):
         try:

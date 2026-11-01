@@ -173,6 +173,16 @@ class CCDTab(QtWidgets.QWidget):
         display.addWidget(self.color, 3, 0)
         self.display_group = display_group
         display_group.setParent(self); display_group.hide()
+        self.levels_group = QtWidgets.QGroupBox('Image levels · 표시 밝기')
+        level_controls = QtWidgets.QGridLayout(self.levels_group)
+        level_controls.addWidget(self.auto_levels, 0, 0)
+        level_controls.addWidget(QtWidgets.QLabel('Min'), 0, 1)
+        level_controls.addWidget(self.low, 0, 2)
+        level_controls.addWidget(QtWidgets.QLabel('Max'), 0, 3)
+        level_controls.addWidget(self.high, 0, 4)
+        self.levels_group.setToolTip('화면 표시 범위만 조절합니다. 원본 픽셀, 이온 검출 threshold, 저장 영상은 바꾸지 않습니다.')
+        self.auto_levels.toggled.connect(self._level_controls)
+        self._level_controls()
         self.canvas = pg.PlotWidget(viewBox=CCDViewBox())
         self.canvas.setProperty('handlesWheelZoom', True)
         self.canvas.setMinimumSize(400, 400)
@@ -185,6 +195,7 @@ class CCDTab(QtWidgets.QWidget):
         self.markers = pg.ScatterPlotItem(symbol='o', size=14, pen=pg.mkPen('r', width=2), brush=None)
         self.canvas.addItem(self.markers)
         image_layout.addWidget(self.canvas, 1)
+        image_layout.addWidget(self.levels_group)
         self.color.currentTextChanged.connect(self._colormap)
         for widget in (self.auto_levels, self.flip_h, self.flip_v, self.markers_enabled): widget.toggled.connect(self._needs_redraw)
         for widget in (self.low, self.high): widget.valueChanged.connect(self._needs_redraw)
@@ -211,6 +222,10 @@ class CCDTab(QtWidgets.QWidget):
         self.roi_timer = QtCore.QTimer(self); self.roi_timer.setInterval(150)
         self.roi_timer.timeout.connect(self._sync_viewport); self.roi_timer.start()
         self.apply_display_config({})
+
+    def _level_controls(self, *_):
+        manual = not self.auto_levels.isChecked()
+        self.low.setEnabled(manual); self.high.setEnabled(manual)
 
     @staticmethod
     def _number(low, high, value, decimals=None):
