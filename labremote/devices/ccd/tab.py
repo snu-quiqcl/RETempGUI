@@ -60,6 +60,10 @@ class CCDTab(QtWidgets.QWidget):
         self._last_frame = None
         self._redraw = True
         self._watch = None
+        self._detection_enabled = False
+        self._start_after_detection = None
+        self._viewport_handle = None
+        self._viewport_sent = object()
         self.worker.connected.connect(self._connected)
         self.worker.disconnected.connect(self._disconnected)
         self.worker.failure.connect(lambda action, error: self.log_message.emit(f'{action}: {error}'))
@@ -110,13 +114,15 @@ class CCDTab(QtWidgets.QWidget):
         controls = QtWidgets.QGridLayout(camera_group)
         self.exposure = self._number(.01, 60000, 30, decimals=2)
         self.gain = self._number(0, 10000, 0)
-        apply_camera = QtWidgets.QPushButton('Apply camera')
+        apply_camera = QtWidgets.QPushButton('Apply exposure / gain')
+        apply_camera.setToolTip('촬영을 정지한 뒤 노출과 gain을 카메라에 적용합니다.')
         self.start_button = QtWidgets.QPushButton('Start live')
         stop = QtWidgets.QPushButton('Stop acquisition')
         self.frames = self._number(1, 50, 1)
         capture = QtWidgets.QPushButton('Single / N frames')
-        self.autosave = QtWidgets.QCheckBox('Auto-save TIFF')
-        for row, (label, widget) in enumerate([('Exposure ms', self.exposure), ('Gain', self.gain), ('Frames', self.frames)]):
+        self.autosave = QtWidgets.QCheckBox('촬영 결과 자동 저장 (TIFF)')
+        self.autosave.setToolTip('Single / N frames 촬영 결과만 자동 저장합니다. Live 전체를 기록하지 않습니다.')
+        for row, (label, widget) in enumerate([('Exposure ms', self.exposure), ('Gain', self.gain), ('Capture frames', self.frames)]):
             controls.addWidget(QtWidgets.QLabel(label), row, 0); controls.addWidget(widget, row, 1)
         controls.addWidget(apply_camera, 3, 0); controls.addWidget(capture, 3, 1)
         controls.addWidget(self.start_button, 4, 0); controls.addWidget(stop, 4, 1)
@@ -133,28 +139,14 @@ class CCDTab(QtWidgets.QWidget):
         self.area = self._number(0, 100000, 3, decimals=1)
         self.target = self._number(1, 10000, 1)
         self.consecutive = self._number(1, 10000, 3)
-        self.timeout = self._number(.1, 86400, 60, decimals=1)
         for row, (label, widget) in enumerate([('Threshold >', self.threshold), ('Min contour area', self.area),
-                                                 ('Target ≥', self.target), ('Consecutive frames', self.consecutive), ('Timeout s', self.timeout)]):
+                                                 ('Target ≥', self.target), ('Consecutive frames', self.consecutive)]):
             grid.addWidget(QtWidgets.QLabel(label), row, 0); grid.addWidget(widget, row, 1)
-        self.roi_enabled = QtWidgets.QCheckBox('Detection ROI · native sensor coordinates')
-        self.roi = [self._number(0, 4096, v) for v in (0, 0, 320, 240)]
-        grid.addWidget(self.roi_enabled, 5, 0, 1, 2)
-        roi_row = QtWidgets.QGridLayout()
-        for index, (label, widget) in enumerate(zip(('x1', 'y1', 'x2', 'y2'), self.roi)):
-            roi_row.addWidget(QtWidgets.QLabel(label), index // 2, (index % 2)*2)
-            roi_row.addWidget(widget, index // 2, (index % 2)*2+1)
-        grid.addLayout(roi_row, 6, 0, 1, 2)
-        apply_detection = QtWidgets.QPushButton('Apply detection')
-        wait = QtWidgets.QPushButton('Wait for ions')
-        cancel = QtWidgets.QPushButton('Cancel wait')
-        grid.addWidget(apply_detection, 7, 0, 1, 2)
-        grid.addWidget(wait, 8, 0); grid.addWidget(cancel, 8, 1)
-        self.condition = QtWidgets.QLabel('Condition: not evaluated'); self.condition.setWordWrap(True)
-        grid.addWidget(self.condition, 9, 0, 1, 2)
-        apply_detection.clicked.connect(self._detection)
-        wait.clicked.connect(self._wait)
-        cancel.clicked.connect(lambda: self._watch.request_cancel() if self._watch else None)
+        self.apply_detection = QtWidgets.QPushButton('Apply detection / 연속 검출')
+        grid.addWidget(self.apply_detection, 5, 0, 1, 2)
+        self.condition = QtWidgets.QLabel('검출 대기 · 화면에 보이는 센서 영역 사용')
+        self.condition.setWordWrap(True); grid.addWidget(self.condition, 6, 0, 1, 2)
+        self.apply_detection.clicked.connect(self._detection)
         side.addWidget(analysis)
 
         from labremote.devices.oven.panel import OvenPanel
@@ -164,7 +156,7 @@ class CCDTab(QtWidgets.QWidget):
         self.oven_panel = OvenPanel(self, endpoint, self)
         self.oven_panel.log_message.connect(self.log_message.emit)
         self.oven_panel.active_changed.connect(lambda active: [w.setEnabled(not active) for w in (connection_group, camera_group, analysis)])
-        side.insertWidget(2, self.oven_panel)
+        layout.addWidget(self.oven_panel)
 
         display_group = QtWidgets.QGroupBox('Display')
         display = QtWidgets.QGridLayout(display_group)
@@ -173,14 +165,14 @@ class CCDTab(QtWidgets.QWidget):
         self.flip_h = QtWidgets.QCheckBox('Flip H'); self.flip_v = QtWidgets.QCheckBox('Flip V')
         self.markers_enabled = QtWidgets.QCheckBox('Ion markers'); self.markers_enabled.setChecked(True)
         self.color = QtWidgets.QComboBox(); self.color.addItems(['grey', 'viridis', 'inferno'])
-        fit = QtWidgets.QPushButton('Fit image')
         display.addWidget(self.auto_levels, 0, 0); display.addWidget(self.markers_enabled, 0, 1)
         display.addWidget(QtWidgets.QLabel('Min / Max'), 1, 0)
         levels = QtWidgets.QHBoxLayout(); levels.addWidget(self.low); levels.addWidget(self.high)
         display.addLayout(levels, 1, 1)
         display.addWidget(self.flip_h, 2, 0); display.addWidget(self.flip_v, 2, 1)
-        display.addWidget(self.color, 3, 0); display.addWidget(fit, 3, 1)
-        side.addWidget(display_group)
+        display.addWidget(self.color, 3, 0)
+        self.display_group = display_group
+        display_group.setParent(self); display_group.hide()
         self.canvas = pg.PlotWidget(viewBox=CCDViewBox())
         self.canvas.setProperty('handlesWheelZoom', True)
         self.canvas.setMinimumSize(400, 400)
@@ -193,7 +185,6 @@ class CCDTab(QtWidgets.QWidget):
         self.markers = pg.ScatterPlotItem(symbol='o', size=14, pen=pg.mkPen('r', width=2), brush=None)
         self.canvas.addItem(self.markers)
         image_layout.addWidget(self.canvas, 1)
-        fit.clicked.connect(self.canvas.getViewBox().fit_sensor)
         self.color.currentTextChanged.connect(self._colormap)
         for widget in (self.auto_levels, self.flip_h, self.flip_v, self.markers_enabled): widget.toggled.connect(self._needs_redraw)
         for widget in (self.low, self.high): widget.valueChanged.connect(self._needs_redraw)
@@ -206,11 +197,8 @@ class CCDTab(QtWidgets.QWidget):
         self.directory = QtWidgets.QLineEdit(str(Path(__file__).resolve().parents[3] / 'data' / 'ccd'))
         browse = QtWidgets.QPushButton('Directory')
         save = QtWidgets.QPushButton('Save TIFF / PNG')
-        self.save_sequence = QtWidgets.QCheckBox('Buffered sequence')
-        self.save_roi = QtWidgets.QCheckBox('Detection ROI only')
         saving.addWidget(self.directory, 0, 0, 1, 2)
         saving.addWidget(browse, 1, 0); saving.addWidget(save, 1, 1)
-        saving.addWidget(self.save_sequence, 2, 0); saving.addWidget(self.save_roi, 2, 1)
         side.addWidget(save_group)
         side.addStretch(1)
         browse.clicked.connect(self._directory)
@@ -220,6 +208,9 @@ class CCDTab(QtWidgets.QWidget):
         layout.addStretch(1)
         self.timer = QtCore.QTimer(self); self.timer.setInterval(33)
         self.timer.timeout.connect(self._preview); self.timer.start()
+        self.roi_timer = QtCore.QTimer(self); self.roi_timer.setInterval(150)
+        self.roi_timer.timeout.connect(self._sync_viewport); self.roi_timer.start()
+        self.apply_display_config({})
 
     @staticmethod
     def _number(low, high, value, decimals=None):
@@ -241,6 +232,8 @@ class CCDTab(QtWidgets.QWidget):
         if not self.worker.isRunning():
             self.worker._closing = False
             self.worker.start()
+        from labremote.ui.connection_status import connection_color
+        connection_color(self.connect_button,'pending')
         self.status.setText('Connecting local CCD…')
         self.api.connect(**self.settings())
 
@@ -248,12 +241,14 @@ class CCDTab(QtWidgets.QWidget):
         self.status.setText(f"Connected: {info['backend']} · {info['shape'][1]} × {info['shape'][0]}")
         self.exposure.setValue(info['exposure_ms']); self.gain.setValue(info['gain'])
         self.frames.setMaximum(info['max_frames'])
-        self.roi[2].setValue(info['shape'][1]); self.roi[3].setValue(info['shape'][0])
         self._last_frame = None
         self.canvas.getViewBox().set_sensor_shape(info['shape'])
         self.canvas.getViewBox().fit_sensor()
         self.condition.setText('Condition: not evaluated')
-        self._detection()
+        from labremote.ui.connection_status import connection_color
+        connection_color(self.connect_button, 'connected')
+        self._detection_enabled = False
+        self._detection_feedback()
 
     def _disconnected(self, message):
         self.status.setText(message)
@@ -261,23 +256,62 @@ class CCDTab(QtWidgets.QWidget):
         self._last_frame = None
         self.image.clear()
         self.markers.clear()
+        self._detection_enabled = False
+        self._start_after_detection = None
+        from labremote.ui.connection_status import connection_color
+        connection_color(self.connect_button, 'disconnected')
+        self._detection_feedback()
 
     def _state(self, state):
         self.status.setText('Acquiring' if state.get('running') else 'Connected · acquisition stopped')
+        self._detection_feedback()
+
+    def apply_display_config(self, options):
+        from labremote.config.equipment import display_config
+        cfg = display_config(options)
+        for name in ('auto_levels','flip_h','flip_v','markers_enabled'):
+            getattr(self,name).setChecked(cfg[name])
+        self.low.setValue(cfg['low']); self.high.setValue(cfg['high'])
+        self.color.setCurrentText(cfg['color']); self._colormap(cfg['color'])
+        self._redraw = True
+
+    def detection_roi(self):
+        from .detection import viewport_roi
+        return viewport_roi(self.worker.sensor_shape, self.canvas.getViewBox().viewRange(),
+                            self.flip_h.isChecked(), self.flip_v.isChecked())
+
+    def _detection_feedback(self):
+        from labremote.ui.connection_status import connection_color
+        active = self._detection_enabled and self.worker.available and self.worker.acquiring
+        connection_color(self.apply_detection, 'connected' if active else 'disconnected')
+        self.apply_detection.setText('검출 중 · 설정 다시 적용' if active else 'Apply detection / 연속 검출')
+        if self.worker.available and not self.worker.acquiring:self.condition.setText('촬영 정지 · 검출 대기')
 
     def _detection(self):
-        roi = tuple(widget.value() for widget in self.roi) if self.roi_enabled.isChecked() else None
-        self.api.configure_detection(threshold=self.threshold.value(), min_area=self.area.value(), target=self.target.value(), roi=roi)
+        if not self.worker.available:
+            self.condition.setText('CCD를 먼저 연결하세요.');return
+        roi = self.detection_roi()
+        if roi is None:
+            self.condition.setText('화면 안에 센서 이미지가 없습니다. 이미지로 이동하세요.');return
+        handle = self.api.configure_detection(threshold=self.threshold.value(), min_area=self.area.value(),
+                                              target=self.target.value(), roi=roi, follow_viewport=True)
+        self._start_after_detection = handle.request_id
+        self.condition.setText('검출 설정 적용 중…')
 
-    def _wait(self):
-        if self._watch and not self._watch.done.is_set():
-            self.condition.setText('An ion wait is already active'); return
-        self._watch = self.api.wait_for_ions(self.target.value(), consecutive_frames=self.consecutive.value(), timeout_s=self.timeout.value())
-        self.condition.setText('Waiting for fresh consecutive detections…')
+    def _sync_viewport(self):
+        if not self.isVisible() or not self._detection_enabled or not self.worker.available or self.worker._closing:return
+        if self._viewport_handle and not self._viewport_handle.done.is_set():return
+        # Workflows with an explicit ROI keep ownership of their detection settings.
+        oven = self.oven_panel.task
+        if oven.running() and not getattr(oven,'settings',{}).get('follow_viewport',False):return
+        roi = self.detection_roi()
+        if roi == self._viewport_sent:return
+        self._viewport_handle = self.api.update_viewport(roi)
+        self._viewport_sent = roi
 
     def _capture(self):
         path = str(Path(self.directory.text()) / (datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'.tif')) if self.autosave.isChecked() else None
-        self.api.capture(self.frames.value(), timeout_s=self.timeout.value(), save_path=path)
+        self.api.capture(self.frames.value(), timeout_s=max(60., self.frames.value()*self.exposure.value()/1000+10), save_path=path)
 
     def _completed(self, handle):
         if not handle.done.is_set():
@@ -291,11 +325,19 @@ class CCDTab(QtWidgets.QWidget):
         if not handle.error and handle.action == 'CCD_DETECTION':
             self.threshold.setValue(handle.result['threshold']); self.area.setValue(handle.result['min_area'])
             self.target.setValue(handle.result['target'])
-            roi = handle.result['roi']
-            self.roi_enabled.setChecked(roi is not None)
-            if roi:
-                for widget, value in zip(self.roi, roi): widget.setValue(value)
+            self._detection_enabled = handle.result.get('follow_viewport', False)
+            self._viewport_sent = object()
+            if handle.request_id == self._start_after_detection:
+                self._start_after_detection = None
+                if not self.worker.acquiring:self.api.start_acquisition()
+            self._sync_viewport()
+        self._detection_feedback()
         if handle.error:
+            if handle.action=='CCD_CONNECT':
+                from labremote.ui.connection_status import connection_color
+                connection_color(self.connect_button,'error')
+            if handle.request_id == self._start_after_detection:self._start_after_detection = None
+            if handle is self._viewport_handle:self._detection_enabled = False;self._detection_feedback()
             self.status.setText(f'{handle.action}: {handle.error}')
         elif handle.action in ('CCD_SAVE', 'CCD_CAPTURE'):
             self.log_message.emit(f'{handle.action} complete: {handle.result}')
@@ -330,6 +372,8 @@ class CCDTab(QtWidgets.QWidget):
         else: self.markers.clear()
         age_ms = (time.perf_counter_ns()-snapshot['received_ns'])/1e6
         analysis_ms = (snapshot['analyzed_ns']-snapshot['received_ns'])/1e6
+        if self._detection_enabled:
+            self.condition.setText(f"연속 검출 중 · {snapshot['count']} / {snapshot['target']} ions · 오븐 종료는 {self.consecutive.value()}개 연속 프레임 조건")
         self.telemetry.setText(f"Ions: {snapshot['count']} / {snapshot['target']} · frame {snapshot['frame_id']} · received→display {age_ms:.1f} ms · read+analysis {analysis_ms:.1f} ms · min/max {snapshot['raw_min']}/{snapshot['raw_max']}")
 
     def _pixel(self, event):
@@ -349,10 +393,11 @@ class CCDTab(QtWidgets.QWidget):
 
     def _save(self):
         path, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save CCD image', str(Path(self.directory.text())/'capture.tif'), 'TIFF (*.tif);;PNG (*.png)')
-        if path: self.api.save(path, sequence=self.save_sequence.isChecked(), roi_only=self.save_roi.isChecked())
+        if path: self.api.save(path, sequence=False, roi_only=False)
 
     def still_running(self): return self.worker.isRunning() or self.oven_panel.still_running()
     def shutdown(self):
         self.timer.stop()
+        self.roi_timer.stop()
         self.oven_panel.shutdown()
         self.worker.shutdown()

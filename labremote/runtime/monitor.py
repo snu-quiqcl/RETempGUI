@@ -17,7 +17,7 @@ class ParameterMonitor:
             if key not in states:
                 LIBRARY.update(key, quality='unknown')
 
-    def scan(self, *, group=None):
+    def scan(self, *, group=None, limit=None, automatic=False):
         worker = self.worker
         with worker._lock:
             if worker._closing or worker.connection_error or worker.ps is None: return []
@@ -36,6 +36,7 @@ class ParameterMonitor:
                     for part in path.split('.'): parameter = getattr(parameter, part)
                     acquire(parameter)
                 handle = ExecutionHandle('MONITOR ' + path, read, group=group, monitor_key=path)
+                handle.automatic_monitor = automatic
                 worker._monitor_pending.add(path)
                 from labremote.runtime.runner import OperationRunner
                 try: OperationRunner.submit(worker, handle)
@@ -43,5 +44,6 @@ class ParameterMonitor:
                     worker._monitor_pending.discard(path)
                     raise
                 result.append(handle)
+                if limit is not None and len(result)>=limit:break
             return result
 

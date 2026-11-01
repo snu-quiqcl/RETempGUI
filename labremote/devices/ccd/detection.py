@@ -68,3 +68,15 @@ def detect_ions(image, config):
                             moments['m01']/moments['m00'] + offset[1]))
     return {'count': len(centers), 'matched': len(centers) >= config.target,
             'centers': centers, 'target': config.target}
+
+
+def viewport_roi(shape, ranges, flip_h=False, flip_v=False):
+    """Visible sensor pixels, excluding letterbox margins; None means no sensor."""
+    h,w=shape
+    (left,right),(top,bottom)=ranges
+    x1,x2=max(0,math.floor(left)),min(w,math.ceil(right))
+    y1,y2=max(0,math.floor(top)),min(h,math.ceil(bottom))
+    if x2<=x1 or y2<=y1:return None
+    if flip_h:x1,x2=w-x2,w-x1
+    if flip_v:y1,y2=h-y2,h-y1
+    return (x1,y1,x2,y2)

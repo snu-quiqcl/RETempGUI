@@ -42,6 +42,8 @@ class DeviceWorker(QtCore.QThread):
         self._snapshot = None
         from labremote.ui.library_updates import LibraryUpdates
         self.library_updates = LibraryUpdates(self)
+        from .auto_monitor import AUTO_MONITOR
+        AUTO_MONITOR.register(self)
 
     def make_monitor(self):
         raise NotImplementedError("Device family must supply its monitor")

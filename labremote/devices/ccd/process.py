@@ -1,7 +1,7 @@
 """Single SDK owner process. Frames never travel through the command Pipe."""
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 import time
 import numpy as np
@@ -53,6 +53,8 @@ def camera_process(pipe, shared, lock, options):
     acquired = 0
     last_device_id = None
     detection = DetectionConfig()
+    follow_viewport = False
+    viewport_empty = False
     detection_revision = 0
     detection_changed_ns = time.perf_counter_ns()
     header = np.frombuffer(shared, dtype=np.int64, count=12)
@@ -119,11 +121,28 @@ def camera_process(pipe, shared, lock, options):
                         reply(request_id, {'exposure_ms': camera.exposure_ms, 'gain': camera.gain})
                     elif command == 'detection':
                         if waits: raise RuntimeError('Cancel active ion waits before changing detection settings')
-                        updated = DetectionConfig(**args).validate(camera.shape)
+                        config_args = {k:v for k,v in args.items() if k!='follow_viewport'}
+                        updated = DetectionConfig(**config_args).validate(camera.shape)
+                        follow_viewport = bool(args.get('follow_viewport', False))
+                        viewport_empty = False
                         detection = updated
                         detection_revision += 1
                         detection_changed_ns = time.perf_counter_ns()
-                        reply(request_id, asdict(detection))
+                        reply(request_id, {**asdict(detection), 'follow_viewport': follow_viewport})
+                    elif command == 'viewport':
+                        if not follow_viewport:
+                            reply(request_id, {'ignored': True})
+                            continue
+                        roi = args.get('roi')
+                        detection = replace(detection, roi=roi).validate(camera.shape)
+                        viewport_empty = roi is None
+                        detection_revision += 1
+                        detection_changed_ns = time.perf_counter_ns()
+                        for wait in waits.values():
+                            wait['streak'] = 0
+                            wait['after_ns'] = detection_changed_ns
+                            wait['skip_queued'] = camera.pending_count()
+                        reply(request_id, {'roi': roi, 'revision': detection_revision})
                     elif command in ('start', 'capture'):
                         if running: raise RuntimeError('CCD acquisition already running')
                         if saves: raise RuntimeError('Wait for image saving before restarting acquisition')
@@ -194,7 +213,8 @@ def camera_process(pipe, shared, lock, options):
             frame_id += 1
             gap = last_device_id is not None and device_id != last_device_id + 1
             last_device_id = device_id
-            result = detect_ions(image, detection)
+            result = (dict(count=0, matched=False, centers=[], target=detection.target)
+                      if follow_viewport and viewport_empty else detect_ions(image, detection))
             result.update(frame_id=frame_id, device_frame_id=device_id, run_id=run_id,
                           received_ns=read_started_ns, analyzed_ns=time.perf_counter_ns(),
                           detection_revision=detection_revision, frame_gap=gap)

@@ -220,7 +220,7 @@ class RFDeviceTab(QtWidgets.QWidget):
             self._request(self.api.read_reference_events)
 
     def _poll(self):
-        if self.connected and not self.worker.connection_error:return self.api.monitor()
+        if self.connected and not self.worker.connection_error:return self.api.auto_monitor()
 
     def _controls(self):
         busy=self.worker.has_requests();ready=self.connected and not busy

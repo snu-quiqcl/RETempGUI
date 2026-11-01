@@ -216,8 +216,9 @@ python verify_release.py --suite all
 
 Flipper는 메인 창 상단 QCoDeS InstrumentServer 주소를 공유합니다.
 상단 `Rescan server devices` 또는 `others → flip`의 `서버 flipper 목록 불러오기`로 실제 서버 이름을 조회하고,
-원하는 MFF101을 선택해 Position 1/2로 이동합니다. `EA / EC 경로 설정`에서 목표 위치를 지정해
-Git에서 제외된 `labremote/config/flip.local.json`에 저장합니다. 저장만으로 이동하지 않습니다.
+각 장비의 연결·Position 1/2 버튼으로 제어하거나 `Flipper 전체 연결`을 사용합니다.
+EA/EC 경로 버튼은 제거했으며 기존 `labremote/config/flip.local.json` 자동 매핑은 유지합니다.
+메인 상단 `장비` 메뉴와 창 동작, CCD 수신 범위는 [장비 창 안내](docs/FLIP_WINDOWS_KO.md)를 참고하세요.
 
 기존 oven_relays.shutter_2를 함께 제어합니다. Linux 서버 드라이버/YAML,
 USB 포트 확인, EA/EC 매핑 설정은 [설치 안내](docs/FLIP_SETUP_KO.md)를 참고하세요.
@@ -252,3 +253,7 @@ Workflow API와 장비별 설정, operation 실행 방식은 기존 그대로입
 개인 파일은 Git에서 제외되며, 공개 형식은 [equipment.example.json](labremote/config/equipment.example.json)입니다.
 수동으로 연결한 장비는 기존처럼 workflow에서 사용할 수 있습니다.
 자세한 사용법과 연결/종료 동작은 [실험 UI 안내](docs/EXPERIMENT_UI_KO.md)를 참고하세요.
+
+### CCD / FPGA 화면 업데이트
+
+FPGA 포트 검색·기억, 화면 영역 기반 CCD 연속 검출, Configuration의 CCD Display 설정은 [CCD/FPGA 제어 안내](docs/CCD_CONTROLS_KO.md)를 참고하세요. 오븐은 별도로 켜며 포획 시 자동 종료와 기존 600초 제한을 유지합니다.

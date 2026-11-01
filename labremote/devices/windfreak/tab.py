@@ -326,7 +326,7 @@ class WindfreakTab(QtWidgets.QWidget):
 
     def _poll(self):
         if self.connected:
-            return device_api(self.worker).monitor()
+            return device_api(self.worker).auto_monitor()
 
     def _connect(self):
         provider = getattr(self, 'endpoint_provider', None)

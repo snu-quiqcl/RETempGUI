@@ -76,7 +76,7 @@ def main():
         assert panel.canvas.mapToGlobal(QtCore.QPoint()).x()+panel.canvas.width() <= panel.controls_scroll.mapToGlobal(QtCore.QPoint()).x()
         panel.canvas.autoRange(); app.processEvents()
         window.detail_windows['CCD'].grab().save(str(output/'ccd_tab.png'))
-        panel.controls_scroll.ensureWidgetVisible(panel.oven_panel)
+        window.detail_windows['CCD'].scroll.ensureWidgetVisible(panel.oven_panel)
         app.processEvents()
         window.detail_windows['CCD'].grab().save(str(output/'ccd_oven_panel.png'))
         # Switching tabs must not stop analysis or workflow conditions.

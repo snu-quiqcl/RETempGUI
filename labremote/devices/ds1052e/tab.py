@@ -286,7 +286,7 @@ class DS1052ETab(QtWidgets.QWidget):
         self._buttons()
 
     def _poll(self):
-        if self.connected and not self.worker.connection_error:return self.api.monitor()
+        if self.connected and not self.worker.connection_error:return self.api.auto_monitor()
 
     def _connected(self,info):
         self.connected=True;self.status.setText(str(info.get('idn','DS1052E')))

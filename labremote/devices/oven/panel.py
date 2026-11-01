@@ -31,6 +31,8 @@ class OvenPanel(QtWidgets.QGroupBox):
         grid = QtWidgets.QGridLayout(self)
         self.psu_name = QtWidgets.QLineEdit(config['psu_name'])
         self.relay_name = QtWidgets.QLineEdit(config['relay_name'])
+        self.psu_name.setParent(self);self.psu_name.hide()
+        self.relay_name.setParent(self);self.relay_name.hide()
         self.connect_button = QtWidgets.QPushButton('Connect oven devices')
         self.isotope = QtWidgets.QComboBox();self.isotope.addItems(['171','174'])
         self.shutter = QtWidgets.QComboBox();self.shutter.addItems(['shutter_2','shutter_1'])
@@ -45,7 +47,7 @@ class OvenPanel(QtWidgets.QGroupBox):
         self.state.setWordWrap(True)
         warning = QtWidgets.QLabel('E3631A OFF는 전체 출력에 적용됩니다. CH2/CH3는 0으로 설정합니다. Flipper 자동 전환은 로컬 매핑을 활성화한 경우에만 수행합니다.')
         warning.setWordWrap(True)
-        for row,(label,widget) in enumerate((('PSU instrument',self.psu_name),('Relay instrument',self.relay_name),('EC isotope',self.isotope),('EC shutter',self.shutter))):
+        for row,(label,widget) in enumerate((('EC isotope',self.isotope),('EC shutter',self.shutter))):
             grid.addWidget(QtWidgets.QLabel(label),row,0);grid.addWidget(widget,row,1)
         for row,widget in enumerate((self.profile,warning,self.connect_button),4):grid.addWidget(widget,row,0,1,2)
         grid.addWidget(self.start_button,7,0);grid.addWidget(self.stop_button,7,1)
@@ -96,10 +98,11 @@ class OvenPanel(QtWidgets.QGroupBox):
         try:
             save_settings(self._config())
             panel=self.ccd_panel
+            if panel.detection_roi() is None:raise ValueError('CCD 화면에 센서 이미지를 표시하세요.')
             self.handle=self.task.start(int(self.isotope.currentText()),shutter=self.shutter.currentText(),
                 threshold=panel.threshold.value(),min_area=panel.area.value(),
                 target=panel.target.value(),consecutive_frames=panel.consecutive.value(),
-                roi=tuple(w.value() for w in panel.roi) if panel.roi_enabled.isChecked() else None)
+                roi=panel.detection_roi(), follow_viewport=True)
             self._tick()
         except Exception as exc:self._failure('OVEN_LOAD',str(exc))
 
@@ -133,7 +136,7 @@ class OvenPanel(QtWidgets.QGroupBox):
             self.state.setText(phase)
 
     def _operation_changed(self,handle):
-        if handle.done.is_set() and handle.error is None and handle.action=='OVEN_READBACK':
+        if handle.done.is_set() and handle.error is None and handle.action=='OVEN_READBACK' and handle.result is not None:
             self._progress(handle.result)
 
     def _tick(self):
@@ -143,6 +146,8 @@ class OvenPanel(QtWidgets.QGroupBox):
         for widget in (self.connect_button,self.psu_name,self.relay_name,self.isotope,self.shutter):
             widget.setEnabled(not active and not self._closing)
         ready=all(w.ps is not None and not w.connection_error and not w.io_fault and not w._closing for w in (self.psu,self.relays))
+        from labremote.ui.connection_status import connection_color
+        connection_color(self.connect_button, 'connected' if ready else 'disconnected')
         self.start_button.setEnabled(ready and self.ccd_panel.connected and not active and not self._closing)
         if self._closing:
             if not active and not self._stop_requested:
@@ -152,7 +157,8 @@ class OvenPanel(QtWidgets.QGroupBox):
             return
         if not active and ready and time.monotonic()>=self._next_read and not self.psu.has_requests():
             self._next_read=time.monotonic()+2
-            self.read_handle=DeviceAPI(self.psu)._submit('OVEN_READBACK',lambda w:power.read_snapshot(w.ps))
+            from labremote.runtime.auto_monitor import AUTO_MONITOR
+            AUTO_MONITOR.request(self.psu, ('OVEN_READBACK',lambda w:power.read_snapshot(w.ps)))
 
     def shutdown(self):
         self._closing=True

@@ -29,6 +29,9 @@ class OperationRunner:
         if ramp: self.ramp_active.emit(True)
         try:
             handle.check_cancelled()
+            if getattr(handle, 'automatic_monitor', False):
+                from .auto_monitor import AUTO_MONITOR
+                if not AUTO_MONITOR.permitted(self): return
             if handle.action not in ('CONNECT', 'DISCONNECT') and (self.connection_error or self.ps is None):
                 raise ConnectionError('Device connection unavailable; connect explicitly')
             with operation_config():
@@ -45,11 +48,17 @@ class OperationRunner:
                 result = handle.callback(self)
                 handle.check_cancelled()
                 self._timed_out = False
+                if handle.action == 'CONNECT':
+                    from .auto_monitor import AUTO_MONITOR
+                    AUTO_MONITOR.reconnected(self)
         except Exception as exc:
             error = exc
             if handle.group is not None: handle.group.stop.set()
             timeout = isinstance(exc, TimeoutError) or 'Server did not reply before timeout' in str(exc)
             if timeout:
+                from .auto_monitor import AUTO_MONITOR
+                AUTO_MONITOR.timed_out(self)
+                handle.auto_monitor_timeout_latched = True
                 # The client already rebuilt the socket, without retrying the request.
                 if getattr(self.cli, 'consecutive_timeouts', 2 if self._timed_out else 1) >= 2:
                     self.connection_error = True

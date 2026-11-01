@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from collections import deque
 from PyQt5 import QtCore, QtWidgets
 from labremote.api.devices import DeviceAPI
 from labremote.runtime.io import Context
@@ -18,6 +19,7 @@ class FlipTab(QtWidgets.QWidget):
         self.workers={};self._rows={};self._discovering=False;self._listed_endpoint=None;self._server_names=[]
         self.routing=FlipRouting(self.workers,oven,endpoint=lambda:self._current_endpoint)
         self._closing=False
+        self.cards={};self._bulk_queue=deque();self._bulk_handle=None;self._bulk_endpoint=None;self._bulk_failed=[];self._bulk_active=False
         layout=QtWidgets.QVBoxLayout(self)
         layout.addWidget(QtWidgets.QLabel('메인 InstrumentServer의 서버 주소와 포트를 사용합니다.'))
         self._request_endpoint=None
@@ -26,33 +28,27 @@ class FlipTab(QtWidgets.QWidget):
         try:
             config=load_settings()
         except Exception as exc:error=str(exc)
-        form=QtWidgets.QFormLayout()
-        form.addRow('선택한 flipper',self.selected);layout.addLayout(form)
+        # Keep the selection API for existing programmatic callers; controls are per device.
+        self.selected.setParent(self);self.selected.hide()
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         self.discover_button=QtWidgets.QPushButton('서버 flipper 목록 불러오기');row.addWidget(self.discover_button)
-        self.route_settings_button=QtWidgets.QPushButton('EA / EC 경로 설정');row.addWidget(self.route_settings_button)
-        row=QtWidgets.QHBoxLayout();layout.addLayout(row)
-        self.connect_button=QtWidgets.QPushButton('선택 장비 연결')
-        self.disconnect_button=QtWidgets.QPushButton('선택 장비 연결 해제')
-        self.read_button=QtWidgets.QPushButton('현재 위치 읽기')
-        for b in (self.connect_button,self.disconnect_button,self.read_button):row.addWidget(b)
-        row=QtWidgets.QHBoxLayout();layout.addLayout(row)
-        self.pos1=QtWidgets.QPushButton('Position 1');self.pos2=QtWidgets.QPushButton('Position 2')
-        row.addWidget(self.pos1);row.addWidget(self.pos2)
-        self.table=QtWidgets.QTableWidget(0,2);self.table.setHorizontalHeaderLabels(['장비','현재 위치 / 연결 상태'])
-        self.table.setFixedHeight(210)
-        self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        layout.addWidget(self.table)
+        self.connect_all_button=QtWidgets.QPushButton('Flipper 전체 연결');row.addWidget(self.connect_all_button)
+        self.connect_all_button.clicked.connect(self._connect_all)
+        self.cards_layout=QtWidgets.QVBoxLayout();layout.addLayout(self.cards_layout)
+        self.empty_label=QtWidgets.QLabel('서버 flipper 목록을 불러오면 장비별 버튼이 표시됩니다.');self.cards_layout.addWidget(self.empty_label)
+        # Legacy entry points remain callable; no table or shared move buttons are displayed.
+        self.route_settings_button=QtWidgets.QPushButton(self)
+        self.connect_button=QtWidgets.QPushButton(self);self.disconnect_button=QtWidgets.QPushButton(self)
+        self.read_button=QtWidgets.QPushButton(self);self.pos1=QtWidgets.QPushButton(self);self.pos2=QtWidgets.QPushButton(self)
+        for button in (self.route_settings_button,self.connect_button,self.disconnect_button,self.read_button,self.pos1,self.pos2):button.hide()
         box=QtWidgets.QGroupBox('EC shutter · oven_relays / shutter_2');sh=QtWidgets.QHBoxLayout(box)
         self.shutter_connect=QtWidgets.QPushButton('셔터 연결');self.shutter_read=QtWidgets.QPushButton('상태 읽기')
         self.shutter_open=QtWidgets.QPushButton('OPEN');self.shutter_close=QtWidgets.QPushButton('CLOSE')
         self.shutter_state=QtWidgets.QLabel('—')
         for w in (self.shutter_connect,self.shutter_read,self.shutter_open,self.shutter_close,self.shutter_state):sh.addWidget(w)
         layout.addWidget(box)
-        row=QtWidgets.QHBoxLayout();layout.addLayout(row)
-        self.ea=QtWidgets.QPushButton('EA 경로 적용');self.ec=QtWidgets.QPushButton('EC 경로 적용')
-        row.addWidget(self.ea);row.addWidget(self.ec)
+        self.ea=QtWidgets.QPushButton(self);self.ec=QtWidgets.QPushButton(self)
+        self.ea.hide();self.ec.hide()
         self.state=QtWidgets.QLabel(error or '서버 목록을 불러온 뒤 장비를 선택하세요. 자동 경로는 로컬 설정을 사용합니다. 포획 workflow는 현재 EC 전용입니다.')
         self.state.setWordWrap(True);layout.addWidget(self.state);layout.addStretch()
         self.discover_button.clicked.connect(self._discover)
@@ -81,9 +77,18 @@ class FlipTab(QtWidgets.QWidget):
     def _add_worker(self,name):
         if name in self.workers:return
         worker=FlipWorker();self.workers[name]=worker
-        row=self.table.rowCount();self.table.insertRow(row);self._rows[name]=row
-        self.table.setItem(row,0,QtWidgets.QTableWidgetItem(name))
-        self.table.setItem(row,1,QtWidgets.QTableWidgetItem('Disconnected / 목록 확인 필요'))
+        box=QtWidgets.QGroupBox(name);row=QtWidgets.QGridLayout(box)
+        status=QtWidgets.QLabel('Disconnected / 목록 확인 필요');status.setWordWrap(True);row.addWidget(status,0,0,1,5)
+        buttons={}
+        for col,(key,title) in enumerate((('connect','연결'),('disconnect','연결 해제'),('read','위치 읽기'),('pos1','Position 1'),('pos2','Position 2'))):
+            button=QtWidgets.QPushButton(title);row.addWidget(button,1,col);buttons[key]=button
+        buttons['connect'].clicked.connect(lambda _,n=name:self._connect_named(n))
+        buttons['disconnect'].clicked.connect(lambda _,n=name:self._named_action(n,'DISCONNECT'))
+        buttons['read'].clicked.connect(lambda _,n=name:self._named_action(n,'READ'))
+        buttons['pos1'].clicked.connect(lambda _,n=name:self._named_action(n,'MOVE',1))
+        buttons['pos2'].clicked.connect(lambda _,n=name:self._named_action(n,'MOVE',2))
+        self.cards[name]=dict(box=box,status=status,buttons=buttons,error='')
+        self.cards_layout.addWidget(box);self.empty_label.hide()
         worker.failure.connect(lambda action,message,n=name:self._failure(n+' '+action,message))
         worker.handle_changed.connect(lambda h,n=name:self._result(n,h))
         worker.start()
@@ -115,15 +120,16 @@ class FlipTab(QtWidgets.QWidget):
         self.selected.clear();self.selected.addItems(selectable)
         if previous in selectable:self.selected.setCurrentText(previous)
         for name in self._server_names:self._add_worker(name)
-        for name,row in self._rows.items():
-            if name not in self._server_names:self.table.item(row,1).setText('현재 서버 목록에 없음')
-            elif self.workers[name].ps is None:self.table.item(row,1).setText('Disconnected')
-        self.state.setText(f'MFF flipper {len(self._server_names)}개 발견. 실제 서버 이름으로 연결합니다. 경로 설정은 별도로 저장하세요.')
+        for name,card in self.cards.items():
+            if name not in self._server_names:card['status'].setText('현재 서버 목록에 없음')
+            elif self.workers[name].ps is None:card['status'].setText('Disconnected')
+        self.state.setText(f'MFF flipper {len(self._server_names)}개 발견. 전체 연결 또는 장비별 연결 버튼을 누르세요.')
         self._tick()
 
     def invalidate_server_list(self,*args):
         self._current_endpoint=self.endpoint()
         self._listed_endpoint=None;self._server_names=[];self.routing.available_names=set()
+        self._bulk_queue.clear()
         self._tick()
 
     def accept_server_devices(self,endpoint,descriptors):
@@ -191,19 +197,72 @@ class FlipTab(QtWidgets.QWidget):
     def _failure(self,action,message):
         self.state.setText(action+': '+message);self.log_message.emit(action+': '+message)
 
-    def _connect(self):
+    def _connected_name(self,name):
+        w=self.workers.get(name)
+        active=getattr(w,'_active',None)
+        if active is not None and active.action=='CONNECT' and not active.done.is_set():return False
+        return w is not None and w.ps is not None and not w.connection_error and w._execution_device==(*self.endpoint(),name)
+
+    def _connect_named(self,name):
         try:
             self._guard()
             if not self.endpoint()[0]:raise ValueError('Enter the main InstrumentServer host')
-            if self._discovering or self._listed_endpoint!=self.endpoint() or self.selected.currentText() not in self._server_names:
-                raise RuntimeError('Load the current server list and select a flipper first')
+            if self._discovering or self._listed_endpoint!=self.endpoint() or name not in self._server_names:
+                raise RuntimeError('Load the current server flipper list first')
+            worker=self.workers[name]
+            if worker.has_requests():raise RuntimeError('Wait for this flipper operation to finish')
             save_endpoint(*self.endpoint())
-            DeviceAPI(self.workers[self.selected.currentText()]).connect(*self.endpoint(),self.selected.currentText())
-        except Exception as exc:self._failure('FLIP_CONNECT',str(exc))
+            self.cards[name]['error']='';self.cards[name]['status'].setText('연결 중…')
+            return DeviceAPI(worker).connect(*self.endpoint(),name)
+        except Exception as exc:
+            if name in self.cards:self.cards[name]['error']=str(exc);self.cards[name]['status'].setText(str(exc))
+            self._failure('FLIP_CONNECT '+name,str(exc))
+
+    def _connect(self):return self._connect_named(self.selected.currentText())
+
+    def _connect_all(self):
+        try:
+            self._guard()
+            if self._bulk_active:return
+            if self._discovering or self._listed_endpoint!=self.endpoint() or not self._server_names:
+                raise RuntimeError('서버 flipper 목록을 먼저 불러오세요.')
+            if any(w.has_requests() for w in self.workers.values()):raise RuntimeError('Flipper 작업 완료 후 연결하세요.')
+            self._bulk_endpoint=self.endpoint();self._bulk_queue=deque(self._server_names)
+            self._bulk_failed=[];self._bulk_active=True;self._pump_connect_all()
+        except Exception as exc:self._failure('FLIP_CONNECT_ALL',str(exc))
+
+    def _pump_connect_all(self):
+        if not self._bulk_active:return
+        if self._bulk_handle is not None:
+            if not self._bulk_handle.done.is_set():return
+            error=self._bulk_handle.error;self._bulk_handle=None
+            if error:
+                self._bulk_failed.append(self._bulk_name)
+                if isinstance(error,TimeoutError) or 'Server did not reply before timeout' in str(error):
+                    self._bulk_queue.clear();self._bulk_active=False
+                    self.state.setText('서버 응답 timeout으로 전체 연결 중지. 각 장비 오류와 서버 상태를 확인하세요.');return
+        if self._closing or self._bulk_endpoint!=self.endpoint() or self.oven.task.running() or self.routing.task.running():
+            self._bulk_queue.clear();self._bulk_active=False;return
+        while self._bulk_queue:
+            name=self._bulk_queue.popleft()
+            if self._connected_name(name):continue
+            self._bulk_name=name;self.state.setText('전체 연결 중: '+name)
+            self._bulk_handle=self._connect_named(name)
+            if self._bulk_handle is not None:return
+            self._bulk_failed.append(name)
+        self._bulk_active=False
+        connected=sum(self._connected_name(n) for n in self._server_names)
+        self.state.setText(f'Flipper {connected} / {len(self._server_names)} 연결'+(' · 실패: '+', '.join(self._bulk_failed) if self._bulk_failed else ''))
 
     def _selected_action(self,action,position=None):
+        return self._named_action(self.selected.currentText(),action,position)
+
+    def _named_action(self,name,action,position=None):
         try:
-            self._guard();worker=self.workers[self.selected.currentText()]
+            self._guard();worker=self.workers[name]
+            if self._bulk_active:raise RuntimeError('Wait for flipper connections to finish')
+            if worker.has_requests():raise RuntimeError('Wait for this flipper operation to finish')
+            self.cards[name]['error']=''
             if action=='DISCONNECT':DeviceAPI(worker).disconnect();return
             if worker._execution_device is None or worker._execution_device[:2]!=self.endpoint():
                 raise RuntimeError('Reconnect the flipper to the current main server')
@@ -220,7 +279,8 @@ class FlipTab(QtWidgets.QWidget):
         state='오류 · 위치 미확인' if handle.error else ('Disconnected' if worker.ps is None else 'Connected · 위치 읽기 필요')
         if handle.error is None and handle.action in ('FLIP_MOVE','FLIP_READ','FLIP_ROUTE_MOVE'):
             state='이동 중 / 미확인' if handle.result==0 else 'Position '+str(handle.result)
-        self.table.item(self._rows[name],1).setText(state)
+        self.cards[name]['error']=str(handle.error) if handle.error else ''
+        self.cards[name]['status'].setText((state+' · '+str(handle.error)) if handle.error else state)
 
     def _connect_shutter(self):
         try:
@@ -247,7 +307,8 @@ class FlipTab(QtWidgets.QWidget):
         except Exception as exc:self._failure('FLIP_ROUTE',str(exc))
 
     def _tick(self):
-        active=self._closing or self.oven.task.running() or self.routing.task.running()
+        self._pump_connect_all()
+        active=self._closing or self._bulk_active or self.oven.task.running() or self.routing.task.running()
         worker=self.workers.get(self.selected.currentText())
         idle=not active and not self._discovering and worker is not None and not worker.has_requests()
         self.connect_button.setEnabled(idle and self.selected.currentText() in self._server_names and self._listed_endpoint==self.endpoint());self.selected.setEnabled(not active and not self._discovering)
@@ -255,13 +316,31 @@ class FlipTab(QtWidgets.QWidget):
         for b in (self.pos1,self.pos2,self.read_button):b.setEnabled(idle and self.selected.currentText() in self._server_names and worker is not None and worker.ps is not None and worker._execution_device is not None and worker._execution_device[:2]==self.endpoint() and not worker.connection_error)
         self.discover_button.setEnabled(not active and not self._discovering and not any(w.has_requests() for w in self.workers.values()))
         self.route_settings_button.setEnabled(not active and not self._discovering and self._listed_endpoint==self.endpoint())
+        from labremote.ui.connection_status import connection_color
+        from labremote.runtime.parameters import LIBRARY
+        self.connect_all_button.setEnabled(not active and not self._discovering and bool(self._server_names) and self._listed_endpoint==self.endpoint() and not any(w.has_requests() for w in self.workers.values()))
+        count=sum(self._connected_name(n) for n in self._server_names)
+        connection_color(self.connect_all_button,'connected' if self._server_names and count==len(self._server_names) else 'partial' if count else 'disconnected')
+        for name,card in self.cards.items():
+            w=self.workers[name];buttons=card['buttons'];ready=self._connected_name(name)
+            idle=not active and not self._discovering and not w.has_requests()
+            listed=name in self._server_names and self._listed_endpoint==self.endpoint()
+            buttons['connect'].setEnabled(idle and listed and not ready)
+            buttons['disconnect'].setEnabled(idle and w.ps is not None)
+            for key in ('read','pos1','pos2'):buttons[key].setEnabled(idle and listed and ready)
+            connection_color(buttons['connect'],'connected' if ready else 'error' if card['error'] else 'disconnected')
+            state=LIBRARY.read((w._execution_device,'position'))
+            position=state.observed if ready and not w.has_requests() and state.quality=='valid' and state.verification not in ('pending','failed','mismatch') else None
+            for value,key in ((1,'pos1'),(2,'pos2')):connection_color(buttons[key],'connected' if position==value else 'disconnected')
+            if not card['error'] and not w.has_requests():
+                card['status'].setText(('Position '+str(position) if position in (1,2) else '연결됨 · 위치 미확인') if ready else 'Disconnected'+(' / 현재 서버 목록에 없음' if not listed else ''))
         relay=self.oven.relays
         self.shutter_connect.setEnabled(not active and not relay.has_requests())
         for b in (self.shutter_read,self.shutter_open,self.shutter_close):b.setEnabled(not active and not relay.has_requests() and relay.ps is not None and not relay.io_fault)
         for b in (self.ea,self.ec):b.setEnabled(not active)
 
     def shutdown(self):
-        self._closing=True;self.timer.stop();self.routing.task.cancel();self.discoverer.shutdown()
+        self._closing=True;self._bulk_queue.clear();self.timer.stop();self.routing.task.cancel();self.discoverer.shutdown()
         for worker in self.workers.values():worker.shutdown()
 
     def still_running(self):return self.discoverer.isRunning() or self.routing.task.running() or any(w.isRunning() for w in self.workers.values())

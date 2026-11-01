@@ -41,6 +41,10 @@ class DeviceAPI:
     def refresh(self):
         return self._submit('REFRESH', lambda w: w.refresh())
 
+    def auto_monitor(self):
+        from labremote.runtime.auto_monitor import AUTO_MONITOR
+        AUTO_MONITOR.request(self.worker)
+
     def monitor(self):
         from labremote.runtime.jobs import aggregate_handles
         if self.worker.connection_error or self.worker.ps is None:

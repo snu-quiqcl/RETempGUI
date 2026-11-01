@@ -30,6 +30,7 @@ class CCDWorker(QtCore.QThread):
         self._handles_lock = threading.Lock()
         self._preview_lock = threading.Lock()
         self._preview = None
+        self.acquiring = False
         self.available = False
         self.backend_name = ''
         self.sensor_shape = (0, 0)
@@ -43,7 +44,7 @@ class CCDWorker(QtCore.QThread):
         handle = ExecutionHandle('CCD_'+action.upper(), None, group)
         handle.arguments = dict(args or {})
         oven = getattr(self, 'oven_runner', None)
-        if oven is not None and oven.running() and group is not oven.group and action not in ('stop', 'disconnect', 'save'):
+        if oven is not None and oven.running() and group is not oven.group and action not in ('stop', 'disconnect', 'save') and not (action == 'viewport' and getattr(oven, 'settings', {}).get('follow_viewport', False)):
             handle.finish(RuntimeError('CCD is reserved by oven loading; stop the oven task first'))
             return handle
         if group is not None: group.add(handle)
@@ -75,6 +76,7 @@ class CCDWorker(QtCore.QThread):
             self.failure.emit(handle.action, str(handle.error))
 
     def _close_process(self, reason):
+        self.acquiring = False
         self.available = False
         if self._process is not None:
             try:
@@ -177,8 +179,11 @@ class CCDWorker(QtCore.QThread):
                                     exception = cls(error[1])
                                 self._finish(handle, value, exception)
                                 if exception is None and action in ('start', 'stop', 'capture'):
-                                    self.state_changed.emit({'running': action == 'start'})
-                        elif msg[0] == 'state': self.state_changed.emit(msg[1])
+                                    self.acquiring = action == 'start'
+                                    self.state_changed.emit({'running': self.acquiring})
+                        elif msg[0] == 'state':
+                            self.acquiring = bool(msg[1].get('running'))
+                            self.state_changed.emit(msg[1])
                         elif msg[0] == 'fatal': raise ConnectionError(msg[1])
                     if not self._process.is_alive(): raise ConnectionError('CCD process exited')
                 for request_id, (handle, deadline, action, cancel_sent) in list(pending.items()):
@@ -213,8 +218,9 @@ class CCDAPI:
     def disconnect(self): return self._submit('disconnect')
     def configure(self, *, exposure_ms=None, gain=None):
         return self._submit('configure', exposure_ms=exposure_ms, gain=gain)
-    def configure_detection(self, *, threshold=1000, min_area=3, target=1, roi=None):
-        return self._submit('detection', threshold=threshold, min_area=min_area, target=target, roi=roi)
+    def configure_detection(self, *, threshold=1000, min_area=3, target=1, roi=None, follow_viewport=False):
+        return self._submit('detection', threshold=threshold, min_area=min_area, target=target, roi=roi, follow_viewport=follow_viewport)
+    def update_viewport(self, roi): return self._submit('viewport', roi=roi)
     def start_acquisition(self): return self._submit('start')
     def stop_acquisition(self):
         # Cleanup remains possible after this workflow's cancellation or failure.

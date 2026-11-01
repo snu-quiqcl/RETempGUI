@@ -106,7 +106,7 @@ class EquipmentTab(QtWidgets.QWidget):
         self.worker.handle_changed.connect(lambda _:self._buttons())
         self.worker.completed.connect(lambda action:self.message.setText(action+' completed'))
         self.timer=QtCore.QTimer(self);self.timer.setInterval(60000)
-        self.timer.timeout.connect(lambda:self.api.monitor() if self.connected and self.family=='keithley' else None)
+        self.timer.timeout.connect(lambda:self.api.auto_monitor() if self.connected and self.family=='keithley' else None)
         self.timer.start();self.worker.start();self._buttons()
 
     def _number(self,grid,path,title,low,high,unit,method):

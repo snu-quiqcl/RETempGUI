@@ -22,7 +22,7 @@ class OvenLoadTask(WorkflowTask):
         self.flip_routing = None
 
     def start(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=None,
-              threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None, parent=None):
+              threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None, parent=None, follow_viewport=False):
         # shutter_confirmed is accepted only for compatibility with older workflows.
         with _TASK_LOCK:
             try:
@@ -53,7 +53,7 @@ class OvenLoadTask(WorkflowTask):
                 return handle
             settings = dict(isotope=isotope, route=f'EC_{isotope}', shutter=shutter,
                             threshold=threshold, min_area=min_area, target=target,
-                            consecutive_frames=consecutive_frames, roi=roi)
+                            consecutive_frames=consecutive_frames, roi=roi, follow_viewport=follow_viewport)
             settings['flip_plan']=flip_plan
             flips=tuple(self.flip_routing.workers[name] for name,_ in flip_plan)
             return self.launch(self._execute, (self.psu, self.relays,*flips), settings, parent)
@@ -105,7 +105,7 @@ class OvenLoadTask(WorkflowTask):
                 self._operation(self.flip_routing.workers[name],'FLIP_ROUTE_MOVE',flip_move,position)
             ccd = CCDAPI(self.ccd, group=self.group)
             self.call(ccd.stop_acquisition())
-            self.call(ccd.configure_detection(threshold=s['threshold'], min_area=s['min_area'], target=s['target'], roi=s['roi']))
+            self.call(ccd.configure_detection(threshold=s['threshold'], min_area=s['min_area'], target=s['target'], roi=s['roi'], **({'follow_viewport': True} if s.get('follow_viewport') else {})))
             self.call(ccd.start_acquisition())
             self.publish(phase='Select EC oven / configure CH1', route=s['route'])
             self._operation(self.relays, 'OVEN_ROUTE', relay.select, s['route'])

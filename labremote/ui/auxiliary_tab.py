@@ -25,7 +25,20 @@ class AuxiliaryTab(QtWidgets.QWidget):
         if family=='fpga':
             line=QtWidgets.QHBoxLayout();root.addLayout(line)
             self.serial=QtWidgets.QLineEdit(self.config['connection']['serial_port']);self.serial.setPlaceholderText('COM port, e.g. COM5')
+            from labremote.devices.fpga.ports import PortScanner, load_port
+            self._serial_ports = []; self._saved_port = {}; self._port_error = ''
+            try: self._saved_port = load_port(name)
+            except Exception as exc: self._port_error = str(exc)
+            if self._saved_port.get('device'): self.serial.setText(self._saved_port['device'])
             line.addWidget(QtWidgets.QLabel('Local FPGA serial port'));line.addWidget(self.serial)
+            self.port_choices=QtWidgets.QComboBox();line.addWidget(self.port_choices,1)
+            self.scan_ports=QtWidgets.QPushButton('포트 검색');line.addWidget(self.scan_ports)
+            self.port_scanner=PortScanner(self)
+            self.port_scanner.found.connect(self._ports_found)
+            self.port_scanner.failed.connect(self._ports_failed)
+            self.port_scanner.finished.connect(lambda:self.scan_ports.setEnabled(not self.connected and not self._closing))
+            self.scan_ports.clicked.connect(self._search_ports)
+            self.port_choices.activated.connect(lambda _:self.serial.setText(self.port_choices.currentData() or self.serial.text()))
         elif family=='motors':
             form=QtWidgets.QFormLayout();root.addLayout(form);cfg=self.config['connection']
             self.host=QtWidgets.QLineEdit(cfg['host']);self.port=QtWidgets.QSpinBox();self.port.setRange(1,65535);self.port.setValue(cfg['port'])
@@ -84,8 +97,11 @@ class AuxiliaryTab(QtWidgets.QWidget):
         self.worker.handle_changed.connect(self._result)
         if hasattr(self.worker,'waveform_changed'):self.worker.waveform_changed.connect(self._repeat_changed)
         self.timer=QtCore.QTimer(self);self.timer.setInterval(60000)
-        self.timer.timeout.connect(lambda:self.api.monitor() if self.connected else None);self.timer.start()
+        self.timer.timeout.connect(lambda:self.api.auto_monitor() if self.connected else None);self.timer.start()
         self.worker.start();self._buttons()
+        if self.family=='fpga':
+            self.message.setText(self._port_error)
+            self._search_ports()
 
     def attach_automation(self,bindings):
         if self.family not in ('mdt','fpga'):return
@@ -130,6 +146,24 @@ class AuxiliaryTab(QtWidgets.QWidget):
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(9,3));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumHeight(240);root.addWidget(self.canvas)
 
+    def _search_ports(self):
+        if self.connected or self._closing or self.port_scanner.isRunning():return
+        self.scan_ports.setEnabled(False);self.port_scanner.start()
+
+    def _ports_failed(self,message):
+        if not self._closing:self.message.setText('포트 검색 실패: '+message)
+
+    def _ports_found(self,ports):
+        if self._closing:return
+        from labremote.devices.fpga.ports import remembered_device
+        self._serial_ports=ports;self.port_choices.clear()
+        for p in ports:self.port_choices.addItem(p['device']+' · '+str(p['description'])+' · '+str(p['serial_number'] or 'USB serial 없음'),p['device'])
+        old=self.serial.text().strip()
+        remembered=remembered_device(self._saved_port,ports)
+        if not self.connected and (not old or old==self._saved_port.get('device')) and remembered:self.serial.setText(remembered)
+        index=self.port_choices.findData(self.serial.text().strip());self.port_choices.setCurrentIndex(index)
+        self.message.setText(f'{len(ports)}개 포트 검색됨. 목록에서 사용할 FPGA 포트를 선택하세요.'+(' 기억한 포트가 현재 목록에 없습니다.' if remembered and self.port_choices.findData(remembered)<0 else ''))
+
     def _connect(self):
         if self.family=='fpga':return self.api.connect_serial(self.serial.text().strip(),self.name)
         if self.family=='motors':return self.api.connect_motor(self.host.text().strip(),self.port.value(),self.target.text().strip())
@@ -137,6 +171,12 @@ class AuxiliaryTab(QtWidgets.QWidget):
         return self.api.connect(*endpoint,self.name)
 
     def _connected(self,info):
+        if self.family=='fpga':
+            from labremote.devices.fpga.ports import save_port, load_port
+            try:
+                save_port(self.name,info['port'],self._serial_ports);self._saved_port=load_port(self.name)
+                self.serial.setText(info['port'])
+            except Exception as exc:self.log_message.emit('FPGA port memory: '+str(exc))
         self.connected=True;self.status.setText(self.name+' — Connected');self._buttons();self.api.refresh()
 
     def _disconnected(self,message):
@@ -216,6 +256,11 @@ class AuxiliaryTab(QtWidgets.QWidget):
         box.setAttribute(QtCore.Qt.WA_DeleteOnClose);box.open()
 
     def _buttons(self):
+        from labremote.ui.connection_status import connection_color
+        connection_color(self.connect_btn,'connected' if self.connected and not self.worker.connection_error and not getattr(self.worker,'io_fault',False) else 'disconnected')
+        if self.family=='fpga':
+            self.scan_ports.setEnabled(not self.connected and not self.port_scanner.isRunning())
+            self.port_choices.setEnabled(not self.connected)
         self.connect_btn.setEnabled(not self.connected and not self.worker.has_requests());self.disconnect_btn.setEnabled(self.connected)
         for button in self.buttons:button.setEnabled(self.connected)
         if self.family=='fpga':self._snapshot()
@@ -224,4 +269,4 @@ class AuxiliaryTab(QtWidgets.QWidget):
             if widget is not None:widget.setEnabled(not self.connected)
 
     def shutdown(self):self._closing=True;self.timer.stop();self.worker.shutdown()
-    def still_running(self):return self.worker.isRunning() or (hasattr(self.worker,'waveform_runner') and self.worker.waveform_runner.running())
+    def still_running(self):return (hasattr(self,'port_scanner') and self.port_scanner.isRunning()) or self.worker.isRunning() or (hasattr(self.worker,'waveform_runner') and self.worker.waveform_runner.running())

@@ -11,7 +11,7 @@ FAMILY_GROUP={'windfreak':'RF','sg384':'RF','anapico':'RF','dds4':'RF','thermote
 SINGLETONS={'ccd','oven_psu','oven_relay'}
 
 def validate(document):
-    if not isinstance(document,dict) or set(document)!={'schema_version','name','devices'} or type(document['schema_version']) is not int or document['schema_version']!=1:
+    if not isinstance(document,dict) or not {'schema_version','name','devices'} <= set(document) or set(document)-{'schema_version','name','devices','ccd_display'} or type(document['schema_version']) is not int or document['schema_version']!=1:
         raise ValueError('Expected equipment schema_version 1, name and devices')
     if not isinstance(document['name'],str) or not document['name'].strip():raise ValueError('Configuration name is required')
     if not isinstance(document['devices'],list) or len(document['devices'])>512:raise ValueError('Invalid equipment list (maximum 512)')
@@ -28,6 +28,7 @@ def validate(document):
             if family in single:raise ValueError('Only one '+family+' entry is supported')
             single.add(family)
         if family=='ccd' and name!='ccd_local':raise ValueError('Local CCD name must be ccd_local')
+    display_config(document.get('ccd_display', {}))
     return deepcopy(document)
 
 def load(path):
@@ -49,3 +50,18 @@ def defaults(cfg):
             devices.append(dict(family=family,name=name,group=group,enabled=True))
     devices.extend([dict(family='ccd',name='ccd_local',group='CCD',enabled=True),dict(family='oven_psu',name='oven_psu',group='기타',enabled=False),dict(family='oven_relay',name='oven_relays',group='기타',enabled=False)])
     return validate(dict(schema_version=1,name='기본 실험 구성',devices=devices))
+
+
+DISPLAY_DEFAULTS = dict(auto_levels=True, low=0, high=4095, flip_h=False,
+                        flip_v=False, markers_enabled=True, color='grey')
+
+def display_config(options):
+    if not isinstance(options,dict) or set(options)-set(DISPLAY_DEFAULTS):
+        raise ValueError('Invalid CCD display settings')
+    cfg={**DISPLAY_DEFAULTS,**options}
+    for key in ('auto_levels','flip_h','flip_v','markers_enabled'):
+        if type(cfg[key]) is not bool:raise ValueError(key+' must be boolean')
+    if any(type(cfg[k]) is not int or not 0<=cfg[k]<=65535 for k in ('low','high')) or cfg['low']>=cfg['high']:
+        raise ValueError('CCD display levels need 0 <= low < high <= 65535')
+    if cfg['color'] not in ('grey','viridis','inferno'):raise ValueError('Invalid CCD colormap')
+    return cfg

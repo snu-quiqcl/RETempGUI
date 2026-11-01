@@ -118,6 +118,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self.flip_tab.log_message.connect(self.log.appendPlainText)
         self.ccd_tab.oven_panel.task.flip_routing=self.flip_tab.routing
         self.others_tabs.addTab(self.flip_tab,'flip')
+        from .connection_status import connection_color
+        self.discovery_host.textChanged.connect(lambda _:connection_color(self.rescan_btn,'disconnected'))
+        self.discovery_port.valueChanged.connect(lambda _:connection_color(self.rescan_btn,'disconnected'))
         self.discovery_host.textChanged.connect(self.flip_tab.invalidate_server_list)
         self.discovery_port.valueChanged.connect(self.flip_tab.invalidate_server_list)
         self.device_tabs.insertTab(self.device_tabs.indexOf(self.workflow_tab), self.ccd_tab, 'CCD')
@@ -146,11 +149,15 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
     def _endpoint(self): return self.discovery_host.text().strip(), self.discovery_port.value()
 
     def _scan(self):
+        from .connection_status import connection_color
+        connection_color(self.rescan_btn,'pending')
         self.rescan_btn.setEnabled(False)
         self._scan_endpoint=self._endpoint()
         self.discovery_worker.scan(*self._scan_endpoint)
 
     def _discovery_error(self, message):
+        from .connection_status import connection_color
+        connection_color(self.rescan_btn,'error')
         self.rescan_btn.setEnabled(True)
         self.log.appendPlainText(message)
 
@@ -160,6 +167,8 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         endpoint=getattr(self,'_scan_endpoint',self._endpoint())
         if endpoint!=self._endpoint():
             self.log.appendPlainText('Server address changed; rescan the current server.');return
+        from .connection_status import connection_color
+        connection_color(self.rescan_btn,'connected')
         self.flip_tab.accept_server_devices(endpoint,devices)
         candidates=[]
         for d in devices:

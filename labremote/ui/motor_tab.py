@@ -60,7 +60,7 @@ class MotorRow(QtCore.QObject):
         self.log_message.emit(self.name+': '+message)
         self.tab.alarm(self.name+' — '+action,message)
     def monitor(self):
-        if self.connected:self.api.monitor()
+        if self.connected:self.api.auto_monitor()
     def shutdown(self):self._closing=True;self.timer.stop();self.worker.shutdown()
     def still_running(self):return self.worker.isRunning()
 

@@ -1,6 +1,6 @@
 """Table-based editor for equipment membership, not hardware parameters."""
 from PyQt5 import QtCore,QtWidgets
-from labremote.config.equipment import GROUPS,FAMILY_GROUP,validate
+from labremote.config.equipment import GROUPS,FAMILY_GROUP,validate,display_config
 
 class EquipmentConfigurationDialog(QtWidgets.QDialog):
     def __init__(self,document,candidates,parent=None):
@@ -19,6 +19,16 @@ class EquipmentConfigurationDialog(QtWidgets.QDialog):
         add.clicked.connect(lambda:self.add_entry(self.candidates.currentData()) if self.candidates.currentData() else None)
         blank=QtWidgets.QPushButton('직접 추가');row.addWidget(blank);blank.clicked.connect(lambda:self.add_entry(dict(family='windfreak',name='',group='RF',enabled=False)))
         remove=QtWidgets.QPushButton('선택 행 삭제');row.addWidget(remove);remove.clicked.connect(lambda:self.table.removeRow(self.table.currentRow()))
+        self._had_display='ccd_display' in document
+        cfg=display_config(document.get('ccd_display',{}));self.display_fields={}
+        box=QtWidgets.QGroupBox('CCD Display');form=QtWidgets.QGridLayout(box)
+        for col,(key,label) in enumerate((('auto_levels','Auto levels'),('flip_h','Flip H'),('flip_v','Flip V'),('markers_enabled','Ion markers'))):
+            field=QtWidgets.QCheckBox(label);field.setChecked(cfg[key]);self.display_fields[key]=field;form.addWidget(field,0,col)
+        for col,(key,label) in enumerate((('low','Min'),('high','Max'))):
+            field=QtWidgets.QSpinBox();field.setRange(0,65535);field.setValue(cfg[key]);self.display_fields[key]=field
+            form.addWidget(QtWidgets.QLabel(label),1,col*2);form.addWidget(field,1,col*2+1)
+        field=QtWidgets.QComboBox();field.addItems(['grey','viridis','inferno']);field.setCurrentText(cfg['color']);self.display_fields['color']=field;form.addWidget(field,2,0,1,4)
+        layout.addWidget(box)
         self.error=QtWidgets.QLabel();self.error.setWordWrap(True);layout.addWidget(self.error)
         buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
         buttons.button(QtWidgets.QDialogButtonBox.Ok).setText('구성 적용');buttons.accepted.connect(self.accept_config);buttons.rejected.connect(self.reject);layout.addWidget(buttons)
@@ -29,7 +39,13 @@ class EquipmentConfigurationDialog(QtWidgets.QDialog):
         self.table.setItem(row,2,QtWidgets.QTableWidgetItem(item['name']))
         group=QtWidgets.QComboBox();group.addItems(GROUPS);group.setCurrentText(item['group']);self.table.setCellWidget(row,3,group)
     def document(self):
-        return validate(dict(schema_version=1,name=self.name.text().strip(),devices=[dict(family=self.table.cellWidget(r,1).currentText(),name=self.table.item(r,2).text().strip(),group=self.table.cellWidget(r,3).currentText(),enabled=self.table.item(r,0).checkState()==QtCore.Qt.Checked) for r in range(self.table.rowCount())]))
+        data=dict(schema_version=1,name=self.name.text().strip(),devices=[dict(family=self.table.cellWidget(r,1).currentText(),name=self.table.item(r,2).text().strip(),group=self.table.cellWidget(r,3).currentText(),enabled=self.table.item(r,0).checkState()==QtCore.Qt.Checked) for r in range(self.table.rowCount())])
+        display=self.display_document()
+        if self._had_display or display!=display_config({}):data['ccd_display']=display
+        return validate(data)
+
+    def display_document(self):
+        return {k:(v.isChecked() if isinstance(v,QtWidgets.QCheckBox) else v.currentText() if isinstance(v,QtWidgets.QComboBox) else v.value()) for k,v in self.display_fields.items()}
     def accept_config(self):
         try:self.document()
         except Exception as exc:self.error.setText(str(exc));return

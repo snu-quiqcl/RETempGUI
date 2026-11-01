@@ -3,6 +3,12 @@ from labremote.api.devices import Devices
 from types import SimpleNamespace
 
 def run_workflow(bindings, workflow, *, on_event=None, stop_event=None):
+    from labremote.runtime.auto_monitor import AUTO_MONITOR
+    with AUTO_MONITOR.workflow():
+        return _run_workflow(bindings, workflow, on_event=on_event, stop_event=stop_event)
+
+
+def _run_workflow(bindings, workflow, *, on_event=None, stop_event=None):
     group = WorkflowGroup(stop_event, on_event)
     devices = Devices(bindings, group=group)
     try:
@@ -83,6 +89,11 @@ class WorkflowTask:
             self.thread.start();return handle
 
     def _run(self,callback,handle):
+        from labremote.runtime.auto_monitor import AUTO_MONITOR
+        with AUTO_MONITOR.workflow():
+            self._run_owned(callback,handle)
+
+    def _run_owned(self,callback,handle):
         error=None;value=None;record=None
         try:
             self.check();handle.status='running';handle.notify()

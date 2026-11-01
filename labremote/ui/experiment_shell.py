@@ -24,6 +24,7 @@ class ExperimentShellMixin:
             # A missing/broken selection must not silently connect a different set.
             self.equipment_profile={'schema_version':1,'name':'구성 파일 확인 필요','devices':[]};startup_error=str(exc)
         self.cfg['equipment_configuration']=str(self.profile_path) if self.profile_path else ''
+        self.ccd_tab.apply_display_config(self.equipment_profile.get('ccd_display',{}))
         # Reparent existing widgets. No replacement workers, connections, or operations.
         detailed=[('RF',self.rf_tabs),('미라',self.mira_tabs),('CCD',self.ccd_tab),('FPGA',self.family_subtabs['fpga']),('오실로스코프',self.oscillo_tabs),('기타',self.others_tabs)]
         for title,widget in detailed:
@@ -60,9 +61,47 @@ class ExperimentShellMixin:
         self.device_tabs.setTabText(self.device_tabs.indexOf(self.workflow_tab),'Workflow')
         self.monitor_placeholder=QtWidgets.QWidget();monitor=QtWidgets.QVBoxLayout(self.monitor_placeholder);monitor.addWidget(QtWidgets.QLabel('Monitor · 구성 예정'));monitor.addStretch();self.device_tabs.addTab(self.monitor_placeholder,'Monitor');self.device_tabs.setCurrentWidget(self.home)
         self.equipment_timer=QtCore.QTimer(self);self.equipment_timer.setInterval(200);self.equipment_timer.timeout.connect(self.refresh_experiment_home);self.equipment_timer.start()
+        self.ccd_tab.oven_panel.psu_name.clear();self.ccd_tab.oven_panel.relay_name.clear()
         for entry in self.equipment_profile['devices']:
-            if entry['enabled']:self.ensure_equipment(entry)
+            if entry['enabled'] or entry['family'] in ('oven_psu','oven_relay'):self.ensure_equipment(entry)
+        self.device_menu=self.menuBar().addMenu('장비')
+        self.device_menu.aboutToShow.connect(self.populate_device_menu)
         self._observed_workers=set();self.refresh_experiment_home()
+
+    def populate_device_menu(self):
+        self.device_menu.clear()
+        for title,window in self.detail_windows.items():
+            menu=self.device_menu.addMenu(title)
+            action=menu.addAction(title+' 창 열기');action.triggered.connect(window.open)
+            for family,panels in self.family_tabs.items():
+                if equipment.FAMILY_GROUP.get(family)!=title:continue
+                for name in panels:
+                    action=menu.addAction(family+' / '+name)
+                    action.triggered.connect(lambda _,f=family,n=name:self.open_device_control(f,n))
+            if title=='기타':
+                action=menu.addAction('Flipper / 셔터');action.triggered.connect(lambda:self.open_device_control('flip'))
+                for name in self.flip_tab.workers:
+                    action=menu.addAction('Flipper / '+name);action.triggered.connect(lambda _,n=name:self.open_device_control('flip',n))
+            if title=='CCD':
+                action=menu.addAction('오븐 / 셔터');action.triggered.connect(lambda:self.open_device_control('oven_psu'))
+
+    def open_device_control(self,family,name=None):
+        if self._closing:return
+        title='CCD' if family in ('oven_psu','oven_relay') else equipment.FAMILY_GROUP[family]
+        window=self.detail_windows[title];window.open()
+        if family=='flip':
+            self.others_tabs.setCurrentWidget(self.flip_tab)
+            if name in self.flip_tab.cards:window.scroll.ensureWidgetVisible(self.flip_tab.cards[name]['box'])
+        elif family in ('oven_psu','oven_relay'):
+            window.scroll.ensureWidgetVisible(self.ccd_tab.oven_panel)
+        elif name is not None:
+            tabs=self.family_subtabs[family];panel=self.family_tabs[family][name]
+            if family=='motors':
+                self.others_tabs.setCurrentWidget(self.motor_tab);window.scroll.ensureWidgetVisible(panel.target);panel.target.setFocus()
+            else:
+                tabs.setCurrentWidget(panel)
+                parent={'RF':self.rf_tabs,'미라':self.mira_tabs,'오실로스코프':self.oscillo_tabs,'기타':self.others_tabs}.get(title)
+                if parent is not None:parent.setCurrentWidget(tabs)
 
     def register_equipment(self,family,name):
         try:
@@ -124,8 +163,10 @@ class ExperimentShellMixin:
         validated=equipment.validate(document)
         if not self.selection_editable():raise RuntimeError('구성 변경 전 작업을 종료하고 장비 연결을 해제하세요.')
         # Validate the entire file before modifying any selection.
+        self.ccd_tab.oven_panel.psu_name.clear();self.ccd_tab.oven_panel.relay_name.clear()
         for entry in validated['devices']:
-            if entry['enabled']:self.ensure_equipment(entry)
+            if entry['enabled'] or entry['family'] in ('oven_psu','oven_relay'):self.ensure_equipment(entry)
+        self.ccd_tab.apply_display_config(validated.get('ccd_display',{}))
         self.equipment_profile=validated;self.profile_path=Path(path) if path else self.profile_path
         self.cfg['equipment_configuration']=str(self.profile_path) if self.profile_path else ''
         self.profile_dirty=path is None;self.profile_errors.clear();self.refresh_experiment_home()
@@ -224,6 +265,7 @@ class ExperimentShellMixin:
         if not self._closing:self.shell_message.setText(' · '.join(str(a) for a in args))
 
     def refresh_experiment_home(self):
+        from .connection_status import connection_color
         if self._closing:return
         self.pump_connections()
         for panel in self._panels():
@@ -238,7 +280,13 @@ class ExperimentShellMixin:
             failed=[e['name'] for e in entries if not self.equipment_connected(e) and (e['family'],e['name']) in self.profile_errors]
             label.setText(f'{connected} / {len(entries)} 연결'+(f' · {len(failed)}대 실패' if failed else ''))
             label.setToolTip('\n'.join(e['name']+': '+('연결됨' if self.equipment_connected(e) else self.profile_errors.get((e['family'],e['name']),'미연결')) for e in entries))
+            connection_color(self.group_buttons[group], 'connected' if entries and connected==len(entries) else 'partial' if connected else 'error' if failed else 'disconnected')
+            from labremote.runtime.auto_monitor import AUTO_MONITOR, endpoint
+            if any((w:=self.equipment_worker(e)) is not None and endpoint(w) in AUTO_MONITOR.blocked for e in entries):
+                label.setText(label.text()+' · 자동 조회 중지 (연결 해제 후 재연결)')
             self.group_buttons[group].setEnabled(bool(entries) and not busy and not active)
+        connected_total=sum(self.equipment_connected(e) for e in selected)
+        connection_color(self.connect_all_button, 'connected' if selected and connected_total==len(selected) else 'partial' if connected_total else 'disconnected')
         self.connect_all_button.setEnabled(bool(selected) and not busy and not active);self.disconnect_all_button.setEnabled(not active and not busy)
         self.profile_label.setText(self.equipment_profile['name']+(' *' if self.profile_dirty else ''));self.profile_label.setToolTip(str(self.profile_path or '저장되지 않은 구성'))
         self.profile_buttons[0].setEnabled(self.selection_editable());self.profile_buttons[1].setEnabled(self.selection_editable())
@@ -250,4 +298,5 @@ class ExperimentShellMixin:
 
     def close_equipment_windows(self):
         self.equipment_timer.stop()
-        for window in [*self.detail_windows.values(),self.connection_settings_window]:window.allow_close=True;window.close()
+        for window in [*self.detail_windows.values(),self.connection_settings_window]:
+            window.allow_close=True;window.close()

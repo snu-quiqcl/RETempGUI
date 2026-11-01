@@ -182,5 +182,14 @@
       "group": "기타",
       "enabled": false
     }
-  ]
+  ],
+  "ccd_display": {
+    "auto_levels": true,
+    "low": 0,
+    "high": 4095,
+    "flip_h": false,
+    "flip_v": false,
+    "markers_enabled": true,
+    "color": "grey"
+  }
 }
