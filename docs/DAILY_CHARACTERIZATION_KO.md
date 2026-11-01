@@ -177,6 +177,33 @@ spam = fpga.run_spam("EC").wait()
 
 실행별 `configuration.json`(조건·역할·원본 적응 코드 해시), `raw_fifo.csv`, `points.json`, `summary.csv`, `analysis.json`, `analysis.png`, `result.json`을 저장합니다. 분석 JSON의 비유한 불확실성 값은 null로 저장하고 status/분해 여부를 함께 남깁니다. GUI와 외부 workflow API의 결과는 같은 해당 EA/EC 탭으로 전달됩니다.
 
-## 메뉴와 표시
+## EA/EC Initialization
+
+Daily Characterization에 EA Initialization과 EC Initialization 탭을 추가했습니다. 변수와 PMT/AOM/EOM/MW gate 역할 매핑은 각 탭에서 독립적으로 저장·불러오기 할 수 있습니다. MW gate 매핑은 공통 FPGA 종료 정리에 사용하며, initialization 시퀀스는 MW 펄스를 발생시키지 않습니다.
+
+원본 `init_measurement_refactored.py`처럼 초기화 인덱스 0부터 `N_init_control-1`까지 한 sequencer 프로그램에서 순회합니다. 기본값은 cooling 500 us × 6, initialization step 0.2 us, 21개 시간점, 지점당 500회, detection 80 us, threshold >= 4입니다. 표시 시간은 원본과 같은 명목상 index × step입니다.
+
+원본의 `T_det_repeat`는 선언되어 있지만 실제 반복 명령이 없어서 1로 고정합니다. 이 값을 늘리는 새로운 동작은 추가하지 않았습니다. PMT raw count는 histogram의 표시 상한으로 잘라 저장하지 않습니다.
+
+각 탭에 마지막 시간점 histogram, 시간별 bright population/오차, `A exp(-t/tau)+offset` 피팅 결과 tau를 표시합니다. 원본처럼 t=0은 fitting에서 제외하며, 추가로 미완료 시간점도 fitting에서는 제외합니다. 데이터 부족·contrast 없음·피팅 실패는 미해결로 표시합니다. 중단 시 실제로 수신한 횟수만 분모로 사용하고 부분 데이터를 저장합니다.
+
+```python
+result = devices.fpga('fpga_local').run_initialization(
+    'EA', settings_file='labremote/config/operations/characterization/initialization_EA.local.json',
+    directory='D:/ExperimentData'
+).wait()
+```
+
+`settings_file`을 생략하면 해당 chamber의 local 설정, 없으면 기본 JSON을 사용합니다. `settings`로 설정 객체를 직접 전달할 수도 있습니다. 중단은 `stop_initialization()` 또는 실행 handle의 `request_cancel()`입니다. 하나의 `INITIALIZATION_ACQUIRE` operation으로 FPGA만 제어하며, 모든 종료 경로에서 기존 FPGA cleanup을 수행합니다.
+
+주파수별 Rabi와 파일 보관 방법은 [실험 조건 라이브러리와 저장 가이드](EXPERIMENT_ARCHIVE_KO.md)를 참고하세요.
+
+## 수집 중 그래프
+
+Ramsey와 Initialization은 한 시간점의 shots가 모두 수신될 때마다 population 점과 해당 시간점 histogram을 갱신합니다. SPAM은 각 상태의 batch가 완료될 때마다 누적 histogram, successes/attempts, 상태별 오류율과 동일 가중 평균을 갱신합니다. 아직 데이터가 없는 상태의 오류율은 N/A입니다. 완료되지 않은 포인트/batch는 중간 그래프에 합산하지 않으며 기존 부분 저장과 종료 분석 정책은 유지합니다.
+
+중간 표시는 작은 집계 결과만 UI에 전달하고, 축과 그래프 객체를 유지한 채 데이터를 갱신합니다. FPGA가 FIFO 데이터를 전달하기 전에는 표시할 수 없으며, 여러 지점이 한 번에 수신되면 화면 갱신도 합쳐질 수 있습니다. Ramsey/Initialization fitting은 수집 종료(중단 포함) 후에만 수행합니다. 측정 명령, 원시 데이터와 파일 형식은 변경하지 않았습니다.
+
+## 장비 메뉴
 
 장비 메뉴에서 RF/FPGA 등 그룹 이름을 바로 누르면 해당 상세 창이 열립니다. 메뉴 안의 추가 장비 단계는 제거했으며 그룹 창 내부 장비 탭은 그대로 유지합니다. 상세 창 제목은 RF, FPGA, CCD 등 그룹 이름만 표시합니다. Rabi population의 수집 중/최종 그래프에는 grid를 표시합니다.

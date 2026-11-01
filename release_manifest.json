@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "EA/EC Ramsey and SPAM FPGA operations, direct device menus and Rabi grid",
+  "revision_note": "Live per-point Ramsey/initialization and cumulative SPAM display",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 19231,
-      "sha256": "b8376621296dde83f55170da4f1ee089624283d3e806ba20bbba8ddf1feb000a"
+      "bytes": 19383,
+      "sha256": "dcb927323e12382070794bdf19c387153fd0c3f69a58786a7ab3ca99289c26be"
     },
     {
       "path": "check_public_files.py",
@@ -49,13 +49,18 @@
     },
     {
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
-      "bytes": 18168,
-      "sha256": "eaad1c93094daf1c31712e16ca635b8a3ac2c79d5f354f03e1e489c49a78e111"
+      "bytes": 21382,
+      "sha256": "62d5c88e7129564e4881b48dd9e77ad3a1d1c9814c09e092abf3357ead78382f"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
       "bytes": 41070,
       "sha256": "50a35562ba19991067acd050493348b48479e851e7bab862ab94442654e00ef4"
+    },
+    {
+      "path": "docs/EXPERIMENT_ARCHIVE_KO.md",
+      "bytes": 6886,
+      "sha256": "25165965456e4c7ec6a29d47a1bb15e22df420b2de7f82296713a970773d528f"
     },
     {
       "path": "docs/EXPERIMENT_UI_KO.md",
@@ -134,13 +139,18 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 29127,
-      "sha256": "6d8c0aa30cad5dd6c9fe04e6cb9c99f158b31ef41390162c914e6a8496bfad59"
+      "bytes": 29458,
+      "sha256": "eb3653c05f6900ea0897ba1581e7a1ac51f07e2c56cf79c563aa07214f855406"
     },
     {
       "path": "labremote/characterization/__init__.py",
       "bytes": 60,
       "sha256": "878de8ecaff2c79ae3358b28bae61bd025129b99aa0c01fcee2072485608d421"
+    },
+    {
+      "path": "labremote/characterization/archive.py",
+      "bytes": 5118,
+      "sha256": "03eb0bc282a06f076e4d1b992dba4c3b0dc0dd91fa3f977c2036f355b0bdf19f"
     },
     {
       "path": "labremote/characterization/config.py",
@@ -153,14 +163,29 @@
       "sha256": "924d3c86cab502f535ee4ddf7c60c119b3ff3f808b58132daed72cbedf5b77a0"
     },
     {
+      "path": "labremote/characterization/initialization_analysis.py",
+      "bytes": 2731,
+      "sha256": "ac51d82195fcbee83f4c412704c1d4970e34f4be43e4a8acc0532997e33ba6ef"
+    },
+    {
+      "path": "labremote/characterization/initialization_sequence.py",
+      "bytes": 3475,
+      "sha256": "5a249b22c03e1931d09a3d76a446711d2af04ab5ffe363d2330f71689a0653fd"
+    },
+    {
+      "path": "labremote/characterization/live_pulse.py",
+      "bytes": 4291,
+      "sha256": "2320cb147bb8015962a149992dfb14104467274f8d5e36129641a0186070cb15"
+    },
+    {
       "path": "labremote/characterization/pulse_experiment.py",
-      "bytes": 10367,
-      "sha256": "268d9ee386d8b9d5c6db3a9c287368b7459514d069e890e76772cd3d99d9ce23"
+      "bytes": 12038,
+      "sha256": "7213995e39806b4dd867eea37add368a13f238a86d19f8132e00042e08d88714"
     },
     {
       "path": "labremote/characterization/pulse_runner.py",
-      "bytes": 5532,
-      "sha256": "63e663f94fc46b2c9cf478ad163af82b03b5ccf32939be135904c7089ce98f26"
+      "bytes": 5909,
+      "sha256": "b63fa0c705aaf0b37977db9a7c67923118efd690ac0e8dc35932011d88ec1069"
     },
     {
       "path": "labremote/characterization/rabi.py",
@@ -323,6 +348,16 @@
       "sha256": "0065832c31d8a96e109768bfaad8daf4d5d95d1f38ca4df3678c11cc1c0b90f9"
     },
     {
+      "path": "labremote/config/operations/characterization/initialization_EA.json",
+      "bytes": 462,
+      "sha256": "24e1a9064f4fbc51695a8088bf104807552ccc5618e2fffb3834e2dfd728333d"
+    },
+    {
+      "path": "labremote/config/operations/characterization/initialization_EC.json",
+      "bytes": 462,
+      "sha256": "f752a730bc367ba80107b2a36e57e9bb8924c0beb5732b96e640dca26bdc6b2c"
+    },
+    {
       "path": "labremote/config/operations/characterization/rabi_EA.json",
       "bytes": 424,
       "sha256": "3924f832df56402a442e8971927bfd96cb5c66daa017175cc0201346c404b311"
@@ -331,6 +366,11 @@
       "path": "labremote/config/operations/characterization/rabi_EC.json",
       "bytes": 424,
       "sha256": "47531f8bff0794755a7fc1642aa1c6dacab14e636bacf4e66683522068fcf059"
+    },
+    {
+      "path": "labremote/config/operations/characterization/rabi_frequency_sweep.json",
+      "bytes": 877,
+      "sha256": "bf3bafec62c809f6ce7ecc0f13b698fe06ec2c48e1bf5fb970e3c1bc04dcd412"
     },
     {
       "path": "labremote/config/operations/characterization/ramsey_EA.json",
@@ -684,8 +724,8 @@
     },
     {
       "path": "labremote/devices/fpga/worker.py",
-      "bytes": 2079,
-      "sha256": "8f4170b32c12cc34ad7abdf0a88af7b2807033a75b9a735f8e26d4d630ec868d"
+      "bytes": 2141,
+      "sha256": "4560cfa81459ccf43a8b8538d0323fb4166eb6ef030ccc8070ea33b11af11e08"
     },
     {
       "path": "labremote/devices/keithley/__init__.py",
@@ -1014,8 +1054,8 @@
     },
     {
       "path": "labremote/operation/fpga/pulse_experiment.py",
-      "bytes": 4360,
-      "sha256": "a72e0fd9b30efb1f52a864651249527de15ea61788e0a66b8e9fde3b9b3c0a91"
+      "bytes": 4644,
+      "sha256": "64187e14d2f191f56dc8b8591c1f8a7ad11c3827a91c5573219e94a51c9f0f81"
     },
     {
       "path": "labremote/operation/fpga/rabi.py",
@@ -1509,8 +1549,8 @@
     },
     {
       "path": "labremote/ui/daily_characterization.py",
-      "bytes": 10257,
-      "sha256": "647219f4a98128e4fdd8135c8b6fc04785dd10902cc43d1e29423250d262f9f3"
+      "bytes": 10307,
+      "sha256": "8e3cc05b5e1bb1f4bba1f2f986ed5599df5e302af3f33ac33d033e27b82f2085"
     },
     {
       "path": "labremote/ui/detail_window.py",
@@ -1569,8 +1609,8 @@
     },
     {
       "path": "labremote/ui/pulse_experiment_tab.py",
-      "bytes": 8789,
-      "sha256": "8bdad8c905aa103742c1afa460ad048060f2bf934108e0337d7abfc445321a21"
+      "bytes": 9639,
+      "sha256": "98d7b51b72feb363a4935ec8591c922e27e1753edd18677051520161c3f192cb"
     },
     {
       "path": "labremote/ui/rabi_tab.py",
@@ -1706,6 +1746,11 @@
       "path": "labremote/workflow/power_on_windfreak.py",
       "bytes": 425,
       "sha256": "5380f90d97c77b0f89afa62ef0d7074febd6b95435a064af5d2f7bbb593106b1"
+    },
+    {
+      "path": "labremote/workflow/rabi_frequency_archive.py",
+      "bytes": 2681,
+      "sha256": "94f504094a5f711ae74a0ba2704d646c9c290738be6067309fe1f340f1263548"
     },
     {
       "path": "labremote/workflow/read_ds1052e.py",

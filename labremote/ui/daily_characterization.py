@@ -128,8 +128,8 @@ class DailyCharacterization(QtWidgets.QTabWidget):
         self.rabi_experiments={c:RabiTab(worker,c,bindings,self) for c in ('EA','EC')}
         for c,tab in self.rabi_experiments.items():self.addTab(tab,c+' Rabi')
         from .pulse_experiment_tab import PulseExperimentTab
-        self.pulse_experiments={(kind,c):PulseExperimentTab(worker,kind,c,bindings,self) for kind in ('ramsey','spam') for c in ('EA','EC')}
-        for (kind,c),tab in self.pulse_experiments.items():self.addTab(tab,c+' '+('Ramsey' if kind=='ramsey' else 'SPAM'))
+        self.pulse_experiments={(kind,c):PulseExperimentTab(worker,kind,c,bindings,self) for kind in ('initialization','ramsey','spam') for c in ('EA','EC')}
+        for (kind,c),tab in self.pulse_experiments.items():self.addTab(tab,c+' '+{'initialization':'Initialization','ramsey':'Ramsey','spam':'SPAM'}[kind])
         self.setCurrentWidget(self.experiments['EA'])
 
     def shutdown(self):

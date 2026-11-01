@@ -498,6 +498,11 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def run_initialization(self,chamber,*,settings=None,settings_file=None,directory=None):
+        return self.worker.initialization_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
+
+    def stop_initialization(self):return self.worker.initialization_runner.cancel()
+
     def run_ramsey(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None):
         return self.worker.ramsey_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,frequency_hz=frequency_hz,parent=self.group)
 

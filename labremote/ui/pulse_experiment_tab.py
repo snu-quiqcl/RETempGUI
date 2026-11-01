@@ -6,7 +6,7 @@ from labremote.characterization import config,rabi,pulse_experiment as model
 class PulseExperimentTab(QtWidgets.QWidget):
     def __init__(self,worker,kind,chamber,bindings,parent=None):
         super().__init__(parent);self.kind=kind;self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
-        self.fields={};self.roles={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
+        self.live_plot=None;self.live_revision=0;self.fields={};self.roles={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
         root=QtWidgets.QVBoxLayout(self)
         note=QtWidgets.QLabel('EC FPGA · '+chamber+' '+model.title(kind)+' · MW 주파수·출력은 외부 설정 · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1)
@@ -77,6 +77,7 @@ class PulseExperimentTab(QtWidgets.QWidget):
             if not self.directory.text().strip():raise ValueError('결과 저장 폴더를 지정하세요.')
             handle=getattr(self.api,"run_"+self.kind)(self.chamber,settings=c,directory=self.directory.text())
             if handle.done.is_set() and handle.error:raise handle.error
+            self.live_plot=None;self.live_revision=0
             self.run_id=handle.request_id;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.figure.clear();self.canvas.draw_idle();self.summary.clear();self.status.setText('Starting · '+self.run_id)
         except Exception as exc:self.status.setText(str(exc))
         self.controls()
@@ -92,12 +93,23 @@ class PulseExperimentTab(QtWidgets.QWidget):
         runner=getattr(self.worker,self.kind+'_runner')
         if label!=self.kind.upper() or state.get('chamber')!=self.chamber or state.get('run_id')!=runner.state.get('run_id'):return
         if self.run_id!=state['run_id']:
+            self.live_plot=None;self.live_revision=0
             self.rendered_id=None;self.figure.clear();self.canvas.draw_idle();self.summary.clear()
         self.run_id=state['run_id'];self.status.setText(f"{state.get('phase','')} · {state.get('points',0)}/{state.get('total','?')} · {state.get('received_samples',0)} received · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
         if state.get('analysis') is not None and self.rendered_id!=self.run_id:
             try:self.show_result(state['analysis'],state['result'])
             except Exception as exc:self.status.setText('Result saved; display error: '+str(exc))
             self.rendered_id=self.run_id
+
+        elif state.get('live') is not None and self.rendered_id!=self.run_id:
+            data=state['live']
+            if data['revision']>self.live_revision:
+                try:
+                    from labremote.characterization.live_pulse import LivePlot
+                    if self.live_plot is None:self.live_plot=LivePlot(self.figure,self.kind)
+                    self.live_plot.update(data);self.canvas.draw_idle();self.live_revision=data['revision']
+                    self.summary.setText(f"{self.chamber} · {data['revision']} complete points/batches · fitting after acquisition")
+                except Exception as exc:self.status.setText('Live display error: '+str(exc))
 
     def show_result(self,data,report):
         model.draw(self.figure,data);self.canvas.draw_idle()

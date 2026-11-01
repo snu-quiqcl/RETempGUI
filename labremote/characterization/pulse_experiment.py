@@ -5,10 +5,12 @@ import numpy as np
 from . import config,rabi
 from .ramsey_fit import fit_ramsey,population_and_error
 
-KINDS=('ramsey','spam')
-def title(kind):return 'Ramsey' if kind=='ramsey' else 'SPAM'
+KINDS=('ramsey','spam','initialization')
+def title(kind):return {'ramsey':'Ramsey','spam':'SPAM','initialization':'Initialization'}[kind]
 def defaults(kind,chamber):
     if kind not in KINDS or chamber not in ('EA','EC'):raise ValueError('Unknown experiment/chamber')
+    if kind=='initialization':
+        return dict(schema_version=1,experiment=kind,chamber=chamber,roles=rabi.defaults(chamber)['roles'],T_cool=50000,T_cool_repeat=6,T_init_step=20,T_det=8000,T_det_repeat=1,WAIT_AOM=100,N_average=500,N_init_control=21,N_threshold=4,timeout_s=120.)
     c=dict(schema_version=1,experiment=kind,chamber=chamber,roles=rabi.defaults(chamber)['roles'],
            T_cool=40000 if kind=='ramsey' else 50000,T_cool_repeat=10 if kind=='ramsey' else 2,
            T_init=1000 if kind=='ramsey' else 150,T_det=5000 if kind=='ramsey' else 8000,
@@ -17,9 +19,13 @@ def defaults(kind,chamber):
     else:c.update(WAIT_AOM=50,T_PI=7677 if chamber=='EA' else 5996,N_repeat=10)
     return c
 
-def times(kind):return ('T_cool','T_init','T_det')+(('T_wait_for_aom_off','half_pi_time','precession_time') if kind=='ramsey' else ('WAIT_AOM','T_PI'))
+def times(kind):
+    if kind=='initialization':return ('T_cool','T_init_step','T_det','WAIT_AOM')
+    return ('T_cool','T_init','T_det')+(('T_wait_for_aom_off','half_pi_time','precession_time') if kind=='ramsey' else ('WAIT_AOM','T_PI'))
 
 def fields(kind):
+    if kind=='initialization':
+        return [('T_cool','Cooling (us)',0,655.35,2,1),('T_cool_repeat','Cooling repeats',1,65535,0,1),('T_init_step','Initialization step (us)',.02,655.35,2,.01),('T_det','Detection (us)',0,655.35,2,1),('T_det_repeat','Detection repeats (original: fixed 1)',1,1,0,1),('WAIT_AOM','AOM wait (us)',0,655.35,2,.1),('N_average','Shots / point',1,65535,0,1),('N_init_control','Time points (from 0)',1,512,0,1),('N_threshold','Bright threshold (>=)',0,65535,0,1),('timeout_s','Timeout / scan (s)',.1,3600,1,1)]
     result=[('T_cool','Cooling (us)',0,655.35,2,1),('T_cool_repeat','Cooling repeats',1,65535,0,1),
             ('T_init','Initialization (us)',0,655.35,2,1),('T_det','Detection (us)',0,655.35,2,1)]
     if kind=='ramsey':result += [('T_det_repeat','Detection repeats',1,65535,0,1),('T_wait_for_aom_off','AOM off wait (us)',0,655.35,2,.1),
@@ -38,10 +44,12 @@ def validate(kind,value):
         if isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) or not low<=v<=high or (not dec and type(v) is not int):raise ValueError('Invalid '+key)
     roles=value['roles']
     if not isinstance(roles,dict) or set(roles)!=set(rabi.ROLE_CHOICES) or any(roles[k] not in names for k,names in rabi.ROLE_CHOICES.items()):raise ValueError('Invalid FPGA roles')
-    shots=value['N_average']*(value['max_precession_count'] if kind=='ramsey' else 2*value['N_repeat'])
+    shots=value['N_average']*(value['N_init_control'] if kind=='initialization' else value['max_precession_count'] if kind=='ramsey' else 2*value['N_repeat'])
     if shots>2000000:raise ValueError('Maximum 2,000,000 attempts')
     c=value
-    if kind=='ramsey':
+    if kind=='initialization':
+        duration=c['N_average']*sum(c['T_cool']*c['T_cool_repeat']+i*c['T_init_step']+c['T_det']+3*c['WAIT_AOM']+200 for i in range(c['N_init_control']))*1e-8
+    elif kind=='ramsey':
         nyquist=.5/(c['precession_time']*1e-8)
         if c['fit_high_hz']==0:
             if c['fit_low_hz']!=0:raise ValueError('Auto fit range requires minimum=maximum=0')
@@ -66,6 +74,9 @@ def clean(value):
     return value
 
 def analyze(kind,records,c):
+    if kind=='initialization':
+        from .initialization_analysis import analyze
+        return clean(analyze(records,c))
     if kind=='ramsey':
         rows=[r for r in records if r['counts']];t=np.array([r['index']*c['precession_time']*1e-8 for r in rows]);n=np.array([len(r['counts']) for r in rows]);k=np.array([sum(v>=c['N_threshold'] for v in r['counts']) for r in rows])
         p,e=population_and_error(k,n) if rows else (np.array([]),np.array([]))
@@ -89,6 +100,9 @@ def analyze(kind,records,c):
 
 def draw(figure,data):
     figure.clear()
+    if data['experiment']=='initialization':
+        from .initialization_analysis import draw
+        draw(figure,data);return
     if data['experiment']=='ramsey':
         hist,ax=figure.subplots(2,1);counts=data['last_counts']
         bins=np.bincount(np.minimum(np.asarray(counts,dtype=np.int64),40),minlength=41);hist.bar(np.arange(41),bins);hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Occurrences')
@@ -110,6 +124,8 @@ def draw(figure,data):
     figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)
 
 def summary(data):
+    if data['experiment']=='initialization':
+        fit=data['fit'];return ('Initialization tau = %.5g us' % fit['tau_us']) if fit['status']=='completed' else 'Initialization fit: '+fit['message']
     if data['experiment']=='ramsey':
         f=data['fit'];message=f"Fit: {f['status']}"
         if f.get('frequency_resolved'):message+=f" · Ramsey {f['frequency_hz']:.5g} Hz"
