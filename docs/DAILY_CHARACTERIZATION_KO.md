@@ -84,7 +84,7 @@ result = fpga.run_fluorescence(
 
 ## 고정 microwave Rabi operation
 
-Rabi는 외부에서 설정된 microwave 상태를 유지하면서 FPGA 펄스 시간만 스캔하는 operation입니다. **주파수 설정, RF 출력 ON/OFF, 주파수 정착 대기는 operation 외부에서 관리합니다.** Rabi 내부에는 주파수 loop나 AnaPico API 호출이 없습니다. Ramsey/SPAM은 아직 구현되지 않았으며 이후 같은 책임 분리를 적용합니다.
+Rabi는 외부에서 설정된 microwave 상태를 유지하면서 FPGA 펄스 시간만 스캔하는 operation입니다. **주파수 설정, RF 출력 ON/OFF, 주파수 정착 대기는 operation 외부에서 관리합니다.** Rabi 내부에는 주파수 loop나 AnaPico API 호출이 없습니다. Ramsey/SPAM도 같은 FPGA 전용 operation 구조를 사용합니다.
 
 ### 장비 설정과 화면
 
@@ -133,3 +133,50 @@ result = devices.fpga("fpga_local").run_rabi("EA").wait()
 원본 `counts >= threshold` 비율 및 `A*sin(pi*f*t)^2+C` 모델을 유지합니다. 원본의 count clipping은 제거하여 수신 counts를 그대로 보존합니다. 피팅 실패는 초기 추정값으로 대체하지 않습니다. 시간축은 원본 pulse step 기준 명목 시간이고 wait/branch 보정(-7 clocks)을 유지합니다.
 
 실행별 `configuration.json`, `raw_fifo.csv`, `points.json`, `population.csv`, `analysis.json`, `analysis.png`, `result.json`을 저장합니다. 주파수 CSV 열은 `frequency_hz_metadata`로 표시합니다. 미완료 시간점의 수신 값은 raw_fifo.csv에 남고, 완전한 시간점만 분석합니다. 외부 microwave 제어 여부와 주파수 메타데이터의 미지정 상태도 기록합니다.
+
+## EA/EC Ramsey와 SPAM
+
+Daily characterization에 EA Ramsey, EC Ramsey, EA SPAM, EC SPAM 탭을 추가했습니다. 각 탭에서 측정 조건과 PMT/AOM/MW/EOM 역할을 함께 저장·불러오고, 개별 Run/Stop 및 이전 결과 열기를 사용할 수 있습니다. 저장 파일은 `labremote/config/operations/characterization/ramsey_EA.local.json`, `ramsey_EC.local.json`, `spam_EA.local.json`, `spam_EC.local.json`입니다. 공개 기본값은 같은 이름의 `.json` 파일입니다. 이 네 로컬 파일도 다른 PC에 별도로 복사하세요.
+
+역할 기본값은 Rabi와 동일하게 EA=PMTFA/AOMA/MW_A/EA EOM, EC=PMTFC/AOMC/MW_C/EC EOM입니다. 각 실험 파일은 서로 독립적이며, 한 탭의 매핑 변경이 다른 실험에 적용되지 않습니다.
+
+두 실험 모두 **microwave 발생기의 주파수·출력 ON/OFF를 읽거나 변경하지 않습니다.** FPGA의 gate와 counter만 제어합니다. 준비·전체 측정·정리가 각각 단일 `RAMSEY_ACQUIRE`, `SPAM_ACQUIRE` operation 안에서 실행됩니다. 종료와 중단 때 선택 MW gate LOW, counter OFF, EOM_2G LOW, AOM/EOM_7G_1/2 HIGH(cooling)로 정리합니다. 발생기 출력은 외부에서 관리해야 하며, 통신 오류로 정리가 확인되지 않으면 오류를 기록합니다.
+
+### Ramsey
+
+제공된 `sequencer_ramsey.py`의 냉각 → 초기화 → half π pulse → free precession → half π pulse → 검출 순서와 FPGA 내부의 precession/shot 반복을 유지합니다. FPGA 프로그램을 한 번 올리고 전체 delay scan의 FIFO를 읽습니다.
+
+GUI에서 냉각/검출 반복, 초기화·검출·AOM off wait, half π pulse, precession step, delay points, shots, threshold, 전체 scan timeout, 피팅 주파수 범위를 설정합니다. 피팅 범위 min=max=0이면 sampled Nyquist band 전체를 사용합니다. 시간은 GUI에서 us, JSON에서는 10 ns clock 정수입니다.
+
+원본 실행값을 기본값으로 사용합니다: cooling 400 us×10, init 10 us, detection 50 us×1, half π 29.48 us(원본 `int(29.485e2)`의 절삭 결과), precession step 500 us, 20 points, 점당 100 shots. 원본에는 실행 중인 half π 값이 하나만 있어 EA/EC 모두 같은 초기값을 사용합니다. 각 탭에서 대상 이온에 맞는 보정값을 저장하세요. 원본의 사용되지 않는 T_init_repeat/T_wait_for_aom_on은 새 기능으로 활성화하지 않았습니다.
+
+분석은 원본의 binomial-deviance 다중 초기값 피팅과 exponential envelope를 유지합니다. 실제 bright/received 비율, 안정화된 binomial 오차, Ramsey frequency, T2*, 불확실성과 BIC 판정을 저장합니다. 주파수 또는 decay가 분해되지 않으면 확정된 측정값으로 표시하지 않습니다. hist 마지막 40-bin은 overflow를 포함하며 raw counts는 보존합니다. 시간축은 원본과 같은 명목상 precession step 기준입니다.
+
+수신이 중단된 시간점도 실제 받은 shots 수로 분석하며, 미수신 데이터를 0으로 채우지 않습니다. 완전한 시간점 개수와 부분 결과 상태를 구분합니다. 유효 시간점이 6개 미만이면 피팅 불가를 표시합니다.
+
+### SPAM
+
+제공된 `sequencer_spam.py`의 두 조건, 즉 **MW pulse 없음(target 0)** 및 **π pulse(target 1)**을 각 N_repeat에서 순서대로 반복합니다. 여기서 MW off는 FPGA gate에 pulse를 주지 않는다는 뜻이며 발생기 출력 OFF가 아닙니다.
+
+기본값은 cooling 500 us×2, init 1.5 us, detection 80 us, AOM wait 0.5 us, batch당 500 attempts, 상태별 10회 반복입니다. π pulse는 원본의 EA=76.77 us, EC=59.96 us를 사용합니다. 조건별 attempts는 기본 5,000회입니다.
+
+원본의 사전선별 코드가 주석 처리되어 있으므로 이를 새로 활성화하지 않았습니다. 현재 시퀀스에서는 보통 N_success=N_average입니다. FIFO의 `[N_success, address, count, 10]`를 검증하고 각 batch마다 address<N_success인 행만 final detection에 포함합니다. 0 photon은 유효 데이터로 유지하고 batch 경계를 보존합니다.
+
+두 상태의 공유 로그축 histogram, successes/attempts, target 0이 bright로/target 1이 dark로 판별된 비율, 두 상태 동일 가중 평균 SPAM error와 fidelity를 표시합니다. accepted 데이터가 0개인 상태의 conditional error/fidelity는 0이나 100%로 대신하지 않고 N/A로 표시합니다. 부분 readout은 received와 accepted 수 및 incomplete batch로 구분합니다. histogram의 마지막 39-bin은 overflow이고 raw counts는 자르지 않습니다.
+
+### 호출 및 결과 저장
+
+```python
+# Microwave settings/output are managed externally before these calls.
+fpga = devices.fpga("fpga_local")
+ramsey = fpga.run_ramsey("EA").wait()
+spam = fpga.run_spam("EC").wait()
+```
+
+`settings`, `settings_file`, `directory`, 선택적인 `frequency_hz` 메타데이터 인자를 사용할 수 있습니다. frequency_hz는 주파수 설정 명령이 아닙니다. `stop_ramsey()`, `stop_spam()` 또는 handle.request_cancel()로 중단합니다. 다른 FPGA 측정과 동시에 실행하지 않습니다.
+
+실행별 `configuration.json`(조건·역할·원본 적응 코드 해시), `raw_fifo.csv`, `points.json`, `summary.csv`, `analysis.json`, `analysis.png`, `result.json`을 저장합니다. 분석 JSON의 비유한 불확실성 값은 null로 저장하고 status/분해 여부를 함께 남깁니다. GUI와 외부 workflow API의 결과는 같은 해당 EA/EC 탭으로 전달됩니다.
+
+## 메뉴와 표시
+
+장비 메뉴에서 RF/FPGA 등 그룹 이름을 바로 누르면 해당 상세 창이 열립니다. 메뉴 안의 추가 장비 단계는 제거했으며 그룹 창 내부 장비 탭은 그대로 유지합니다. 상세 창 제목은 RF, FPGA, CCD 등 그룹 이름만 표시합니다. Rabi population의 수집 중/최종 그래프에는 grid를 표시합니다.

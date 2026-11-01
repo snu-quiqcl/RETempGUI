@@ -102,6 +102,7 @@ def draw(figure,data):
         f=curve['fit']
         if f['valid']:
             t=np.linspace(0,x[-1],300);osc.plot(t,f['amplitude']*np.sin(np.pi*f['frequency_hz']*t*1e-6)**2+f['offset'],'--')
+    osc.grid(True,which='both',alpha=.3)
     if data['curves']:osc.legend(fontsize=7)
     osc.set(xlabel='Nominal microwave pulse time (us)',ylabel='Bright population',ylim=(-.05,1.05))
     if scanned:

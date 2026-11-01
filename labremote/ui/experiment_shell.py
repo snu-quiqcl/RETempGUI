@@ -69,19 +69,8 @@ class ExperimentShellMixin:
     def populate_device_menu(self):
         self.device_menu.clear()
         for title,window in self.detail_windows.items():
-            menu=self.device_menu.addMenu(title)
-            action=menu.addAction(title+' 창 열기');action.triggered.connect(window.open)
-            for family,panels in self.family_tabs.items():
-                if equipment.FAMILY_GROUP.get(family)!=title:continue
-                for name in panels:
-                    action=menu.addAction(family+' / '+name)
-                    action.triggered.connect(lambda _,f=family,n=name:self.open_device_control(f,n))
-            if title=='기타':
-                action=menu.addAction('Flipper / 셔터');action.triggered.connect(lambda:self.open_device_control('flip'))
-                for name in self.flip_tab.workers:
-                    action=menu.addAction('Flipper / '+name);action.triggered.connect(lambda _,n=name:self.open_device_control('flip',n))
-            if title=='CCD':
-                action=menu.addAction('오븐 / 셔터');action.triggered.connect(lambda:self.open_device_control('oven_psu'))
+            action=self.device_menu.addAction(title)
+            action.triggered.connect(window.open)
 
     def open_device_control(self,family,name=None):
         if self._closing:return

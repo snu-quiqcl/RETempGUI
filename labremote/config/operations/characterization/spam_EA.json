@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "experiment": "spam",
+  "chamber": "EA",
+  "roles": {
+    "PMT": "PMTFA",
+    "AOM": "AOMA",
+    "MW": "MW_A",
+    "EOM_7G_1": "EOM_7GA1",
+    "EOM_7G_2": "EOM_7GA2",
+    "EOM_2G": "EOM_2GA"
+  },
+  "T_cool": 50000,
+  "T_cool_repeat": 2,
+  "T_init": 150,
+  "T_det": 8000,
+  "N_average": 500,
+  "N_threshold": 2,
+  "timeout_s": 30.0,
+  "WAIT_AOM": 50,
+  "T_PI": 7677,
+  "N_repeat": 10
+}

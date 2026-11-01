@@ -104,6 +104,7 @@ class RabiTab(QtWidgets.QWidget):
             if self.live_axis is None:
                 self.figure.clear();self.live_axis=self.figure.add_subplot(111)
                 self.live_axis.set(xlabel='Nominal microwave pulse time (us)',ylabel='Bright population',ylim=(-.05,1.05))
+            self.live_axis.grid(True,which='both',alpha=.3)
             ax=self.live_axis
             for frequency in sorted({k[0] for k in self.live}):
                 rows=sorted((t,v) for (f,t),v in self.live.items() if f==frequency)

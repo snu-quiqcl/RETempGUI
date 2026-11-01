@@ -498,6 +498,16 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def run_ramsey(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None):
+        return self.worker.ramsey_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,frequency_hz=frequency_hz,parent=self.group)
+
+    def stop_ramsey(self):return self.worker.ramsey_runner.cancel()
+
+    def run_spam(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None):
+        return self.worker.spam_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,frequency_hz=frequency_hz,parent=self.group)
+
+    def stop_spam(self):return self.worker.spam_runner.cancel()
+
     def run_rabi(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None):
         return self.worker.rabi_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,frequency_hz=frequency_hz,parent=self.group)
 

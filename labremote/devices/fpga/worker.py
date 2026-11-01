@@ -14,6 +14,8 @@ class FPGAWorker(AcquisitionWorker):
         self.fluorescence_runner=FluorescenceRunner(self)
         from labremote.characterization.rabi_runner import RabiRunner
         self.rabi_runner=RabiRunner(self)
+        from labremote.characterization.pulse_runner import PulseRunner
+        self.ramsey_runner=PulseRunner(self,'ramsey');self.spam_runner=PulseRunner(self,'spam')
 
     def enqueue(self,handle):
         from labremote.runtime.characterization_guard import enqueue

@@ -8,7 +8,7 @@ class DetailWindow(QtWidgets.QMainWindow):
         # independent top-level window; the owner still manages shutdown.
         self.owner=owner;self.allow_close=False
         owner.destroyed.connect(self.deleteLater)
-        self.setWindowTitle('RETempGUI · '+title);self.resize(1280,900)
+        self.setWindowTitle(title);self.resize(1280,900)
         self.scroll=QtWidgets.QScrollArea();self.scroll.setWidgetResizable(True);self.scroll.setWidget(content)
         self.setCentralWidget(self.scroll)
         home=self.menuBar().addAction('메인창')
