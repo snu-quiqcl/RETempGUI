@@ -76,3 +76,7 @@ instrumentserver-remote_entanglement/
 
 # Local launcher
 /start_lab_remote_gui.bat
+
+#workflow
+/labremote/workflow/
+/labremote/workflow/
