@@ -272,3 +272,5 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 
 - [Daily characterization: EA/EC Fluorescence·Initialization·Rabi·Ramsey·SPAM operation과 실험별 FPGA 역할 매핑](docs/DAILY_CHARACTERIZATION_KO.md)
 - [실험 조건 라이브러리·주파수별 Rabi workflow·원시 데이터 저장과 외부 분석](docs/EXPERIMENT_ARCHIVE_KO.md)
+
+- [Decay: EA/EC · 171/174 · 단일/Interferometer, 핀 매핑과 저장](docs/DECAY_KO.md)

@@ -40,7 +40,7 @@ class ExperimentArchive:
         save(self.folder/'series.json',self.state)
         # Copy executable source, not credentials, local configs, or hardware addresses.
         root=Path(__file__).resolve().parents[1]
-        sources=[p for relative in ('characterization','operation/fpga','devices/fpga/vendor') for p in (root/relative).rglob('*.py')]
+        sources=[p for relative in ('characterization','decay','operation/fpga','devices/fpga/vendor') for p in (root/relative).rglob('*.py')]
         sources += [root/'devices/fpga/controller.py',root/'api/devices.py']
         self.state['sources']={}
         for source in sources:

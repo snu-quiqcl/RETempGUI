@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "SPAM cumulative log histogram and automatic error range",
+  "revision_note": "EA EC 171 174 single dual PMT decay experiments",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 19383,
-      "sha256": "dcb927323e12382070794bdf19c387153fd0c3f69a58786a7ab3ca99289c26be"
+      "bytes": 19479,
+      "sha256": "6230e292ec76ea6bbca8e7b7198fe247a67179323d030fc23e6e61432a7f355f"
     },
     {
       "path": "check_public_files.py",
@@ -51,6 +51,11 @@
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
       "bytes": 21720,
       "sha256": "90520e7c086e327d6125a46f6bbfaad4f70e91eb1af47e420d89205c13c45910"
+    },
+    {
+      "path": "docs/DECAY_KO.md",
+      "bytes": 6562,
+      "sha256": "3dfd07435b38a84bb151d7138e1fbfba82f09c10ba8d6b4954925ebf28354ccd"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -139,8 +144,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 29458,
-      "sha256": "eb3653c05f6900ea0897ba1581e7a1ac51f07e2c56cf79c563aa07214f855406"
+      "bytes": 29763,
+      "sha256": "6428150078e541da42e70ac67dc07b9c72b58dc333cb21ffa3145f2a6fbdf3ac"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -149,8 +154,8 @@
     },
     {
       "path": "labremote/characterization/archive.py",
-      "bytes": 5118,
-      "sha256": "03eb0bc282a06f076e4d1b992dba4c3b0dc0dd91fa3f977c2036f355b0bdf19f"
+      "bytes": 5126,
+      "sha256": "52e84de36395f453dc372d1ee89d3085e5585b46265a17107334311e49b661b6"
     },
     {
       "path": "labremote/characterization/config.py",
@@ -398,6 +403,46 @@
       "sha256": "e776345d697970b401cffa6eae038a4b88377b3fc3d0b1486e51368b5a19f04c"
     },
     {
+      "path": "labremote/config/operations/decay/EA_171_dual.json",
+      "bytes": 779,
+      "sha256": "43d48c78deefec1fa2585e2a70427cf2dde38b6c04b58a017c0b3cce78c9dc9f"
+    },
+    {
+      "path": "labremote/config/operations/decay/EA_171_single.json",
+      "bytes": 785,
+      "sha256": "2758f73fa6571c0267b506f532d86d2b0deb0da92696afcfec23cc53c79512ed"
+    },
+    {
+      "path": "labremote/config/operations/decay/EA_174_dual.json",
+      "bytes": 774,
+      "sha256": "74394d3d84812762fc73395c4918531e16854c097efb32142b01291aaf89d263"
+    },
+    {
+      "path": "labremote/config/operations/decay/EA_174_single.json",
+      "bytes": 780,
+      "sha256": "417baf7f9ad3318e6cebdff80778ce4f8cacdb804d9cc6dd5c9f9ca68cf4e532"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_171_dual.json",
+      "bytes": 779,
+      "sha256": "e5c13c383129f41a0f1746e277d13759972fdbb88ff5df71e409fc702d61f5c4"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_171_single.json",
+      "bytes": 785,
+      "sha256": "6d32db603dbc4f46a4e6489cdbd93490f7874785d2658bf46e9daa97724858a1"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_174_dual.json",
+      "bytes": 774,
+      "sha256": "f9b528550c18620779f009c594ee4d7bc541beee072bba2cb19a7f9f33c6a800"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_174_single.json",
+      "bytes": 780,
+      "sha256": "fce05b5e32788295602ad59321b473113b897a7cb17901a921525447053b9a52"
+    },
+    {
       "path": "labremote/config/operations/ds1052e/parameter_registry.yml",
       "bytes": 3284,
       "sha256": "75e36d3415729856761555f1df91bf3150c2642d3351f31506f853abbf6e5367"
@@ -526,6 +571,31 @@
       "path": "labremote/config/ui/monitor.json",
       "bytes": 39,
       "sha256": "43144306c2240c8fbbbea5e13c99e8464bc41923b412ae0acb91ee14a3a8546f"
+    },
+    {
+      "path": "labremote/decay/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/decay/config.py",
+      "bytes": 5632,
+      "sha256": "3839fdacf5415c601ac893a078e6c89fe54e0f0bb530edfbb9f9304dcb80b309"
+    },
+    {
+      "path": "labremote/decay/plotting.py",
+      "bytes": 3658,
+      "sha256": "9ac029a63269c2e6fca1315fda2a20c35a5558fce3e8a2aa4f7d47cb89d2b63a"
+    },
+    {
+      "path": "labremote/decay/runner.py",
+      "bytes": 5596,
+      "sha256": "b10998fe78ab756a89964856cd1957f9ce08b0e3f9b790519d6cd14696af247e"
+    },
+    {
+      "path": "labremote/decay/sequence.py",
+      "bytes": 22717,
+      "sha256": "ac64ac8658acc0d3ce325ec5ac4106e686f48e6f79129cc17e30c17fca5bded9"
     },
     {
       "path": "labremote/devices/__init__.py",
@@ -724,8 +794,8 @@
     },
     {
       "path": "labremote/devices/fpga/worker.py",
-      "bytes": 2141,
-      "sha256": "4560cfa81459ccf43a8b8538d0323fb4166eb6ef030ccc8070ea33b11af11e08"
+      "bytes": 2242,
+      "sha256": "11590d47c93d8c6e68c0fa7acc1a896945acc40394fecb40d978c7314e0d4ca5"
     },
     {
       "path": "labremote/devices/keithley/__init__.py",
@@ -1036,6 +1106,11 @@
       "path": "labremote/operation/fpga/__init__.py",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/fpga/decay.py",
+      "bytes": 4190,
+      "sha256": "303db4dfea00323cb3c0a9f01ceb2a62d03b70a52ecfe0fb7745b8d42dcdb5a9"
     },
     {
       "path": "labremote/operation/fpga/fluorescence.py",
@@ -1539,8 +1614,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 21673,
-      "sha256": "cd32f7a75578f1c65ce9a4816eb058309c8fe9308426af0804c8035c17f240b5"
+      "bytes": 21737,
+      "sha256": "42a7140677ca004f813b626aa38f5006d4d166263f29cf115141d250fafb156f"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -1551,6 +1626,11 @@
       "path": "labremote/ui/daily_characterization.py",
       "bytes": 10307,
       "sha256": "8e3cc05b5e1bb1f4bba1f2f986ed5599df5e302af3f33ac33d033e27b82f2085"
+    },
+    {
+      "path": "labremote/ui/decay_tab.py",
+      "bytes": 8136,
+      "sha256": "938a6d4eef7c67908ca0cd5f728ec14140b4b0d5d0d1ab9ccd373e283869d713"
     },
     {
       "path": "labremote/ui/detail_window.py",
@@ -1584,8 +1664,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 16896,
-      "sha256": "e68cd97a36bd192810961c61cbdc6b98ac0dccf381448b5ad93276b628190e6a"
+      "bytes": 17088,
+      "sha256": "79c53f279d089dad7d31d12afd9364e6eca2073cfa4832dc59910d4e7e4b2e88"
     },
     {
       "path": "labremote/ui/monitor_dashboard.py",

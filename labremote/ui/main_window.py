@@ -217,6 +217,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             from .daily_characterization import DailyCharacterization
             panel.daily_tab=DailyCharacterization(panel.worker,self._bindings,self)
             tabs.addTab(panel.daily_tab,'Daily characterization' if len(panels)==1 else 'Daily · '+name)
+            from .decay_tab import DecayTab
+            panel.decay_tab=DecayTab(panel.worker,self)
+            tabs.addTab(panel.decay_tab,'Decay' if len(panels)==1 else 'Decay · '+name)
 
     def _panels(self):
         return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()

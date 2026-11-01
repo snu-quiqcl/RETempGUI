@@ -498,6 +498,11 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def run_decay(self,chamber,mode,*,settings=None,settings_file=None,directory=None):
+        return self.worker.decay_runner.start(chamber,mode,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
+
+    def stop_decay(self):return self.worker.decay_runner.cancel()
+
     def run_initialization(self,chamber,*,settings=None,settings_file=None,directory=None):
         return self.worker.initialization_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
 
