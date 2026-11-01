@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Live per-point Ramsey/initialization and cumulative SPAM display",
+  "revision_note": "SPAM cumulative log histogram and automatic error range",
   "files": [
     {
       "path": ".gitattributes",
@@ -49,8 +49,8 @@
     },
     {
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
-      "bytes": 21382,
-      "sha256": "62d5c88e7129564e4881b48dd9e77ad3a1d1c9814c09e092abf3357ead78382f"
+      "bytes": 21720,
+      "sha256": "90520e7c086e327d6125a46f6bbfaad4f70e91eb1af47e420d89205c13c45910"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -164,8 +164,8 @@
     },
     {
       "path": "labremote/characterization/initialization_analysis.py",
-      "bytes": 2731,
-      "sha256": "ac51d82195fcbee83f4c412704c1d4970e34f4be43e4a8acc0532997e33ba6ef"
+      "bytes": 3313,
+      "sha256": "b0c0082e875a8754257794a19406a8837c91f4121927f56d5962533685d14c8c"
     },
     {
       "path": "labremote/characterization/initialization_sequence.py",
@@ -174,13 +174,13 @@
     },
     {
       "path": "labremote/characterization/live_pulse.py",
-      "bytes": 4291,
-      "sha256": "2320cb147bb8015962a149992dfb14104467274f8d5e36129641a0186070cb15"
+      "bytes": 4582,
+      "sha256": "77490208fb138d1929bc3e0b1e6da899d8cf1d226d62c38e8ea7d7863869c875"
     },
     {
       "path": "labremote/characterization/pulse_experiment.py",
-      "bytes": 12038,
-      "sha256": "7213995e39806b4dd867eea37add368a13f238a86d19f8132e00042e08d88714"
+      "bytes": 10850,
+      "sha256": "e576b178c8a587631984319a2591dc8e9869f17383a0e64e1c87dfeef42a8bfc"
     },
     {
       "path": "labremote/characterization/pulse_runner.py",

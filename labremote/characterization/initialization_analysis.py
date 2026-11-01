@@ -40,5 +40,13 @@ def draw(figure,data):
     hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Occurrences')
     ax.errorbar(np.asarray(data['time_s'])*1e6,data['population'],yerr=data['population_error'],fmt='o-',label='Measured')
     if len(data['fit_time_us']):ax.plot(data['fit_time_us'],data['fit_population'],'--',label='Exponential fit')
-    ax.set(xlabel='Nominal initialization time (us)',ylabel='Bright population',ylim=(-.05,1.05));ax.grid(True,alpha=.3);ax.legend()
+    values=np.concatenate((np.asarray(data['population'],dtype=float),np.asarray(data['fit_population'],dtype=float)))
+    positive=values[np.isfinite(values)&(values>0)]
+    lower=min(.1,float(positive.min())*.5) if positive.size else 1e-3
+    upper=max(1.05,float(positive.max())*1.1) if positive.size else 1.05
+    ax.set(xlabel='Nominal initialization time (us)',ylabel='Bright population',ylim=(lower,upper))
+    ax.set_yscale('log',nonpositive='mask')
+    if np.any(np.asarray(data['population'])<=0):
+        ax.text(.02,.03,'Zero population is not shown on log scale',transform=ax.transAxes,fontsize=8)
+    ax.grid(True,which='both',alpha=.3);ax.legend()
     figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)

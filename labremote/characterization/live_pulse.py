@@ -33,15 +33,15 @@ class LivePlot:
     def __init__(self,figure,kind):
         self.kind=kind;figure.clear()
         if kind=='spam':
-            hist,passed,error=figure.subplots(3,1)
-            self.lines=[hist.plot(range(40),[math.nan]*40,drawstyle='steps-mid',label=label)[0] for label in ('No MW pulse / target 0','π pulse / target 1')]
-            hist.set(xlabel='Photon counts (39 includes overflow)',ylabel='Final detections',yscale='log',ylim=(.8,10));hist.legend()
-            self.hist=hist;self.passed=passed.bar([0,1],[0,0]);self.errors=error.bar([0,1,2],[0,0,0])
-            passed.set(xticks=[0,1],xticklabels=['Target 0','Target 1'],ylabel='Successes / attempts',ylim=(0,1.18))
-            error.set(xticks=[0,1,2],xticklabels=['0 read as 1','1 read as 0','Equal-weight mean'],ylabel='Conditional SPAM error',ylim=(0,1.18))
+            hist,error=figure.subplots(2,1)
+            self.lines=[hist.plot(range(40),[math.nan]*40,drawstyle='steps-mid',marker='o',markersize=3,label=label)[0] for label in ('No MW pulse / target 0','π pulse / target 1')]
+            hist.set(xlabel='Photon counts (39 includes overflow)',ylabel='Occurrences (cumulative)',title='Population histogram',yscale='log',ylim=(.8,10));hist.legend()
+            self.hist=hist;self.error_axis=error;self.errors=error.bar([0,1,2],[0,0,0])
+            error.set(xticks=[0,1,2],xticklabels=['0 read as 1','1 read as 0','Equal-weight mean'],ylabel='Conditional SPAM error')
             self.labels=[error.text(i,0,'N/A',ha='center',va='bottom') for i in range(3)]
             from matplotlib.ticker import PercentFormatter
-            for ax in (passed,error):ax.yaxis.set_major_formatter(PercentFormatter(1));ax.grid(True,axis='y',alpha=.3)
+            error.yaxis.set_major_formatter(PercentFormatter(1));error.grid(True,axis='y',alpha=.3)
+            hist.grid(True,which='both',alpha=.2)
         else:
             hist,ax=figure.subplots(2,1);self.hist=hist;self.bars=hist.bar(range(41),[0]*41)
             hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Occurrences',ylim=(0,1))
@@ -51,12 +51,17 @@ class LivePlot:
 
     def update(self,data):
         if self.kind=='spam':
-            for line,state,bar in zip(self.lines,data['states'],self.passed):
+            for line,state in zip(self.lines,data['states']):
                 line.set_ydata([v if v else math.nan for v in state['histogram']])
-                bar.set_height(state['successes']/state['attempts'] if state['attempts'] else math.nan)
             self.hist.set_ylim(.8,max(10,max(max(s['histogram']) for s in data['states'])*1.3))
             for bar,label,value in zip(self.errors,self.labels,data['errors']):
                 bar.set_height(value if value is not None else math.nan);label.set_y(value or 0);label.set_text('N/A' if value is None else f'{value:.3%}')
+            finite=[v for v in data['errors'] if v is not None and math.isfinite(v)]
+            low,high=(min(finite),max(finite)) if finite else (0,0)
+            pad=max((high-low)*.2,high*.1,1e-4)
+            bottom=max(0,low-pad);self.error_axis.set_ylim(bottom,high+pad*2)
+            for label,value in zip(self.labels,data['errors']):
+                if value is None:label.set_y(bottom+pad*.1)
         else:
             for bar,value in zip(self.bars,data['histogram']):bar.set_height(value)
             self.hist.set_ylim(0,max(1,max(data['histogram'])*1.2))

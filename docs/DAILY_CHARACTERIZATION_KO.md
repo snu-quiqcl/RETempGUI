@@ -162,7 +162,7 @@ GUI에서 냉각/검출 반복, 초기화·검출·AOM off wait, half π pulse, 
 
 원본의 사전선별 코드가 주석 처리되어 있으므로 이를 새로 활성화하지 않았습니다. 현재 시퀀스에서는 보통 N_success=N_average입니다. FIFO의 `[N_success, address, count, 10]`를 검증하고 각 batch마다 address<N_success인 행만 final detection에 포함합니다. 0 photon은 유효 데이터로 유지하고 batch 경계를 보존합니다.
 
-두 상태의 공유 로그축 histogram, successes/attempts, target 0이 bright로/target 1이 dark로 판별된 비율, 두 상태 동일 가중 평균 SPAM error와 fidelity를 표시합니다. accepted 데이터가 0개인 상태의 conditional error/fidelity는 0이나 100%로 대신하지 않고 N/A로 표시합니다. 부분 readout은 received와 accepted 수 및 incomplete batch로 구분합니다. histogram의 마지막 39-bin은 overflow이고 raw counts는 자르지 않습니다.
+두 상태의 누적 population histogram(로그 Y축), target 0이 bright로/target 1이 dark로 판별된 비율, 두 상태 동일 가중 평균 SPAM error와 fidelity를 표시합니다. accepted 데이터가 0개인 상태의 conditional error/fidelity는 0이나 100%로 대신하지 않고 N/A로 표시합니다. 부분 readout은 received와 accepted 수 및 incomplete batch로 구분합니다. histogram의 마지막 39-bin은 overflow이고 raw counts는 자르지 않습니다.
 
 ### 호출 및 결과 저장
 
@@ -200,10 +200,12 @@ result = devices.fpga('fpga_local').run_initialization(
 
 ## 수집 중 그래프
 
-Ramsey와 Initialization은 한 시간점의 shots가 모두 수신될 때마다 population 점과 해당 시간점 histogram을 갱신합니다. SPAM은 각 상태의 batch가 완료될 때마다 누적 histogram, successes/attempts, 상태별 오류율과 동일 가중 평균을 갱신합니다. 아직 데이터가 없는 상태의 오류율은 N/A입니다. 완료되지 않은 포인트/batch는 중간 그래프에 합산하지 않으며 기존 부분 저장과 종료 분석 정책은 유지합니다.
+Ramsey와 Initialization은 한 시간점의 shots가 모두 수신될 때마다 population 점과 해당 시간점 histogram을 갱신합니다. SPAM은 각 상태의 batch가 완료될 때마다 누적 histogram(로그 Y축), 상태별 오류율과 동일 가중 평균을 갱신합니다. 아직 데이터가 없는 상태의 오류율은 N/A입니다. 완료되지 않은 포인트/batch는 중간 그래프에 합산하지 않으며 기존 부분 저장과 종료 분석 정책은 유지합니다.
 
 중간 표시는 작은 집계 결과만 UI에 전달하고, 축과 그래프 객체를 유지한 채 데이터를 갱신합니다. FPGA가 FIFO 데이터를 전달하기 전에는 표시할 수 없으며, 여러 지점이 한 번에 수신되면 화면 갱신도 합쳐질 수 있습니다. Ramsey/Initialization fitting은 수집 종료(중단 포함) 후에만 수행합니다. 측정 명령, 원시 데이터와 파일 형식은 변경하지 않았습니다.
 
 ## 장비 메뉴
 
 장비 메뉴에서 RF/FPGA 등 그룹 이름을 바로 누르면 해당 상세 창이 열립니다. 메뉴 안의 추가 장비 단계는 제거했으며 그룹 창 내부 장비 탭은 그대로 유지합니다. 상세 창 제목은 RF, FPGA, CCD 등 그룹 이름만 표시합니다. Rabi population의 수집 중/최종 그래프에는 grid를 표시합니다.
+
+SPAM의 수집 중/종료 그래프는 같은 표시 방식을 사용합니다. successes/attempts 그래프는 제거했으며 원시 통계 저장은 유지합니다. Histogram은 정규화 확률이 아닌 누적 발생 횟수로 표시합니다. SPAM error Y축은 현재 오류율의 최소·최대에 여백을 더해 자동 조정합니다.

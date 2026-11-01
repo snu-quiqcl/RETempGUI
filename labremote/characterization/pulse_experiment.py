@@ -110,16 +110,9 @@ def draw(figure,data):
         if data['fit_time_s']:ax.plot(np.array(data['fit_time_s'])*1000,data['fit_population'],'--',label='Fit')
         ax.set(xlabel='Nominal free precession time (ms)',ylabel='Bright population',ylim=(-.05,1.05));ax.legend();ax.grid(True,alpha=.3)
     else:
-        from matplotlib.ticker import PercentFormatter
-        hist,passed,error=figure.subplots(3,1);labels=['No MW pulse / target 0','π pulse / target 1']
-        for state,label in zip(data['states'],labels):
-            counts=np.array(state['histogram'],dtype=float);hist.step(np.arange(40),np.where(counts>0,counts,np.nan),where='mid',marker='o',markersize=3,label=label)
-        hist.set_yscale('log');hist.set_ylim(bottom=.8);hist.set(xlabel='Photon counts (39 includes overflow)',ylabel='Final detections');hist.legend();hist.grid(True,which='both',alpha=.2)
-        for ax,values,names in [(passed,[s['success_probability'] for s in data['states']],labels),(error,[s['spam_error'] for s in data['states']]+[data['average_spam_error']],['0 read as 1','1 read as 0','Equal-weight mean'])]:
-            ax.bar(range(len(values)),[v if v is not None else np.nan for v in values]);ax.set_xticks(range(len(values)),names);ax.yaxis.set_major_formatter(PercentFormatter(1));ax.grid(True,axis='y',alpha=.3)
-            for i,v in enumerate(values):ax.annotate('N/A' if v is None else f'{v:.3%}',(i,0 if v is None else v),xytext=(0,5),textcoords='offset points',ha='center')
-            ax.set_ylim(0,max(.05,max((v for v in values if v is not None),default=0)*1.25))
-        passed.set_ylabel('Successes / attempts');passed.set_ylim(0,1.18);error.set_ylabel('Conditional SPAM error')
+        from .live_pulse import LivePlot
+        plot=LivePlot(figure,'spam')
+        plot.update(dict(states=data['states'],errors=[s['spam_error'] for s in data['states']]+[data['average_spam_error']]))
     # Stable margins also work when workflow results arrive in a hidden tab.
     figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)
 
