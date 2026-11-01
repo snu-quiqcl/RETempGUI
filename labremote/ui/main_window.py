@@ -238,13 +238,14 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
                 if answer==QtWidgets.QMessageBox.Cancel or (answer==QtWidgets.QMessageBox.Save and not self.save_equipment()):event.ignore();return
             for panel in self.family_tabs['fpga'].values():
                 if hasattr(panel,'daily_tab') and not panel.daily_tab.workflow.confirm_close():event.ignore();return
-            if not self.workflow_tab.confirm_close():
+            if not self.workflow_tab.confirm_close() or not self.queue_tab.confirm_close():
                 event.ignore()
                 return
             self._closing = True
             self.connection_queue.clear()
             for detail in [*self.detail_windows.values(),self.connection_settings_window]:detail.setEnabled(False)
             self.workflow_tab.shutdown()
+            self.queue_tab.shutdown()
             for panel in self.family_tabs['fpga'].values():
                 if hasattr(panel,'daily_tab'):panel.daily_tab.shutdown()
             self.discovery_worker.shutdown()
@@ -260,10 +261,11 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         else:self.close_equipment_windows();event.accept()
 
     def _running(self):
-        return self.workflow_tab.still_running() or self.discovery_worker.isRunning() or any(p.still_running() for p in self._panels())
+        return self.workflow_tab.still_running() or self.queue_tab.still_running() or self.queue_monitor.still_running() or self.discovery_worker.isRunning() or any(p.still_running() for p in self._panels())
 
     def _shutdown_workers_when_ready(self):
         if self._workers_shutdown:return
+        if self.workflow_tab.still_running() or self.queue_tab.still_running():return
         if any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values()):return
         from labremote.runtime.workflow_runner import _TASK_LOCK
         with _TASK_LOCK:tasks={task for panel in self._panels() for task in panel.worker._background_tasks}

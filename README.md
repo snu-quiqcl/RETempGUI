@@ -274,3 +274,7 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 - [실험 조건 라이브러리·주파수별 Rabi workflow·원시 데이터 저장과 외부 분석](docs/EXPERIMENT_ARCHIVE_KO.md)
 
 - [Decay: EA/EC · 171/174 · 단일/Interferometer, 핀 매핑과 저장](docs/DECAY_KO.md)
+
+## Workflow Queue
+
+메인 창의 Queue에서 workflow 순서·반복·실패 정책을 설정하고, Queue Monitor에서 실시간/저장된 결과를 확인합니다. EA/EC 개별 실험 탭은 유지됩니다. [사용법 및 결과 저장 구조](docs/WORKFLOW_QUEUE_KO.md)를 참고하세요.

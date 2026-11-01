@@ -21,7 +21,8 @@ class WorkflowThread(QtCore.QThread):
     def run(self):
         try:
             if self.stop_event.is_set(): raise OperationCancelled('Stopped before loading workflow')
-            with load_workflow(self.source, self.filename) as workflow:
+            from labremote.runtime.workflow_result import workflow_session
+            with workflow_session(), load_workflow(self.source, self.filename) as workflow:
                 result = run_workflow(self.bindings, workflow, stop_event=self.stop_event)
             self.result_ready.emit(result)
         except Exception as error:
@@ -205,9 +206,12 @@ class WorkflowTab(QtWidgets.QWidget):
 
     def _result(self, result):
         self.last_result = result
-        self.status.setText('성공')
+        status=getattr(result,'status','completed')
+        self.status.setText({'completed':'성공','failed':'실패','cancelled':'취소'}[status]+(' · '+result.reason if getattr(result,'reason','') else ''))
 
     def _error(self, message, stopped):
+        from labremote.runtime.workflow_result import WorkflowResult
+        self.last_result=WorkflowResult(status='cancelled' if stopped else 'failed',reason=message)
         self.status.setText(('취소: ' if stopped else '실패: ') + message)
 
     def _finished(self):

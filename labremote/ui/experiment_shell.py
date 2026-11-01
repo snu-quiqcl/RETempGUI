@@ -56,6 +56,13 @@ class ExperimentShellMixin:
         self.device_tabs.insertTab(0,self.home,'메인')
         self.device_tabs.setTabText(self.device_tabs.indexOf(self.workflow_tab),'Workflow')
         from .monitor_dashboard import MonitorDashboard
+        from labremote.ui.queue_tab import QueueTab
+        from labremote.ui.queue_monitor import QueueMonitor
+        self.queue_tab=QueueTab(self._bindings,self)
+        self.queue_monitor=QueueMonitor(self)
+        self.queue_tab.state_changed.connect(self.queue_monitor.accept_live)
+        self.device_tabs.addTab(self.queue_tab,'Queue')
+        self.device_tabs.addTab(self.queue_monitor,'Queue Monitor')
         self.monitor_tab=MonitorDashboard(lambda:self.family_tabs,self)
         self.device_tabs.addTab(self.monitor_tab,'Monitor');self.device_tabs.setCurrentWidget(self.home)
         self.equipment_timer=QtCore.QTimer(self);self.equipment_timer.setInterval(200);self.equipment_timer.timeout.connect(self.refresh_experiment_home);self.equipment_timer.start()
@@ -138,7 +145,7 @@ class ExperimentShellMixin:
         return identity==(*self._endpoint(),target)
 
     def workflows_running(self):
-        return self.workflow_tab.still_running() or any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values())
+        return self.workflow_tab.still_running() or self.queue_tab.still_running() or any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values())
 
     def active_experiment_tasks(self):
         tasks={t for panel in self._panels() for t in getattr(panel.worker,'_background_tasks',())}
@@ -247,7 +254,7 @@ class ExperimentShellMixin:
         self.shell_message.setText('연결 해제 요청 · 출력 OFF 명령과는 별개입니다. 기존 종료 workflow를 먼저 실행하세요.')
 
     def stop_experiment_tasks(self):
-        self.connection_queue.clear();self.workflow_tab.cancel()
+        self.connection_queue.clear();self.workflow_tab.cancel();self.queue_tab.shutdown()
         for panel in self.family_tabs['fpga'].values():
             if hasattr(panel,'daily_tab'):panel.daily_tab.workflow.cancel()
         for task in self.active_experiment_tasks():task.cancel()

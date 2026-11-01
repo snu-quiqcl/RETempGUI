@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "EA EC 171 174 single dual PMT decay experiments",
+  "revision_note": "Workflow outcomes, ordered repeat Queue and integrated Queue Monitor",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 19479,
-      "sha256": "6230e292ec76ea6bbca8e7b7198fe247a67179323d030fc23e6e61432a7f355f"
+      "bytes": 19780,
+      "sha256": "1b3c107e31acb94f1d17badabe77bbe6ccb399b9d60184cacadd5a3b8cf8c04c"
     },
     {
       "path": "check_public_files.py",
@@ -126,6 +126,11 @@
       "path": "docs/WORKFLOW_CCD_FPGA_KO.md",
       "bytes": 4664,
       "sha256": "9b9bb2ac61f8a89e6f9a9f9bf1b5b0db3f4887290940e27f33a92a3cc7ebf80d"
+    },
+    {
+      "path": "docs/WORKFLOW_QUEUE_KO.md",
+      "bytes": 6778,
+      "sha256": "bca6fd80c0ee3058bf6d8e50b6e295ea2fa686475c168c9077d1a05824dc64ec"
     },
     {
       "path": "lab_remote_gui.py",
@@ -1598,9 +1603,19 @@
       "sha256": "d41f226e166623ded12a182fa54a40e6ae3355c7110dbcb13bd6f84d4523393d"
     },
     {
+      "path": "labremote/runtime/workflow_queue.py",
+      "bytes": 9571,
+      "sha256": "7caa225a2ad3b08790fc2a24a7dc5e467d16536455443f8a826c7d806010b792"
+    },
+    {
+      "path": "labremote/runtime/workflow_result.py",
+      "bytes": 2205,
+      "sha256": "ebde4f5683ff2071504b7c59c84cb72d90c8df0cd86deeea322a99f434791327"
+    },
+    {
       "path": "labremote/runtime/workflow_runner.py",
-      "bytes": 6929,
-      "sha256": "adf183adb3a3a97f231f7fdfbd2c815d26dc798405a16f6f21f214a0bfa99b25"
+      "bytes": 7514,
+      "sha256": "d2958b27716eace522bd5b1d39fba0b010dd9534e6518d554bab023381743b5c"
     },
     {
       "path": "labremote/sequence_examples/pmt_exposure.py",
@@ -1649,8 +1664,8 @@
     },
     {
       "path": "labremote/ui/experiment_shell.py",
-      "bytes": 21973,
-      "sha256": "34c8ebc41f9adb226913540bf62c35b44c3065e8536f5fa63005dc323c9a810d"
+      "bytes": 22452,
+      "sha256": "271df0fc9fe896078c0fed050850a73717ef97bc4de0bf73adc4ef2c4011c1b2"
     },
     {
       "path": "labremote/ui/fpga_count_tab.py",
@@ -1664,8 +1679,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 17088,
-      "sha256": "79c53f279d089dad7d31d12afd9364e6eca2073cfa4832dc59910d4e7e4b2e88"
+      "bytes": 17324,
+      "sha256": "d3b4afd982e62115bfc863b6bd73fdebc2bd13fe316385d780ae25e5bc548999"
     },
     {
       "path": "labremote/ui/monitor_dashboard.py",
@@ -1691,6 +1706,16 @@
       "path": "labremote/ui/pulse_experiment_tab.py",
       "bytes": 9639,
       "sha256": "98d7b51b72feb363a4935ec8591c922e27e1753edd18677051520161c3f192cb"
+    },
+    {
+      "path": "labremote/ui/queue_monitor.py",
+      "bytes": 6588,
+      "sha256": "81a12111f3fca78d44fdcd385b0147fed92503049d9a35b38d4ea112fb3a8be7"
+    },
+    {
+      "path": "labremote/ui/queue_tab.py",
+      "bytes": 9574,
+      "sha256": "73924f90e6c18b88969a33e0634c9dc3dfbe9f12ab0d0908350bf35ef73ce3e0"
     },
     {
       "path": "labremote/ui/rabi_tab.py",
@@ -1754,8 +1779,8 @@
     },
     {
       "path": "labremote/ui/workflow_tab.py",
-      "bytes": 10826,
-      "sha256": "7089b4f7e0aa7d3da70f5952f31b5f19fb78aad85d060cb1beb1197d2b89001e"
+      "bytes": 11269,
+      "sha256": "2c5325ad82bc6cd1f06d67f32d11a65b6ee9efd4d685712701cc181e43845609"
     },
     {
       "path": "labremote/workflow/__init__.py",
@@ -1826,6 +1851,16 @@
       "path": "labremote/workflow/power_on_windfreak.py",
       "bytes": 425,
       "sha256": "5380f90d97c77b0f89afa62ef0d7074febd6b95435a064af5d2f7bbb593106b1"
+    },
+    {
+      "path": "labremote/workflow/queue_demo.py",
+      "bytes": 606,
+      "sha256": "8ab3e43d973cd6ca8794b8ceb06ed8fe8b3161c1553cbdfde612dcefd4f3d7fa"
+    },
+    {
+      "path": "labremote/workflow/queue_rabi.py",
+      "bytes": 585,
+      "sha256": "6ed551a7d78054a4421edfcf27b22201eba25d537b6bc8ec1defd761e3613abc"
     },
     {
       "path": "labremote/workflow/rabi_frequency_archive.py",
