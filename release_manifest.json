@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Daily EA/EC fluorescence characterization with frozen role mappings and workflow API",
+  "revision_note": "Experiment-local role mappings and EA/EC microwave Rabi characterization",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 19191,
-      "sha256": "ccd948aeeb2b87a954cbd18236ad65616ccbea3e5902da514355af92cc2352c1"
+      "bytes": 19217,
+      "sha256": "bb3bac79a0737f1d73081813b60203d67c23ff167a9f7a77b61e50de6fadc97e"
     },
     {
       "path": "check_public_files.py",
@@ -49,8 +49,8 @@
     },
     {
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
-      "bytes": 5849,
-      "sha256": "b2e793c8067cc24b18204886deae2d799b71804c431261dea770b34651b2a478"
+      "bytes": 11644,
+      "sha256": "e2d4e2fcafae9fd555bc19f3aec1d13965f2f526ffe5e6f6a8c87be02ca3f20d"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -134,8 +134,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 28114,
-      "sha256": "9ab43189f022c7dbbbeaeb249c859ab8e2e42a5c3bf0ab54f32264825601f98b"
+      "bytes": 28425,
+      "sha256": "a5a64b1a6750bf10580a2dfa330607e803d17739b0b37704aa3eb8fbe85a8c64"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -144,8 +144,8 @@
     },
     {
       "path": "labremote/characterization/config.py",
-      "bytes": 4094,
-      "sha256": "6786e03e63139140953a7eefeaf185d760bcf69d95a2174aa8f9891f18878373"
+      "bytes": 4855,
+      "sha256": "a0f2ed2b3f76f897aabd054868aca13cff2c83093f27356ba89a016fc52edf0c"
     },
     {
       "path": "labremote/characterization/fluorescence.py",
@@ -153,9 +153,24 @@
       "sha256": "924d3c86cab502f535ee4ddf7c60c119b3ff3f808b58132daed72cbedf5b77a0"
     },
     {
+      "path": "labremote/characterization/rabi.py",
+      "bytes": 7363,
+      "sha256": "2e93b63e980f288ffcd8442a4e061f823f56aeee49f854d7a8f714e6e1399d3c"
+    },
+    {
+      "path": "labremote/characterization/rabi_runner.py",
+      "bytes": 6776,
+      "sha256": "56bf0b3f3f10530b5d1bc96184b7cd7a478a360e2cd72af7c5b1fea770325c12"
+    },
+    {
+      "path": "labremote/characterization/rabi_sequence.py",
+      "bytes": 4410,
+      "sha256": "0ab6b59b362d6ca139a5274dd39f02bdba0d60a1ffcd5874df3f012d4c71998d"
+    },
+    {
       "path": "labremote/characterization/runner.py",
-      "bytes": 5473,
-      "sha256": "f514517552c99a5c8ce9bcad492bfe360f02a2d6477c10db8796fa0f40fd5d22"
+      "bytes": 5590,
+      "sha256": "f8478ba003c8e1f472ecb5c0d45c82a2e98e29289fd7a05499a27576b9a0190c"
     },
     {
       "path": "labremote/config/__init__.py",
@@ -169,8 +184,8 @@
     },
     {
       "path": "labremote/config/devices/anapico/device_config.yml",
-      "bytes": 408,
-      "sha256": "0662a1096fc5f19b21d41e527bd9c7c026336f1b4ea8cd637dea6b93e3c63526"
+      "bytes": 572,
+      "sha256": "d7dd093a4c7c15ba9c59372df03eab7c786c6fbb0653e9616b76951fa3b1735f"
     },
     {
       "path": "labremote/config/devices/connections.json",
@@ -281,6 +296,16 @@
       "path": "labremote/config/operations/characterization/fpga_roles.json",
       "bytes": 197,
       "sha256": "0065832c31d8a96e109768bfaad8daf4d5d95d1f38ca4df3678c11cc1c0b90f9"
+    },
+    {
+      "path": "labremote/config/operations/characterization/rabi_EA.json",
+      "bytes": 586,
+      "sha256": "88bde16d35c6e0c761cd7226d81a1632f074cfb3a039e6fea910d3b47eb59c4b"
+    },
+    {
+      "path": "labremote/config/operations/characterization/rabi_EC.json",
+      "bytes": 586,
+      "sha256": "a3dd6d6a9f7369e5359c3aaf028bf6864ef6f33507e338eac58c67e32f11550b"
     },
     {
       "path": "labremote/config/operations/dds4/parameter_registry.yml",
@@ -434,8 +459,8 @@
     },
     {
       "path": "labremote/devices/anapico/worker.py",
-      "bytes": 556,
-      "sha256": "b8765ee454d47b6fd79f3c6f5007f4dd6daebfd494265f6681f69db6b36d0e5a"
+      "bytes": 712,
+      "sha256": "4d5779ed046c856ae6dabb99b5e1194bc1e76876f31788632cceb2f1a052c889"
     },
     {
       "path": "labremote/devices/ccd/__init__.py",
@@ -614,8 +639,8 @@
     },
     {
       "path": "labremote/devices/fpga/worker.py",
-      "bytes": 2196,
-      "sha256": "6b8738ae208c5d0475e8538ddc0aa28f29582524acb05b3df8d185f707d06c4c"
+      "bytes": 1909,
+      "sha256": "61ccabfb3df37f307b6e125f79e4e184c900471f8d49d1050eabed77e19fce6f"
     },
     {
       "path": "labremote/devices/keithley/__init__.py",
@@ -941,6 +966,11 @@
       "path": "labremote/operation/fpga/measure_counts.py",
       "bytes": 1014,
       "sha256": "f2092ce92f4f97083e7ce5df1640242f8655887678ae741dbdc0077dc86d5a47"
+    },
+    {
+      "path": "labremote/operation/fpga/rabi.py",
+      "bytes": 2875,
+      "sha256": "db3f255ecd21dac6d936b4e719db076d98f8ad43e930a415313fe5319008929a"
     },
     {
       "path": "labremote/operation/fpga/read_snapshot.py",
@@ -1313,6 +1343,11 @@
       "sha256": "87779106caef599042ce1788ea6a058d516e88298bfbd546e38838d283274d17"
     },
     {
+      "path": "labremote/runtime/characterization_guard.py",
+      "bytes": 1243,
+      "sha256": "ab4673b68f9e9c819e4e1d11a3e85a19c69b9b61305c03b72d3f6f2283f312db"
+    },
+    {
       "path": "labremote/runtime/device_worker.py",
       "bytes": 6455,
       "sha256": "556aa0d5d52e9d14b2128d891b7a90b6aebfffafa28a31589034adcb75203091"
@@ -1389,8 +1424,8 @@
     },
     {
       "path": "labremote/runtime/waveform_runner.py",
-      "bytes": 4971,
-      "sha256": "de205df4907cde06dffae615e0fcdff8e3bfa13cfe9831245fc51a5cbe4b760e"
+      "bytes": 5002,
+      "sha256": "c34ebe37388c484804aa6922171f6cd541b23cb6cc677a3f443203497d764d24"
     },
     {
       "path": "labremote/runtime/workflow_loader.py",
@@ -1399,8 +1434,8 @@
     },
     {
       "path": "labremote/runtime/workflow_runner.py",
-      "bytes": 6898,
-      "sha256": "9ebbce6f84c4d7b130a3c43252b3ad720d9c334b8251a9c8fd319f1532cb0dfe"
+      "bytes": 6929,
+      "sha256": "adf183adb3a3a97f231f7fdfbd2c815d26dc798405a16f6f21f214a0bfa99b25"
     },
     {
       "path": "labremote/sequence_examples/pmt_exposure.py",
@@ -1424,8 +1459,8 @@
     },
     {
       "path": "labremote/ui/daily_characterization.py",
-      "bytes": 12148,
-      "sha256": "0fb6411bce296ad523c5c850cde53683a9222a544dd5d97c53aeed319f43c2bd"
+      "bytes": 9896,
+      "sha256": "96a44f25f9d839d212dedffbdd87af8ccf85d7e900540278f74e5726c98459eb"
     },
     {
       "path": "labremote/ui/detail_window.py",
@@ -1481,6 +1516,11 @@
       "path": "labremote/ui/pid_tab.py",
       "bytes": 6997,
       "sha256": "7df837dfe6648a81c9b60aac336dba4c838e3a60d7e09d5e4f113d76d7ccfd22"
+    },
+    {
+      "path": "labremote/ui/rabi_tab.py",
+      "bytes": 11019,
+      "sha256": "444083166074f4ad9ecb91b8d6afe66a3b32875e0286d30b03394d596c773a59"
     },
     {
       "path": "labremote/ui/rf_device_tab.py",
@@ -1561,6 +1601,11 @@
       "path": "labremote/workflow/daily_fluorescence.py",
       "bytes": 313,
       "sha256": "9d342deab70a6016da1c32d4d4f6bb6566c6dba748b2ac2a548c43398f5c5f4b"
+    },
+    {
+      "path": "labremote/workflow/daily_rabi.py",
+      "bytes": 333,
+      "sha256": "b81fcb7509f506c1b72da6b85a4c1008da0ed088ab70949f12dbc9208aa9c248"
     },
     {
       "path": "labremote/workflow/ea_ec_rf_setup.py",

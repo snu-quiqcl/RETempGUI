@@ -38,7 +38,7 @@ class WaveformRunner:
         with _TASK_LOCK, worker._lock:
             error=None
             if any(t.label=="MOTOR_SCAN" and t.running() for t in worker._background_tasks):error=RuntimeError("Stop motor scan before starting repeat measurement")
-            elif any(getattr(t,'exclusive_fpga',False) and t.running() for t in worker._background_tasks):error=RuntimeError('FPGA reserved by daily characterization')
+            elif any(getattr(t,'exclusive_fpga',False) and t.running() and not t.handle.done.is_set() for t in worker._background_tasks):error=RuntimeError('FPGA reserved by daily characterization')
             elif self.running():error=RuntimeError('Waveform capture is already running or stopping')
             elif worker._closing or self.suspended or worker.connection_error or worker.ps is None:
                 error=ConnectionError('Connect the device before starting waveform capture')

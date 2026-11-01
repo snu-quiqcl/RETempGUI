@@ -12,17 +12,12 @@ class FPGAWorker(AcquisitionWorker):
         self.scan_runners={number:MotorScanRunner(self,number) for number in range(1,5)}
         from labremote.characterization.runner import FluorescenceRunner
         self.fluorescence_runner=FluorescenceRunner(self)
+        from labremote.characterization.rabi_runner import RabiRunner
+        self.rabi_runner=RabiRunner(self)
 
     def enqueue(self,handle):
-        from labremote.runtime.workflow_runner import _TASK_LOCK
-        with _TASK_LOCK:
-            runner=self.fluorescence_runner
-            if runner.running() and handle.group is not runner.group and handle.action!='DISCONNECT':
-                error=RuntimeError('FPGA reserved by fluorescence')
-                if handle.group is not None:handle.group.stop.set()
-                handle.finish(error);self.handle_changed.emit(handle)
-                return handle
-            return super().enqueue(handle)
+        from labremote.runtime.characterization_guard import enqueue
+        return enqueue(self,handle,super().enqueue)
 
     def make_monitor(self):
         from .monitor import Monitor

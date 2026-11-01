@@ -7,55 +7,15 @@ from labremote.characterization import config
 from labremote.characterization.fluorescence import draw
 
 
-class MappingTab(QtWidgets.QWidget):
-    def __init__(self,worker,parent=None):
-        super().__init__(parent);self.worker=worker;self.fields={}
-        root=QtWidgets.QVBoxLayout(self)
-        root.addWidget(QtWidgets.QLabel('EC 셋업의 공통 FPGA · fluorescence는 PMT만 사용하며 AOM 출력은 변경하지 않습니다.'))
-        grid=QtWidgets.QGridLayout();root.addLayout(grid)
-        for col,title in enumerate(('실험 대상','시퀀스 PMT','시퀀스 AOM')):grid.addWidget(QtWidgets.QLabel(title),0,col)
-        for row,chamber in enumerate(('EA','EC'),1):
-            grid.addWidget(QtWidgets.QLabel(chamber),row,0)
-            for col,(role,names) in enumerate((('PMT',config.PMTS),('AOM',config.AOMS)),1):
-                box=QtWidgets.QComboBox();box.addItems(names);self.fields[chamber,role]=box;grid.addWidget(box,row,col)
-        row=QtWidgets.QHBoxLayout();root.addLayout(row)
-        for title,callback in (('불러오기',self.load),('저장 / 적용',self.apply),('다른 이름으로 저장',self.save_as)):
-            button=QtWidgets.QPushButton(title);row.addWidget(button);button.clicked.connect(callback)
-        self.status=QtWidgets.QLabel();self.status.setWordWrap(True);root.addWidget(self.status);root.addStretch()
-        try:self.populate(config.load_roles());self.status.setText(str(config.ROOT/'fpga_roles.local.json'))
-        except Exception as exc:self.status.setText(str(exc))
-
-    def populate(self,value):
-        for (chamber,role),box in self.fields.items():box.setCurrentText(value['routes'][chamber][role])
-
-    def value(self):
-        return config.validate_roles(dict(schema_version=1,setup='EC',routes={c:{r:self.fields[c,r].currentText() for r in ('PMT','AOM')} for c in ('EA','EC')}))
-
-    def idle(self):
-        if self.worker.fluorescence_runner.running():raise RuntimeError('측정 종료 후 매핑을 변경하세요. 실행 중 매핑은 고정됩니다.')
-
-    def load(self):
-        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load FPGA role mapping',str(config.ROOT),'JSON (*.json)')
-        if path:
-            try:self.idle();self.populate(config.load_roles(path));self.status.setText('불러옴 · 저장 / 적용을 눌러 활성화: '+path)
-            except Exception as exc:self.status.setText(str(exc))
-
-    def apply(self):
-        try:
-            self.idle();path=config.ROOT/'fpga_roles.local.json';config.save(path,self.value());self.status.setText('적용됨 · '+str(path))
-        except Exception as exc:self.status.setText(str(exc))
-
-    def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save mapping',str(config.ROOT/'fpga_roles.local.json'),'JSON (*.json)')
-        if path:
-            try:config.save(path,self.value());self.status.setText('파일 저장됨 · 활성화하려면 불러오기 후 저장 / 적용: '+path)
-            except Exception as exc:self.status.setText(str(exc))
-
-
 class FluorescenceTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,parent=None):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.api=device_api(worker);self.fields={};self.run_id=None;self.rendered_id=None
         root=QtWidgets.QVBoxLayout(self);self.mapping_label=QtWidgets.QLabel();root.addWidget(self.mapping_label)
+        self.roles={}
+        mapping_row=QtWidgets.QHBoxLayout();root.addLayout(mapping_row)
+        for role,names in (('PMT',config.PMTS),('AOM',config.AOMS)):
+            box=QtWidgets.QComboBox();box.addItems(names);self.roles[role]=box
+            mapping_row.addWidget(QtWidgets.QLabel(role));mapping_row.addWidget(box)
         row=QtWidgets.QHBoxLayout();root.addLayout(row)
         for key,title,lo,hi in (('exposure_ms','Exposure (ms)',.1,6000),('num_average','Samples / batch',1,65535),('num_repeat','Batches',1,65535),('timeout_s','Timeout / batch (s)',.1,3600)):
             field=QtWidgets.QDoubleSpinBox() if key in ('exposure_ms','timeout_s') else QtWidgets.QSpinBox()
@@ -84,9 +44,11 @@ class FluorescenceTab(QtWidgets.QWidget):
 
     def populate(self,value):
         for key,field in self.fields.items():field.setValue(value[key])
+        route=value.get('roles') or config.load_roles()['routes'][self.chamber]
+        for role,box in self.roles.items():box.setCurrentText(route[role])
 
     def value(self):
-        return config.validate_settings(dict(schema_version=1,chamber=self.chamber,**{key:field.value() for key,field in self.fields.items()}))
+        return config.validate_settings(dict(schema_version=1,chamber=self.chamber,roles={r:b.currentText() for r,b in self.roles.items()},**{key:field.value() for key,field in self.fields.items()}))
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load fluorescence settings',str(config.ROOT),'JSON (*.json)')
@@ -123,9 +85,9 @@ class FluorescenceTab(QtWidgets.QWidget):
         ready=self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing
         self.start_button.setEnabled(self.config_valid and ready and not active and not self.worker.has_requests() and not self.worker.waveform_runner.running() and not any(t.running() for t in self.worker._background_tasks))
         self.stop_button.setEnabled(active and runner.settings['settings']['chamber']==self.chamber)
-        for field in (*self.fields.values(),*self.config_buttons):field.setEnabled(not active)
+        for field in (*self.fields.values(),*self.roles.values(),*self.config_buttons):field.setEnabled(not active)
         try:
-            route=config.load_roles()['routes'][self.chamber]
+            route={r:b.currentText() for r,b in self.roles.items()}
             self.mapping_label.setText(f"EC setup / {self.chamber} experiment · PMT={route['PMT']} · AOM={route['AOM']} (fluorescence에서는 미사용)")
         except Exception as exc:self.mapping_label.setText(str(exc));self.start_button.setEnabled(False)
 
@@ -162,11 +124,13 @@ class DailyCharacterization(QtWidgets.QTabWidget):
         self.workflow.load_path(str(self.workflow.workflow_root/'daily_fluorescence.py'),check_unsaved=False)
         self.experiments={c:FluorescenceTab(worker,c,self) for c in ('EA','EC')}
         for c,tab in self.experiments.items():self.addTab(tab,c+' Fluorescence')
-        self.mapping=MappingTab(worker,self);self.addTab(self.mapping,'FPGA 역할 매핑')
+        from .rabi_tab import RabiTab
+        self.rabi_experiments={c:RabiTab(worker,c,bindings,self) for c in ('EA','EC')}
+        for c,tab in self.rabi_experiments.items():self.addTab(tab,c+' Rabi')
         self.setCurrentWidget(self.experiments['EA'])
 
     def shutdown(self):
         self.workflow.shutdown()
-        for tab in self.experiments.values():tab.timer.stop()
+        for tab in (*self.experiments.values(),*self.rabi_experiments.values()):tab.timer.stop()
 
     def still_running(self):return self.workflow.still_running()

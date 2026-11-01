@@ -16,6 +16,8 @@ class FluorescenceRunner(WorkflowTask):
 
     def start(self,chamber,*,settings=None,settings_file=None,mapping_file=None,directory=None,parent=None):
         if self.handle is not None and self.handle.done.is_set():self.join()
+        from labremote.runtime.characterization_guard import join_completed
+        join_completed((self.worker,))
         request=prepare(chamber,settings,settings_file,mapping_file)
         request['directory']=str(Path(directory or Path(__file__).resolve().parents[2]/'data/characterization').expanduser().resolve())
         with _TASK_LOCK:

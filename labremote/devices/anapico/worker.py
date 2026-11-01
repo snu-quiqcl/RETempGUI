@@ -4,6 +4,10 @@ from labremote.runtime.io import acquire
 
 class AnaPicoWorker(DeviceWorker):
     family = 'anapico'
+    def enqueue(self,handle):
+        from labremote.runtime.characterization_guard import enqueue
+        return enqueue(self,handle,super().enqueue)
+
     def make_monitor(self):
         from labremote.devices.anapico.monitor import AnaPicoMonitor
         return AnaPicoMonitor(self)

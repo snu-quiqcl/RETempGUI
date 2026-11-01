@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "chamber": "EC",
+  "microwave": "apsyn420_mw",
+  "frequency_start_hz": 12642820855.0,
+  "frequency_stop_hz": 12642820855.0,
+  "frequency_step_hz": 1000.0,
+  "settle_s": 0.1,
+  "timeout_s": 30.0,
+  "T_cool": 50000,
+  "T_cool_repeat": 2,
+  "WAIT_AOM": 100,
+  "T_init": 1000,
+  "T_det": 6000,
+  "N_average": 500,
+  "N_qubit_control": 10,
+  "T_mw_step": 1000,
+  "N_threshold": 2,
+  "roles": {
+    "PMT": "PMTFC",
+    "AOM": "AOMC",
+    "MW": "MW_C",
+    "EOM_7G_1": "EOM_7GC1",
+    "EOM_7G_2": "EOM_7GC2",
+    "EOM_2G": "EOM_2GC"
+  }
+}

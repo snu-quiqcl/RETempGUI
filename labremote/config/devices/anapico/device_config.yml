@@ -17,3 +17,10 @@ instruments:
     output:
       expected_fixed_power_dbm: null
       max_allowed_power_dbm: null
+  apsyn420_mw:
+    preset:
+      frequency_hz: null
+      phase_deg: null
+    output:
+      expected_fixed_power_dbm: null
+      max_allowed_power_dbm: null

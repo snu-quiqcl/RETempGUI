@@ -498,6 +498,11 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def run_rabi(self,chamber,microwave,*,settings=None,settings_file=None,directory=None):
+        return self.worker.rabi_runner.start(chamber,microwave,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
+
+    def stop_rabi(self):return self.worker.rabi_runner.cancel()
+
     def run_fluorescence(self,chamber,*,settings=None,settings_file=None,mapping_file=None,directory=None):
         """Shared UI/workflow entry point; frozen settings, EA/EC results routed by run ID."""
         return self.worker.fluorescence_runner.start(chamber,settings=settings,settings_file=settings_file,
