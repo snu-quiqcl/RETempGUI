@@ -53,6 +53,7 @@ def camera_process(pipe, shared, lock, options):
     acquired = 0
     last_device_id = None
     detection = DetectionConfig()
+    detection_enabled = options.get("detection_enabled", True)
     follow_viewport = False
     viewport_empty = False
     detection_revision = 0
@@ -78,6 +79,7 @@ def camera_process(pipe, shared, lock, options):
             capture_id = None
 
     try:
+        if type(detection_enabled) is not bool:raise ValueError("detection_enabled must be boolean")
         import cv2
         cv2.setNumThreads(1)  # Do not oversubscribe the host's other device workers.
         backend = options.get('backend', 'Thorcam')
@@ -126,9 +128,18 @@ def camera_process(pipe, shared, lock, options):
                         follow_viewport = bool(args.get('follow_viewport', False))
                         viewport_empty = False
                         detection = updated
+                        detection_enabled = True
                         detection_revision += 1
                         detection_changed_ns = time.perf_counter_ns()
                         reply(request_id, {**asdict(detection), 'follow_viewport': follow_viewport})
+                    elif command == 'detection_enabled':
+                        enabled=args.get('enabled')
+                        if type(enabled) is not bool:raise ValueError('Detection enabled must be boolean')
+                        if waits:raise RuntimeError('Cancel active ion waits before changing detection mode')
+                        detection_enabled=enabled
+                        detection_revision += 1
+                        detection_changed_ns=time.perf_counter_ns()
+                        reply(request_id, {'enabled': enabled})
                     elif command == 'viewport':
                         if not follow_viewport:
                             reply(request_id, {'ignored': True})
@@ -214,7 +225,7 @@ def camera_process(pipe, shared, lock, options):
             gap = last_device_id is not None and device_id != last_device_id + 1
             last_device_id = device_id
             result = (dict(count=0, matched=False, centers=[], target=detection.target)
-                      if follow_viewport and viewport_empty else detect_ions(image, detection))
+                      if (not detection_enabled and not waits) or (follow_viewport and viewport_empty) else detect_ions(image, detection))
             result.update(frame_id=frame_id, device_frame_id=device_id, run_id=run_id,
                           received_ns=read_started_ns, analyzed_ns=time.perf_counter_ns(),
                           detection_revision=detection_revision, frame_gap=gap)

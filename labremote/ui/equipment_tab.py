@@ -182,18 +182,18 @@ class EquipmentTab(QtWidgets.QWidget):
         self.temperature_axes={};lines=[]
         times=[s[1]-self.samples[0][1] for s in self.samples]
         series=[('supply_temperature','Supply','#76baff'),('ambient_temperature','Ambient','#f3c46b'),('temperature_setpoint','Target','#79df96')]
-        # Each axis has its own center, but all three show the same temperature span.
-        span=max([1.0]+[(max(s[2][key] for s in self.samples)-min(s[2][key] for s in self.samples))*1.2 for key,_,_ in series])
+        # Supply and Target share a physical temperature axis; Ambient is separate.
         for index,(key,title,color) in enumerate(series):
-            axis=main if index==0 else main.twinx()
-            if index==2:axis.spines['right'].set_position(('axes',1.14))
-            values=[s[2][key] for s in self.samples];center=(min(values)+max(values))/2
-            axis.set_ylim(center-span/2,center+span/2);axis.set_ylabel(title+' (°C)',color=color)
-            axis.tick_params(axis='y',colors=color)
+            axis=main if index in (0,2) else main.twinx()
+            values=[s[2][key] for s in self.samples]
+            limits=([s[2][k] for s in self.samples for k in ('supply_temperature','temperature_setpoint')] if index in (0,2) else values)
+            center=(min(limits)+max(limits))/2;axis_span=max(1.,(max(limits)-min(limits))*1.2)
+            axis.set_ylim(center-axis_span/2,center+axis_span/2)
+            axis.set_ylabel('Supply / Target (°C)' if index in (0,2) else 'Ambient (°C)')
             line,=axis.plot(times,values,color=color,label=title,linestyle='--' if index==2 else '-',marker='.' if len(values)==1 else None)
             lines.append(line);self.temperature_axes[key]=axis
         main.set_xlabel('Elapsed seconds');main.grid(True,alpha=.25);main.legend(lines,[line.get_label() for line in lines],loc='upper left')
-        self.figure.subplots_adjust(left=.1,right=.77,bottom=.16,top=.94);self.canvas.draw_idle()
+        self.figure.subplots_adjust(left=.1,right=.88,bottom=.16,top=.94);self.canvas.draw_idle()
 
     def _failure(self,action,message):
         self.message.setText(action+': '+message);self.log_message.emit(self.name+': '+message)

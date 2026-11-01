@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "CCD image level controls and flipper direction labels with optional local thumbnails",
+  "revision_note": "CCD visible maximum, detection stop, level steps and Thermotek/OSA display axes",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 18644,
-      "sha256": "be747a41d335771ad9520b5ea00424c23a81b832b2c5804daa31c411f3120efa"
+      "bytes": 19084,
+      "sha256": "819f91c243511e20e2f5ceadbd459d092be7e1196b347c98ef8a2828efdab8c3"
     },
     {
       "path": "check_public_files.py",
@@ -34,8 +34,8 @@
     },
     {
       "path": "docs/CCD_CONTROLS_KO.md",
-      "bytes": 5221,
-      "sha256": "866691117b79ae8c062c1a44f68e5c985a6cd5bd18ddf84e25e292eee424f03f"
+      "bytes": 6715,
+      "sha256": "489fc0850e563242e949fe641472a704999e40eecb5a1e64cb0810bbc5790bc8"
     },
     {
       "path": "docs/CCD_GUIDE_KO.md",
@@ -78,9 +78,19 @@
       "sha256": "71d00804e54ab8d0125b89a545dbf0ed66d3e9d7f2a353074c8ebb833d922571"
     },
     {
+      "path": "docs/MONITOR_KO.md",
+      "bytes": 2336,
+      "sha256": "1bd8ee86c0525a269e1b9ae5a493fb1ad54a02d985be4ad52b05261681b2b851"
+    },
+    {
+      "path": "docs/OVEN_DETECTION_MODES_KO.md",
+      "bytes": 7314,
+      "sha256": "69f457c8f0e0e1fd39a4cab1bcce90380cbf42e9696ff8e1260069948034f234"
+    },
+    {
       "path": "docs/OVEN_LOADING_KO.md",
-      "bytes": 10464,
-      "sha256": "9a349689fa4e034b5ea288ce6545869a1f0142525d375709fa17130159366dce"
+      "bytes": 10689,
+      "sha256": "e8c056402dbac61945b75d8956cea43a4bf2970ade6a4137fdf4c49925feddd4"
     },
     {
       "path": "docs/OVEN_REVIEW.md",
@@ -363,6 +373,11 @@
       "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f"
     },
     {
+      "path": "labremote/config/ui/monitor.json",
+      "bytes": 39,
+      "sha256": "43144306c2240c8fbbbea5e13c99e8464bc41923b412ae0acb91ee14a3a8546f"
+    },
+    {
       "path": "labremote/devices/__init__.py",
       "bytes": 130,
       "sha256": "abefb7e451cea57eeccc6bebfe652df51e72af558a363e003154ce33b3bccf5f"
@@ -399,13 +414,13 @@
     },
     {
       "path": "labremote/devices/ccd/process.py",
-      "bytes": 14738,
-      "sha256": "bbd0694aca7c629e01e76b65476d7ff693a08b1d1bfaedce906f113d9d03ae55"
+      "bytes": 15561,
+      "sha256": "3370ec0d9285846351d81a27625aa579ad978d5cd97b95567eb0ba17830eb907"
     },
     {
       "path": "labremote/devices/ccd/tab.py",
-      "bytes": 23548,
-      "sha256": "0109cedab600c1bb97e463412465fbd6c2cca62a43ed1d580543d3e79cfea17d"
+      "bytes": 26031,
+      "sha256": "3ad57aafa8e0d5554adb76d4887917e41c7a2ce38c411ce01f2ccf5532161467"
     },
     {
       "path": "labremote/devices/ccd/vendor/QuIQCL_ThorCam.py",
@@ -424,8 +439,8 @@
     },
     {
       "path": "labremote/devices/ccd/worker.py",
-      "bytes": 13438,
-      "sha256": "cc245541aefa003b78a0276e9c19660d8e326044814a89b69287fc7aee2289a7"
+      "bytes": 13862,
+      "sha256": "330030465d585367063946297a7d7e0ffa70b2aa73dc4132b6a8068c066723a1"
     },
     {
       "path": "labremote/devices/dds4/__init__.py",
@@ -484,8 +499,8 @@
     },
     {
       "path": "labremote/devices/flip/tab.py",
-      "bytes": 27088,
-      "sha256": "cb15d56201fe6130ac8422f0f491450cc747c7c7756d20e59ada88d6edac7dcd"
+      "bytes": 28949,
+      "sha256": "5435a7963ab7fa79b23442336090ffb7392e98f926372fdbea2010319b47be86"
     },
     {
       "path": "labremote/devices/flip/worker.py",
@@ -649,18 +664,18 @@
     },
     {
       "path": "labremote/devices/oven/panel.py",
-      "bytes": 9703,
-      "sha256": "7d36a4c7153c491922c83432accb0962d2967877b2149c65d97fa03ae2a71d47"
+      "bytes": 14278,
+      "sha256": "5532483682b3d012f110b25f58ac604ed7af988640fd5155efb7ddbaa3206c48"
     },
     {
       "path": "labremote/devices/oven/runner.py",
-      "bytes": 9787,
-      "sha256": "184cfce5863f0c7c7467acf28dfb9b9c07a6da91d97d06075991d3cdf9e99ecb"
+      "bytes": 12462,
+      "sha256": "5151764540a94cec652a616df13992400298f2f291b1400234e1a9351c50c551"
     },
     {
       "path": "labremote/devices/oven/settings.py",
-      "bytes": 1031,
-      "sha256": "eb1ffebcf2408b1835a770287fac89b7decbf0b510395071a1e80809e5ab0abd"
+      "bytes": 1947,
+      "sha256": "91c1fdf84fe8fffc8514ef3ea8917bd226d0f1ff153a4dc15dcb037a00778a0c"
     },
     {
       "path": "labremote/devices/oven/worker.py",
@@ -1114,8 +1129,8 @@
     },
     {
       "path": "labremote/operation/oven_relay/control.py",
-      "bytes": 744,
-      "sha256": "d1b4cbc27f0df276634760eceb57d6723b5ac41fa0b8edc3dee5337484f1c76a"
+      "bytes": 982,
+      "sha256": "90cdb65d40aa47aeaf235e66352e0f8b5108a4eb4bb9a8f96825719a891f5997"
     },
     {
       "path": "labremote/operation/sg384/__init__.py",
@@ -1354,8 +1369,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 19813,
-      "sha256": "b8f48d8240eca6f64f2f13d62148cf7d7ccdf698ef9e403c22e31b5cefadd3b9"
+      "bytes": 21533,
+      "sha256": "b4205f72b9239b574db75fe09f779bc927bf9df6ef31c426efdb9db26b0e946b"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -1374,18 +1389,18 @@
     },
     {
       "path": "labremote/ui/equipment_tab.py",
-      "bytes": 15854,
-      "sha256": "0557552d76af03218b775ea144cc735fc0178b2ab40ae55c5c47154d0c21bf62"
+      "bytes": 15861,
+      "sha256": "fc07946045ca50b7550c5a355259461b5f0e9ccbdf5dc2fdfcc52de672936c16"
     },
     {
       "path": "labremote/ui/experiment_shell.py",
-      "bytes": 22666,
-      "sha256": "f55755ae9ad2a2ea59864365eb1c774f9d111f8f4566bb3e446df237dbdfd34a"
+      "bytes": 22602,
+      "sha256": "0f23bc68ee7e97837080e2a4190c8c256e66fdab1fb241d741bf84e3cd7b7bb2"
     },
     {
       "path": "labremote/ui/fpga_count_tab.py",
-      "bytes": 9781,
-      "sha256": "838227bd5c8f58fbdd197090720ad68a2c3d128fb9116a569518e624f3cdc347"
+      "bytes": 11261,
+      "sha256": "f52f96b0483193c6177f9ab245776fc87622151e8d0902cbb7dd75ca1ae6ec6f"
     },
     {
       "path": "labremote/ui/library_updates.py",
@@ -1398,9 +1413,14 @@
       "sha256": "b1d2fca92827f583f41ef297bc42037c3473960ce8aac7c29f43da793da51829"
     },
     {
+      "path": "labremote/ui/monitor_dashboard.py",
+      "bytes": 10434,
+      "sha256": "40707e84895920e0cd9fa51e3f0966a98d53e86ed52c852c6b181fd68da5f279"
+    },
+    {
       "path": "labremote/ui/motor_scan_tab.py",
-      "bytes": 18501,
-      "sha256": "496ac206d0bb1c7c50705409f680dc9b1b2b819db4ca528c1494e0aa7ae94d55"
+      "bytes": 20788,
+      "sha256": "2f4f1a51f9891f0ce119ee781ddb9462551b08250e7004e21a5ad3407a842b15"
     },
     {
       "path": "labremote/ui/motor_tab.py",
@@ -1416,6 +1436,11 @@
       "path": "labremote/ui/rf_device_tab.py",
       "bytes": 18728,
       "sha256": "c2994e0ea3b368de66f0e9cb38e140128cd1b8c40184a05a82a815fda8a314b3"
+    },
+    {
+      "path": "labremote/ui/shutter_status.py",
+      "bytes": 1333,
+      "sha256": "351648c4f871688345d7e3f8c12ebb95165696712d5fe6069535fdb8b2576799"
     },
     {
       "path": "labremote/ui/theme.py",

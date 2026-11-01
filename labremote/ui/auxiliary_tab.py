@@ -68,6 +68,17 @@ class AuxiliaryTab(QtWidgets.QWidget):
             self._label(grid,'auto_reference','Auto reference');self._label(grid,'trace_name','Trace')
             self._repeat_controls(root,self.api.read_spectrum,lambda:self.api.start_spectrum(interval_s=self.interval.value()),self.api.stop_spectrum)
             self._plot(root)
+            row=QtWidgets.QHBoxLayout();root.addLayout(row)
+            self.spectrum_auto_y=QtWidgets.QCheckBox('Auto Y min/max');row.addWidget(self.spectrum_auto_y)
+            self.spectrum_y_min=QtWidgets.QDoubleSpinBox();self.spectrum_y_max=QtWidgets.QDoubleSpinBox()
+            for field,value,label in ((self.spectrum_y_min,-100,'Y min (dBm)'),(self.spectrum_y_max,0,'Y max (dBm)')):
+                field.setRange(-300,100);field.setDecimals(2);field.setValue(value)
+                row.addWidget(QtWidgets.QLabel(label));row.addWidget(field)
+            self.spectrum_limit_error=QtWidgets.QLabel();root.addWidget(self.spectrum_limit_error)
+            self.spectrum_auto_y.toggled.connect(self._spectrum_limits)
+            self.spectrum_axis=None
+            for field in (self.spectrum_y_min,self.spectrum_y_max):field.valueChanged.connect(self._spectrum_limits)
+            self._spectrum_limits()
         elif family=='mdt':
             limits=self.config['limits']
             for axis in 'XYZ':
@@ -244,10 +255,24 @@ class AuxiliaryTab(QtWidgets.QWidget):
         value=handle.result;self.figure.clear();axis=self.figure.add_subplot(111)
         if handle.action=='SPECTRUM':
             axis.plot(value['frequency_thz'],value['power_dbm']);axis.set_xlabel('Frequency (THz)');axis.set_ylabel('Power (dBm)')
+            self.spectrum_axis=axis;self._spectrum_limits()
         else:
             self.samples.append((time.monotonic(),value['count']));self.count.setText(f"Count: {value['count']} / {value['ms']} ms")
             axis.plot([t-self.samples[0][0] for t,c in self.samples],[c for t,c in self.samples]);axis.set_xlabel('Elapsed seconds');axis.set_ylabel('Counts')
         axis.grid(True,alpha=.3);self.figure.subplots_adjust(left=.12,right=.87,bottom=.2,top=.94);self.canvas.draw_idle()
+
+    def _spectrum_limits(self,*args):
+        automatic=self.spectrum_auto_y.isChecked()
+        for field in (self.spectrum_y_min,self.spectrum_y_max):field.setEnabled(not automatic)
+        low,high=self.spectrum_y_min.value(),self.spectrum_y_max.value()
+        self.spectrum_limit_error.setText('Y min must be less than Y max' if not automatic and low>=high else '')
+        if not automatic and low<high:self._spectrum_fixed_limits=(low,high)
+        axis=self.spectrum_axis
+        if axis is None:return
+        axis.set_autoscaley_on(automatic)
+        if automatic:axis.relim();axis.autoscale_view(scalex=False,scaley=True)
+        else:axis.set_ylim(*self._spectrum_fixed_limits)
+        self.canvas.draw_idle()
 
     def _repeat_changed(self,handle):
         if hasattr(self,'repeat_status'):self.repeat_status.setText('Repeat: '+handle.status)

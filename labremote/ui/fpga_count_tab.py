@@ -51,6 +51,16 @@ class FPGACountTab(QtWidgets.QWidget):
         self.timing = QtWidgets.QLabel('Timing: waiting'); self.timing.setWordWrap(True); root.addWidget(self.timing)
         self.status = QtWidgets.QLabel('Disconnected'); self.status.setWordWrap(True); root.addWidget(self.status)
         root.addWidget(QtWidgets.QLabel('Each point is the mean of N exposures. Plot: latest 20 points. CSV: all points.'))
+        row=QtWidgets.QHBoxLayout();root.addLayout(row)
+        self.y_auto=QtWidgets.QCheckBox('Auto Y min/max');self.y_auto.setChecked(True)
+        self.y_min=QtWidgets.QDoubleSpinBox();self.y_max=QtWidgets.QDoubleSpinBox()
+        for field in (self.y_min,self.y_max):
+            field.setDecimals(3);field.setRange(-1e12,1e12)
+        self.y_max.setValue(1000)
+        row.addWidget(self.y_auto)
+        for label,field in (('Y min',self.y_min),('Y max',self.y_max)):
+            row.addWidget(QtWidgets.QLabel(label));row.addWidget(field)
+        self.y_error=QtWidgets.QLabel();row.addWidget(self.y_error)
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure = Figure(figsize=(9, 3)); self.canvas = FigureCanvasQTAgg(self.figure)
@@ -58,12 +68,30 @@ class FPGACountTab(QtWidgets.QWidget):
         self.axis = self.figure.add_subplot(111); self.curve, = self.axis.plot([], [], marker='o')
         self.axis.set_xlabel('Elapsed seconds'); self.axis.set_ylabel('Mean photon count / exposure')
         self.axis.grid(True, alpha=.3); self.figure.tight_layout()
+        self.y_auto.toggled.connect(self.update_y_range)
+        self.y_min.valueChanged.connect(self.update_y_range);self.y_max.valueChanged.connect(self.update_y_range)
+        self.update_y_range()
         worker.connected.connect(self.on_connected); worker.disconnected.connect(self.on_disconnected)
         worker.handle_changed.connect(self.on_result); worker.waveform_changed.connect(self.on_repeat)
         self.settle_timer=QtCore.QTimer(self);self.settle_timer.setInterval(25)
         self.settle_timer.timeout.connect(self.controls)
         worker.task_changed.connect(self.controls)
         self.controls()
+
+    def update_y_range(self,*args):
+        automatic=self.y_auto.isChecked()
+        self.y_min.setEnabled(not automatic);self.y_max.setEnabled(not automatic)
+        self.y_error.setText('')
+        if automatic:
+            self.axis.set_autoscaley_on(True)
+        else:
+            self.axis.set_autoscaley_on(False)
+            low,high=self.y_min.value(),self.y_max.value()
+            if low>=high:
+                self.y_error.setText('Y min must be less than Y max')
+            else:self.axis.set_ylim(low,high)
+        self.axis.relim();self.axis.autoscale_view(scalex=True,scaley=automatic)
+        self.canvas.draw_idle()
 
     def choose_directory(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self, 'CSV log folder', self.directory.text())

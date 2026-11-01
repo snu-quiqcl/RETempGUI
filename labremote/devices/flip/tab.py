@@ -50,11 +50,22 @@ class FlipTab(QtWidgets.QWidget):
         self.connect_button=QtWidgets.QPushButton(self);self.disconnect_button=QtWidgets.QPushButton(self)
         self.read_button=QtWidgets.QPushButton(self);self.pos1=QtWidgets.QPushButton(self);self.pos2=QtWidgets.QPushButton(self)
         for button in (self.route_settings_button,self.connect_button,self.disconnect_button,self.read_button,self.pos1,self.pos2):button.hide()
-        box=QtWidgets.QGroupBox('EC shutter · oven_relays / shutter_2');sh=QtWidgets.QHBoxLayout(box)
-        self.shutter_connect=QtWidgets.QPushButton('셔터 연결');self.shutter_read=QtWidgets.QPushButton('상태 읽기')
-        self.shutter_open=QtWidgets.QPushButton('OPEN');self.shutter_close=QtWidgets.QPushButton('CLOSE')
-        self.shutter_state=QtWidgets.QLabel('—')
-        for w in (self.shutter_connect,self.shutter_read,self.shutter_open,self.shutter_close,self.shutter_state):sh.addWidget(w)
+        box=QtWidgets.QGroupBox('Shutters · 오븐과 동일한 relay 사용');sh=QtWidgets.QGridLayout(box)
+        self.shutter_connect=QtWidgets.QPushButton('셔터 relay 연결');sh.addWidget(self.shutter_connect,0,0,1,5)
+        self.shutter_controls={}
+        for row,name in enumerate(('shutter_1','shutter_2'),1):
+            controls={key:QtWidgets.QPushButton(text) for key,text in (('read','상태 읽기'),('open','OPEN'),('close','CLOSE'))}
+            controls['state']=QtWidgets.QLabel('—');self.shutter_controls[name]=controls
+            sh.addWidget(QtWidgets.QLabel(name),row,0)
+            for col,key in enumerate(('read','open','close','state'),1):sh.addWidget(controls[key],row,col)
+            controls['read'].clicked.connect(lambda _,n=name:self._shutter(None,n))
+            controls['open'].clicked.connect(lambda _,n=name:self._shutter('OPEN',n))
+            controls['close'].clicked.connect(lambda _,n=name:self._shutter('CLOSED',n))
+        # Compatibility attributes still point to the shutter_2 row.
+        self.shutter_read=self.shutter_controls['shutter_2']['read']
+        self.shutter_open=self.shutter_controls['shutter_2']['open']
+        self.shutter_close=self.shutter_controls['shutter_2']['close']
+        self.shutter_state=self.shutter_controls['shutter_2']['state']
         layout.addWidget(box)
         self.ea=QtWidgets.QPushButton(self);self.ec=QtWidgets.QPushButton(self)
         self.ea.hide();self.ec.hide()
@@ -72,9 +83,6 @@ class FlipTab(QtWidgets.QWidget):
         self.pos1.clicked.connect(lambda:self._selected_action('MOVE',1))
         self.pos2.clicked.connect(lambda:self._selected_action('MOVE',2))
         self.shutter_connect.clicked.connect(self._connect_shutter)
-        self.shutter_read.clicked.connect(lambda:self._shutter(None))
-        self.shutter_open.clicked.connect(lambda:self._shutter('OPEN'))
-        self.shutter_close.clicked.connect(lambda:self._shutter('CLOSED'))
         self.ea.clicked.connect(lambda:self._route('EA'));self.ec.clicked.connect(lambda:self._route('EC'))
         saved=set(config.get('names',[]))
         for route in config.get('routes',{}).values():saved.update(route)
@@ -337,26 +345,45 @@ class FlipTab(QtWidgets.QWidget):
             DeviceAPI(self.oven.relays).connect(*self.endpoint(),self.oven.relay_name.text().strip())
         except Exception as exc:self._failure('SHUTTER_CONNECT',str(exc))
 
-    def _shutter(self,value):
+    def _shutter_name(self):
+        return self.oven.shutter.currentText() if hasattr(self.oven,'shutter') else 'shutter_2'
+
+    def _shutter(self,value,shutter=None):
         try:
             self._guard()
+            shutter=shutter or self._shutter_name()
+            if shutter not in self.shutter_controls:raise ValueError("Unknown shutter")
             def execute(w):
-                self._guard();ctx=Context()
-                if value is not None:ctx.assign(w.ps.shutter_2,value)
-                return ctx.acquire(w.ps.shutter_2)
+                self._guard();ctx=Context();parameter=getattr(w.ps,shutter)
+                if value is not None:ctx.assign(parameter,value)
+                return ctx.acquire(parameter)
             DeviceAPI(self.oven.relays)._submit('FLIP_SHUTTER',execute)
         except Exception as exc:self._failure('SHUTTER',str(exc))
 
     def _shutter_result(self,handle):
         if handle.done.is_set() and handle.action=='FLIP_SHUTTER':
-            self.shutter_state.setText('미확인' if handle.error else str(handle.result))
+            self._update_shutter_states()
 
     def _route(self,chamber):
         try:self._guard();self.routing.task.start(chamber)
         except Exception as exc:self._failure('FLIP_ROUTE',str(exc))
 
+    def _update_shutter_states(self):
+        from labremote.ui.shutter_status import show_shutter
+        for name,controls in self.shutter_controls.items():
+            show_shutter(controls['state'],self.oven.relays,name,controls['open'],controls['close'])
+
     def _tick(self):
         self._pump_connect_all()
+        self._update_shutter_states()
+        import time
+        relay_worker=self.oven.relays
+        if (not self._closing and relay_worker.ps is not None and not relay_worker.io_fault and not relay_worker.connection_error
+                and not self.oven.task.running() and not self.routing.task.running() and not relay_worker.has_requests()
+                and time.monotonic()>=getattr(self,'_next_shutter_read',0)):
+            self._next_shutter_read=time.monotonic()+2
+            from labremote.runtime.auto_monitor import AUTO_MONITOR
+            AUTO_MONITOR.request(relay_worker,('SHUTTER_READ',lambda w:{n:Context().acquire(getattr(w.ps,n)) for n in ('shutter_1','shutter_2')}))
         active=self._closing or self._bulk_active or self.oven.task.running() or self.routing.task.running()
         worker=self.workers.get(self.selected.currentText())
         idle=not active and not self._discovering and worker is not None and not worker.has_requests()
@@ -385,7 +412,8 @@ class FlipTab(QtWidgets.QWidget):
                 card['status'].setText(('Position '+str(position) if position in (1,2) else '연결됨 · 위치 미확인') if ready else 'Disconnected'+(' / 현재 서버 목록에 없음' if not listed else ''))
         relay=self.oven.relays
         self.shutter_connect.setEnabled(not active and not relay.has_requests())
-        for b in (self.shutter_read,self.shutter_open,self.shutter_close):b.setEnabled(not active and not relay.has_requests() and relay.ps is not None and not relay.io_fault)
+        for controls in self.shutter_controls.values():
+            for key in ('read','open','close'):controls[key].setEnabled(not active and not relay.has_requests() and relay.ps is not None and not relay.io_fault)
         for b in (self.ea,self.ec):b.setEnabled(not active)
 
     def shutdown(self):

@@ -55,7 +55,9 @@ class ExperimentShellMixin:
         root.addStretch()
         self.device_tabs.insertTab(0,self.home,'메인')
         self.device_tabs.setTabText(self.device_tabs.indexOf(self.workflow_tab),'Workflow')
-        self.monitor_placeholder=QtWidgets.QWidget();monitor=QtWidgets.QVBoxLayout(self.monitor_placeholder);monitor.addWidget(QtWidgets.QLabel('Monitor · 구성 예정'));monitor.addStretch();self.device_tabs.addTab(self.monitor_placeholder,'Monitor');self.device_tabs.setCurrentWidget(self.home)
+        from .monitor_dashboard import MonitorDashboard
+        self.monitor_tab=MonitorDashboard(lambda:self.family_tabs,self)
+        self.device_tabs.addTab(self.monitor_tab,'Monitor');self.device_tabs.setCurrentWidget(self.home)
         self.equipment_timer=QtCore.QTimer(self);self.equipment_timer.setInterval(200);self.equipment_timer.timeout.connect(self.refresh_experiment_home);self.equipment_timer.start()
         self.ccd_tab.oven_panel.psu_name.clear();self.ccd_tab.oven_panel.relay_name.clear()
         for entry in self.equipment_profile['devices']:

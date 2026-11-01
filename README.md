@@ -263,3 +263,9 @@ FPGA 포트 검색·기억, 화면 영역 기반 CCD 연속 검출, Configuratio
 [설정 구조 및 이전 안내](docs/CONFIGURATION.md)를 참고하세요. 공개 기본값과 PC별 `*.local.json`을 구분하고, 장비 / 메인 UI / operation 설정을 각 폴더에서 관리합니다. 메인의 중복 상세 제어창 버튼은 제거했으며 상단 **장비** 메뉴에서 기존 상세 창을 엽니다.
 
 CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](docs/FLIP_DISPLAY_KO.md)를 참고하세요.
+
+검출 ON/OFF, 분·초 timeout, 셔터 색 표시와 399 flipper 자동 경로는 [오븐·검출 동작 안내](docs/OVEN_DETECTION_MODES_KO.md)를 참고하세요.
+
+수동 shutter_1/2 제어와 설정 가능한 399 셔터의 CLOSE 우선 종료 순서도 [오븐 동작 안내](docs/OVEN_DETECTION_MODES_KO.md)에 포함되어 있습니다.
+
+- [Monitor: 장비별 읽기 전용 모아보기 및 표시 설정](docs/MONITOR_KO.md)

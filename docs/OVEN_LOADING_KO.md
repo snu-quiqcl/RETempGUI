@@ -1,5 +1,7 @@
 # CCD 화면에서 EC 오븐으로 이온 로딩
 
+현재 GUI는 검출 ON/OFF를 분리합니다. 아래 포획 절차는 검출 ON 기준이며, 검출 OFF의 타이머 모드와 셔터 표시는 [최신 동작 안내](OVEN_DETECTION_MODES_KO.md)를 참고하세요.
+
 서버에 등록된 E3631A `oven_psu`와 RPiOven `oven_relays`를 사용합니다. 제공된 QCoDeS 드라이버의 parameter get/set 계약을 사용하며 서버나 Raspberry Pi에 자동 배포하지 않습니다. 기본 InstrumentServer 주소는 앱 상단 Host/Port입니다. Connect oven devices는 ID와 실제 PSU 출력 상태·측정 전압/전류, 릴레이 상태를 읽어서 연결을 검증합니다. 출력을 켜거나 릴레이를 바꾸지 않습니다.
 
 ## 설정과 사용
@@ -29,7 +31,7 @@ EA 171/174의 5.000 V / 0.75 A 값은 profile에 보존하지만 이번 UI는 EC
 8. `CCD_WAIT`: 새로운 프레임에서 목표 조건을 기다립니다. 별도 카메라 프로세스가 판정하므로 다른 탭을 보고 있어도 동작합니다. PSU 측정 V/A와 route/shutter 상태를 주기적으로 읽습니다.
 9. 성공·실패·취소·timeout 모두 `OVEN_OFF` → `OVEN_SHUTTER_CLOSE`를 실행합니다. 한 종료 operation이 실패해도 다른 종료 operation은 별도로 시도합니다.
 
-10분(600초)은 setup을 포함한 task 실행 시작부터의 제한입니다. UI Ion detection의 별도 Timeout s 입력으로 이 제한을 늘릴 수 없습니다. timeout 이후 OFF/CLOSE 확인 작업이 추가로 진행됩니다. 진행 중인 통신 및 readback을 중간에 잘라 성공으로 처리하지 않으므로 실제 종료 완료 시점은 통신 응답 시간만큼 늦어질 수 있습니다.
+기본 10분 0초이며 오븐 패널의 분·초 입력으로 변경합니다. 제한 시간에는 setup을 포함한 task 실행 시작부터의 시간이 포함됩니다. timeout 이후 OFF/CLOSE 확인 작업이 추가로 진행됩니다. 진행 중인 통신 및 readback을 중간에 잘라 성공으로 처리하지 않으므로 실제 종료 완료 시점은 통신 응답 시간만큼 늦어질 수 있습니다.
 
 전류/전압 표시는 CH1 측정값이며 실제 전류는 부하와 전압 제한에 따라 설정 전류보다 낮을 수 있습니다. 종료 후 CCD 연속 영상은 유지합니다. 앱을 정상 종료하면 오븐 task 취소·종료 처리를 기다린 다음 worker를 닫습니다. 통신 오류로 OFF/CLOSE를 확인하지 못하면 명시적인 오류를 표시합니다.
 

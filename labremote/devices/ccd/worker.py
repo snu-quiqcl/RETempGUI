@@ -44,7 +44,7 @@ class CCDWorker(QtCore.QThread):
         handle = ExecutionHandle('CCD_'+action.upper(), None, group)
         handle.arguments = dict(args or {})
         oven = getattr(self, 'oven_runner', None)
-        if oven is not None and oven.running() and group is not oven.group and action not in ('stop', 'disconnect', 'save') and not (action == 'viewport' and getattr(oven, 'settings', {}).get('follow_viewport', False)):
+        if oven is not None and oven.running() and getattr(oven, 'settings', {}).get('detect_ions', True) and group is not oven.group and action not in ('stop', 'disconnect', 'save') and not (action == 'viewport' and getattr(oven, 'settings', {}).get('follow_viewport', False)):
             handle.finish(RuntimeError('CCD is reserved by oven loading; stop the oven task first'))
             return handle
         if group is not None: group.add(handle)
@@ -213,13 +213,15 @@ class CCDAPI:
         self.worker, self.group = worker, group
 
     def _submit(self, action, **args): return self.worker.submit(action, args, self.group)
-    def connect(self, *, backend='Thorcam', serial='', dll_path='', dummy_ions=3):
-        return self._submit('connect', backend=backend, serial=serial, dll_path=dll_path, dummy_ions=dummy_ions)
+    def connect(self, *, backend='Thorcam', serial='', dll_path='', dummy_ions=3, detection_enabled=True):
+        return self._submit('connect', backend=backend, serial=serial, dll_path=dll_path, dummy_ions=dummy_ions, detection_enabled=detection_enabled)
     def disconnect(self): return self._submit('disconnect')
     def configure(self, *, exposure_ms=None, gain=None):
         return self._submit('configure', exposure_ms=exposure_ms, gain=gain)
     def configure_detection(self, *, threshold=1000, min_area=3, target=1, roi=None, follow_viewport=False):
         return self._submit('detection', threshold=threshold, min_area=min_area, target=target, roi=roi, follow_viewport=follow_viewport)
+    def set_detection_enabled(self, enabled):
+        return self._submit('detection_enabled', enabled=enabled)
     def update_viewport(self, roi): return self._submit('viewport', roi=roi)
     def start_acquisition(self): return self._submit('start')
     def stop_acquisition(self):
@@ -234,12 +236,12 @@ class CCDAPI:
     def cancel(self): self.worker.cancel_backgrounds()
 
     def load_oven(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=None,
-                  threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None):
+                  threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None, detect_ions=True, timeout_s=None, photoionization_shutter=None, chamber=None):
         runner = getattr(self.worker, 'oven_runner', None)
         if runner is None: raise RuntimeError('Use the CCD panel oven connections first')
         return runner.start(isotope, shutter=shutter, shutter_confirmed=shutter_confirmed,
                             threshold=threshold, min_area=min_area, target=target,
-                            consecutive_frames=consecutive_frames, roi=roi, parent=self.group)
+                            consecutive_frames=consecutive_frames, roi=roi, parent=self.group, detect_ions=detect_ions, timeout_s=timeout_s, photoionization_shutter=photoionization_shutter, chamber=chamber)
 
     def stop_oven(self):
         runner = getattr(self.worker, 'oven_runner', None)

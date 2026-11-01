@@ -1,13 +1,18 @@
 from labremote.runtime.io import Context
 
 
+def open_photoionization_shutter(p, shutter):
+    if shutter not in ('shutter_1','shutter_2'):raise ValueError('Invalid 399 shutter')
+    Context().assign(getattr(p, shutter), 'OPEN')
+
+
 def close_shutter(p, shutter):
     Context().assign(getattr(p, shutter), 'CLOSED')
 
 
 def select(p, route):
-    if route not in ('EC_171', 'EC_174'):
-        raise ValueError('Only EC oven loading is enabled')
+    if route not in ('EA_171', 'EA_174', 'EC_171', 'EC_174'):
+        raise ValueError('Select an EA/EC oven isotope route')
     Context().assign(p.selected_oven, route)
 
 
