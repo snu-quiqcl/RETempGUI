@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "setup": "EC",
+  "routes": {
+    "EA": {
+      "PMT": "PMTFA",
+      "AOM": "AOMA"
+    },
+    "EC": {
+      "PMT": "PMTFC",
+      "AOM": "AOMC"
+    }
+  }
+}

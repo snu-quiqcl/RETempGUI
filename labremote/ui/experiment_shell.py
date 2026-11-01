@@ -148,12 +148,15 @@ class ExperimentShellMixin:
         if entry['family']=='motors':target=self.family_tabs['motors'][entry['name']].target.text().strip()
         return identity==(*self._endpoint(),target)
 
+    def workflows_running(self):
+        return self.workflow_tab.still_running() or any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values())
+
     def active_experiment_tasks(self):
         tasks={t for panel in self._panels() for t in getattr(panel.worker,'_background_tasks',())}
         return [t for t in tasks if t.running()]
 
     def selection_editable(self):
-        if self._closing or self.connection_queue or self.connection_handle is not None or self.workflow_tab.still_running() or self.active_experiment_tasks():return False
+        if self._closing or self.connection_queue or self.connection_handle is not None or self.workflows_running() or self.active_experiment_tasks():return False
         if not self.rescan_btn.isEnabled() or self.flip_tab._discovering:return False
         return not any(self.worker_busy(p.worker) or getattr(p.worker,'available',False) or getattr(p.worker,'ps',None) is not None for p in self._panels())
 
@@ -196,7 +199,7 @@ class ExperimentShellMixin:
         except Exception as exc:self.shell_message.setText(str(exc));return False
 
     def connect_equipment(self,group=None):
-        if self._closing or self.workflow_tab.still_running() or self.active_experiment_tasks():self.shell_message.setText('실행 중인 작업 종료 후 연결하세요.');return
+        if self._closing or self.workflows_running() or self.active_experiment_tasks():self.shell_message.setText('실행 중인 작업 종료 후 연결하세요.');return
         if self.connection_queue or self.connection_handle is not None:return
         self.connection_queue=deque(self.selected_equipment(group));self.shell_message.setText('선택한 장비를 순서대로 연결합니다. 실패한 장비는 재연결 버튼으로 다시 시도하세요.')
         self.pump_connections()
@@ -228,7 +231,7 @@ class ExperimentShellMixin:
                 if flip.selected.findText(name)<0:flip.selected.addItem(name)
                 if flip.routing.available_names is not None:flip.routing.available_names.add(name)
             self.connection_handle=self.connection_entry=None
-        if self.workflow_tab.still_running() or self.active_experiment_tasks():
+        if self.workflows_running() or self.active_experiment_tasks():
             self.connection_queue.clear();return
         while self.connection_queue:
             entry=self.connection_queue.popleft();key=(entry['family'],entry['name'])
@@ -240,7 +243,7 @@ class ExperimentShellMixin:
             except Exception as exc:self.profile_errors[key]=str(exc);self.connection_entry=None
 
     def disconnect_equipment(self):
-        if self.workflow_tab.still_running() or self.active_experiment_tasks():self.shell_message.setText('작업 중단 / 종료 정리 완료 후 연결을 해제하세요.');return
+        if self.workflows_running() or self.active_experiment_tasks():self.shell_message.setText('작업 중단 / 종료 정리 완료 후 연결을 해제하세요.');return
         self.connection_queue.clear()
         if self.connection_handle is not None and not self.connection_handle.done.is_set():self.shell_message.setText('현재 연결 요청 완료 후 다시 연결 해제하세요.');return
         seen=set()
@@ -256,6 +259,8 @@ class ExperimentShellMixin:
 
     def stop_experiment_tasks(self):
         self.connection_queue.clear();self.workflow_tab.cancel()
+        for panel in self.family_tabs['fpga'].values():
+            if hasattr(panel,'daily_tab'):panel.daily_tab.workflow.cancel()
         for task in self.active_experiment_tasks():task.cancel()
         self.shell_message.setText('작업 중단 요청 · 진행 중인 명령 반환과 기존 종료 정리를 기다립니다.')
 
@@ -272,7 +277,7 @@ class ExperimentShellMixin:
                 self._observed_workers.add(id(worker))
                 worker.failure.connect(self.show_shell_failure)
         selected=self.selected_equipment();busy=bool(self.connection_queue or self.connection_handle is not None)
-        active=self.workflow_tab.still_running() or bool(self.active_experiment_tasks())
+        active=self.workflows_running() or bool(self.active_experiment_tasks())
         for group,label in self.group_labels.items():
             entries=[e for e in selected if e['group']==group];connected=sum(self.equipment_connected(e) for e in entries)
             failed=[e['name'] for e in entries if not self.equipment_connected(e) and (e['family'],e['name']) in self.profile_errors]
@@ -288,7 +293,7 @@ class ExperimentShellMixin:
         self.connect_all_button.setEnabled(bool(selected) and not busy and not active);self.disconnect_all_button.setEnabled(not active and not busy)
         self.profile_label.setText(self.equipment_profile['name']+(' *' if self.profile_dirty else ''));self.profile_label.setToolTip(str(self.profile_path or '저장되지 않은 구성'))
         self.profile_buttons[0].setEnabled(self.selection_editable());self.profile_buttons[1].setEnabled(self.selection_editable())
-        self.activity_label.setText('연결 중: '+self.connection_entry['name'] if self.connection_entry else 'Workflow: '+self.workflow_tab.status.text() if self.workflow_tab.still_running() else '실행 중: '+', '.join(t.label for t in self.active_experiment_tasks()) if self.active_experiment_tasks() else '대기 중')
+        self.activity_label.setText('연결 중: '+self.connection_entry['name'] if self.connection_entry else 'Workflow 실행 중' if self.workflows_running() else '실행 중: '+', '.join(t.label for t in self.active_experiment_tasks()) if self.active_experiment_tasks() else '대기 중')
         selected_workers={id(self.equipment_worker(e)) for e in selected}
         extra={id(p.worker) for p in self._panels() if id(p.worker) not in selected_workers and (getattr(p.worker,'ps',None) is not None or getattr(p.worker,'available',False))}
         if extra:self.activity_label.setText(self.activity_label.text()+f' · 구성 외 수동 연결 {len(extra)}대')

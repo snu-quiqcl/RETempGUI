@@ -498,6 +498,13 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def run_fluorescence(self,chamber,*,settings=None,settings_file=None,mapping_file=None,directory=None):
+        """Shared UI/workflow entry point; frozen settings, EA/EC results routed by run ID."""
+        return self.worker.fluorescence_runner.start(chamber,settings=settings,settings_file=settings_file,
+            mapping_file=mapping_file,directory=directory,parent=self.group)
+
+    def stop_fluorescence(self):return self.worker.fluorescence_runner.cancel()
+
     def run_sequence_file(self, path, *, parameters=None, timeout_s=30., max_rows=4096):
         """Run a trusted builder file on the local FPGA worker, never a new serial connection."""
         from labremote.devices.fpga.sequence_file import validate_request

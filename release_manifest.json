@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "CCD visible maximum, detection stop, level steps and Thermotek/OSA display axes",
+  "revision_note": "Daily EA/EC fluorescence characterization with frozen role mappings and workflow API",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 19084,
-      "sha256": "819f91c243511e20e2f5ceadbd459d092be7e1196b347c98ef8a2828efdab8c3"
+      "bytes": 19191,
+      "sha256": "ccd948aeeb2b87a954cbd18236ad65616ccbea3e5902da514355af92cc2352c1"
     },
     {
       "path": "check_public_files.py",
@@ -46,6 +46,11 @@
       "path": "docs/CONFIGURATION.md",
       "bytes": 5275,
       "sha256": "f41795ca4a8431143d5a7496b9c0c4d3ed9644aab2d2aa13ed818a99f5491773"
+    },
+    {
+      "path": "docs/DAILY_CHARACTERIZATION_KO.md",
+      "bytes": 5849,
+      "sha256": "b2e793c8067cc24b18204886deae2d799b71804c431261dea770b34651b2a478"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -129,8 +134,28 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 27637,
-      "sha256": "e6542788d62322a04c714bdf1526a2c0c1296575c61d92f0dd704167961a897b"
+      "bytes": 28114,
+      "sha256": "9ab43189f022c7dbbbeaeb249c859ab8e2e42a5c3bf0ab54f32264825601f98b"
+    },
+    {
+      "path": "labremote/characterization/__init__.py",
+      "bytes": 60,
+      "sha256": "878de8ecaff2c79ae3358b28bae61bd025129b99aa0c01fcee2072485608d421"
+    },
+    {
+      "path": "labremote/characterization/config.py",
+      "bytes": 4094,
+      "sha256": "6786e03e63139140953a7eefeaf185d760bcf69d95a2174aa8f9891f18878373"
+    },
+    {
+      "path": "labremote/characterization/fluorescence.py",
+      "bytes": 2954,
+      "sha256": "924d3c86cab502f535ee4ddf7c60c119b3ff3f808b58132daed72cbedf5b77a0"
+    },
+    {
+      "path": "labremote/characterization/runner.py",
+      "bytes": 5473,
+      "sha256": "f514517552c99a5c8ce9bcad492bfe360f02a2d6477c10db8796fa0f40fd5d22"
     },
     {
       "path": "labremote/config/__init__.py",
@@ -241,6 +266,21 @@
       "path": "labremote/config/operations/anapico/parameter_registry.yml",
       "bytes": 1242,
       "sha256": "b594db35ef86c67c6b581bc44e39b9b111b80c06ef33e67f4679a448c903e2bc"
+    },
+    {
+      "path": "labremote/config/operations/characterization/fluorescence_EA.json",
+      "bytes": 136,
+      "sha256": "3f80752813d5d0da6b398e4812886c528fee0e6111528bfafc9d997c81acfe80"
+    },
+    {
+      "path": "labremote/config/operations/characterization/fluorescence_EC.json",
+      "bytes": 136,
+      "sha256": "ed1c0fedec10a25b2e95e3b2a7ad15d810f6ccf78be50338f69750972d502314"
+    },
+    {
+      "path": "labremote/config/operations/characterization/fpga_roles.json",
+      "bytes": 197,
+      "sha256": "0065832c31d8a96e109768bfaad8daf4d5d95d1f38ca4df3678c11cc1c0b90f9"
     },
     {
       "path": "labremote/config/operations/dds4/parameter_registry.yml",
@@ -574,8 +614,8 @@
     },
     {
       "path": "labremote/devices/fpga/worker.py",
-      "bytes": 1506,
-      "sha256": "7dc2f00bbccc1a380855ff7bcf77a5edb4b79e99b19384cd88ed0282cd578916"
+      "bytes": 2196,
+      "sha256": "6b8738ae208c5d0475e8538ddc0aa28f29582524acb05b3df8d185f707d06c4c"
     },
     {
       "path": "labremote/devices/keithley/__init__.py",
@@ -886,6 +926,11 @@
       "path": "labremote/operation/fpga/__init__.py",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/fpga/fluorescence.py",
+      "bytes": 3132,
+      "sha256": "bcaaa04e0dd237cf37587a66306053430cf1f33b3e6d444bc09246309313f785"
     },
     {
       "path": "labremote/operation/fpga/measure.py",
@@ -1344,8 +1389,8 @@
     },
     {
       "path": "labremote/runtime/waveform_runner.py",
-      "bytes": 4802,
-      "sha256": "252bdb2ee73e0d637879ff05f8080ce6682a1cf3c19283e7f31f77c5edac1ec1"
+      "bytes": 4971,
+      "sha256": "de205df4907cde06dffae615e0fcdff8e3bfa13cfe9831245fc51a5cbe4b760e"
     },
     {
       "path": "labremote/runtime/workflow_loader.py",
@@ -1354,8 +1399,8 @@
     },
     {
       "path": "labremote/runtime/workflow_runner.py",
-      "bytes": 6712,
-      "sha256": "16ae44c8c5da1daa8ba856e053072b2cae68e65f1442a3052b8335641fd151e2"
+      "bytes": 6898,
+      "sha256": "9ebbce6f84c4d7b130a3c43252b3ad720d9c334b8251a9c8fd319f1532cb0dfe"
     },
     {
       "path": "labremote/sequence_examples/pmt_exposure.py",
@@ -1369,13 +1414,18 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 21533,
-      "sha256": "b4205f72b9239b574db75fe09f779bc927bf9df6ef31c426efdb9db26b0e946b"
+      "bytes": 21673,
+      "sha256": "cd32f7a75578f1c65ce9a4816eb058309c8fe9308426af0804c8035c17f240b5"
     },
     {
       "path": "labremote/ui/connection_status.py",
       "bytes": 476,
       "sha256": "bd468cae869b444b7d841541f452495860dc15e0e02ee3451deed7eae62ad766"
+    },
+    {
+      "path": "labremote/ui/daily_characterization.py",
+      "bytes": 12148,
+      "sha256": "0fb6411bce296ad523c5c850cde53683a9222a544dd5d97c53aeed319f43c2bd"
     },
     {
       "path": "labremote/ui/detail_window.py",
@@ -1394,8 +1444,8 @@
     },
     {
       "path": "labremote/ui/experiment_shell.py",
-      "bytes": 22602,
-      "sha256": "0f23bc68ee7e97837080e2a4190c8c256e66fdab1fb241d741bf84e3cd7b7bb2"
+      "bytes": 22851,
+      "sha256": "0dcd2363803a23e9472c896f4c0dff8d0b0fd32ca6d67dc8d0cba16b8fa2f300"
     },
     {
       "path": "labremote/ui/fpga_count_tab.py",
@@ -1409,8 +1459,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 16169,
-      "sha256": "b1d2fca92827f583f41ef297bc42037c3473960ce8aac7c29f43da793da51829"
+      "bytes": 16896,
+      "sha256": "e68cd97a36bd192810961c61cbdc6b98ac0dccf381448b5ad93276b628190e6a"
     },
     {
       "path": "labremote/ui/monitor_dashboard.py",
@@ -1506,6 +1556,11 @@
       "path": "labremote/workflow/ccd_wait_for_ions.py",
       "bytes": 677,
       "sha256": "bd03cf2f65871bdcf52d44df8396ee13036a232437a599726435b6f73b0c03e2"
+    },
+    {
+      "path": "labremote/workflow/daily_fluorescence.py",
+      "bytes": 313,
+      "sha256": "9d342deab70a6016da1c32d4d4f6bb6566c6dba748b2ac2a548c43398f5c5f4b"
     },
     {
       "path": "labremote/workflow/ea_ec_rf_setup.py",

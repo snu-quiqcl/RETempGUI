@@ -213,6 +213,10 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         panel.endpoint_provider=self._endpoint
         panel.log_message.connect(self.log.appendPlainText)
         panels[name]=panel;tabs.addTab(panel,name)
+        if family=='fpga':
+            from .daily_characterization import DailyCharacterization
+            panel.daily_tab=DailyCharacterization(panel.worker,self._bindings,self)
+            tabs.addTab(panel.daily_tab,'Daily characterization' if len(panels)==1 else 'Daily · '+name)
 
     def _panels(self):
         return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()
@@ -229,6 +233,8 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             if self.profile_dirty:
                 answer=QtWidgets.QMessageBox.question(self,'Configuration','변경한 장비 구성을 저장할까요?',QtWidgets.QMessageBox.Save|QtWidgets.QMessageBox.Discard|QtWidgets.QMessageBox.Cancel)
                 if answer==QtWidgets.QMessageBox.Cancel or (answer==QtWidgets.QMessageBox.Save and not self.save_equipment()):event.ignore();return
+            for panel in self.family_tabs['fpga'].values():
+                if hasattr(panel,'daily_tab') and not panel.daily_tab.workflow.confirm_close():event.ignore();return
             if not self.workflow_tab.confirm_close():
                 event.ignore()
                 return
@@ -236,6 +242,8 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             self.connection_queue.clear()
             for detail in [*self.detail_windows.values(),self.connection_settings_window]:detail.setEnabled(False)
             self.workflow_tab.shutdown()
+            for panel in self.family_tabs['fpga'].values():
+                if hasattr(panel,'daily_tab'):panel.daily_tab.shutdown()
             self.discovery_worker.shutdown()
             self.centralWidget().setEnabled(False)
             for p in self._panels():p.worker.cancel_backgrounds()
@@ -253,6 +261,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
 
     def _shutdown_workers_when_ready(self):
         if self._workers_shutdown:return
+        if any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values()):return
         from labremote.runtime.workflow_runner import _TASK_LOCK
         with _TASK_LOCK:tasks={task for panel in self._panels() for task in panel.worker._background_tasks}
         if any(task.running() for task in tasks):return

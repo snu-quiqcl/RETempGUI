@@ -269,3 +269,5 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 수동 shutter_1/2 제어와 설정 가능한 399 셔터의 CLOSE 우선 종료 순서도 [오븐 동작 안내](docs/OVEN_DETECTION_MODES_KO.md)에 포함되어 있습니다.
 
 - [Monitor: 장비별 읽기 전용 모아보기 및 표시 설정](docs/MONITOR_KO.md)
+
+- [Daily characterization: EA/EC Fluorescence와 FPGA 역할 매핑](docs/DAILY_CHARACTERIZATION_KO.md)

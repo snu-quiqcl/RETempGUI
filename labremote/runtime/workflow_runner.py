@@ -73,6 +73,7 @@ class WorkflowTask:
             error=None
             if self.running():error=RuntimeError(self.label+' is already running or stopping')
             elif any(w._closing or w.ps is None or w.connection_error for w in participants):error=ConnectionError('Connect all participating devices first')
+            elif any(getattr(t,'exclusive_fpga',False) and t.running() for w in participants for t in w._background_tasks):error=RuntimeError('FPGA reserved by daily characterization')
             elif self.label=='MOTOR_SCAN' and conflicting_scan(participants):error=RuntimeError('A participating device already belongs to a scan')
             elif self.label=='MOTOR_SCAN' and self.worker.waveform_runner.running():error=RuntimeError('Stop FPGA repeat measurement before scanning')
             if parent is not None:parent.add(handle)

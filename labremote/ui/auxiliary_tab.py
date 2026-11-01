@@ -296,5 +296,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
             widget=getattr(self,name,None)
             if widget is not None:widget.setEnabled(not self.connected)
 
-    def shutdown(self):self._closing=True;self.timer.stop();self.worker.shutdown()
-    def still_running(self):return (hasattr(self,'port_scanner') and self.port_scanner.isRunning()) or self.worker.isRunning() or (hasattr(self.worker,'waveform_runner') and self.worker.waveform_runner.running())
+    def shutdown(self):
+        if hasattr(self,'daily_tab'):self.daily_tab.shutdown()
+        self._closing=True;self.timer.stop();self.worker.shutdown()
+    def still_running(self):return (hasattr(self,'daily_tab') and self.daily_tab.still_running()) or (hasattr(self,'port_scanner') and self.port_scanner.isRunning()) or self.worker.isRunning() or (hasattr(self.worker,'waveform_runner') and self.worker.waveform_runner.running())
