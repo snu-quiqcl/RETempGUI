@@ -270,4 +270,4 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 
 - [Monitor: 장비별 읽기 전용 모아보기 및 표시 설정](docs/MONITOR_KO.md)
 
-- [Daily characterization: EA/EC Fluorescence·microwave Rabi와 실험별 FPGA 역할 매핑](docs/DAILY_CHARACTERIZATION_KO.md)
+- [Daily characterization: EA/EC Fluorescence·고정 microwave Rabi operation과 실험별 FPGA 역할 매핑](docs/DAILY_CHARACTERIZATION_KO.md)

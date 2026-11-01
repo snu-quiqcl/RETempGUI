@@ -1,11 +1,6 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "chamber": "EA",
-  "microwave": "apsyn420_mw",
-  "frequency_start_hz": 12642820855.0,
-  "frequency_stop_hz": 12642820855.0,
-  "frequency_step_hz": 1000.0,
-  "settle_s": 0.1,
   "timeout_s": 30.0,
   "T_cool": 50000,
   "T_cool_repeat": 2,

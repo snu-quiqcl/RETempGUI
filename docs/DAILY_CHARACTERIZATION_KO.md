@@ -1,6 +1,6 @@
 # Daily characterization — Fluorescence / microwave Rabi
 
-FPGA 창에서 `fpga_local` 옆의 `Daily characterization`을 엽니다. FPGA는 기존 창에서 한 번만 연결합니다. 새 COM 연결을 만들지 않습니다. Fluorescence는 PMT만 읽고, Rabi는 아래 설명대로 microwave 및 선택 FPGA 출력을 제어합니다.
+FPGA 창에서 `fpga_local` 옆의 `Daily characterization`을 엽니다. FPGA는 기존 창에서 한 번만 연결합니다. 새 COM 연결을 만들지 않습니다. Fluorescence는 PMT만 읽고, Rabi는 선택 FPGA 출력만 제어하며 microwave 발생기 설정은 외부에서 관리합니다.
 
 ## 화면
 
@@ -82,47 +82,54 @@ result = fpga.run_fluorescence(
 
 원본 계산을 유지합니다: 시간축은 exposure×샘플 번호, Poisson λ는 평균 count, FFT는 평균 제거→Hann window→rFFT→원본과 동일한 one-sided PSD 정규화입니다. **원본과 같이 배치 사이 재시작/PC 대기 시간은 시간축과 FFT에서 제외됩니다.** 따라서 실제 무중단 샘플링의 주파수 분석과 동일하다고 해석하면 안 됩니다. 이 가정은 설정/결과에도 기록됩니다. 상수 신호는 의미 있는 FFT peak가 없으므로 null로 표시하고, 3개 미만 부분 샘플에는 FFT를 만들지 않습니다.
 
-## Microwave Rabi
+## 고정 microwave Rabi operation
 
-### apsyn420_mw 연결
+Rabi는 외부에서 설정된 microwave 상태를 유지하면서 FPGA 펄스 시간만 스캔하는 operation입니다. **주파수 설정, RF 출력 ON/OFF, 주파수 정착 대기는 operation 외부에서 관리합니다.** Rabi 내부에는 주파수 loop나 AnaPico API 호출이 없습니다. Ramsey/SPAM은 아직 구현되지 않았으며 이후 같은 책임 분리를 적용합니다.
 
-기존 AnaPico APSYN420 GUI/API를 사용합니다. `config/devices/anapico/device_config.yml`에 `apsyn420_mw` 이름을 추가했으므로 RF → AnaPico 상세 창에 표시됩니다. 서버에 이미 등록되어 있으면 서버 드라이버/YAML을 교체할 필요가 없습니다. GUI가 사용하는 서버의 APSYN420 드라이버는 기존 `frequency`, `output`, `identity` 파라미터와 호환되어야 합니다. 서버 실연결은 이번 검증에 포함되지 않았습니다.
+### 장비 설정과 화면
 
-기존 개인 장비 구성 파일은 자동 덮어쓰지 않습니다. 메인 Configuration 편집에서 **직접 추가** 또는 서버 조회 후 추가로 아래 항목을 사용 설정하고 저장한 뒤 RF 그룹을 연결하세요.
+`apsyn420_mw`는 기존 RF → AnaPico GUI/API에서 설정합니다. 기존 개인 Configuration을 사용한다면 필요할 때 아래 항목을 추가하고 RF 그룹을 연결하세요. Rabi operation 자체는 AnaPico 연결을 요구하지 않습니다.
 
 ```json
 {"family":"anapico","name":"apsyn420_mw","group":"RF","enabled":true}
 ```
 
-새 장비 구성의 기본 목록에는 포함됩니다. 별도 IP나 TCP socket을 Rabi에서 열지 않고 기존 InstrumentServer 연결을 사용합니다. 기존 APSYN420 GUI와 같이 power setpoint는 추가하지 않습니다. reference 설정도 자동 변경하지 않습니다.
+EA Rabi / EC Rabi 탭은 측정 조건과 FPGA 역할 매핑, Run/Stop, 결과 저장 폴더와 이전 결과 열기를 제공합니다. 주파수 start/end/step, microwave instrument, frequency settle 입력은 제거했습니다.
 
-### EA Rabi / EC Rabi
+- EA 기본 매핑: PMTFA, AOMA, MW_A, EOM_7GA1, EOM_7GA2, EOM_2GA
+- EC 기본 매핑: PMTFC, AOMC, MW_C, EOM_7GC1, EOM_7GC2, EOM_2GC
 
-두 탭에 조건·매핑 불러오기, 저장, 개별 Run/Stop, 결과 폴더, 이전 결과 열기가 있습니다. 기본값은 기존 코드의 12,642,820,855 Hz, 10 us 시간 간격, 0부터 10개 시간점, 점당 500 shots, threshold 2입니다. frequency start=end이면 단일 주파수 시간 scan이고, end와 step을 설정하면 주파수 scan도 수행합니다. 끝점은 정수 step에 맞아야 합니다.
+냉각 시간·반복, AOM wait, 초기화·검출 시간, microwave pulse step, pulse points, shots, threshold, 점당 timeout은 각 탭에서 설정합니다. 기본값은 10 us 간격, 0부터 10개 시간점, 점당 500 shots, threshold 2입니다. GUI 시간은 us이며 JSON의 T_* / WAIT_AOM은 원본과 같은 10 ns clock 정수입니다. shots 최대 1024, 전체 shots 최대 2,000,000 제한을 유지합니다.
 
-- EA: PMTFA, AOMA, MW_A, EOM_7GA1, EOM_7GA2, EOM_2GA
-- EC: PMTFC, AOMC, MW_C, EOM_7GC1, EOM_7GC2, EOM_2GC
+### 실행 범위와 종료
 
-모든 역할은 각 Rabi 탭에서 변경 가능합니다. 냉각 시간·반복, AOM wait, 초기화, 검출 시간, microwave pulse step, pulse points, shots, threshold, 주파수 정착 시간, 점당 timeout을 설정합니다. GUI 시간은 us, JSON의 T_* 및 WAIT_AOM은 원본과 같은 10 ns clock 정수입니다. 원본 memory 구조 때문에 shots는 최대 1024, 전체 shots는 2,000,000으로 제한합니다.
+GUI/API는 기존 비동기 실행·취소·로그 기반을 재사용하지만, 실제 FPGA 작업은 한 개의 `RABI_ACQUIRE` operation입니다. 이 operation 안에서 준비 → 모든 pulse 시간점 측정 → FPGA 정리를 수행합니다. 각 시간점마다 별도 workflow operation을 제출하지 않습니다. FPGA 시퀀스의 냉각·초기화·MW gate pulse·PMT 검출 순서는 유지합니다.
 
-실행은 선택 FPGA 출력을 cooling 상태로 설정하고 MW gate를 LOW로 만든 후 AnaPico 주파수 설정/출력 ON → 정착 대기 → 원본의 냉각·초기화·MW pulse·PMT 검출 순서로 진행합니다. AOM/EOM/MW는 선택한 역할만 제어하며 오븐·셔터는 조작하지 않습니다. fluorescence와 달리 Rabi는 AOM/EOM을 실제로 조작합니다.
+operation이 실행되는 동안 외부 제어자는 microwave 주파수와 출력을 고정해야 합니다. **완료·중단·timeout 때도 AnaPico 출력은 바꾸지 않습니다.** FPGA는 MW gate LOW, PMT counter OFF, EOM_2G LOW, 선택 AOM/EOM_7G_1/2 HIGH(cooling)로 정리합니다. 이는 기존 상태 복원이 아닙니다. FPGA 정리 실패는 오류로 남습니다. 다른 FPGA 작업과 동시 실행은 거부하지만 microwave는 외부 제어 범위이므로 예약하지 않습니다.
 
-정상 종료·Stop·실패 시 **AnaPico OFF**를 시도하고, 별도 취소되지 않은 정리 경로로 MW LOW, PMT counter OFF, EOM_2G LOW, 선택 AOM/EOM_7G_1/2 HIGH(cooling)를 수행합니다. 시작 전 상태로 복원하는 동작은 아닙니다. OFF 실패여도 FPGA 정리를 별도로 시도하며 정리 실패를 명확히 기록합니다. 통신이 끊긴 상태에서 물리적 종료를 보장하지 않습니다. 같은 FPGA 및 microwave의 다른 작업은 실행 동안 거부됩니다.
+### 설정 파일 이전
 
-### 결과와 원본 대비 차이
+`rabi_EA.json`, `rabi_EC.json`과 저장되는 `rabi_EA.local.json`, `rabi_EC.local.json`은 schema_version 2입니다. 조건과 `roles`를 함께 저장하며 microwave 장비명·주파수 scan·정착 설정은 포함하지 않습니다.
 
-각 시간점의 population을 해당 EA/EC 탭에 표시하고, 종료 후 photon histogram, pulse time vs bright population(+fit), microwave frequency vs 원본 지표 `(1+max(population)-min(population))/2` 및 Rabi frequency(오른쪽 축)를 표시합니다. 일반 contrast `max-min`도 분석 파일에 함께 저장합니다. 피팅 결과의 Rabi frequency와 π time은 주파수별로 위쪽에 표시합니다.
+이전 schema 1 파일은 frequency start=end인 경우 나머지 조건/매핑을 유지하여 읽습니다. 이전 microwave 관련 필드는 제거되며 저장 시 schema 2가 됩니다. 이전 주파수 값은 실제 장비의 현재 값이라고 간주하지 않고 결과에도 자동 기록하지 않습니다. start≠end인 파일은 조용히 단일 주파수로 바꾸지 않고 외부 workflow로 옮기라는 오류를 표시합니다. 원본 파일은 GUI에서 저장하기 전까지 수정하지 않습니다.
 
-원본의 `counts >= threshold` bright 비율 및 `A*sin(pi*f*t)^2+C` 모델을 유지합니다. count를 39로 자르던 원본 처리는 제거하여 raw counts를 그대로 보존합니다. 0-count 임의 보충도 없습니다. 피팅에는 여러 초기값과 Nyquist 범위 제한을 사용하며 실패 시 원본처럼 초기 추정값을 피팅 결과로 내보내지 않습니다. 유한한 피팅 결과도 충분한 시간점·진동 주기 및 배경 검증이 필요합니다. 시간축은 원본 pulse-step 기준의 명목 시간이며 기존 wait/branch 보정(-7 clocks)은 유지합니다. 별도의 X_control로 시간축을 다르게 지정하지 않습니다.
-
-`configuration.json`, `raw_fifo.csv`, `points.json`, `population.csv`, `analysis.json`, `analysis.png`, `result.json`을 실행별로 저장합니다. 미완료 시간점의 수신 데이터는 raw_fifo.csv에 남고, 완전한 시간점만 population/fit에 사용합니다. 부분 결과는 cancelled/failed로 표시됩니다. 결과가 없거나 fit이 불가능하면 성공 수치로 표시하지 않습니다.
+### Operation API
 
 ```python
-def main(devices):
-    fpga = devices.fpga("fpga_local")
-    microwave = devices.anapico("apsyn420_mw")
-    ea = fpga.run_rabi("EA", microwave).wait()
-    ec = fpga.run_rabi("EC", microwave).wait()
+# Microwave frequency/output must already be set externally.
+result = devices.fpga("fpga_local").run_rabi("EA").wait()
 ```
 
-`settings=...`, `settings_file=...`, `directory=...`를 지정할 수 있습니다. microwave 인자는 명시한 AnaPico API이며 설정의 microwave 이름과 일치해야 합니다. `stop_rabi()` 또는 handle.request_cancel()로 중단합니다. 메인/Daily 어느 workflow에서 호출해도 같은 EA/EC 결과 탭으로 전달됩니다. 예제는 `labremote/workflow/daily_rabi.py`입니다. Daily Workflow 편집기의 불러오기로 선택하면 됩니다.
+`settings=...`, `settings_file=...`, `directory=...`를 사용할 수 있습니다. microwave API 인자를 받던 이전 호출은 제거했으므로 `run_rabi("EA", mw)`는 새 형식으로 수정해야 합니다. 기존 Single Scan / Fluorescence API는 유지합니다.
+
+외부 주파수 workflow는 주파수 설정 및 정착을 마친 뒤 매 주파수에서 위 operation을 호출하면 됩니다. 그때 결과에 주파수를 기록하려면 `frequency_hz=...`를 전달할 수 있습니다. **이 값은 호출자가 제공하는 메타데이터이며 하드웨어 설정 또는 읽기 요청이 아닙니다.** 생략하면 null이며 UI는 External microwave로 표시합니다. 외부 workflow가 microwave 종료와 취소 시 정리까지 책임져야 합니다.
+
+`stop_rabi()` 또는 handle.request_cancel()로 operation을 중단합니다. GUI 실행과 외부 workflow 호출 모두 같은 EA/EC 탭에 결과를 전달합니다. `labremote/workflow/daily_rabi.py`는 외부 설정을 마친 뒤 EA operation 한 번을 호출하는 예시입니다. 주파수 스캔 workflow는 이 operation과 별도로 작성합니다.
+
+### 결과
+
+각 시간점의 bright population을 실시간으로 표시하고, 완료/중단 후 photon histogram과 pulse time vs population/fit을 표시합니다. Rabi frequency와 π time은 위쪽 요약에 표시합니다. 단일 operation에는 microwave 주파수 스캔 그래프가 없습니다. 이전 다중 주파수 결과 파일은 기존 그래프로 열 수 있습니다.
+
+원본 `counts >= threshold` 비율 및 `A*sin(pi*f*t)^2+C` 모델을 유지합니다. 원본의 count clipping은 제거하여 수신 counts를 그대로 보존합니다. 피팅 실패는 초기 추정값으로 대체하지 않습니다. 시간축은 원본 pulse step 기준 명목 시간이고 wait/branch 보정(-7 clocks)을 유지합니다.
+
+실행별 `configuration.json`, `raw_fifo.csv`, `points.json`, `population.csv`, `analysis.json`, `analysis.png`, `result.json`을 저장합니다. 주파수 CSV 열은 `frequency_hz_metadata`로 표시합니다. 미완료 시간점의 수신 값은 raw_fifo.csv에 남고, 완전한 시간점만 분석합니다. 외부 microwave 제어 여부와 주파수 메타데이터의 미지정 상태도 기록합니다.

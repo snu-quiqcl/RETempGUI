@@ -23,32 +23,43 @@ def acquire(controller,c,index,cancelled,on_rows):
         n=d.fifo_data_length()
         if type(n) is not int or not 0<=n<=65535:raise RuntimeError('Invalid FIFO length')
         return n
-    try:
-        check();stale=length()
-        while stale:
-            check();n=min(stale,500);d.read_fifo_data(n);stale-=n
-        program.program(show=False,target=d);check();d.auto_mode();d.start_sequencer()
-        deadline=time.monotonic()+c['timeout_s'];counts=[]
-        while True:
+    check();stale=length()
+    while stale:
+        check();n=min(stale,500);d.read_fifo_data(n);stale-=n
+    program.program(show=False,target=d);check();d.auto_mode();d.start_sequencer()
+    deadline=time.monotonic()+c['timeout_s'];counts=[]
+    while True:
+        check()
+        if time.monotonic()>deadline:raise TimeoutError('Rabi point timeout')
+        state=d.sequencer_running_status()
+        if state not in ('running','stopped'):raise RuntimeError('Invalid sequencer status')
+        n=length()
+        while n:
             check()
-            if time.monotonic()>deadline:raise TimeoutError('Rabi point timeout')
-            state=d.sequencer_running_status()
-            if state not in ('running','stopped'):raise RuntimeError('Invalid sequencer status')
-            n=length()
-            while n:
-                check()
-                if time.monotonic()>deadline:raise TimeoutError('Rabi FIFO timeout')
-                size=min(n,500);rows=d.read_fifo_data(size)
-                if not isinstance(rows,list) or len(rows)!=size or any(len(r)!=4 for r in rows):raise RuntimeError('Malformed Rabi FIFO')
-                valid=all(all(type(v) is int and 0<=v<=65535 for v in r) and r[0]==len(counts)+i and r[1]==index and r[3]==10 for i,r in enumerate(rows)) and len(counts)+size<=c['N_average']
-                on_rows(rows,valid)
-                if not valid:raise RuntimeError('Unexpected Rabi FIFO index/tag')
-                counts.extend(r[2] for r in rows);n-=size
-            if state=='stopped':break
-            time.sleep(.001)
-        if len(counts)!=c['N_average']:raise RuntimeError('Missing Rabi samples')
-        return counts
+            if time.monotonic()>deadline:raise TimeoutError('Rabi FIFO timeout')
+            size=min(n,500);rows=d.read_fifo_data(size)
+            if not isinstance(rows,list) or len(rows)!=size or any(len(r)!=4 for r in rows):raise RuntimeError('Malformed Rabi FIFO')
+            valid=all(all(type(v) is int and 0<=v<=65535 for v in r) and r[0]==len(counts)+i and r[1]==index and r[3]==10 for i,r in enumerate(rows)) and len(counts)+size<=c['N_average']
+            on_rows(rows,valid)
+            if not valid:raise RuntimeError('Unexpected Rabi FIFO index/tag')
+            counts.extend(r[2] for r in rows);n-=size
+        if state=='stopped':break
+        time.sleep(.001)
+    if len(counts)!=c['N_average']:raise RuntimeError('Missing Rabi samples')
+    return counts
+
+def run(controller,c,cancelled,on_rows,on_point):
+    controller._idle()
+    try:
+        if cancelled.is_set():raise OperationCancelled('Rabi cancelled')
+        cleanup(controller,c['roles'])
+        for index in range(c['N_qubit_control']):
+            counts=acquire(controller,c,index,cancelled,lambda rows,valid:on_rows(index,rows,valid))
+            on_point(index,counts)
     except Exception as original:
         try:cleanup(controller,c['roles'])
         except Exception as exc:raise RuntimeError(f'Rabi FPGA cleanup failed: {exc}; original: {original}') from exc
         raise
+    else:
+        try:cleanup(controller,c['roles'])
+        except Exception as exc:raise RuntimeError(f'Rabi FPGA cleanup failed: {exc}') from exc

@@ -1,6 +1,6 @@
 from pathlib import Path
 from PyQt5 import QtCore,QtWidgets
-from labremote.api.devices import Devices,device_api
+from labremote.api.devices import device_api
 from labremote.characterization import config,rabi
 
 class RabiTab(QtWidgets.QWidget):
@@ -8,20 +8,17 @@ class RabiTab(QtWidgets.QWidget):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
         self.fields={};self.roles={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
         root=QtWidgets.QVBoxLayout(self)
-        note=QtWidgets.QLabel('EC FPGA · '+chamber+' microwave Rabi · 종료/중단: microwave OFF, MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
+        note=QtWidgets.QLabel('EC FPGA · '+chamber+' microwave Rabi · MW 주파수·출력은 외부 설정 · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1)
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(330);split.addWidget(scroll)
         settings=QtWidgets.QWidget();scroll.setWidget(settings);left=QtWidgets.QVBoxLayout(settings)
         form=QtWidgets.QFormLayout();left.addLayout(form)
-        self.microwave=QtWidgets.QLineEdit('apsyn420_mw');form.addRow('Microwave instrument',self.microwave)
-        self.connection=QtWidgets.QLabel();self.connection.setWordWrap(True);form.addRow(self.connection)
         for key,title,lo,hi,dec,step in [
-            ('frequency_start_hz','Frequency start (Hz)',1e4,20e9,3,1000),('frequency_stop_hz','Frequency end (Hz)',1e4,20e9,3,1000),('frequency_step_hz','Frequency step (Hz)',.001,20e9,3,1000),
             ('T_cool','Cooling time (us)',0,655.35,2,1),('T_cool_repeat','Cooling repeats',1,65535,0,1),
             ('WAIT_AOM','AOM wait (us)',0,655.35,2,.1),('T_init','Initialization (us)',0,655.35,2,1),('T_det','Detection (us)',0,655.35,2,1),
             ('T_mw_step','Pulse time step (us)',.07,655.35,2,1),('N_qubit_control','Pulse points (from 0)',3,65535,0,1),
             ('N_average','Shots / point',1,1024,0,1),('N_threshold','Bright threshold (>=)',0,65535,0,1),
-            ('settle_s','Frequency settle (s)',0,60,3,.1),('timeout_s','Timeout / point (s)',.1,3600,1,1)]:
+            ('timeout_s','Timeout / point (s)',.1,3600,1,1)]:
             field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
             if dec:field.setDecimals(dec)
             field.setRange(lo,hi);field.setSingleStep(step);self.fields[key]=field;form.addRow(title,field)
@@ -51,13 +48,12 @@ class RabiTab(QtWidgets.QWidget):
         worker.task_progress.connect(self.progress);self.controls()
 
     def populate(self,value):
-        self.microwave.setText(value['microwave'])
         for key,field in self.fields.items():field.setValue(value[key]*.01 if key in rabi.TIMES else value[key])
         for role,box in self.roles.items():box.setCurrentText(value['roles'][role])
 
     def value(self):
         values={k:round(f.value()*100) if k in rabi.TIMES else f.value() for k,f in self.fields.items()}
-        return rabi.validate(dict(schema_version=1,chamber=self.chamber,microwave=self.microwave.text().strip(),roles={r:b.currentText() for r,b in self.roles.items()},**values))
+        return rabi.validate(dict(schema_version=2,chamber=self.chamber,roles={r:b.currentText() for r,b in self.roles.items()},**values))
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load Rabi settings',str(config.ROOT),'JSON (*.json)')
@@ -84,25 +80,18 @@ class RabiTab(QtWidgets.QWidget):
         try:
             c=self.value()
             if not self.directory.text().strip():raise ValueError('결과 저장 폴더를 지정하세요.')
-            microwave=Devices(self.bindings()).anapico(c['microwave'])
-            handle=self.api.run_rabi(self.chamber,microwave,settings=c,directory=self.directory.text())
+            handle=self.api.run_rabi(self.chamber,settings=c,directory=self.directory.text())
             if handle.done.is_set() and handle.error:raise handle.error
             self.run_id=handle.request_id;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.figure.clear();self.canvas.draw_idle();self.summary.clear();self.status.setText('Starting · '+self.run_id)
-        except KeyError:self.status.setText('장비 구성에서 선택한 AnaPico를 추가하고 연결하세요.')
         except Exception as exc:self.status.setText(str(exc))
         self.controls()
 
     def controls(self):
         runner=self.worker.rabi_runner;active=runner.running()
-        try:
-            microwave=Devices(self.bindings()).anapico(self.microwave.text().strip()).worker
-            connected=microwave.ps is not None and not microwave.connection_error
-        except KeyError:connected=False
-        self.connection.setText('Microwave 연결됨' if connected else 'Microwave 미연결 · 메인 장비 구성에서 추가/연결')
         busy=self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks)
-        self.start_button.setEnabled(self.config_valid and connected and self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing and not busy)
+        self.start_button.setEnabled(self.config_valid and self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing and not busy)
         self.stop_button.setEnabled(active and runner.settings['settings']['chamber']==self.chamber)
-        for field in (*self.fields.values(),*self.roles.values(),*self.config_buttons,self.microwave):field.setEnabled(not active)
+        for field in (*self.fields.values(),*self.roles.values(),*self.config_buttons):field.setEnabled(not active)
 
     def progress(self,label,state):
         if label!='RABI' or state.get('chamber')!=self.chamber or state.get('run_id')!=self.worker.rabi_runner.state.get('run_id'):return
@@ -118,7 +107,7 @@ class RabiTab(QtWidgets.QWidget):
             ax=self.live_axis
             for frequency in sorted({k[0] for k in self.live}):
                 rows=sorted((t,v) for (f,t),v in self.live.items() if f==frequency)
-                if frequency not in self.live_lines:self.live_lines[frequency],=ax.plot([],[],'o-',label=f'{frequency/1e9:.9f} GHz');ax.legend()
+                if frequency not in self.live_lines:self.live_lines[frequency],=ax.plot([],[],'o-',label=(f'{frequency/1e9:.9f} GHz (metadata)' if frequency is not None else 'External microwave'));ax.legend()
                 self.live_lines[frequency].set_data([p[0] for p in rows],[p[1] for p in rows])
             ax.relim();ax.autoscale_view(scalex=True,scaley=False);self.canvas.draw_idle()
 
@@ -126,7 +115,7 @@ class RabiTab(QtWidgets.QWidget):
         rabi.draw(self.figure,data);self.canvas.draw_idle()
         lines=[f"{report['chamber']} · {report['status']} · {report['completed_points']} points"]
         for curve in data['curves']:
-            f=curve['fit'];lines.append(f"{curve['frequency_hz']/1e9:.9f} GHz: "+(f"Rabi {f['frequency_hz']/1000:.4g} kHz, π time {f['pi_time_us']:.4g} us" if f['valid'] else 'Fit unavailable: '+f['reason']))
+            f=curve['fit'];lines.append((f"{curve['frequency_hz']/1e9:.9f} GHz (metadata): " if curve.get('frequency_hz') is not None else "External microwave: ")+(f"Rabi {f['frequency_hz']/1000:.4g} kHz, π time {f['pi_time_us']:.4g} us" if f['valid'] else 'Fit unavailable: '+f['reason']))
         self.summary.setText('\n'.join(lines))
 
     def load_result(self):

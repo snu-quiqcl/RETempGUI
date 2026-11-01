@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Experiment-local role mappings and EA/EC microwave Rabi characterization",
+  "revision_note": "Fixed-microwave Rabi operation; external microwave control",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 19217,
-      "sha256": "bb3bac79a0737f1d73081813b60203d67c23ff167a9f7a77b61e50de6fadc97e"
+      "bytes": 19234,
+      "sha256": "6915a2087c656a2687bc77ec27c8e746224836bd34b58229ddd6184b586fba51"
     },
     {
       "path": "check_public_files.py",
@@ -49,8 +49,8 @@
     },
     {
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
-      "bytes": 11644,
-      "sha256": "e2d4e2fcafae9fd555bc19f3aec1d13965f2f526ffe5e6f6a8c87be02ca3f20d"
+      "bytes": 12196,
+      "sha256": "421c785a264a18e46067d1fb8424eeefe38ad4846da1b93a8f2f162c82418970"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -134,8 +134,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 28425,
-      "sha256": "a5a64b1a6750bf10580a2dfa330607e803d17739b0b37704aa3eb8fbe85a8c64"
+      "bytes": 28449,
+      "sha256": "0b9eb0bbbdbc184825a4ddd36b560c753adc86bb3d89fb47069faf873d11496d"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -154,13 +154,13 @@
     },
     {
       "path": "labremote/characterization/rabi.py",
-      "bytes": 7363,
-      "sha256": "2e93b63e980f288ffcd8442a4e061f823f56aeee49f854d7a8f714e6e1399d3c"
+      "bytes": 7527,
+      "sha256": "8a82c1324a98f486d209e7a26f4bd8e2ffbe3e363026fc0452cc214c4d229f33"
     },
     {
       "path": "labremote/characterization/rabi_runner.py",
-      "bytes": 6776,
-      "sha256": "56bf0b3f3f10530b5d1bc96184b7cd7a478a360e2cd72af7c5b1fea770325c12"
+      "bytes": 5550,
+      "sha256": "5ba6159e128f93ec635c306d0035f1adfc2b7568e03332be6e2a19bfe17ef228"
     },
     {
       "path": "labremote/characterization/rabi_sequence.py",
@@ -299,13 +299,13 @@
     },
     {
       "path": "labremote/config/operations/characterization/rabi_EA.json",
-      "bytes": 586,
-      "sha256": "88bde16d35c6e0c761cd7226d81a1632f074cfb3a039e6fea910d3b47eb59c4b"
+      "bytes": 424,
+      "sha256": "3924f832df56402a442e8971927bfd96cb5c66daa017175cc0201346c404b311"
     },
     {
       "path": "labremote/config/operations/characterization/rabi_EC.json",
-      "bytes": 586,
-      "sha256": "a3dd6d6a9f7369e5359c3aaf028bf6864ef6f33507e338eac58c67e32f11550b"
+      "bytes": 424,
+      "sha256": "47531f8bff0794755a7fc1642aa1c6dacab14e636bacf4e66683522068fcf059"
     },
     {
       "path": "labremote/config/operations/dds4/parameter_registry.yml",
@@ -459,8 +459,8 @@
     },
     {
       "path": "labremote/devices/anapico/worker.py",
-      "bytes": 712,
-      "sha256": "4d5779ed046c856ae6dabb99b5e1194bc1e76876f31788632cceb2f1a052c889"
+      "bytes": 556,
+      "sha256": "b8765ee454d47b6fd79f3c6f5007f4dd6daebfd494265f6681f69db6b36d0e5a"
     },
     {
       "path": "labremote/devices/ccd/__init__.py",
@@ -969,8 +969,8 @@
     },
     {
       "path": "labremote/operation/fpga/rabi.py",
-      "bytes": 2875,
-      "sha256": "db3f255ecd21dac6d936b4e719db076d98f8ad43e930a415313fe5319008929a"
+      "bytes": 3365,
+      "sha256": "f0cd55b0edb19c7918961d8b93735b8aa3bbc2859605c6faf718895f2212f0bd"
     },
     {
       "path": "labremote/operation/fpga/read_snapshot.py",
@@ -1519,8 +1519,8 @@
     },
     {
       "path": "labremote/ui/rabi_tab.py",
-      "bytes": 11019,
-      "sha256": "444083166074f4ad9ecb91b8d6afe66a3b32875e0286d30b03394d596c773a59"
+      "bytes": 10035,
+      "sha256": "4a3c63331dcfb8ebade8ddef9c3539c443f0dbbe10e84959bdadc94903936721"
     },
     {
       "path": "labremote/ui/rf_device_tab.py",
@@ -1604,8 +1604,8 @@
     },
     {
       "path": "labremote/workflow/daily_rabi.py",
-      "bytes": 333,
-      "sha256": "b81fcb7509f506c1b72da6b85a4c1008da0ed088ab70949f12dbc9208aa9c248"
+      "bytes": 234,
+      "sha256": "778bcb64fc67c7984e57c48dcf9040ede3c68e1064498e30e04f832dcbbe5690"
     },
     {
       "path": "labremote/workflow/ea_ec_rf_setup.py",
