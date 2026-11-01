@@ -11,12 +11,10 @@ from labremote.config.device_config import load_device_config
 from labremote.devices.fpga.controller import INPUTS
 
 
-SCAN_TABS = (
-    ('Scan EA collection', ('EA_px','EA_py','EA_pz')),
-    ('Scan EA excitation', ('EA_sx','EA_sy','EA_sz')),
-    ('Scan EC collection', ('EC_px','EC_py','EC_pz')),
-    ('Scan EC excitation', ('EC_sx','EC_sy','EC_sz')),
-)
+from labremote.config.paths import CONFIG_ROOT
+from labremote.config.roles import scan_roles
+SCAN_ROLES = scan_roles()
+SCAN_TABS = tuple((r['title'],tuple(r['axes'])) for r in SCAN_ROLES)
 
 
 class MotorScanTab(QtWidgets.QWidget):
@@ -25,7 +23,7 @@ class MotorScanTab(QtWidgets.QWidget):
         self.run_id=None;self.data=None;self.fields={};self.latest_state={};self.z_values=[];self.fit_artists=[]
         self.title,self.defaults=SCAN_TABS[number-1]
         self.position_labels={};self.manual_move=None
-        self.previous_path=Path(__file__).resolve().parents[1]/'config'/('scan_'+self.defaults[0]+'.local.json')
+        self.previous_path=CONFIG_ROOT/'ui'/('scan_'+self.defaults[0]+'.local.json')
         cfg=load_device_config('fpga',getattr(parent,'name',None) or worker.name or 'fpga_local')['scan_defaults']
         self.scales={axis+'_um_per_unit':cfg[axis+'_um_per_unit'] for axis in 'xyz'}
         root=QtWidgets.QVBoxLayout(self);root.setContentsMargins(6,6,6,6);root.setSpacing(4)
@@ -59,7 +57,7 @@ class MotorScanTab(QtWidgets.QWidget):
         for box,default in zip((self.x_motor,self.y_motor,self.z_motor),self.defaults):
             box.addItem(default);box.setEnabled(False)
         for n,(name,pin) in INPUTS.items():self.channel.addItem(name,n)
-        self.channel.setCurrentIndex((0,3,1,2)[number-1])
+        self.channel.setCurrentIndex(SCAN_ROLES[number-1]['pmt_index'])
         for col,title in enumerate(('Axis','Motor','Start (µm)','End (µm)','Step (µm)','Current (µm)')):
             form.addWidget(QtWidgets.QLabel(title),0,col)
         for row,(axis,box) in enumerate(zip('xyz',(self.x_motor,self.y_motor,self.z_motor)),1):

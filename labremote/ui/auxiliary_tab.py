@@ -213,11 +213,14 @@ class AuxiliaryTab(QtWidgets.QWidget):
                     value=individual.requested;commanded=isinstance(value,bool)
                 if not self.connected or pending:value=None
                 text='Pending' if pending else 'Unknown' if value is None else 'ON' if value else 'OFF'
+                if self.connected and value is None and not pending and not failed and OUTPUTS[name][1]!=0:text='읽기 미지원'
                 label.setText(name+'\n'+text+(' *' if commanded and value is not None else ''))
                 label.setProperty('outputValue',value)
                 color='#238636' if value is True else '#b42318' if value is False else '#616161'
                 label.setStyleSheet('QPushButton { background-color: '+color+'; color: white; border-radius: 4px; padding: 6px; }')
                 label.setToolTip('Commanded state only; this output has no physical readback.' if commanded else 'Click to turn OFF' if value else 'Click to turn ON')
+                if self.connected and value is None and not pending and not failed and OUTPUTS[name][1]!=0:
+                    label.setToolTip('Slow port: 상태 읽기 미지원. 클릭하면 ON 명령을 보냅니다. ON/OFF *는 실제 읽기값이 아닌 마지막 성공 명령입니다.')
                 label.setEnabled(self.connected and not pending)
 
     def _toggle_output(self,name):

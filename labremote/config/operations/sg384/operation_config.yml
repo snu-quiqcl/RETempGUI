@@ -1,0 +1,9 @@
+schema_version: 1
+defaults:
+  rf_operation:
+    max_step_vpp: 0.01
+    interval_s: 0.2
+    low_power_dbm:
+      BNC: -40.0
+      N: -40.0
+instruments: {}

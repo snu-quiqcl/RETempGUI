@@ -23,7 +23,7 @@
 2. PID/XYZ 모듈은 GUI/스캔 검증을 합쳐 약 87초가 걸려 초기 75초 제한에 걸렸습니다. 충분한 제한 시간으로 32개 테스트가 통과했습니다. 검증 스크립트 기본 모듈 제한은 180초입니다.
 3. 이전 전체 실행에서 관찰된 FPGA Input counts 테스트 실패는 독립 프로세스 재검증에서 재현되지 않았고 12개 관련 테스트가 통과했습니다.
 4. 누락된 Pillow 및 별도 InstrumentServer 클라이언트의 Python 의존성을 설치 목록에 추가했습니다. 실제 검증 환경의 직접 의존성 버전을 `constraints-tested.txt`에 기록했습니다.
-5. PC별 Conda/서버/외부 소스 경로를 `local_settings.bat`에서 덮어쓸 수 있도록 했습니다. 이 파일과 앱의 `client_settings.json`은 Git에서 제외됩니다.
+5. PC별 Conda/서버/외부 소스 경로를 `local_settings.bat`에서 덮어쓸 수 있도록 했습니다. 이 파일과 앱의 `labremote/config/ui/client_settings.local.json`은 Git에서 제외됩니다.
 6. 서버 드라이버 안내의 오래된 Motor Server 문구를 실제 QCoDeS/InstrumentServer 구성에 맞게 고쳤습니다. 사용하지 않는 KDC101 legacy Windows 드라이버와 실험실 개별 config.yaml은 배포본에서 제외하고 서버 설정 예제는 유지했습니다.
 
 ## 유지 및 제외 기준

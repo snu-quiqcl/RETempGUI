@@ -7,8 +7,8 @@ v6 복사본에 CCD 탭을 추가했습니다. 기존 RF/oscillo/mira/others/wor
 `start_lab_remote_gui.bat` 실행 → CCD 탭 → Thorcam 또는 Dummy 선택 → Connect local CCD.
 
 - Dummy는 밝은 영역 3개를 생성합니다. 실제 장비 없이 workflow를 확인할 수 있습니다.
-- Thorcam은 첨부 CCD.zip의 .NET SDK 래퍼를 사용합니다. ThorCam/Thorlabs SDK가 별도로 설치되어 있어야 합니다. 기본 DLL 디렉터리는 `C:/Program Files/Thorlabs/Scientific Imaging/ThorCam/`입니다. 화면 입력칸은 제거했으며 별도 경로가 필요하면 로컬 client_settings.json의 ccd_options.dll_path로 지정합니다.
-- 여러 카메라가 연결되어 있으면 로컬 client_settings.json의 ccd_options.serial을 지정해야 합니다. 단색 16bit 영상만 지원하며 컬러 카메라는 명시적으로 거부합니다.
+- Thorcam은 첨부 CCD.zip의 .NET SDK 래퍼를 사용합니다. ThorCam/Thorlabs SDK가 별도로 설치되어 있어야 합니다. 기본 DLL 디렉터리는 `C:/Program Files/Thorlabs/Scientific Imaging/ThorCam/`입니다. 화면 입력칸은 제거했으며 별도 경로가 필요하면 로컬 labremote/config/ui/client_settings.local.json의 ccd_options.dll_path로 지정합니다.
+- 여러 카메라가 연결되어 있으면 로컬 labremote/config/ui/client_settings.local.json의 ccd_options.serial을 지정해야 합니다. 단색 16bit 영상만 지원하며 컬러 카메라는 명시적으로 거부합니다.
 - 추가 Python 패키지는 `requirements_ccd.txt`에 기록했습니다. SDK와 카메라 실물은 더미 검증에 사용하지 않았습니다.
 
 ## 유지한 기능과 변경한 표현

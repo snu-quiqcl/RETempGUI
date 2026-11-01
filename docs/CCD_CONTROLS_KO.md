@@ -5,7 +5,7 @@
 FPGA Manual 화면의 **포트 검색**은 운영체제의 serial port 목록을 조회합니다.
 포트 이름, 장치 설명, USB serial을 표시하며 포트를 열거나 출력 명령을 보내지 않습니다.
 목록에서 선택하거나 포트 이름을 직접 입력한 뒤 Connect를 누릅니다.
-연결에 성공한 포트만 `labremote/config/fpga_ports.local.json`에 장비 이름별로 저장합니다.
+연결에 성공한 포트만 `labremote/config/devices/fpga/ports.local.json`에 장비 이름별로 저장합니다.
 다음 실행 때 복원하며 USB serial/VID/PID가 유일하게 일치하면 변경된 COM 번호를 따라갑니다.
 USB serial이 없거나 중복이면 추측하지 않으므로 목록에서 직접 선택하세요.
 이 파일은 Git에서 제외되며 PC마다 포트 번호가 다를 수 있습니다.

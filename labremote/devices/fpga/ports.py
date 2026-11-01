@@ -4,7 +4,7 @@ import os
 from PyQt5 import QtCore
 from labremote.config.paths import CONFIG_ROOT
 
-LOCAL = CONFIG_ROOT / 'fpga_ports.local.json'
+LOCAL = CONFIG_ROOT / 'devices/fpga/ports.local.json'
 
 def load_port(name):
     if not LOCAL.exists(): return {}

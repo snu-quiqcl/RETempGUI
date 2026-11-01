@@ -19,7 +19,7 @@ def main():
                              '--exclude-standard', '-z'], check=True, stdout=subprocess.PIPE)
     names = set(result.stdout.decode('utf-8').split('\0')) - {''}
     private_values = set()
-    for name in ('labremote/config/local_hardware.json', 'server_deploy_latest/KDC101/serials.local.json'):
+    for name in ('labremote/config/devices/connections.local.json', 'labremote/config/local_hardware.json', 'server_deploy_latest/KDC101/serials.local.json'):
         path = ROOT/name
         if path.exists():
             data = json.loads(path.read_text(encoding='utf-8-sig'))

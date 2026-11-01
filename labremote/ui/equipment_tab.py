@@ -99,7 +99,7 @@ class EquipmentTab(QtWidgets.QWidget):
                 self.inputs.extend((enable,disable));advanced.hide();advanced_toggle.toggled.connect(advanced.setVisible)
             off=QtWidgets.QPushButton('All outputs OFF');off.clicked.connect(self.api.all_off)
             root.addWidget(off);self.inputs.append(off)
-            root.addWidget(QtWidgets.QLabel('Limits: labremote/config/keithley/device_config.yml · Monitoring every 60 s'))
+            root.addWidget(QtWidgets.QLabel('Limits: labremote/config/devices/keithley/device_config.yml · Monitoring every 60 s'))
         root.addStretch()
         self.worker.connected.connect(self._connected);self.worker.disconnected.connect(self._disconnected)
         self.worker.snapshot.connect(self._snapshot);self.worker.failure.connect(self._failure)

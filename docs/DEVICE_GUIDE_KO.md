@@ -47,7 +47,7 @@ def main(devices):
     measured_dbm = rf.acquire('n_power_dbm').wait()
 ```
 
-기존 `set_power(-20)` 호출은 계속 dBm입니다. `labremote/config/sg384/device_config.yml`의 `max_power_vpp`는 dBm으로 변환해 각 ramp 단계의 assign에서 검사합니다. `max_power_dbm: null`이어도 Vpp 제한은 적용되며, 두 제한이 있으면 더 낮은 값을 사용합니다. 현재 EA의 0.16 Vpp는 약 −11.94 dBm, EC의 0.19 Vpp는 약 −10.45 dBm입니다. 제한 초과 단계에서 중단되며 그 전에 변경된 값은 유지됩니다.
+기존 `set_power(-20)` 호출은 계속 dBm입니다. `labremote/config/devices/sg384/device_config.yml`의 `max_power_vpp`는 dBm으로 변환해 각 ramp 단계의 assign에서 검사합니다. `max_power_dbm: null`이어도 Vpp 제한은 적용되며, 두 제한이 있으면 더 낮은 값을 사용합니다. 현재 EA의 0.16 Vpp는 약 −11.94 dBm, EC의 0.19 Vpp는 약 −10.45 dBm입니다. 제한 초과 단계에서 중단되며 그 전에 변경된 값은 유지됩니다.
 
 ## DS1052E
 
@@ -106,8 +106,8 @@ DS1052E 응답 형식은 `parameter_registry.yml`에서 지정합니다. 공통 
 - `labremote/runtime/device_worker.py`: 장비별 worker가 공유하는 FIFO 큐와 통신 수명 관리.
 - `labremote/operation/windfreak/`: Windfreak 작업 정의.
 - `labremote/runtime/parameters.py`: acquire/assign 검증, readback, 공유 관측값.
-- `labremote/config/windfreak/parameter_registry.yml`: 파라미터 타입·범위·readback 정책.
-- `labremote/config/windfreak/device_config.yml`: 장비별 출력 한계·ramp·reference 기본값.
+- `labremote/config/operations/windfreak/parameter_registry.yml`: 파라미터 타입·범위·readback 정책.
+- `labremote/config/devices/windfreak/device_config.yml`: 장비별 출력 한계·reference 기본값. Ramp는 `labremote/config/operations/windfreak/operation_config.yml`.
 
 Config는 operation 시작 때 읽어 고정합니다. 값 검증은 acquire/assign에서 수행합니다. Operation은 사전 값 검증을 하지 않으며, 오류 전에 성공한 변경은 유지합니다. Ramp는 각 단계의 값을 assign에서 검증하고 씁니다. 범위를 벗어나는 단계에서 중단하며 이전 단계에서 성공한 변경은 유지합니다.
 
@@ -153,9 +153,9 @@ wait()는 완료까지 기다리고 실패·취소를 예외로 전달합니다.
 
 ## 설정 위치
 
-- `labremote/config/client_settings.json`: 서버 주소, 화면 설정, 장비 목록.
-- `labremote/config/windfreak/device_config.yml`: Windfreak 기본값과 장비 이름별 override.
-- `labremote/config/windfreak/parameter_registry.yml`: Windfreak 전체 파라미터 검증/readback 정책.
+- `labremote/config/ui/client_settings.local.json`: 서버 주소, 화면 설정, 장비 목록.
+- `labremote/config/devices/windfreak/device_config.yml`: Windfreak 기본값과 장비 이름별 override.
+- `labremote/config/operations/windfreak/parameter_registry.yml`: Windfreak 전체 파라미터 검증/readback 정책.
 
 새 장비는 `labremote/config/<장비 종류>/`에 설정 파일을 추가합니다. 설정 로더 코드와 모든 설정 데이터는 `labremote/config/`에 함께 두며, 데이터 파일도 이 경로에서만 읽고 저장합니다. Operation 시작 시 각 장비 설정과 파라미터 정책을 함께 고정합니다.
 
@@ -257,7 +257,7 @@ def main(devices):
 
 mira → MDT → OSA PID에서 OSA 소스와 축, 목표 주파수·PID 계수·평균 횟수를 지정합니다. 먼저 OSA 반복 측정을 시작해야 합니다. 시작 전 캐시와 단발 조회는 피드백으로 사용하지 않고, 같은 반복 실행에서 새로 얻은 스펙트럼만 사용합니다. 선택적으로 sech² peak fit을 사용하며, 신호 세기·SNR·capture 범위와 전압·step·slew 제한, 적분 누적 제한을 유지합니다. 기본 목표와 계수는 0이므로 실제 값을 설정해야 합니다.
 
-잘못된 스펙트럼은 HOLD하며 새 정상 데이터가 최대 간격 이내에 도착하지 않으면 실패합니다. OSA 반복 중단·연결 해제·취소 시 PID가 중단되며 마지막 전압을 유지합니다. 이전 전압으로 자동 복구하지 않습니다. 실행 중 목표와 계수는 Apply로 변경합니다. 설정은 labremote/config/mdt/device_config.yml의 pid_defaults에 있습니다.
+잘못된 스펙트럼은 HOLD하며 새 정상 데이터가 최대 간격 이내에 도착하지 않으면 실패합니다. OSA 반복 중단·연결 해제·취소 시 PID가 중단되며 마지막 전압을 유지합니다. 이전 전압으로 자동 복구하지 않습니다. 실행 중 목표와 계수는 Apply로 변경합니다. 설정은 labremote/config/devices/mdt/device_config.yml의 pid_defaults에 있습니다.
 
 others → FPGA → Scan 1–4에서 X/Y 모터, PMT, 절대 시작·끝 좌표·step, 노출·평균·안정화 시간을 설정합니다. 현재 위치를 더하지 않고 입력 좌표 자체로 이동합니다. 예: 시작 5990, 끝 6010, step 1 µm는 서버에 5.990–6.010 mm를 요청합니다. Y를 바꾼 뒤 X를 오름차순으로 이동하는 raster 방식입니다. 기본 단위 환산은 서버 1단위당 1000 µm입니다. QCoDeS position 파라미터는 mm입니다. FPGA 반복 측정과 스캔은 동시에 실행하지 않습니다.
 
@@ -282,7 +282,7 @@ Actual/Target은 µm, 서버 position과 workflow move()/acquire('position')는 
 
 Connect는 서버 파라미터에 연결하며 USB를 자동 Open/Home/Move하지 않습니다. 최초 사용은 Open을 누르세요. UI Disconnect와 앱 종료는 클라이언트 소켓만 닫으며 USB 모터를 Close하거나 위치를 바꾸지 않습니다. Close 버튼은 USB 핸들을 닫고, 서버 종료의 드라이버 정리도 USB 핸들을 닫습니다.
 
-모터의 클라이언트 응답 제한은 config/motors/device_config.yml의 timeout_s=210초, 서버 하드웨어 이동 제한은 180초입니다. 통신 timeout 시 소켓 재생성만 하며 이동 명령을 재전송하지 않습니다. 재생성 후에도 응답이 없으면 연결 오류로 전환하고 수동 재연결합니다. 서버 내부 하드웨어 이동 제한에 도달하면 Stop을 한 번 요청하고 실패를 반환합니다.
+모터의 클라이언트 응답 제한은 config/devices/motors/device_config.yml의 timeout_s=210초, 서버 하드웨어 이동 제한은 180초입니다. 통신 timeout 시 소켓 재생성만 하며 이동 명령을 재전송하지 않습니다. 재생성 후에도 응답이 없으면 연결 오류로 전환하고 수동 재연결합니다. 서버 내부 하드웨어 이동 제한에 도달하면 Stop을 한 번 요청하고 실패를 반환합니다.
 
 InstrumentServer의 단일 요청 처리 루프에서는 모터 이동 완료를 기다리는 동안 다른 서버 요청도 대기합니다. Scan 1–4의 독립 runner/FPGA 큐 구조는 유지하지만, 기존 중계 서버와 동일한 모터 동시 처리 성능을 보장하지 않습니다. Stop/Cancel도 진행 중 assign 이후 적용되는 기존 정책이며 즉시 USB 정지가 아닙니다.
 

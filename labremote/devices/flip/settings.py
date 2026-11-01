@@ -2,12 +2,13 @@ import json
 import os
 from pathlib import Path
 
-LOCAL=Path(__file__).resolve().parents[2]/'config'/'flip.local.json'
+from labremote.config.paths import CONFIG_ROOT
+LOCAL=CONFIG_ROOT/'operations/flipper_routes.local.json'
 
 
 def validate_settings(data):
     if not isinstance(data['host'],str) or type(data['port']) is not int or not 1<=data['port']<=65535:
-        raise ValueError('Invalid flipper endpoint in flip.local.json')
+        raise ValueError('Invalid flipper endpoint in operations/flipper_routes.local.json')
     if type(data['auto_route']) is not bool:raise ValueError('auto_route must be true or false')
     names=data.get('names',[])
     if not isinstance(names,list) or any(not isinstance(n,str) or not n.isidentifier() for n in names) or len(set(names))!=len(names):
@@ -21,7 +22,7 @@ def validate_settings(data):
 
 
 def load_settings():
-    data={'host':'','port':5556,'names':[],'auto_route':False,'routes':{'EA':{},'EC':{}}}
+    data=json.loads((CONFIG_ROOT/'operations/flipper_routes.json').read_text(encoding='utf-8'))
     if LOCAL.exists():data.update(json.loads(LOCAL.read_text(encoding='utf-8-sig')))
     return validate_settings(data)
 

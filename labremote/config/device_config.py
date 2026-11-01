@@ -29,8 +29,24 @@ def _merge(left: dict, right: dict) -> dict:
 _DOCUMENTS = {}
 
 
+def _with_operation_settings(family, document):
+    path = CONFIG_ROOT / 'operations' / family / 'operation_config.yml'
+    if not path.exists(): return document
+    operation = read_yaml_document(path)
+    if not isinstance(operation, dict) or operation.get('schema_version') != 1:
+        raise ValueError(f'{path}: expected schema_version: 1')
+    for section in ('defaults', 'instruments'):
+        if not isinstance(operation.get(section, {}), dict):
+            raise ValueError(f'{path}: invalid {section}')
+    entries = [operation.get('defaults', {}), *operation.get('instruments', {}).values()]
+    if any(not isinstance(e, dict) or set(e)-{'rf_operation','scan_defaults'} for e in entries):
+        raise ValueError(f'{path}: only rf_operation and scan_defaults are permitted')
+    return _merge(document, operation)
+
+
+
 def preload_device_configs():
-    for path in CONFIG_ROOT.glob('*/device_config.yml'):
+    for path in CONFIG_ROOT.glob('devices/*/device_config.yml'):
         load_device_config(path.parent.name, '')
 
 
@@ -62,7 +78,7 @@ def _validate_ramp_configs(document):
 def load_device_config(family: str, instrument_name: str = "") -> dict:
     if not family.isidentifier():
         raise ValueError(f'Invalid device family: {family}')
-    config_path = (CONFIG_ROOT / family / 'device_config.yml')
+    config_path = (CONFIG_ROOT / 'devices' / family / 'device_config.yml')
     try:
         import yaml
     except ImportError as exc:
@@ -72,7 +88,7 @@ def load_device_config(family: str, instrument_name: str = "") -> dict:
     if documents is None: documents = _DOCUMENTS
     if family not in documents:
         with config_path.open('r', encoding='utf-8') as stream:
-            document = yaml.safe_load(stream)
+            document = _with_operation_settings(family, yaml.safe_load(stream))
         _validate_ramp_configs(document)
         documents[family] = document
     document = deepcopy(documents[family])
@@ -137,8 +153,8 @@ load_rf_device_config = load_device_config
 def operation_config():
     documents = {}
     import yaml
-    for path in CONFIG_ROOT.glob('*/device_config.yml'):
-        document = read_yaml_document(path)
+    for path in CONFIG_ROOT.glob('devices/*/device_config.yml'):
+        document = _with_operation_settings(path.parent.name, read_yaml_document(path))
         _validate_ramp_configs(document)
         documents[path.parent.name] = document
     from labremote.runtime.parameters import REGISTRY_SNAPSHOT, ParameterRegistry

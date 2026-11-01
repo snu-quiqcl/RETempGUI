@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from .paths import CONFIG_ROOT
 
-LOCAL=CONFIG_ROOT/'equipment.local.json'
+LOCAL=CONFIG_ROOT/'ui/equipment.local.json'
 GROUPS=('RF','미라','CCD','FPGA','오실로스코프','기타')
 FAMILY_GROUP={'windfreak':'RF','sg384':'RF','anapico':'RF','dds4':'RF','thermotek':'미라','osa':'미라','mdt':'미라','ccd':'CCD','fpga':'FPGA','ds1052e':'오실로스코프','mso7054':'오실로스코프','keithley':'기타','motors':'기타','flip':'기타','oven_psu':'기타','oven_relay':'기타'}
 SINGLETONS={'ccd','oven_psu','oven_relay'}
@@ -43,13 +43,15 @@ def save(path,document):
 
 def defaults(cfg):
     from .device_config import configured_instrument_names
-    devices=[]
+    template=load(CONFIG_ROOT/'ui/equipment.json')
+    devices=list(template['devices'])
     for family,group in FAMILY_GROUP.items():
         if family in ('ccd','flip','oven_psu','oven_relay'):continue
         for name in dict.fromkeys((*configured_instrument_names(family),*cfg.get(family+'_names',[]))):
-            devices.append(dict(family=family,name=name,group=group,enabled=True))
-    devices.extend([dict(family='ccd',name='ccd_local',group='CCD',enabled=True),dict(family='oven_psu',name='oven_psu',group='기타',enabled=False),dict(family='oven_relay',name='oven_relays',group='기타',enabled=False)])
-    return validate(dict(schema_version=1,name='기본 실험 구성',devices=devices))
+            if not any(d['family']==family and d['name']==name for d in devices):
+                devices.append(dict(family=family,name=name,group=group,enabled=True))
+    template['devices']=devices
+    return validate(template)
 
 
 DISPLAY_DEFAULTS = dict(auto_levels=True, low=0, high=4095, flip_h=False,

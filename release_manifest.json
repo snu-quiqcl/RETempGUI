@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Individual flipper controls, sequential connect-all and independent device windows",
+  "revision_note": "Separate device, UI and operation configuration; preserve existing effective values",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,13 +14,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 18046,
-      "sha256": "a073d81dedd28ea9adc14f5daf95df7eeac9ef3109a711f90e09aab0856ac550"
+      "bytes": 18516,
+      "sha256": "905c3317005544c4233e3ff46cd0d4688bf010ccc55d4f8c9b8c1313e9d0b004"
     },
     {
       "path": "check_public_files.py",
-      "bytes": 3200,
-      "sha256": "b0805bf6ad56bf36b7f99400cc5e0608bcf6ee35ecac0e9786556c93c7b4c817"
+      "bytes": 3251,
+      "sha256": "e6d7ef65528389742e28b59eae4e3fc85eb62bfb00fa69cb2093d63edb936d80"
     },
     {
       "path": "constraints-tested.txt",
@@ -34,43 +34,48 @@
     },
     {
       "path": "docs/CCD_CONTROLS_KO.md",
-      "bytes": 5153,
-      "sha256": "084be63d92cfc883509b03c2c2a80a0b3ea811b6366c2d8e05210b4bf5bf0029"
+      "bytes": 5221,
+      "sha256": "866691117b79ae8c062c1a44f68e5c985a6cd5bd18ddf84e25e292eee424f03f"
     },
     {
       "path": "docs/CCD_GUIDE_KO.md",
-      "bytes": 9431,
-      "sha256": "765d8184e2d7f59dade78f989f440f67b0d9b855b5d5e61c73f26ad174936638"
+      "bytes": 9483,
+      "sha256": "6bd617f58fd16de9316ec31d4b762b5dcd168119aec3d834c80aac7999b0cd55"
+    },
+    {
+      "path": "docs/CONFIGURATION.md",
+      "bytes": 5275,
+      "sha256": "f41795ca4a8431143d5a7496b9c0c4d3ed9644aab2d2aa13ed818a99f5491773"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
-      "bytes": 40935,
-      "sha256": "6c7c76eb0498e78f27d7d9ace969ebf1d06306265339c3cb911a56c2ab53d080"
+      "bytes": 41070,
+      "sha256": "50a35562ba19991067acd050493348b48479e851e7bab862ab94442654e00ef4"
     },
     {
       "path": "docs/EXPERIMENT_UI_KO.md",
-      "bytes": 4821,
-      "sha256": "6e15b5d4bb7100b85b4fee7d20262f37d2045bb54c6a3b4594fe7f884f78256b"
+      "bytes": 4981,
+      "sha256": "e97d018c9ca423e34442f6c920d6a05d8b29aade58647d340f3eb69d752405b6"
     },
     {
       "path": "docs/FLIP_SETUP_KO.md",
-      "bytes": 6066,
-      "sha256": "ad154850c1ed998c162947280e9aa23ec3c4c119ea2e2f9716b5243e8c6dfc0e"
+      "bytes": 6272,
+      "sha256": "c9a7c1af988768513531ae0488dd7e4620021bc4cb1ee4ef386ba272cc7a3354"
     },
     {
       "path": "docs/FLIP_WINDOWS_KO.md",
-      "bytes": 3461,
-      "sha256": "5ed1e81e9b3b751c826fec7c9e5e1dadc347c90c4d7fb8e20cfd6dbc9af2f86b"
+      "bytes": 3523,
+      "sha256": "7762e59bee1b49262654be1de12766b5f315f94208d8300c9d5444a31c0a206e"
     },
     {
       "path": "docs/LOCAL_SETUP_KO.md",
-      "bytes": 7055,
-      "sha256": "c60e20b46cdf8f666e4d5c09997e2fb6e2b1ce796aba2bcb01223a17236cf5e9"
+      "bytes": 7180,
+      "sha256": "71d00804e54ab8d0125b89a545dbf0ed66d3e9d7f2a353074c8ebb833d922571"
     },
     {
       "path": "docs/OVEN_LOADING_KO.md",
-      "bytes": 10412,
-      "sha256": "fb2b0cab48203be7c29a3d1ad295b682bca42753e9ee132f786107f0314ca0d7"
+      "bytes": 10464,
+      "sha256": "9a349689fa4e034b5ea288ce6545869a1f0142525d375709fa17130159366dce"
     },
     {
       "path": "docs/OVEN_REVIEW.md",
@@ -84,8 +89,8 @@
     },
     {
       "path": "docs/RELEASE_REVIEW.md",
-      "bytes": 5055,
-      "sha256": "bbaada00ae3b226908b9b6118fe1b721e28c480db39fb0ce3a0c8f553b8dc278"
+      "bytes": 5081,
+      "sha256": "fb80080505dd558ce39127a4304950a57ec117de0473989f519ecb05ceb624f9"
     },
     {
       "path": "docs/WORKFLOW_CCD_FPGA_KO.md",
@@ -118,164 +123,209 @@
       "sha256": "8699729e40d7662ca386783d71a50ca83696b592157b6c42b4343630422a991b"
     },
     {
-      "path": "labremote/config/anapico/device_config.yml",
+      "path": "labremote/config/device_config.py",
+      "bytes": 7541,
+      "sha256": "de94f803aee41e9abfdd72a8b8723f7b4032e05160046b30c9fa2cd2a88d1568"
+    },
+    {
+      "path": "labremote/config/devices/anapico/device_config.yml",
       "bytes": 408,
       "sha256": "0662a1096fc5f19b21d41e527bd9c7c026336f1b4ea8cd637dea6b93e3c63526"
     },
     {
-      "path": "labremote/config/anapico/parameter_registry.yml",
-      "bytes": 1242,
-      "sha256": "b594db35ef86c67c6b581bc44e39b9b111b80c06ef33e67f4679a448c903e2bc"
+      "path": "labremote/config/devices/connections.json",
+      "bytes": 4,
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f"
     },
     {
-      "path": "labremote/config/client_settings.example.json",
-      "bytes": 877,
-      "sha256": "16d090aa2d3b72aacea2ab17127accecdc923d06ec8ff476f71d1c71e7d915f9"
-    },
-    {
-      "path": "labremote/config/dds4/device_config.yml",
+      "path": "labremote/config/devices/dds4/device_config.yml",
       "bytes": 59,
       "sha256": "b110ec8219a040caba2d28f03798cc6da41267ab328a02472533dd358bc92d6a"
     },
     {
-      "path": "labremote/config/dds4/parameter_registry.yml",
-      "bytes": 1018,
-      "sha256": "e776345d697970b401cffa6eae038a4b88377b3fc3d0b1486e51368b5a19f04c"
-    },
-    {
-      "path": "labremote/config/device_config.py",
-      "bytes": 6588,
-      "sha256": "a22fdc627ceb07e304e7349ce4ada3b50c106d400d2e79d494f784ffcc643b83"
-    },
-    {
-      "path": "labremote/config/ds1052e/device_config.yml",
+      "path": "labremote/config/devices/ds1052e/device_config.yml",
       "bytes": 83,
       "sha256": "8cb5d1b593a3a61718421b755919e1ae9aeaa23c811d89ff5fbfcc722b129c55"
     },
     {
-      "path": "labremote/config/ds1052e/parameter_registry.yml",
-      "bytes": 3284,
-      "sha256": "75e36d3415729856761555f1df91bf3150c2642d3351f31506f853abbf6e5367"
-    },
-    {
-      "path": "labremote/config/equipment.example.json",
-      "bytes": 3796,
-      "sha256": "3f710f358393e800fa3cb79fc6aa74bda75a7f215eb9bd08e2391957c03f0f5e"
-    },
-    {
-      "path": "labremote/config/equipment.py",
-      "bytes": 4327,
-      "sha256": "abdad62ce816e35ec109e0259c43ee9702edb51e5e763eac63cf373db79966b0"
-    },
-    {
-      "path": "labremote/config/flip.example.json",
-      "bytes": 127,
-      "sha256": "4a91212b7a91579c068e942d34b81ceac51105c6c6bf48c7b4bdcda71a25f05c"
-    },
-    {
-      "path": "labremote/config/flip/device_config.yml",
+      "path": "labremote/config/devices/flip/device_config.yml",
       "bytes": 47,
       "sha256": "a71eaeec32148050428e0774a64fec14f2e39b31d2c75ed3fb257cca8dbd8f1c"
     },
     {
-      "path": "labremote/config/flip/parameter_registry.yml",
-      "bytes": 214,
-      "sha256": "f954bd7f032156ad15180a3f2b7730fb1fc8a6f083f7c4e9dd673344bf61c0ab"
+      "path": "labremote/config/devices/fpga/device_config.yml",
+      "bytes": 173,
+      "sha256": "964dfe1c13578e84b1e9b6b27163ec4ff4d65675cbb72e866afab3789499eb0a"
     },
     {
-      "path": "labremote/config/fpga/device_config.yml",
-      "bytes": 538,
-      "sha256": "aca7ddc6237fba3a8faf3287671df4977d0d00a8bee715feef4cfe40949559af"
-    },
-    {
-      "path": "labremote/config/fpga/parameter_registry.yml",
-      "bytes": 1510,
-      "sha256": "fb715b51d8ebdd3bf1d9bce61c02e43ca02e9259d55fabd389ac09f0c6fcf76d"
-    },
-    {
-      "path": "labremote/config/keithley/device_config.yml",
+      "path": "labremote/config/devices/keithley/device_config.yml",
       "bytes": 319,
       "sha256": "f78793e6b8fbbfacf288d4a3fe1d0dbefe507e0910608355517761d4f9a1e662"
     },
     {
-      "path": "labremote/config/keithley/parameter_registry.yml",
-      "bytes": 2039,
-      "sha256": "aec5f5bfe45bf23936161a7d0df43ac6ee4c9d3670e876927411707a1a134dbe"
-    },
-    {
-      "path": "labremote/config/local_hardware.example.json",
-      "bytes": 113,
-      "sha256": "b9d720b0e044bcafc4908ed4ec5248bdfb85a1dffb16c4d18e09fd844d0f52fa"
-    },
-    {
-      "path": "labremote/config/local_hardware.py",
-      "bytes": 1428,
-      "sha256": "da61235f9edda76bace3add673857240a4b87e05094fd4908f953c19e18499b2"
-    },
-    {
-      "path": "labremote/config/mdt/device_config.yml",
+      "path": "labremote/config/devices/mdt/device_config.yml",
       "bytes": 566,
       "sha256": "1c9d2587e6e5045c203c799210d3f00e3009d7b24097ab319aa04e04acc4a22a"
     },
     {
-      "path": "labremote/config/mdt/parameter_registry.yml",
-      "bytes": 831,
-      "sha256": "b8746a58e04f4db24e107cdc4f9ebc4989e3b2846349ef7045ef45aa3b117786"
-    },
-    {
-      "path": "labremote/config/motors/device_config.yml",
+      "path": "labremote/config/devices/motors/device_config.yml",
       "bytes": 596,
       "sha256": "c06ab4cc85862531a139e683dbbad5ee14918ff95d34150613c271ee1087e533"
     },
     {
-      "path": "labremote/config/motors/parameter_registry.yml",
-      "bytes": 861,
-      "sha256": "b60b635aed2f81829ae899adf5cdbbfc415eedc28eead8abff332aca559b8fd1"
-    },
-    {
-      "path": "labremote/config/mso7054/device_config.yml",
+      "path": "labremote/config/devices/mso7054/device_config.yml",
       "bytes": 62,
       "sha256": "bd3f3f53115e709fee5df4e3f0bdc8eb66196990d6fc37bfa0ab48e320db4e2d"
     },
     {
-      "path": "labremote/config/mso7054/parameter_registry.yml",
-      "bytes": 4400,
-      "sha256": "b4cd7a695f61ad5a95e9b62ba395446662c1ad2308ce639c1502b7bcc3968131"
-    },
-    {
-      "path": "labremote/config/osa/device_config.yml",
+      "path": "labremote/config/devices/osa/device_config.yml",
       "bytes": 114,
       "sha256": "305b977405cec9b8826180e6208e82f3662723a8c6dc72c10c32ea668466f38f"
     },
     {
-      "path": "labremote/config/osa/parameter_registry.yml",
+      "path": "labremote/config/devices/oven_psu/device_config.yml",
+      "bytes": 50,
+      "sha256": "9d05df128478e189702bb528a73607d5f64269dfb823ffcd9771f59bdb7af1f6"
+    },
+    {
+      "path": "labremote/config/devices/oven_relay/device_config.yml",
+      "bytes": 50,
+      "sha256": "9d05df128478e189702bb528a73607d5f64269dfb823ffcd9771f59bdb7af1f6"
+    },
+    {
+      "path": "labremote/config/devices/sg384/device_config.yml",
+      "bytes": 928,
+      "sha256": "86170fa0ac00e354738fbd6f637f388a7f2eeb44eb11ee5edac2009bc54cc1f2"
+    },
+    {
+      "path": "labremote/config/devices/thermotek/device_config.yml",
+      "bytes": 92,
+      "sha256": "08520e7fc12c0bc7bc9dc83b6f303c02e1520dae304af64135457403a48ebd39"
+    },
+    {
+      "path": "labremote/config/devices/windfreak/device_config.yml",
+      "bytes": 1496,
+      "sha256": "7dc4a58875349647f27776d95724bd18344d26a388716413fd3ac7226243e020"
+    },
+    {
+      "path": "labremote/config/equipment.py",
+      "bytes": 4240,
+      "sha256": "b4e454b2573020e1ae3d2bbaadb42beb805ca151c412285c9e82770e9b7c3409"
+    },
+    {
+      "path": "labremote/config/local_hardware.py",
+      "bytes": 1535,
+      "sha256": "b7f017afafbde094d4cb4e446495b93d22a8049041f0a5bafce47702dd25228f"
+    },
+    {
+      "path": "labremote/config/migration.py",
+      "bytes": 1902,
+      "sha256": "c6b74aad88b40c7a413112e1e47d98ae1781685f6c2c1eeb5c0c20cc60b38b2a"
+    },
+    {
+      "path": "labremote/config/operations/anapico/parameter_registry.yml",
+      "bytes": 1242,
+      "sha256": "b594db35ef86c67c6b581bc44e39b9b111b80c06ef33e67f4679a448c903e2bc"
+    },
+    {
+      "path": "labremote/config/operations/dds4/parameter_registry.yml",
+      "bytes": 1018,
+      "sha256": "e776345d697970b401cffa6eae038a4b88377b3fc3d0b1486e51368b5a19f04c"
+    },
+    {
+      "path": "labremote/config/operations/ds1052e/parameter_registry.yml",
+      "bytes": 3284,
+      "sha256": "75e36d3415729856761555f1df91bf3150c2642d3351f31506f853abbf6e5367"
+    },
+    {
+      "path": "labremote/config/operations/flip/parameter_registry.yml",
+      "bytes": 214,
+      "sha256": "f954bd7f032156ad15180a3f2b7730fb1fc8a6f083f7c4e9dd673344bf61c0ab"
+    },
+    {
+      "path": "labremote/config/operations/flipper_routes.json",
+      "bytes": 127,
+      "sha256": "4a91212b7a91579c068e942d34b81ceac51105c6c6bf48c7b4bdcda71a25f05c"
+    },
+    {
+      "path": "labremote/config/operations/fpga/operation_config.yml",
+      "bytes": 412,
+      "sha256": "b17cf7b27ef6a432fc0a22c1fc67d1b5fdef17c39cc54586f215d7031a0c112b"
+    },
+    {
+      "path": "labremote/config/operations/fpga/parameter_registry.yml",
+      "bytes": 1510,
+      "sha256": "fb715b51d8ebdd3bf1d9bce61c02e43ca02e9259d55fabd389ac09f0c6fcf76d"
+    },
+    {
+      "path": "labremote/config/operations/keithley/parameter_registry.yml",
+      "bytes": 2039,
+      "sha256": "aec5f5bfe45bf23936161a7d0df43ac6ee4c9d3670e876927411707a1a134dbe"
+    },
+    {
+      "path": "labremote/config/operations/mdt/parameter_registry.yml",
+      "bytes": 831,
+      "sha256": "b8746a58e04f4db24e107cdc4f9ebc4989e3b2846349ef7045ef45aa3b117786"
+    },
+    {
+      "path": "labremote/config/operations/motors/parameter_registry.yml",
+      "bytes": 861,
+      "sha256": "b60b635aed2f81829ae899adf5cdbbfc415eedc28eead8abff332aca559b8fd1"
+    },
+    {
+      "path": "labremote/config/operations/mso7054/parameter_registry.yml",
+      "bytes": 4400,
+      "sha256": "b4cd7a695f61ad5a95e9b62ba395446662c1ad2308ce639c1502b7bcc3968131"
+    },
+    {
+      "path": "labremote/config/operations/osa/parameter_registry.yml",
       "bytes": 2784,
       "sha256": "14ee5f44fcc7d5c7f13e816f012ef166b414bb20d326cce94dc382861a680c22"
     },
     {
-      "path": "labremote/config/oven_psu/device_config.yml",
-      "bytes": 50,
-      "sha256": "9d05df128478e189702bb528a73607d5f64269dfb823ffcd9771f59bdb7af1f6"
-    },
-    {
-      "path": "labremote/config/oven_psu/parameter_registry.yml",
+      "path": "labremote/config/operations/oven_psu/parameter_registry.yml",
       "bytes": 1817,
       "sha256": "729ff890566b47ccd84b5c290ee6fbb8eec53383a5a24e3d9a0c6e35c137ff06"
     },
     {
-      "path": "labremote/config/oven_relay/device_config.yml",
-      "bytes": 50,
-      "sha256": "9d05df128478e189702bb528a73607d5f64269dfb823ffcd9771f59bdb7af1f6"
-    },
-    {
-      "path": "labremote/config/oven_relay/parameter_registry.yml",
+      "path": "labremote/config/operations/oven_relay/parameter_registry.yml",
       "bytes": 532,
       "sha256": "860b734d9726a3f7cc14dfc85086b02813981af72672b89a44d92105e1b7b96c"
     },
     {
+      "path": "labremote/config/operations/scan_roles.json",
+      "bytes": 553,
+      "sha256": "10c8364d5cb0d3af61e9a3670379c7911f47c9da360afd20ee1e17bb5e9edf5c"
+    },
+    {
+      "path": "labremote/config/operations/sg384/operation_config.yml",
+      "bytes": 163,
+      "sha256": "d02b86467f7154b5ca2b59cda1a29432a16fbffddbf2cb9a11c3ddf73c4cca18"
+    },
+    {
+      "path": "labremote/config/operations/sg384/parameter_registry.yml",
+      "bytes": 1298,
+      "sha256": "a8e9256fc0ddea21a5b3af536ff4734c1657f3bb7f13a921e6778a2baeb8d438"
+    },
+    {
+      "path": "labremote/config/operations/thermotek/parameter_registry.yml",
+      "bytes": 1176,
+      "sha256": "1a461a33c139e440a2f2eef776a31be8b7dea123d13b9a2e08dc2a0d4f70b8e2"
+    },
+    {
+      "path": "labremote/config/operations/windfreak/operation_config.yml",
+      "bytes": 134,
+      "sha256": "657bbbea16ca58b217573b2df51e7ce579b0cd3d7388f771acede2e20a8f2857"
+    },
+    {
+      "path": "labremote/config/operations/windfreak/parameter_registry.yml",
+      "bytes": 2464,
+      "sha256": "c679f02695d816e9e829bb79ddd4ebcadc9bec721f53377b828f0234f9d0d73e"
+    },
+    {
       "path": "labremote/config/paths.py",
-      "bytes": 804,
-      "sha256": "3d5e72f460a5eebe9ff23fad190d7bdb28c1539e19f53aea2a851befa3fdd461"
+      "bytes": 869,
+      "sha256": "bfc0885bc1b80f66a3ec82c5f437ca8e725ae46551a493ca755e2a530a05e0af"
     },
     {
       "path": "labremote/config/ramp.py",
@@ -283,39 +333,24 @@
       "sha256": "393659c7ee6ad29fdbc260dddbd6f9093265febe464eba69c3f3f84da47a692a"
     },
     {
+      "path": "labremote/config/roles.py",
+      "bytes": 1070,
+      "sha256": "74db37344ac3144b3a757893d93302d726a57416ca2e8f27649f557a4c843c59"
+    },
+    {
       "path": "labremote/config/settings.py",
-      "bytes": 1543,
-      "sha256": "c7f7f04561049490404ea2bf8adaed63f7934e761d37a0e6254a057ff2fb62cb"
+      "bytes": 1200,
+      "sha256": "1db78523544cf980b0d02bca65c8191287e3090578e2e21b5ebf512eff81c4bf"
     },
     {
-      "path": "labremote/config/sg384/device_config.yml",
-      "bytes": 1044,
-      "sha256": "581c4ccb984820e567042a18a2169cfefae39742cf827d6027971583cfe77b87"
+      "path": "labremote/config/ui/defaults.json",
+      "bytes": 466,
+      "sha256": "284439ce06872cac4d4007cf06a26c17c8b61160915454116c8b54ebb6cedf5a"
     },
     {
-      "path": "labremote/config/sg384/parameter_registry.yml",
-      "bytes": 1298,
-      "sha256": "a8e9256fc0ddea21a5b3af536ff4734c1657f3bb7f13a921e6778a2baeb8d438"
-    },
-    {
-      "path": "labremote/config/thermotek/device_config.yml",
-      "bytes": 92,
-      "sha256": "08520e7fc12c0bc7bc9dc83b6f303c02e1520dae304af64135457403a48ebd39"
-    },
-    {
-      "path": "labremote/config/thermotek/parameter_registry.yml",
-      "bytes": 1176,
-      "sha256": "1a461a33c139e440a2f2eef776a31be8b7dea123d13b9a2e08dc2a0d4f70b8e2"
-    },
-    {
-      "path": "labremote/config/windfreak/device_config.yml",
-      "bytes": 1583,
-      "sha256": "a5eed3481bfb108114a08b9aa0da19e42303493de7c662c05505da6d9b5460f6"
-    },
-    {
-      "path": "labremote/config/windfreak/parameter_registry.yml",
-      "bytes": 2464,
-      "sha256": "c679f02695d816e9e829bb79ddd4ebcadc9bec721f53377b828f0234f9d0d73e"
+      "path": "labremote/config/ui/equipment.json",
+      "bytes": 445,
+      "sha256": "2fb405b9fe7031be0407f980f4204116fcaa6490d4eb122ae182605aacfa46a8"
     },
     {
       "path": "labremote/devices/__init__.py",
@@ -429,8 +464,8 @@
     },
     {
       "path": "labremote/devices/flip/settings.py",
-      "bytes": 1917,
-      "sha256": "18fafcfde5a5719952668cd618bd64e87da5bbc63782b7d0d58977f1b5ccc787"
+      "bytes": 2020,
+      "sha256": "ff7f813f1aa9c81b398b9840047fa9948632fd405e8bc2830786185c5f932517"
     },
     {
       "path": "labremote/devices/flip/tab.py",
@@ -464,8 +499,8 @@
     },
     {
       "path": "labremote/devices/fpga/ports.py",
-      "bytes": 1703,
-      "sha256": "838d8e253e9ef639fb8ac6652b0cc032b16cd533398b9adb8f5415ac74fed813"
+      "bytes": 1751,
+      "sha256": "14fa35449660673289fb7f34ccf82dde611d5d277a9fa38d2baf9e8624b272f1"
     },
     {
       "path": "labremote/devices/fpga/scan_model.py",
@@ -609,8 +644,8 @@
     },
     {
       "path": "labremote/devices/oven/settings.py",
-      "bytes": 1005,
-      "sha256": "7e652ef1d5e198496cff94a1978df2d8dd3c698b3a9874314db3bb33741ef6ff"
+      "bytes": 1031,
+      "sha256": "eb1ffebcf2408b1835a770287fac89b7decbf0b510395071a1e80809e5ab0abd"
     },
     {
       "path": "labremote/devices/oven/worker.py",
@@ -659,8 +694,8 @@
     },
     {
       "path": "labremote/devices/windfreak/tab.py",
-      "bytes": 30442,
-      "sha256": "bed546eb0cdeb2c9ccb23eb465bb857c0b7c9505d4d48fa48df4177938f20a8f"
+      "bytes": 30450,
+      "sha256": "71ab95f02525de4fdb9c2e5e0aa5fc2ee983b28dc094977b8c633a400d71004b"
     },
     {
       "path": "labremote/devices/windfreak/worker.py",
@@ -1304,8 +1339,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 19382,
-      "sha256": "8b20529b14f6ba38ef95765d189c9e2c1f81841ba289c8790e7253858b1bc80f"
+      "bytes": 19813,
+      "sha256": "b8f48d8240eca6f64f2f13d62148cf7d7ccdf698ef9e403c22e31b5cefadd3b9"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -1324,13 +1359,13 @@
     },
     {
       "path": "labremote/ui/equipment_tab.py",
-      "bytes": 15846,
-      "sha256": "ab175074bdbf00a588f78ec00b66cfbfc3e8bcf26e9a549935c516593a2d14f2"
+      "bytes": 15854,
+      "sha256": "0557552d76af03218b775ea144cc735fc0178b2ab40ae55c5c47154d0c21bf62"
     },
     {
       "path": "labremote/ui/experiment_shell.py",
-      "bytes": 22956,
-      "sha256": "91d2edfc6e444f4d895e0d325bc8be276fbb793e00b8fae52617d5ff63e56a0a"
+      "bytes": 22666,
+      "sha256": "f55755ae9ad2a2ea59864365eb1c774f9d111f8f4566bb3e446df237dbdfd34a"
     },
     {
       "path": "labremote/ui/fpga_count_tab.py",
@@ -1349,8 +1384,8 @@
     },
     {
       "path": "labremote/ui/motor_scan_tab.py",
-      "bytes": 18565,
-      "sha256": "fbcfa3fed0b4eb1b3297e8d821b6d8a7cd4ea4ced3bce74493908bbd39661bbb"
+      "bytes": 18501,
+      "sha256": "496ac206d0bb1c7c50705409f680dc9b1b2b819db4ca528c1494e0aa7ae94d55"
     },
     {
       "path": "labremote/ui/motor_tab.py",
@@ -1469,8 +1504,8 @@
     },
     {
       "path": "labremote/workflow/mdt_pid.py",
-      "bytes": 480,
-      "sha256": "22ac80f0f04a7f6c8a735e197310868b95f04136bd727ba9035cb6934fbada57"
+      "bytes": 488,
+      "sha256": "c3e556a45befe508cbb4b00e6a6ba0e89bdc18b97609c6709e2938f93f7d9d2e"
     },
     {
       "path": "labremote/workflow/power_on_windfreak.py",
@@ -1584,8 +1619,8 @@
     },
     {
       "path": "verify_release.py",
-      "bytes": 5734,
-      "sha256": "d50522ec0dcbed04bf397c14a463cb1ce497f3f85c0ca6f4203beb3f2786d443"
+      "bytes": 6130,
+      "sha256": "0c2be9d803117c1587223ea8c082ad04e45d037580d71c499f0057017dbdfcdb"
     }
   ]
 }

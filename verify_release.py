@@ -43,6 +43,13 @@ def checks():
     from labremote.runtime.parameters import registry
     preload_device_configs()
     registry()
+    from labremote.config.roles import scan_roles
+    from labremote.config import equipment
+    from labremote.config.paths import CONFIG_ROOT
+    from labremote.devices.flip.settings import validate_settings
+    scan_roles()
+    equipment.load(CONFIG_ROOT/'ui/equipment.json')
+    validate_settings(json.loads((CONFIG_ROOT/'operations/flipper_routes.json').read_text(encoding='utf-8')))
     missing = []
     for path in [ROOT/'README.md', * (ROOT/'docs').glob('*.md')]:
         for target in re.findall(r'\]\(([^)]+)\)', path.read_text(encoding='utf-8')):

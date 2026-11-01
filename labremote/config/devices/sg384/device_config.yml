@@ -3,12 +3,6 @@ defaults:
   reference:
     source: external
     frequency_hz: 10000000
-  rf_operation:
-    max_step_vpp: 0.01
-    interval_s: 0.2
-    low_power_dbm:
-      BNC: -40.0
-      N: -40.0
   display:
     frequency_unit: MHz
     power_unit: dBm

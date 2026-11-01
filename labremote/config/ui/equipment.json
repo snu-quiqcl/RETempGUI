@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "name": "기본 실험 구성",
+  "devices": [
+    {
+      "family": "ccd",
+      "name": "ccd_local",
+      "group": "CCD",
+      "enabled": true
+    },
+    {
+      "family": "oven_psu",
+      "name": "oven_psu",
+      "group": "기타",
+      "enabled": false
+    },
+    {
+      "family": "oven_relay",
+      "name": "oven_relays",
+      "group": "기타",
+      "enabled": false
+    }
+  ]
+}

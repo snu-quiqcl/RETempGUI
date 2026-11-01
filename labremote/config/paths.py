@@ -14,7 +14,9 @@ def read_yaml_document(path):
     return deepcopy(_parse_yaml_text(Path(path).read_text(encoding='utf-8')))
 
 CONFIG_ROOT = Path(__file__).resolve().parent
+from .migration import migrate
+migrate(CONFIG_ROOT)
 def registry_paths():
-    paths = tuple(sorted(CONFIG_ROOT.glob('*/parameter_registry.yml')))
+    paths = tuple(sorted(CONFIG_ROOT.glob('operations/*/parameter_registry.yml')))
     if not paths: raise FileNotFoundError(f'No parameter policies in {CONFIG_ROOT}')
     return paths

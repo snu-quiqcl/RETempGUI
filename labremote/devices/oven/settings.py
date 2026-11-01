@@ -2,7 +2,8 @@ import json
 import os
 from pathlib import Path
 
-LOCAL = Path(__file__).resolve().parents[2]/'config'/'oven.local.json'
+from labremote.config.paths import CONFIG_ROOT
+LOCAL = CONFIG_ROOT/'operations/oven.local.json'
 PROFILES = {'EA_174': (5., .75), 'EA_171': (5., .75),
             'EC_174': (5., 1.4), 'EC_171': (5., 1.30)}
 DEFAULTS = {'psu_name': 'oven_psu', 'relay_name': 'oven_relays',

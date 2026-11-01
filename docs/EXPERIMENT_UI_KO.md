@@ -14,8 +14,8 @@ CCD 창을 숨겨도 기존 촬영과 이온 검출은 유지하고, 숨겨진 �
 
 ## 구성 파일
 
-기본 개인 파일은 `labremote/config/equipment.local.json`입니다.
-공개 예제는 `labremote/config/equipment.example.json`입니다.
+기본 개인 파일은 `labremote/config/ui/equipment.local.json`입니다.
+공개 예제는 `labremote/config/ui/equipment.json`입니다.
 개인 구성 파일은 `*.local.json`으로 저장하며 Git에서 제외됩니다.
 다른 컴퓨터에서는 이 파일과 기존 로컬 하드웨어/카메라 설정을 직접 복사하세요.
 
@@ -36,8 +36,8 @@ CCD 창을 숨겨도 기존 촬영과 이온 검출은 유지하고, 숨겨진 �
 - `group`: 메인 화면 그룹 연결 버튼에 포함될 그룹입니다. 상세 제어창의 장비 분류는 기존대로 유지합니다.
 - `enabled`: 그룹/전체 연결 대상으로 사용할지 여부입니다.
 
-장비별 `device_config.yml`, `parameter_registry.yml`, `local_hardware.json`,
-오븐 설정, `flip.local.json`, 카메라 및 FPGA 연결 옵션은 변경하지 않습니다.
+장비별 `device_config.yml`, `parameter_registry.yml`, `labremote/config/devices/connections.local.json`,
+오븐 설정, `labremote/config/operations/flipper_routes.local.json`, 카메라 및 FPGA 연결 옵션은 변경하지 않습니다.
 RF/미라/모터/오븐/Flipper는 기존 메인 InstrumentServer 주소를 사용하고,
 CCD와 FPGA는 기존 로컬 연결 방식을 사용합니다.
 
@@ -66,6 +66,6 @@ CCD와 FPGA는 기존 로컬 연결 방식을 사용합니다.
 기존 종료 workflow를 먼저 수행해야 합니다. 메인의 작업 중단 버튼도 기존 작업 취소와
 종료 정리를 요청하며 물리적 비상 정지 기능이 아닙니다.
 
-마지막 구성 경로는 기존 `client_settings.json`에 저장됩니다. 저장된 경로가 사라졌거나
+마지막 구성 경로는 기존 `labremote/config/ui/client_settings.local.json`에 저장됩니다. 저장된 경로가 사라졌거나
 구성 파일이 잘못되면 다른 구성으로 자동 연결하지 않고 빈 선택과 오류를 표시합니다.
 개인 기본 파일이 처음부터 없는 경우에는 기존 목록으로 생성하며 자동 연결하지 않습니다.

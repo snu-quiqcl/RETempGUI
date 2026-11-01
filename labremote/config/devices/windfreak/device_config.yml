@@ -3,10 +3,6 @@ defaults:
   reference:
     source: external
     frequency_hz: 10000000
-  rf_operation:
-    max_step_vpp: 0.1
-    interval_s: 0.2
-    low_power_dbm: -50.0
   channels:
     A:
       preset:

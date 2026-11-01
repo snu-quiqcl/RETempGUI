@@ -8,26 +8,26 @@
 
 | 파일 | 내용 | 복사 대상 |
 |---|---|---|
-| `labremote/config/local_hardware.json` | 메인 InstrumentServer와 모터 InstrumentServer의 host/port | UI를 실행할 PC의 동일한 상대 경로 |
+| `labremote/config/devices/connections.local.json` | 메인 InstrumentServer와 모터 InstrumentServer의 host/port | UI를 실행할 PC의 동일한 상대 경로 |
 | `server_deploy_latest/KDC101/serials.local.json` | 모터 이름별 실제 USB 시리얼 | 실제 모터 서버에 배포된 `KDC101.py`와 같은 폴더 |
 | `local_settings.bat` | Conda 환경·설치 경로, 외부 InstrumentServer 소스 경로, 선택적 서버 override | UI PC 저장소 루트. 복사 후 해당 PC에 맞게 경로 확인 |
-| `labremote/config/client_settings.json` | 저장된 UI 상태와 CCD 옵션(카메라 serial/DLL/저장 경로 포함 가능) | 기존 설정을 그대로 쓸 때만 UI PC의 동일 경로. 앱을 종료한 상태로 복사 |
-| `labremote/config/oven.local.json` | 오븐 장비 이름과 EC 셔터 선택 | CCD 오븐 설정 후 생성. 같은 연결 구성을 유지할 UI PC에 직접 복사하거나 화면에서 다시 설정 |
+| `labremote/config/ui/client_settings.local.json` | 저장된 UI 상태와 CCD 옵션(카메라 serial/DLL/저장 경로 포함 가능) | 기존 설정을 그대로 쓸 때만 UI PC의 동일 경로. 앱을 종료한 상태로 복사 |
+| `labremote/config/operations/oven.local.json` | 오븐 장비 이름과 EC 셔터 선택 | CCD 오븐 설정 후 생성. 같은 연결 구성을 유지할 UI PC에 직접 복사하거나 화면에서 다시 설정 |
 
-이번 이전 작업은 첫 두 파일에 기존 IP·12개 모터 시리얼을 보존합니다. `local_settings.bat`도 기본 실행 설정으로 준비합니다. `client_settings.json`은 앱 사용 후 생성되는 선택 파일이므로 아직 없을 수 있습니다.
+이번 이전 작업은 첫 두 파일에 기존 IP·12개 모터 시리얼을 보존합니다. `local_settings.bat`도 기본 실행 설정으로 준비합니다. `labremote/config/ui/client_settings.local.json`은 앱 사용 후 생성되는 선택 파일이므로 아직 없을 수 있습니다.
 
 클라이언트 PC만 옮길 때는 `serials.local.json`을 클라이언트에 설치할 필요가 없습니다. 모터 서버 드라이버를 이번 버전으로 교체할 때 그 파일도 함께 배치해야 합니다. 기존 서버 설정에 `serial_number`를 직접 지정했다면 그 값이 우선하며, 해당 서버 설정 역시 로컬로 보관하세요.
 
 ## 읽기 우선순위와 기존 동작
 
-- 메인 서버: loopback 기본값 → 저장된 `client_settings.json` → `local_hardware.json` → 명령행 `--host/--port`.
+- 메인 서버: loopback 기본값 → 저장된 `labremote/config/ui/client_settings.local.json` → `labremote/config/devices/connections.local.json` → 명령행 `--host/--port`.
 - 실행 배치 파일은 기본적으로 JSON을 사용합니다. `local_settings.bat`에 `SERVER_IP/SERVER_PORT`를 명시한 경우에만 명령행으로 덮어씁니다.
 - 모터 서버: 기존 YAML과 장비별 설정을 합친 뒤 로컬 JSON의 `motor_host/motor_port`만 덮어씁니다. 이동 제한·단위·timeout·장비 이름은 기존 YAML을 그대로 사용합니다.
 - 모터 시리얼: 명시적인 서버 init `serial_number` → 드라이버 옆 `serials.local.json`. 파일은 드라이버 import 시 읽으므로 변경 후 서버를 재시작하세요.
 - 로컬 파일이 없는 새 clone은 IP가 loopback으로 표시됩니다. 모터 시리얼은 추정하지 않으며 실제 번호 없이 장비를 등록하면 오류가 납니다. JSON 형식 오류도 명확하게 실패합니다.
 - UI 모양, workflow, CCD 처리, 모터 이동과 USB 동작은 변경하지 않습니다.
 
-새 환경을 수동 설정하려면 Git에 포함된 `local_hardware.example.json`을 사용하세요. 모터용 `serials.example.json`은 Git에서 제외된 로컬 `server_deploy_latest/KDC101/`에 있으며, 서버 드라이버 폴더를 직접 전달받아 사용합니다. 각각 해당 로컬 파일 이름으로 복사한 뒤 값을 입력하세요. 예제 파일에는 실제 값을 넣지 마세요.
+새 환경을 수동 설정하려면 Git에 포함된 `labremote/config/devices/connections.json`을 사용하세요. 모터용 `serials.example.json`은 Git에서 제외된 로컬 `server_deploy_latest/KDC101/`에 있으며, 서버 드라이버 폴더를 직접 전달받아 사용합니다. 각각 해당 로컬 파일 이름으로 복사한 뒤 값을 입력하세요. 예제 파일에는 실제 값을 넣지 마세요.
 
 ## 업로드 전 확인
 

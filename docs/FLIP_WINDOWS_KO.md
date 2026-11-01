@@ -14,7 +14,7 @@
    공통 서버 응답 timeout이면 남은 연결을 중지하여 요청을 계속 보내지 않습니다.
 
 EA/EC 경로 설정 및 수동 경로 적용 버튼은 화면에서 제거했습니다.
-기존 `labremote/config/flip.local.json`의 자동 경로 매핑과 포획 workflow는 유지합니다.
+기존 `labremote/config/operations/flipper_routes.local.json`의 자동 경로 매핑과 포획 workflow는 유지합니다.
 Flipper 전체 연결과 Position 버튼 사용은 서버 드라이버/YAML 변경이 필요하지 않습니다.
 목록에 5대가 아닌 일부만 표시되면 서버 등록 이름·드라이버 메타데이터를 확인해야 합니다.
 

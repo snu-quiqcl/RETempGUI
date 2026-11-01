@@ -49,10 +49,6 @@ class ExperimentShellMixin:
             grid.addWidget(QtWidgets.QLabel(group),row,0);label=QtWidgets.QLabel();grid.addWidget(label,row,1);self.group_labels[group]=label
             button=QtWidgets.QPushButton('연결 / 재연결');button.clicked.connect(lambda _,g=group:self.connect_equipment(g));grid.addWidget(button,row,2);self.group_buttons[group]=button
         self.connect_all_button=connect_all;root.addWidget(box)
-        box=QtWidgets.QGroupBox('상세 제어창');line=QtWidgets.QHBoxLayout(box)
-        for title,window in self.detail_windows.items():
-            button=QtWidgets.QPushButton(title+' 열기');button.clicked.connect(window.open);line.addWidget(button)
-        root.addWidget(box)
         self.shell_message=QtWidgets.QLabel(startup_error or '구성을 확인한 뒤 장비를 연결하세요. 연결만으로 실험 설정을 적용하지 않습니다.');self.shell_message.setWordWrap(True);root.addWidget(self.shell_message)
         row=QtWidgets.QHBoxLayout();self.activity_label=QtWidgets.QLabel('대기 중');row.addWidget(self.activity_label,1)
         self.cancel_tasks_button=QtWidgets.QPushButton('작업 중단 / 종료 정리');self.cancel_tasks_button.clicked.connect(self.stop_experiment_tasks);row.addWidget(self.cancel_tasks_button);root.addLayout(row)

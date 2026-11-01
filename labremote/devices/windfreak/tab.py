@@ -180,7 +180,7 @@ class WindfreakTab(QtWidgets.QWidget):
                     # Never round a configured cap UP to the 0.001-dBm UI precision.
                     hi = min(hi, math.floor(self._power_caps[ch] * 1000) / 1000)
                 w.setDecimals(dec); w.setRange(lo, hi); w.setSingleStep(step)
-                w.setToolTip('Device preset/limit: labremote/config/windfreak/device_config.yml')
+                w.setToolTip('Device preset/limit: labremote/config/devices/windfreak/device_config.yml')
                 preset_name = 'phase_step_deg' if key == 'phase_deg' else key
                 configured = self._presets[ch][preset_name]
                 if configured is not None:
