@@ -418,10 +418,23 @@ class ArtyS7:
     def check_version(self, version_string):
         self.send_command('*IDN?')
         reply = self.read_next_message()
-        if reply[1] != version_string:
-            error_msg = 'FPGA version "%s" does not match HW_VERSION "%s"' % (reply[1], version_string)
-            print(error_msg)
-            raise RuntimeError(error_msg)
+        if reply[0] == '0':
+            raise TimeoutError(
+                'No response from FPGA to version query (*IDN?). '
+                'Check the COM port, USB connection, FPGA power and loaded bitstream. '
+                'Expected HW_VERSION: %r' % version_string)
+        if reply[0] not in ('!', '#'):
+            raise RuntimeError('Invalid FPGA version response: %r; expected HW_VERSION: %r'
+                               % (reply, version_string))
+        actual_version = reply[1]
+        if not actual_version:
+            raise RuntimeError(
+                'FPGA returned an empty version response to *IDN?; '
+                'expected HW_VERSION: %r' % version_string)
+        if actual_version != version_string:
+            raise RuntimeError(
+                'FPGA version mismatch: received FPGA version %r; expected HW_VERSION %r'
+                % (actual_version, version_string))
 
     def read_DNA(self):
         self.send_command('*DNA_PORT?')

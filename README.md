@@ -57,7 +57,7 @@ D:\coding\QCODES\
       └─ instrumentserver\
 ```
 
-다른 위치에 있으면 `local_settings.bat`의 `IS_ROOT`를 **instrumentserver 패키지를 포함하는 폴더**로 지정하세요. 위의 통합 의존성을 설치한 뒤, 실험실 소스를 editable 설치할 수도 있습니다.
+다른 위치에 있으면 위의 통합 의존성을 설치한 뒤, 실행할 Python 환경에 실험실 InstrumentServer 소스를 editable 설치하세요.
 
 ```bat
 python -m pip install -e "D:\path\to\instrumentserver-source"
@@ -70,24 +70,16 @@ python -c "from instrumentserver.client import Client; print('Remote client impo
 
 먼저 [로컬 설정 전달 안내](docs/LOCAL_SETUP_KO.md)에 따라 `labremote/config/devices/connections.local.json`을 직접 복사하세요. 실제 IP와 모터 시리얼은 GitHub에 포함하지 않습니다. 새 checkout에는 loopback 기본값만 있으며 실제 연결에는 로컬 설정이 필요합니다.
 
-```bat
-copy local_settings.example.bat local_settings.bat
-```
-
-`local_settings.bat`에서 다음을 확인합니다. 이 파일은 Git에서 제외되므로 다른 컴퓨터에서 `pull`해도 PC별 설정이 유지됩니다.
-
-- `CONDA_BAT`: Conda 활성화 스크립트 경로. 기본값 `C:\Anaconda\condabin\conda.bat`
-- `CONDA_ENV`: 실행 환경. 기본값 `uniqcon`
-- `SERVER_IP`, `SERVER_PORT`: 선택적 명령행 덮어쓰기. 기본 네트워크 설정은 `labremote/config/devices/connections.local.json` 사용
-- `IS_ROOT`: 선택 사항. 별도 InstrumentServer 소스 경로
-
-실행:
+Conda 환경을 활성화한 뒤 저장소 루트에서 실행합니다. 기본 네트워크 설정은 `labremote/config/devices/connections.local.json`에서 읽습니다.
 
 ```bat
-start_lab_remote_gui.bat
+conda activate uniqcon
+python lab_remote_gui.py
 ```
 
-이미 환경이 활성화되어 있다면 `python lab_remote_gui.py --host 서버주소 --port 5555`로도 실행할 수 있습니다. 이 경우 배치 파일의 경로 자동 탐색과 `local_settings.bat` 적용은 수행되지 않습니다.
+서버 주소를 명시적으로 덮어쓰려면 `python lab_remote_gui.py --host 서버주소 --port 5555`로 실행하세요.
+
+로컬 실행 배치 파일 `start_lab_remote_gui.bat`를 사용하는 경우 기본 Conda 경로는 `C:\Anaconda\condabin\conda.bat`, 환경은 `uniqcon`입니다. PC의 설치 위치가 다르면 배치 파일의 `CONDA_BAT`와 `CONDA_ENV`를 수정하세요. 배치 파일은 주변 InstrumentServer 소스 경로도 자동 탐색합니다.
 
 ### 4. 실제 CCD
 
@@ -162,7 +154,6 @@ RETempUI_V1_00/
 ├─ README.MD
 ├─ lab_remote_gui.py                # 앱 진입점
 ├─ start_lab_remote_gui.bat         # Conda/서버 경로를 적용하는 실행 파일
-├─ local_settings.example.bat       # PC별 설정 예제
 ├─ requirements*.txt                # 설치 의존성
 ├─ labremote/
 │  ├─ api/                         # UI/workflow 공통 API
@@ -174,37 +165,10 @@ RETempUI_V1_00/
 │  └─ workflow/                    # 실행 가능한 workflow 예제
 ├─ tests/                          # 로컬 전용 회귀 테스트 (Git 제외)
 ├─ server_deploy_latest/           # 로컬 전용 서버 드라이버 (Git 제외)
-├─ docs/                           # 장비·CCD·검토 문서
-├─ verify_release.py               # 패키지 검증 및 격리 테스트 실행
-└─ verify_ccd_v7.py                # 더미 CCD GUI/마우스/종료 검증
+└─ docs/                           # 장비·CCD·검토 문서
 ```
 
 위 구조는 개발 PC 기준입니다. `tests/`와 `server_deploy_latest/`는 기존 위치에 보존하지만 Git에서 제외하므로 새 clone에는 없습니다. UI 실행에는 필요하지 않습니다. 서버 드라이버나 회귀 테스트가 필요한 PC에만 두 폴더를 직접 전달하세요. 서버 드라이버는 자동 배포하지 않으며 로컬 폴더의 `server_deploy_latest/README.md`를 참고합니다.
-
-## 검증
-
-실제 하드웨어 없이 실행하는 검사입니다. 새 clone에서도 기본 검사와 Dummy CCD GUI 검사를 실행할 수 있습니다:
-
-```bat
-python verify_release.py
-python verify_release.py --suite ccd-gui
-python check_public_files.py
-```
-
-`verify_release.py`의 기본값은 `--suite checks`입니다. 소스 구문·장비 설정·문서 링크를 검사하며, 로컬 두 폴더가 있으면 해당 Python 소스도 검사합니다.
-
-`tests/`와 `server_deploy_latest/`를 별도로 복사한 개발 PC에서는 다음 회귀 테스트도 사용할 수 있습니다:
-
-```bat
-python verify_release.py --suite core
-python verify_release.py --suite all
-```
-
-필요한 로컬 폴더가 없으면 회귀 테스트는 안내와 함께 실패 종료합니다. 테스트 0개를 성공으로 보고하지 않습니다. 두 폴더는 Git으로 업데이트되지 않으므로 사용하는 UI 코드 버전에 맞춰 함께 보관하세요.
-
-검증기는 주변 InstrumentServer 소스를 자동 탐색하며, 테스트 모듈을 독립 프로세스로 실행합니다. 결과는 Git에서 제외되는 `.verification/`에 기록합니다. 상세 검토 결과와 미검증 사항은 [릴리스 검토](docs/RELEASE_REVIEW.md)에 정리합니다.
-
-실제 CCD 노출/USB/SDK/모니터 표시 지연은 더미 검증으로 보장할 수 없습니다. 실기 연결과 영상 방향·검출 threshold·촬영/정지 동작을 확인한 뒤 실험에 적용하세요.
 
 ## 제외한 자료
 
