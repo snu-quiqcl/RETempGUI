@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "PID detuning display",
+  "revision_note": "PID stopped target apply",
   "files": [
     {
       "path": ".gitattributes",
@@ -1744,8 +1744,8 @@
     },
     {
       "path": "labremote/ui/pid_tab.py",
-      "bytes": 10282,
-      "sha256": "74001a88ff815b28f81fca252cfb47ffb9cb30f90f3d60b40659e5f9b4793c16"
+      "bytes": 11830,
+      "sha256": "be507f635fc8100bb4e38c3154fbb8eb2946a0b9168ee6c35ccdfb7e09d4df6f"
     },
     {
       "path": "labremote/ui/pulse_experiment_tab.py",
