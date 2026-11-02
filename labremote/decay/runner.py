@@ -35,7 +35,7 @@ class DecayRunner(WorkflowTask):
         for name,path in [('operation.py',operation),('hardware_definition.py',Path(hd.__file__)),('HardwareDefinition_v4_04.py',Path(hd.__file__).with_name('HardwareDefinition_v4_04.py'))]:
             shutil.copyfile(path,source_root/name);sources[name]=hashlib.sha256(path.read_bytes()).hexdigest()
         config.save(folder/'configuration.json',dict(settings=c,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,sequencer_clock_ns=10,stopwatch_bin_ns=1.25,source_sha256=sources,
-            acquisition_note='16-bit histogram protected by chunks <=65535 pulse trials; host pauses between chunks; SYNC arrival required'))
+            acquisition_note='One FPGA execution per PC batch; no trial chunk splitting; 16-bit histogram bins; SYNC arrival required'))
         acc=Accumulator(c);error=None
         self.publish(chamber=c['chamber'],mode=c['mode'],phase='Starting',folder=str(folder),total=c['outer_loop'])
         try:

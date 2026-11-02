@@ -1,4 +1,4 @@
-"""Exclusive decay acquisition with bounded histogram counters and cleanup."""
+"""Exclusive decay acquisition: one FPGA run per PC batch, with cleanup."""
 import threading
 import time
 from labremote.runtime.errors import OperationCancelled
@@ -25,42 +25,36 @@ def run(controller,c,cancelled,on_rows,on_chunk):
         return n
     try:
         check();cleanup(controller,c)
-        # Each PMT can contribute at most once per trial. Never let a 16-bit
-        # histogram bin receive more than 65535 events before reading it out.
-        max_groups=65535//c['wo_cooling_number']
+        # Execute all configured cooling groups and FPGA outer loops in one run.
+        # FIFO packets are transport reads, not separate measurement chunks.
         for batch in range(c['outer_loop']):
-            chunk=0
-            for outer in range(c['outer_loop_in_fpga']):
-                remaining=c['run_number']
-                while remaining:
-                    check();groups=min(max_groups,remaining);effective=dict(c,run_number=groups,outer_loop_in_fpga=1)
-                    stale=length()
-                    while stale:
-                        check();size=min(stale,500);d.read_fifo_data(size);stale-=size
-                    build_program(effective).program(show=False,target=d);check();d.auto_mode();d.start_sequencer()
-                    rows=[];deadline=time.monotonic()+c['timeout_s'];start=time.monotonic()
-                    while True:
-                        check()
-                        if time.monotonic()>deadline:raise TimeoutError('Decay chunk timeout')
-                        status=d.sequencer_running_status()
-                        if status not in ('running','stopped'):raise RuntimeError('Invalid sequencer status')
-                        available=length()
-                        while available:
-                            check()
-                            if time.monotonic()>deadline:raise TimeoutError('Decay FIFO timeout')
-                            size=min(available,500);values=d.read_fifo_data(size)
-                            valid=isinstance(values,list) and len(values)==size and len(rows)+size<=expected and all(isinstance(r,(list,tuple)) and len(r)==4 and all(type(v) is int and 0<=v<=65535 for v in r) and r[3]==100 for r in values)
-                            on_rows(batch,chunk,values,valid)
-                            if not valid:raise RuntimeError('Invalid decay FIFO payload/tag/length')
-                            rows.extend(values);available-=size
-                        if status=='stopped':break
-                        time.sleep(.001)
-                    if len(rows)!=expected:raise RuntimeError(f'Missing decay histogram rows: {len(rows)}/{expected}')
-                    flat=[v for r in rows for v in r[:3]]
-                    on_chunk(dict(batch=batch,chunk=chunk,groups=groups,outer_index=outer,trials=groups*c['wo_cooling_number'],elapsed_s=time.monotonic()-start,
-                        batch_complete=outer==c['outer_loop_in_fpga']-1 and remaining==groups,
-                        histograms=[flat[i*bins:(i+1)*bins] for i in range(channels)]))
-                    remaining-=groups;chunk+=1
+            check()
+            stale=length()
+            while stale:
+                check();size=min(stale,500);d.read_fifo_data(size);stale-=size
+            build_program(c).program(show=False,target=d);check();d.auto_mode();d.start_sequencer()
+            rows=[];deadline=time.monotonic()+c['timeout_s'];start=time.monotonic()
+            while True:
+                check()
+                if time.monotonic()>deadline:raise TimeoutError('Decay batch timeout')
+                status=d.sequencer_running_status()
+                if status not in ('running','stopped'):raise RuntimeError('Invalid sequencer status')
+                available=length()
+                while available:
+                    check()
+                    if time.monotonic()>deadline:raise TimeoutError('Decay FIFO timeout')
+                    size=min(available,500);values=d.read_fifo_data(size)
+                    valid=isinstance(values,list) and len(values)==size and len(rows)+size<=expected and all(isinstance(r,(list,tuple)) and len(r)==4 and all(type(v) is int and 0<=v<=65535 for v in r) and r[3]==100 for r in values)
+                    on_rows(batch,0,values,valid)
+                    if not valid:raise RuntimeError('Invalid decay FIFO payload/tag/length')
+                    rows.extend(values);available-=size
+                if status=='stopped':break
+                time.sleep(.001)
+            if len(rows)!=expected:raise RuntimeError(f'Missing decay histogram rows: {len(rows)}/{expected}')
+            flat=[v for r in rows for v in r[:3]]
+            on_chunk(dict(batch=batch,chunk=0,groups=c['run_number']*c['outer_loop_in_fpga'],outer_index=0,trials=c['run_number']*c['outer_loop_in_fpga']*c['wo_cooling_number'],elapsed_s=time.monotonic()-start,
+                batch_complete=True,
+                histograms=[flat[i*bins:(i+1)*bins] for i in range(channels)]))
     except Exception as original:
         try:cleanup(controller,c)
         except Exception as exc:raise RuntimeError(f'Decay cleanup failed: {exc}; original: {original}') from exc

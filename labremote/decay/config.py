@@ -39,7 +39,7 @@ FIELDS=[('TIME_COOL','Cooling (10 ns clocks)',0,65535),('TIME_INIT','Initializat
  ('SIGNAL_THRESHOLD','Communication threshold (bin)',0,509),('DECAY_THRESHOLD','Decay threshold (bin)',0,509),
  ('run_number','Cooling groups / FPGA outer loop',1,65535),('outer_loop_in_fpga','FPGA outer loops / batch',1,65535),
  ('wo_cooling_number','Pulse trials / cooling group',1,65535),('outer_loop','PC batches',1,10000),
- ('timeout_s','Timeout / hardware chunk (s)',1,3600),('reference_tau_ns','Legacy reference lifetime (unused)',.01,1000),
+ ('timeout_s','Timeout / batch (s)',1,3600),('reference_tau_ns','Legacy reference lifetime (unused)',.01,1000),
  ('aux1_start','AUX1 start level',0,1),('aux1_end','AUX1 cleanup level',0,1),('aux2_start','AUX2 start level',0,1),('aux2_end','AUX2 cleanup level',0,1)]
 
 def defaults(chamber,mode):

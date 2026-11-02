@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Completed PID batch mean display",
+  "revision_note": "Decay full batch acquisition",
   "files": [
     {
       "path": ".gitattributes",
@@ -49,13 +49,13 @@
     },
     {
       "path": "docs/DECAY_KO.md",
-      "bytes": 6562,
-      "sha256": "3dfd07435b38a84bb151d7138e1fbfba82f09c10ba8d6b4954925ebf28354ccd"
+      "bytes": 6359,
+      "sha256": "601f5bef538bdaaad9543393cf9f23832fe6065818680faeedbc38c5f873c283"
     },
     {
       "path": "docs/DECAY_SIX_PLOTS_KO.md",
-      "bytes": 3611,
-      "sha256": "158ad39199ad58a3373379277b43229987fbcf1e8e7ade50e2a82fa8c7a7ba6d"
+      "bytes": 3761,
+      "sha256": "dcc67796c0ab7e0bd9e29e9595b3ff931d8982dc1c5c7c5d1b64f77c4d695f8f"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -619,8 +619,8 @@
     },
     {
       "path": "labremote/decay/config.py",
-      "bytes": 6583,
-      "sha256": "b46edafeb37efe16b896654dba5094e7ca80097fcf7b198c662899b1d58636dd"
+      "bytes": 6574,
+      "sha256": "c9158163aec70285dcc65571c36ebc087b1f7dfe0f7182fd892788661a913d78"
     },
     {
       "path": "labremote/decay/plotting.py",
@@ -629,8 +629,8 @@
     },
     {
       "path": "labremote/decay/runner.py",
-      "bytes": 5791,
-      "sha256": "b68c9716d567eefcc38cf216ba95f8bbcfaed285dcf76d0cfb2b9f3e5f871f56"
+      "bytes": 5786,
+      "sha256": "96c19b82c6a44283936ee40780be3fa4264ce312845f4ef1d57d7d6cd4e85e34"
     },
     {
       "path": "labremote/decay/sequence.py",
@@ -1149,8 +1149,8 @@
     },
     {
       "path": "labremote/operation/fpga/decay.py",
-      "bytes": 4190,
-      "sha256": "303db4dfea00323cb3c0a9f01ceb2a62d03b70a52ecfe0fb7745b8d42dcdb5a9"
+      "bytes": 3694,
+      "sha256": "bdd99a585635cf699c2dd2eddabb7762041dca8d2587db975b464f471b22a64b"
     },
     {
       "path": "labremote/operation/fpga/fluorescence.py",

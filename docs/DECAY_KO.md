@@ -32,35 +32,28 @@ EA는 AOMA/EOM_7GA1/2/EOM_2GA, EC는 AOMC/EOM_7GC1/2/EOM_2GC를 기본으로 사
 
 ## 원본과 비교한 수집 보완
 
-FPGA 메모리는 bin당 16비트입니다. overflow를 피하려고 한 hardware chunk의 pulse trials를 65535 이하로 제한하며, cooling group 경계에서 나눕니다. `outer_loop_in_fpga` 반복도 host에서 관리합니다. 총 pulse 횟수와 구간 내부의 원본 pulse 명령은 유지되지만, chunk 사이에 PC 전송·재업로드 대기가 있습니다. 하나의 PC batch에 여러 chunk가 포함될 수 있습니다. SYNC stopwatch가 실제로 도착한 trial만 histogram에 넣는 확인 명령을 추가했습니다.
+한 PC batch는 FPGA 한 번 실행으로 수행합니다. `run_number`, `wo_cooling_number`, `outer_loop_in_fpga`를 그대로 FPGA에 전달하며, 내부 chunk 분할이나 배치 중간 재업로드가 없습니다. bin당 16비트 카운터는 그대로입니다. SYNC stopwatch가 실제로 도착한 trial만 histogram에 넣습니다.
 
-한 실행 전체는 `DECAY_ACQUIRE` operation 하나입니다. timeout은 hardware chunk별로 적용됩니다. 정상·중단·오류 종료 시 TRIG LOW, 선택 AOM ON, 171의 EOM7G ON/EOM2G OFF와 설정된 AUX cleanup 레벨을 보냅니다. 외부 RF·MW 장비에는 명령을 보내지 않습니다. 기존 FPGA 연결과 hardware definition을 사용하며 새 server driver가 필요하지 않습니다.
+한 실행 전체는 `DECAY_ACQUIRE` operation 하나입니다. timeout은 PC batch 전체에 적용됩니다. 정상·중단·오류 종료 시 TRIG LOW, 선택 AOM ON, 171의 EOM7G ON/EOM2G OFF와 설정된 AUX cleanup 레벨을 보냅니다. 외부 RF·MW 장비에는 명령을 보내지 않습니다. 기존 FPGA 연결과 hardware definition을 사용하며 새 server driver가 필요하지 않습니다.
 
 ## 그래프와 저장
 
-완료된 hardware chunk마다 네 그래프를 갱신합니다.
+완료된 PC batch마다 6개 그래프를 갱신합니다. 누적/최신 배치 decay, 누적/최신 배치 pulse, 배치별 decay/pulse 합계를 표시하며 실제 누적 counts에 지수 fitting을 적용합니다. 자세한 내용은 [6개 그래프 설명](DECAY_SIX_PLOTS_KO.md)을 참조하세요.
 
-- PMT별 누적 decay histogram 및 고정 수명 기준선
-- PC batch별 decay counts (진행 중 batch는 부분 합계)
-- 가장 최근 완료된 hardware chunk histogram
-- PMT를 합한 누적 prompt window
-
-기준선의 기본 수명 8.12 ns는 원본의 **고정 기준값**이며 측정으로 추정한 fitting 결과가 아닙니다. 각 탭에서 reference lifetime을 변경할 수 있습니다. signal threshold와 decay boundary가 같으면 prompt window가 비어 있는 것이 정상입니다. PC batch 그래프의 counts는 초당 rate가 아닙니다.
-
-결과는 `data/decay` 또는 지정한 폴더의 실행별 고유 디렉토리에 저장됩니다.
+결과는 `labremote/data/decay` 또는 지정한 폴더의 실행별 고유 디렉토리에 저장됩니다.
 
 | 파일 | 내용 |
 |---|---|
 | configuration.json | 원래 요청 조건, 역할 매핑, FPGA/HD 정보, 두 시간 단위, 소스 해시 |
 | source/ | 사용한 decay 코드와 HD/operation 사본 |
 | raw_fifo.csv | batch/chunk별 수신 원시 histogram word와 tag/검증 결과 |
-| chunks.jsonl | 완료된 chunk별 histogram, 실제 groups/trials/경과시간 |
+| chunks.jsonl | 완료된 배치별 histogram, 실제 groups/trials/경과시간 (호환용 파일명 유지) |
 | histogram.json | 누적값, 최신 chunk, batch별 집계, 실제 완료 trials |
 | histogram.csv | bin, 시간(ns), PMT별 누적 counts |
 | decay.png | 마지막 결과 이미지 |
 | result.json | 완료/중단/실패 및 완료 batch 수 |
 
-FPGA가 아직 전송하지 않은 내부 histogram은 Stop 시 복구할 수 없습니다. 전송 도중 중단된 chunk의 수신 word는 raw_fifo.csv에 남지만, 완전한 chunk가 아니므로 누적 histogram에는 넣지 않습니다. 파일을 0으로 채워 정상 측정처럼 처리하지 않습니다. `Open result`에서 해당 탭과 동일한 chamber/mode의 result.json을 열어 다시 표시합니다.
+FPGA가 아직 전송하지 않은 내부 histogram은 Stop 시 복구할 수 없습니다. 전송 도중 중단된 batch의 수신 word는 raw_fifo.csv에 남지만, 완전한 batch가 아니므로 누적 histogram에는 넣지 않습니다. 파일을 0으로 채워 정상 측정처럼 처리하지 않습니다. `Open result`에서 해당 탭과 동일한 chamber/mode의 result.json을 열어 다시 표시합니다.
 
 ## Workflow API
 
@@ -74,3 +67,5 @@ def main(devices):
 ```
 
 `settings` 또는 `settings_file`로 조건을 전달할 수 있고, 생략하면 해당 탭의 local/default JSON을 사용합니다. 모드는 `171_single`, `174_single`, `171_dual`, `174_dual`입니다. 중단은 `stop_decay()` 또는 handle.request_cancel()입니다. 기존 ExperimentArchive의 point 디렉토리를 directory로 넘겨 다른 실험과 함께 보관할 수도 있습니다.
+
+저장 형식 호환을 위해 chunk 필드는 남기되 새 실행은 배치마다 chunk=0 레코드 하나만 기록합니다. FIFO를 여러 패킷으로 읽더라도 측정 반복을 분할하는 것은 아닙니다.
