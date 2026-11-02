@@ -9,13 +9,15 @@ class DecayExperimentTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,mode,parent=None):
         super().__init__(parent);self.worker=worker;self.api=device_api(worker);self.chamber=chamber;self.mode=mode;self.fields={};self.roles={};self.run_id=None;self.plot=None;self.revision=-1
         root=QtWidgets.QVBoxLayout(self)
-        note=QtWidgets.QLabel('171: initialization before pulse · 174: no EOM initialization · PMT − SYNC: 1.25 ns/bin · dashed curve: fixed lifetime reference, not a fit');note.setWordWrap(True);root.addWidget(note)
+        note=QtWidgets.QLabel('171: initialization before pulse · 174: no EOM initialization · PMT − SYNC: 1.25 ns/bin · dashed: fitted decay · pulse preview: +5 bins (6.25 ns) · probability: counts / received trials');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1);scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(370);split.addWidget(scroll)
         left=QtWidgets.QWidget();scroll.setWidget(left);form=QtWidgets.QFormLayout(left)
         for key,label,lo,hi in config.FIELDS:
             box=QtWidgets.QDoubleSpinBox() if key in ('timeout_s','reference_tau_ns') else QtWidgets.QSpinBox();box.setRange(lo,hi)
             if isinstance(box,QtWidgets.QDoubleSpinBox):box.setDecimals(2)
-            self.fields[key]=box;form.addRow(label,box)
+            self.fields[key]=box
+            if key=='reference_tau_ns':box.hide()  # Keep old profiles readable; no fixed-lifetime curve.
+            else:form.addRow(label,box)
         for role,choices in config.CHOICES.items():
             box=QtWidgets.QComboBox();box.addItems(choices);self.roles[role]=box;form.addRow(role,box)
         self.profile_buttons=[]
@@ -31,7 +33,7 @@ class DecayExperimentTab(QtWidgets.QWidget):
         self.status=QtWidgets.QLabel('Idle');self.status.setWordWrap(True);layout.addWidget(self.status)
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-        self.figure=Figure(figsize=(10,8));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumSize(400,400);layout.addWidget(self.canvas,1);split.setSizes([420,900])
+        self.figure=Figure(figsize=(14,12));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumSize(900,850);plot_scroll=QtWidgets.QScrollArea();plot_scroll.setWidgetResizable(True);plot_scroll.setWidget(self.canvas);layout.addWidget(plot_scroll,1);split.setSizes([420,900])
         try:self.populate(config.load(chamber,mode))
         except Exception as exc:self.populate(config.defaults(chamber,mode));self.status.setText(str(exc))
         worker.task_progress.connect(self.progress);self.timer=QtCore.QTimer(self);self.timer.timeout.connect(self.controls);self.timer.start(300);self.controls()

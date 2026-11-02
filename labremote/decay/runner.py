@@ -60,7 +60,7 @@ class DecayRunner(WorkflowTask):
                 for i in range(c['MAX_TIME_DIFFERENCE']):writer.writerow([i,i*1.25]+[channel[i] for channel in data['counts']])
             from matplotlib.figure import Figure
             from matplotlib.backends.backend_agg import FigureCanvasAgg
-            fig=Figure(figsize=(11,8));FigureCanvasAgg(fig);plot=DecayPlot(fig,c);plot.update(data);fig.savefig(folder/'decay.png',dpi=130)
+            fig=Figure(figsize=(14,12));FigureCanvasAgg(fig);plot=DecayPlot(fig,c);fits=plot.update(data);config.save(folder/'decay_fit.json',dict(bin_ns=1.25,decay_threshold_bin=c['DECAY_THRESHOLD'],fits=fits));fig.savefig(folder/'decay.png',dpi=160)
         except Exception as exc:error=error or exc
         if self.handle.cancelled() and error is None:error=OperationCancelled('Decay cancelled')
         report.update(status='cancelled' if isinstance(error,OperationCancelled) else 'failed' if error else 'completed',error=str(error) if error else '')

@@ -15,10 +15,10 @@ CHOICES={'PMT1':INPUTS,'PMT2':INPUTS,'SYNC':INPUTS,'AOM':FAST,'TRIG':FAST,'EOM_7
 FIELDS=[('TIME_COOL','Cooling (10 ns clocks)',0,65535),('TIME_INIT','Initialization / 174 AOM hold (clocks)',5,65535),
  ('waiting_time_for_AOM_off','AOM off wait (clocks)',3,65535),('waiting_time_for_AOM_on','AOM on wait (clocks; single only)',3,65535),
  ('waiting_time_for_stopwatch','Stopwatch wait (sequencer clocks)',4,65535),('MAX_TIME_DIFFERENCE','Histogram bins (multiple of 3)',3,510),
- ('SIGNAL_THRESHOLD','Acquisition lower bin',0,509),('DECAY_THRESHOLD','Decay / prompt boundary bin',0,509),
+ ('SIGNAL_THRESHOLD','Communication threshold (bin)',0,509),('DECAY_THRESHOLD','Decay threshold (bin)',0,509),
  ('run_number','Cooling groups / FPGA outer loop',1,65535),('outer_loop_in_fpga','FPGA outer loops / batch',1,65535),
  ('wo_cooling_number','Pulse trials / cooling group',1,65535),('outer_loop','PC batches',1,10000),
- ('timeout_s','Timeout / hardware chunk (s)',1,3600),('reference_tau_ns','Reference lifetime (ns; not fit)',.01,1000),
+ ('timeout_s','Timeout / hardware chunk (s)',1,3600),('reference_tau_ns','Legacy reference lifetime (unused)',.01,1000),
  ('aux1_start','AUX1 start level',0,1),('aux1_end','AUX1 cleanup level',0,1),('aux2_start','AUX2 start level',0,1),('aux2_end','AUX2 cleanup level',0,1)]
 
 def defaults(chamber,mode):

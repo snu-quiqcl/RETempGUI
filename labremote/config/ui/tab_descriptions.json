@@ -1,0 +1,25 @@
+{
+  "descriptions": {
+    "RF": "RF 신호원의 주파수, 출력 세기 및 출력 ON/OFF를 제어합니다.",
+    "Windfreak": "Windfreak SynthHD 장비별 제어 탭입니다. 장비를 선택한 뒤 채널별 RF 설정을 조작합니다.",
+    "synthhd_760": "synthhd_760으로 등록된 SynthHD 장비입니다. 실제 연결 용도는 이 설명을 수정해 기록하세요.",
+    "SG384": "SG384 신호원 제어입니다.",
+    "AnaPico": "AnaPico microwave 신호원 제어입니다.",
+    "OSA": "실측 스펙트럼과 sech² 피팅 결과를 확인합니다.",
+    "THERMOTEK": "Chiller 온도 및 펌프 제어와 온도 모니터링입니다.",
+    "CCD": "카메라 영상, 이온 검출 및 오븐 로딩을 제어합니다.",
+    "FPGA": "FPGA 입력 계수, 출력 제어 및 실험 탭입니다.",
+    "Daily characterization": "EA/EC의 Fluorescence, Rabi, Ramsey, SPAM, Initialization 실험입니다.",
+    "Decay": "EA/EC, 171/174 및 interferometer 유무에 따른 decay 측정입니다.",
+    "Input counts": "선택한 FPGA 입력의 photon counts를 측정합니다. Save CSV log 선택 시 CSV를 저장합니다.",
+    "Workflow": "장비 제어와 실험 operation을 조합해 실행합니다.",
+    "Queue": "Workflow의 실행 순서, 반복 및 실패 처리 정책을 지정합니다.",
+    "Queue Monitor": "Queue 진행 상태와 각 실행의 성공·실패 결과를 확인합니다.",
+    "Monitor": "선택한 장비의 기존 측정 화면을 한곳에서 확인합니다.",
+    "Monitor/Control": "측정과 제어 설정입니다.",
+    "Scan EA collection": "EA collection 모터의 XY/XYZ scan 및 MFD 분석입니다.",
+    "Scan EA excitation": "EA excitation 모터의 XY/XYZ scan 및 MFD 분석입니다.",
+    "Scan EC collection": "EC collection 모터의 XY/XYZ scan 및 MFD 분석입니다.",
+    "Scan EC excitation": "EC excitation 모터의 XY/XYZ scan 및 MFD 분석입니다."
+  }
+}

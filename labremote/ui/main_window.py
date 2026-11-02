@@ -141,6 +141,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
                 self._add_family(family,name)
         self.close_timer = QtCore.QTimer(self); self.close_timer.timeout.connect(self._close_ready)
         self.setup_experiment_shell(server)
+        from labremote.ui.tab_help import TabHelp
+        self.tab_help=TabHelp(self)
+        QtWidgets.QApplication.instance().installEventFilter(self.tab_help)
 
     def _logging(self, enabled):
         self.cfg['operation_detailed_logging'] = enabled

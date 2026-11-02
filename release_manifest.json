@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Scan XY and Z-MFD image export",
+  "revision_note": "Six-panel decay analysis and batch histograms",
   "files": [
     {
       "path": ".gitattributes",
@@ -53,6 +53,11 @@
       "sha256": "3dfd07435b38a84bb151d7138e1fbfba82f09c10ba8d6b4954925ebf28354ccd"
     },
     {
+      "path": "docs/DECAY_SIX_PLOTS_KO.md",
+      "bytes": 2242,
+      "sha256": "7f8f9842f7c7e882f35f66739235e103be69213a00365959c08d21e3c4871499"
+    },
+    {
       "path": "docs/DEVICE_GUIDE_KO.md",
       "bytes": 41070,
       "sha256": "50a35562ba19991067acd050493348b48479e851e7bab862ab94442654e00ef4"
@@ -99,8 +104,8 @@
     },
     {
       "path": "docs/MOTOR_BACKLASH_KO.md",
-      "bytes": 3524,
-      "sha256": "c3ca8b3605455ea43f3f3e0720c06a68dcff0bfb222d7a4722b5537cee1a0119"
+      "bytes": 3664,
+      "sha256": "c54ce5897187b74e4bdc753eb812e8dc00eb48c4ef06cf2c3cadeb5cfbaeca36"
     },
     {
       "path": "docs/OVEN_DETECTION_MODES_KO.md",
@@ -136,6 +141,11 @@
       "path": "docs/SCAN_GOTO_MAX_KO.md",
       "bytes": 1961,
       "sha256": "eaf01f09a9fd21360bd46f6eb48d56dda08143667b722795a458d187dc16df97"
+    },
+    {
+      "path": "docs/TAB_DESCRIPTIONS_KO.md",
+      "bytes": 1164,
+      "sha256": "8adb78d688d9f9e828f4bccf01aa603846033348ec6849ae9c4767dbabd73fa3"
     },
     {
       "path": "docs/WORKFLOW_CCD_FPGA_KO.md",
@@ -593,6 +603,11 @@
       "sha256": "43144306c2240c8fbbbea5e13c99e8464bc41923b412ae0acb91ee14a3a8546f"
     },
     {
+      "path": "labremote/config/ui/tab_descriptions.json",
+      "bytes": 1972,
+      "sha256": "47422a90933198022ac674e7cd8a5c5e0ac9ea63051d5fc08191c44d121aa65a"
+    },
+    {
       "path": "labremote/data_paths.py",
       "bytes": 3210,
       "sha256": "cfbf94f33335ab720a81105aa9bbfccaa3d075715491291694d232e15d5e1fe5"
@@ -604,18 +619,18 @@
     },
     {
       "path": "labremote/decay/config.py",
-      "bytes": 5632,
-      "sha256": "3839fdacf5415c601ac893a078e6c89fe54e0f0bb530edfbb9f9304dcb80b309"
+      "bytes": 5710,
+      "sha256": "ebfe89469b8cfa833be90f83413eef05460867186fc46cd163c94a229a41a37c"
     },
     {
       "path": "labremote/decay/plotting.py",
-      "bytes": 3658,
-      "sha256": "9ac029a63269c2e6fca1315fda2a20c35a5558fce3e8a2aa4f7d47cb89d2b63a"
+      "bytes": 8138,
+      "sha256": "3f6931d3c11f7ec8344c184fa0fe96ab2b9bff53e9785fb094f9d702b57edbe1"
     },
     {
       "path": "labremote/decay/runner.py",
-      "bytes": 5679,
-      "sha256": "b549948594e59c6d132ad66288c29bb674bd73b359ca0ad804b98d784751bb64"
+      "bytes": 5791,
+      "sha256": "b68c9716d567eefcc38cf216ba95f8bbcfaed285dcf76d0cfb2b9f3e5f871f56"
     },
     {
       "path": "labremote/decay/sequence.py",
@@ -1664,8 +1679,8 @@
     },
     {
       "path": "labremote/ui/decay_tab.py",
-      "bytes": 8276,
-      "sha256": "5991181531417970e11399137315c839e3ef77695f3f8db79d7fdca6cd14fb92"
+      "bytes": 8558,
+      "sha256": "c6c843ac9c8654abd29e5e448f169ecc82de6fce289bb8f8822776c3f8fe2cdc"
     },
     {
       "path": "labremote/ui/detail_window.py",
@@ -1699,8 +1714,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 17324,
-      "sha256": "d3b4afd982e62115bfc863b6bd73fdebc2bd13fe316385d780ae25e5bc548999"
+      "bytes": 17489,
+      "sha256": "d30c087e3e5f8b51299c3c9484f74abafef221e6c873a936ce815de258431e75"
     },
     {
       "path": "labremote/ui/monitor_dashboard.py",
@@ -1751,6 +1766,11 @@
       "path": "labremote/ui/shutter_status.py",
       "bytes": 1333,
       "sha256": "351648c4f871688345d7e3f8c12ebb95165696712d5fe6069535fdb8b2576799"
+    },
+    {
+      "path": "labremote/ui/tab_help.py",
+      "bytes": 3318,
+      "sha256": "37f3d6b72fefdd33a05fb5d01c1d36178841f8e8bf527a8dd0843d8d8124c9e1"
     },
     {
       "path": "labremote/ui/theme.py",

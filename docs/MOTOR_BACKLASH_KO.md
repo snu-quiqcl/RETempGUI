@@ -19,7 +19,7 @@ Motor/Instrument는 한 열입니다. 표시 이름은 서버 연결 이름이�
 
 기준 로컬 루트: `D:\coding\QCODES\RETempGUI\RETempGUI\RETempGUI`
 
-서버 PC: `server_deploy_latest/KDC101/KDC101.py`를 서버에서 사용 중인 `KDC101/KDC101.py`에 덮어쓴 뒤 InstrumentServer를 재시작합니다. 기존 배치 구조라면 `/home/quiqcl-ent/server/qcodes-driver/qcodes_driver/KDC101/KDC101.py`가 대상입니다. YAML의 `type`과 실제 import 경로를 확인하고 해당 파일을 교체하세요. `__init__.py`, serials.local.json, 서버 YAML의 장비 이름·시리얼·units_per_mm은 유지합니다. 기존 pylablib 1.4.5/pyserial 의존성을 사용하므로 새 패키지는 필요하지 않습니다.
+서버 PC: `server_deploy_latest/KDC101/KDC101.py`를 서버에서 사용 중인 `KDC101/KDC101.py`에 덮어쓴 뒤 InstrumentServer를 재시작합니다. 기존 배치 구조라면 `/home/quiqcl-ent/server/qcodes-driver/qcodes_driver/KDC101/KDC101.py`가 대상입니다. YAML의 `type`과 실제 import 경로를 확인하고 해당 파일을 교체하세요. `__init__.py`와 서버 YAML의 장비 이름·시리얼·units_per_mm은 유지합니다. 시리얼은 드라이버 내부 `SERIAL_NUMBERS`에서 관리하며 별도 JSON 파일은 필요하지 않습니다. 기존 pylablib 1.4.5/pyserial 의존성을 사용하므로 새 패키지는 필요하지 않습니다.
 
 UI PC: 다음 파일을 같은 상대 경로로 복사하고 GUI를 재시작합니다.
 
