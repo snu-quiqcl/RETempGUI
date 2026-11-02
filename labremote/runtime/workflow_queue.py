@@ -9,6 +9,7 @@ import traceback
 from copy import deepcopy
 from datetime import datetime,timezone
 from pathlib import Path
+from labremote.data_paths import resolve_data_directory
 from uuid import uuid4
 from .jobs import CancellationToken
 from .errors import OperationCancelled
@@ -60,7 +61,7 @@ def validate_plan(plan):
 
 class QueueRunner:
     def __init__(self,bindings,plan,directory,publish=lambda state:None):
-        self.bindings=dict(bindings);self.plan=validate_plan(plan);self.directory=Path(directory).resolve();self.publish=publish
+        self.bindings=dict(bindings);self.plan=validate_plan(plan);self.directory=resolve_data_directory(directory, 'queues');self.publish=publish
         self.stop=threading.Event();self.pause=threading.Event();self.lock=threading.Lock();self.active=None;self.state=None;self.folder=None
     def cancel(self):
         with self.lock:

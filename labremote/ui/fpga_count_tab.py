@@ -3,6 +3,7 @@ from collections import deque
 import csv
 from datetime import datetime, timezone
 from pathlib import Path
+from labremote.data_paths import data_directory, counts_directory
 import time
 import weakref
 from PyQt5 import QtCore, QtWidgets
@@ -38,7 +39,8 @@ class FPGACountTab(QtWidgets.QWidget):
             row.addWidget(QtWidgets.QLabel(title)); row.addWidget(field)
         row = QtWidgets.QHBoxLayout(); root.addLayout(row)
         self.logging = QtWidgets.QCheckBox('Save CSV log')
-        self.directory = QtWidgets.QLineEdit(str(Path(__file__).resolve().parents[2]/'logs'/'fpga_counts'))
+        self.directory = QtWidgets.QLineEdit(str(data_directory('input_counts')))
+        self.directory.setToolTip('Default: labremote/data/input_counts/<selected channel>. Explicit custom folders are preserved.')
         self.browse = QtWidgets.QPushButton('Folder…'); self.browse.clicked.connect(self.choose_directory)
         for widget in (self.logging, self.directory, self.browse): row.addWidget(widget)
         row = QtWidgets.QHBoxLayout(); root.addLayout(row)
@@ -125,7 +127,7 @@ class FPGACountTab(QtWidgets.QWidget):
         self.log_error = None
         try:
             if self.logging.isChecked():
-                folder = Path(self.directory.text()).expanduser(); folder.mkdir(parents=True, exist_ok=True)
+                folder = counts_directory(self.directory.text(), INPUTS[self.channel.currentData()][0]); folder.mkdir(parents=True, exist_ok=True)
                 path = folder / ('counts_'+datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'.csv')
                 with path.open('x', newline='', encoding='utf-8') as stream:
                     csv.writer(stream).writerow(self.columns)

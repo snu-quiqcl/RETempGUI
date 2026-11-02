@@ -1,4 +1,5 @@
 from pathlib import Path
+from labremote.data_paths import decay_directory
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api
 from labremote.decay import config
@@ -23,7 +24,7 @@ class DecayExperimentTab(QtWidgets.QWidget):
         right=QtWidgets.QWidget();split.addWidget(right);layout=QtWidgets.QVBoxLayout(right);row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         self.run=QtWidgets.QPushButton('Run '+chamber+' '+config.LABELS[mode]);self.stop=QtWidgets.QPushButton('Stop / save partial');row.addWidget(self.run);row.addWidget(self.stop)
         self.run.clicked.connect(self.start);self.stop.clicked.connect(self.api.stop_decay)
-        self.directory=QtWidgets.QLineEdit(str(Path(__file__).resolve().parents[2]/'data/decay'));layout.addWidget(self.directory)
+        self.directory=QtWidgets.QLineEdit(str(decay_directory(None, chamber, mode)));layout.addWidget(self.directory)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         for text,fn in [('Save folder',self.choose_folder),('Open result',self.load_result)]:
             b=QtWidgets.QPushButton(text);b.clicked.connect(fn);row.addWidget(b)

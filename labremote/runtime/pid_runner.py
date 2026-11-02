@@ -27,7 +27,7 @@ def validate_settings(settings):
     return c
 
 
-def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float):
+def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float, *, include_curve=False):
     import numpy as np
     x = np.asarray(spectrum.get("frequency_thz", []), dtype=float)
     y = np.asarray(spectrum.get("power_dbm", []), dtype=float)
@@ -68,9 +68,13 @@ def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float):
                 raise ValueError("Fit returned non-finite values")
         except Exception as exc:
             raise InvalidSpectrum(f"Fit required but unavailable: {exc}") from exc
-    return {"raw_thz": raw, "fit_thz": fit, "peak_dbm": peak,
+    result = {"raw_thz": raw, "fit_thz": fit, "peak_dbm": peak,
             "noise_floor_dbm": floor, "snr_db": snr,
             "selected_thz": fit if use_fit else raw}
+    if include_curve and use_fit:
+        curve_x=np.linspace(float(xx[0]),float(xx[-1]),max(200,len(xx)))
+        result.update(fit_frequency_thz=curve_x.tolist(),fit_power_dbm=model(curve_x,*pars).tolist())
+    return result
 
 class PIDMath:
     """v5 nonoverlapping averaging, filtered derivative and reachable-I limiting."""

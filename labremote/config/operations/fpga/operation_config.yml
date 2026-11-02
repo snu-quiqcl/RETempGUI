@@ -16,5 +16,5 @@ defaults:
     settle_ms: 100
     x_um_per_unit: 1000
     y_um_per_unit: 1000
-    directory: logs/fiber_scan
+    directory: labremote/data/scans
 instruments: {}

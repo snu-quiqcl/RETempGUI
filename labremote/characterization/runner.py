@@ -3,6 +3,7 @@ import hashlib
 import time
 from datetime import datetime
 from pathlib import Path
+from labremote.data_paths import characterization_directory
 import numpy as np
 from labremote.runtime.workflow_runner import WorkflowTask,_TASK_LOCK
 from labremote.runtime.errors import OperationCancelled
@@ -19,7 +20,7 @@ class FluorescenceRunner(WorkflowTask):
         from labremote.runtime.characterization_guard import join_completed
         join_completed((self.worker,))
         request=prepare(chamber,settings,settings_file,mapping_file)
-        request['directory']=str(Path(directory or Path(__file__).resolve().parents[2]/'data/characterization').expanduser().resolve())
+        request['directory']=str(characterization_directory(directory, chamber, 'fluorescence'))
         with _TASK_LOCK:
             if self.running() or self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):
                 raise RuntimeError('FPGA is busy; stop measurements/scans or wait for the current operation')

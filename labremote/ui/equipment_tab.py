@@ -20,6 +20,12 @@ class EquipmentTab(QtWidgets.QWidget):
         self.worker=(ThermotekWorker if family=='thermotek' else KeithleyWorker)()
         self.api=device_api(self.worker)
         root=QtWidgets.QVBoxLayout(self)
+        if family=='thermotek':
+            self.chiller_tabs=QtWidgets.QTabWidget();root.addWidget(self.chiller_tabs)
+            self.monitor_page=QtWidgets.QWidget();self.control_page=QtWidgets.QWidget()
+            self.chiller_tabs.addTab(self.monitor_page,'Monitor');self.chiller_tabs.addTab(self.control_page,'Control')
+            monitor=QtWidgets.QVBoxLayout(self.monitor_page)
+            root=QtWidgets.QVBoxLayout(self.control_page)
         line=QtWidgets.QHBoxLayout();root.addLayout(line)
         self.connect_btn=QtWidgets.QPushButton('Connect');self.disconnect_btn=QtWidgets.QPushButton('Disconnect')
         self.read_btn=QtWidgets.QPushButton('Read once');self.cancel_btn=QtWidgets.QPushButton('Cancel operation / workflow')
@@ -40,14 +46,17 @@ class EquipmentTab(QtWidgets.QWidget):
             self.run_btn=QtWidgets.QPushButton('Pump RUN');self.stop_btn=QtWidgets.QPushButton('Pump STOP')
             self.run_btn.clicked.connect(self.api.start);self.stop_btn.clicked.connect(self.api.stop)
             line.addWidget(self.run_btn);line.addWidget(self.stop_btn);self.inputs.extend([self.run_btn,self.stop_btn])
-            self.live_btn=QtWidgets.QPushButton('Start monitoring');self.live_btn.clicked.connect(self._toggle_monitor)
+            monitor_buttons=QtWidgets.QHBoxLayout();monitor.addLayout(monitor_buttons)
+            self.live_btn=QtWidgets.QPushButton('Start monitoring');self.live_btn.clicked.connect(self._start_monitor)
+            self.stop_monitor_btn=QtWidgets.QPushButton('Stop monitoring');self.stop_monitor_btn.clicked.connect(self.api.stop_monitoring)
+            monitor_buttons.addWidget(self.live_btn);monitor_buttons.addWidget(self.stop_monitor_btn)
             self.interval=QtWidgets.QDoubleSpinBox();self.interval.setRange(3,3600)
             self.interval.setValue(load_device_config(family,name)['acquisition']['interval_s'])
-            line.addWidget(self.live_btn);line.addWidget(self.interval);line.addWidget(QtWidgets.QLabel('seconds after each acquisition'))
+            line.addWidget(self.interval);line.addWidget(QtWidgets.QLabel('seconds after each acquisition'))
             self.repeat_status=QtWidgets.QLabel('Monitoring stopped');root.addWidget(self.repeat_status)
             from matplotlib.figure import Figure
             from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-            self.figure=Figure(figsize=(9,4));self.canvas=FigureCanvasQTAgg(self.figure);root.addWidget(self.canvas)
+            self.figure=Figure(figsize=(9,4));self.canvas=FigureCanvasQTAgg(self.figure);monitor.addWidget(self.canvas,1)
             self.worker.waveform_changed.connect(self._repeat_changed)
             self.worker.handle_changed.connect(self._telemetry)
             diagnostic=QtWidgets.QHBoxLayout();root.addLayout(diagnostic)
@@ -162,25 +171,30 @@ class EquipmentTab(QtWidgets.QWidget):
             state=LIBRARY.read((self.worker._execution_device,self.diagnostic.currentText()))
             self.diagnostic_value.setText(str(state.observed) if self.connected and state.quality=='valid' else 'Unknown')
 
+    def _start_monitor(self):
+        if self.connected and not self.worker.waveform_runner.running():
+            self.api.start_monitoring(interval_s=self.interval.value())
+
     def _toggle_monitor(self):
         if self.worker.waveform_runner.running():self.api.stop_monitoring()
         else:self.api.start_monitoring(interval_s=self.interval.value())
 
     def _repeat_changed(self,handle):
         self.repeat_status.setText('Monitoring: '+handle.status)
-        self.live_btn.setText('Start monitoring' if handle.done.is_set() else 'Stop monitoring')
         self._buttons()
 
     def _telemetry(self,handle):
         if handle.action!='TELEMETRY' or not handle.done.is_set() or handle.error is not None or self._shutting_down:return
         if any(sample[0]==handle.request_id for sample in self.samples):return
-        self.samples.append((handle.request_id,time.monotonic(),handle.result))
+        now=time.monotonic()
+        self.samples.append((handle.request_id,now,handle.result))
+        while self.samples and self.samples[0][1]<now-600:self.samples.popleft()
         self._plot_temperatures()
 
     def _plot_temperatures(self):
         self.figure.clear();main=self.figure.add_subplot(111)
         self.temperature_axes={};lines=[]
-        times=[s[1]-self.samples[0][1] for s in self.samples]
+        times=[(s[1]-self.samples[-1][1])/60 for s in self.samples]
         series=[('supply_temperature','Supply','#76baff'),('ambient_temperature','Ambient','#f3c46b'),('temperature_setpoint','Target','#79df96')]
         # Supply and Target share a physical temperature axis; Ambient is separate.
         for index,(key,title,color) in enumerate(series):
@@ -192,7 +206,7 @@ class EquipmentTab(QtWidgets.QWidget):
             axis.set_ylabel('Supply / Target (°C)' if index in (0,2) else 'Ambient (°C)')
             line,=axis.plot(times,values,color=color,label=title,linestyle='--' if index==2 else '-',marker='.' if len(values)==1 else None)
             lines.append(line);self.temperature_axes[key]=axis
-        main.set_xlabel('Elapsed seconds');main.grid(True,alpha=.25);main.legend(lines,[line.get_label() for line in lines],loc='upper left')
+        main.set_xlim(-10,0);main.set_xlabel('Minutes relative to latest sample (last 10 minutes)');main.grid(True,alpha=.25);main.legend(lines,[line.get_label() for line in lines],loc='upper left')
         self.figure.subplots_adjust(left=.1,right=.88,bottom=.16,top=.94);self.canvas.draw_idle()
 
     def _failure(self,action,message):
@@ -206,7 +220,11 @@ class EquipmentTab(QtWidgets.QWidget):
         self.disconnect_btn.setEnabled(self.connected);self.read_btn.setEnabled(self.connected)
         self.cancel_btn.setEnabled(self.connected)
         for button in self.inputs:button.setEnabled(self.connected)
-        if hasattr(self,'live_btn'):self.live_btn.setEnabled(self.connected)
+        if hasattr(self,'live_btn'):
+            running=self.worker.waveform_runner.running()
+            self.live_btn.setEnabled(self.connected and not running)
+            self.stop_monitor_btn.setEnabled(self.connected and running)
+            self.interval.setEnabled(not running)
 
     def shutdown(self):
         self._shutting_down=True;self.timer.stop();self.worker.shutdown()

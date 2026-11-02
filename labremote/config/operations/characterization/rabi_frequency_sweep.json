@@ -2,7 +2,7 @@
   "schema_version": 1,
   "fpga": "fpga_local",
   "microwave": "apsyn420_mw",
-  "directory": "data/characterization",
+  "directory": "labremote/data/characterization",
   "frequencies_hz": [
     12642819855,
     12642820855,

@@ -1,6 +1,7 @@
 import csv
 import hashlib
 from pathlib import Path
+from labremote.data_paths import decay_directory
 from datetime import datetime
 from labremote.runtime.workflow_runner import WorkflowTask,_TASK_LOCK
 from labremote.runtime.errors import OperationCancelled
@@ -19,7 +20,7 @@ class DecayRunner(WorkflowTask):
         if (c['chamber'],c['mode'])!=(chamber,mode):raise ValueError('Decay chamber/mode mismatch')
         with _TASK_LOCK:
             if self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):raise RuntimeError('FPGA busy')
-            return self.launch(self._execute,(self.worker,),dict(settings=c,directory=str(Path(directory or Path(__file__).resolve().parents[2]/'data/decay').resolve())),parent)
+            return self.launch(self._execute,(self.worker,),dict(settings=c,directory=str(decay_directory(directory, chamber, mode))),parent)
     def _execute(self):
         from labremote.devices.fpga.adapter import Cancellation
         from labremote.devices.fpga.controller import hd

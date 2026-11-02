@@ -8,6 +8,7 @@ import uuid
 from importlib.metadata import version,PackageNotFoundError
 from datetime import datetime,timezone
 from pathlib import Path
+from labremote.data_paths import resolve_data_directory
 from .config import save
 
 
@@ -30,7 +31,7 @@ class ExperimentArchive:
     def __init__(self,directory,*,recipe,external_conditions=None,workflow_file=None):
         # Serialize before creating anything; freeze callers' mutable dictionaries.
         frozen=json.loads(json.dumps(dict(recipe=recipe,external_conditions=external_conditions or {}),allow_nan=False))
-        self.folder=Path(directory).expanduser().resolve()/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_series_'+uuid.uuid4().hex)
+        self.folder=resolve_data_directory(directory, 'characterization')/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_series_'+uuid.uuid4().hex)
         self.folder.mkdir(parents=True,exist_ok=False)
         self.state=dict(schema_version=1,started_utc=utc(),status='running',python=sys.version,points=[],**frozen)
         self.state['packages']={}

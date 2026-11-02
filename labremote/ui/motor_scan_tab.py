@@ -1,5 +1,6 @@
 """Four scan runners share the FPGA operation FIFO only while measuring."""
 from pathlib import Path
+from labremote.data_paths import scan_data_directory
 import json
 import math
 import time
@@ -94,7 +95,7 @@ class MotorScanTab(QtWidgets.QWidget):
             editor=QtWidgets.QDoubleSpinBox();editor.setDecimals(dec);editor.setRange(lo,hi);editor.setValue(cfg[key]);self.fields[key]=editor
             acquisition.addWidget(QtWidgets.QLabel(title));acquisition.addWidget(editor)
         line=QtWidgets.QHBoxLayout();line.setSpacing(6);settings.addLayout(line)
-        self.directory=QtWidgets.QLineEdit(cfg['directory']);line.addWidget(self.directory,1)
+        self.directory=QtWidgets.QLineEdit(str(scan_data_directory(cfg['directory'], self.number)));line.addWidget(self.directory,1)
         browse=QtWidgets.QPushButton('Save folder');line.addWidget(browse);browse.clicked.connect(self.browse)
         self.start_btn=QtWidgets.QPushButton('Start scan');self.stop_btn=QtWidgets.QPushButton('Stop / save partial')
         line.addWidget(self.start_btn);line.addWidget(self.stop_btn)
@@ -184,8 +185,7 @@ class MotorScanTab(QtWidgets.QWidget):
         except Exception as exc:self.status.setText(str(exc))
 
     def load_scan_setting(self):
-        base=Path(self.directory.text()).expanduser()
-        if not base.is_absolute():base=Path(__file__).resolve().parents[2]/base
+        base=scan_data_directory(self.directory.text(), self.number)
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load scan setting',str(base),
             'Scan settings (configuration.json result.json);;JSON files (*.json)')
         if path:self.load_scan_file(path)

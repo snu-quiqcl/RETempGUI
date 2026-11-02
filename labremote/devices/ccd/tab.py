@@ -2,6 +2,7 @@
 import time
 from datetime import datetime
 from pathlib import Path
+from labremote.data_paths import data_directory
 from PyQt5 import QtCore, QtWidgets
 import pyqtgraph as pg
 from .worker import CCDWorker, CCDAPI
@@ -216,7 +217,7 @@ class CCDTab(QtWidgets.QWidget):
 
         save_group = QtWidgets.QGroupBox('Save images')
         saving = QtWidgets.QGridLayout(save_group)
-        self.directory = QtWidgets.QLineEdit(str(Path(__file__).resolve().parents[3] / 'data' / 'ccd'))
+        self.directory = QtWidgets.QLineEdit(str(data_directory('ccd')))
         browse = QtWidgets.QPushButton('Directory')
         save = QtWidgets.QPushButton('Save TIFF / PNG')
         saving.addWidget(self.directory, 0, 0, 1, 2)

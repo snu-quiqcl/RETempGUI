@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from pathlib import Path
+from labremote.data_paths import data_directory, resolve_data_directory
 from uuid import uuid4
 from PyQt5 import QtCore,QtWidgets
 from labremote.runtime.workflow_queue import QueueRunner,freeze_job,validate_plan,read,save
@@ -26,7 +27,7 @@ class QueueTab(QtWidgets.QWidget):
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
         self.table.cellDoubleClicked.connect(lambda *_:self.edit_job())
         row=QtWidgets.QHBoxLayout();layout.addLayout(row);row.addWidget(QtWidgets.QLabel('전체 목록 반복'));self.repeat=QtWidgets.QSpinBox();self.repeat.setRange(1,10000);row.addWidget(self.repeat);self.repeat.valueChanged.connect(lambda *_:setattr(self,'dirty',True))
-        self.directory=QtWidgets.QLineEdit(str(Path(__file__).resolve().parents[2]/'data/queues'));row.addWidget(self.directory,1);self.folder_button=QtWidgets.QPushButton('저장 폴더');row.addWidget(self.folder_button);self.folder_button.clicked.connect(self.choose_folder)
+        self.directory=QtWidgets.QLineEdit(str(data_directory('queues')));row.addWidget(self.directory,1);self.folder_button=QtWidgets.QPushButton('저장 폴더');row.addWidget(self.folder_button);self.folder_button.clicked.connect(self.choose_folder)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         self.run_button=QtWidgets.QPushButton('Queue 실행');self.pause_button=QtWidgets.QPushButton('현재 작업 후 일시정지');self.resume_button=QtWidgets.QPushButton('계속');self.stop_button=QtWidgets.QPushButton('Queue 중단')
         for b in (self.run_button,self.pause_button,self.resume_button,self.stop_button):row.addWidget(b)

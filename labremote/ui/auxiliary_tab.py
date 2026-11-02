@@ -254,7 +254,14 @@ class AuxiliaryTab(QtWidgets.QWidget):
         self._last_result=handle.request_id
         value=handle.result;self.figure.clear();axis=self.figure.add_subplot(111)
         if handle.action=='SPECTRUM':
-            axis.plot(value['frequency_thz'],value['power_dbm']);axis.set_xlabel('Frequency (THz)');axis.set_ylabel('Power (dBm)')
+            axis.plot(value['frequency_thz'],value['power_dbm'],color='#57baff',label='Measured',linewidth=1.3)
+            from labremote.runtime.pid_runner import estimate_peak,InvalidSpectrum
+            try:
+                fit=estimate_peak(value,True,0.,include_curve=True)
+                axis.plot(fit['fit_frequency_thz'],fit['fit_power_dbm'],color='#ffb347',linestyle='--',linewidth=2,label='sech² fit')
+            except InvalidSpectrum as exc:
+                axis.text(.02,.96,'Fit unavailable: '+str(exc),transform=axis.transAxes,va='top',fontsize=8)
+            axis.legend();axis.set_xlabel('Frequency (THz)');axis.set_ylabel('Power (dBm)')
             self.spectrum_axis=axis;self._spectrum_limits()
         else:
             self.samples.append((time.monotonic(),value['count']));self.count.setText(f"Count: {value['count']} / {value['ms']} ms")

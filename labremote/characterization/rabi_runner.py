@@ -2,6 +2,7 @@ import csv
 import hashlib
 from datetime import datetime
 from pathlib import Path
+from labremote.data_paths import characterization_directory
 from labremote.api.devices import DeviceAPI
 from labremote.runtime.workflow_runner import WorkflowTask,_TASK_LOCK
 from labremote.runtime.errors import OperationCancelled
@@ -19,7 +20,7 @@ class RabiRunner(WorkflowTask):
         frequency_hz=rabi.validate_frequency(frequency_hz)
         from labremote.runtime.characterization_guard import join_completed
         join_completed((self.worker,))
-        request=dict(settings=c,frequency_hz=frequency_hz,microwave_control='external',directory=str(Path(directory or Path(__file__).resolve().parents[2]/'data/characterization').expanduser().resolve()))
+        request=dict(settings=c,frequency_hz=frequency_hz,microwave_control='external',directory=str(characterization_directory(directory, chamber, 'rabi')))
         with _TASK_LOCK:
             if self.worker.has_requests() or any(t.running() for t in self.worker._background_tasks) or self.worker.waveform_runner.running():raise RuntimeError('FPGA is busy')
             return self.launch(self._execute,(self.worker,),request,parent)

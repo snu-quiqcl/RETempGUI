@@ -1,4 +1,5 @@
 from pathlib import Path
+from labremote.data_paths import characterization_directory
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api
 from labremote.characterization import config,rabi
@@ -32,7 +33,7 @@ class RabiTab(QtWidgets.QWidget):
         row=QtWidgets.QHBoxLayout();right.addLayout(row)
         self.start_button=QtWidgets.QPushButton('Run '+chamber+' Rabi');self.stop_button=QtWidgets.QPushButton('Stop / save partial')
         self.start_button.clicked.connect(self.start);self.stop_button.clicked.connect(self.api.stop_rabi);row.addWidget(self.start_button);row.addWidget(self.stop_button)
-        self.directory=QtWidgets.QLineEdit(str(Path(__file__).resolve().parents[2]/'data/characterization'));right.addWidget(self.directory)
+        self.directory=QtWidgets.QLineEdit(str(characterization_directory(None, chamber, 'rabi')));right.addWidget(self.directory)
         row=QtWidgets.QHBoxLayout();right.addLayout(row)
         for title,callback in [('저장 폴더',self.choose_folder),('이전 결과 열기',self.load_result)]:
             button=QtWidgets.QPushButton(title);button.clicked.connect(callback);row.addWidget(button)

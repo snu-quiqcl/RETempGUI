@@ -80,3 +80,6 @@ instrumentserver-remote_entanglement/
 #workflow
 /labremote/workflow/
 /labremote/workflow/
+
+# Central experiment output (including JSON, plots and copied sequences)
+/labremote/data/

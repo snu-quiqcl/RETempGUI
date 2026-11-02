@@ -1,5 +1,6 @@
 """Daily experiment views share the existing FPGA worker and workflow API."""
 from pathlib import Path
+from labremote.data_paths import characterization_directory
 import numpy as np
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api
@@ -27,7 +28,7 @@ class FluorescenceTab(QtWidgets.QWidget):
         self.start_button=QtWidgets.QPushButton('Run '+chamber+' Fluorescence');self.stop_button=QtWidgets.QPushButton('Stop / save partial')
         row.addWidget(self.start_button);row.addWidget(self.stop_button);self.start_button.clicked.connect(self.start);self.stop_button.clicked.connect(self.api.stop_fluorescence)
         row=QtWidgets.QHBoxLayout();root.addLayout(row)
-        self.directory=QtWidgets.QLineEdit(str(Path(__file__).resolve().parents[2]/'data/characterization'));row.addWidget(self.directory)
+        self.directory=QtWidgets.QLineEdit(str(characterization_directory(None, chamber, 'fluorescence')));row.addWidget(self.directory)
         folder=QtWidgets.QPushButton('결과 저장 폴더');folder.clicked.connect(self.choose_folder);row.addWidget(folder)
         load_result=QtWidgets.QPushButton('이전 결과 열기');load_result.clicked.connect(self.load_result);row.addWidget(load_result)
         self.status=QtWidgets.QLabel('대기 중');self.status.setWordWrap(True);root.addWidget(self.status)

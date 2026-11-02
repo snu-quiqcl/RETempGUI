@@ -4,6 +4,7 @@ import json
 import math
 import time
 from pathlib import Path
+from labremote.data_paths import scan_data_directory
 from datetime import datetime
 from uuid import uuid4
 import numpy as np
@@ -54,8 +55,7 @@ class MotorScanRunner(WorkflowTask):
         if z is not None:origin.append(self.position(self.call(z.status())))
         scales=[c['x_um_per_unit'],c['y_um_per_unit']]
         tolerance=[min(.001,c['x_step_um']/scales[0]*.25),min(.001,c['y_step_um']/scales[1]*.25)]
-        base=Path(c['directory']).expanduser()
-        if not base.is_absolute():base=Path(__file__).resolve().parents[2]/base
+        base=scan_data_directory(c['directory'], self.number)
         folder=base/(datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'_'+uuid4().hex[:6])
         folder.mkdir(parents=True,exist_ok=False)
         counts=np.full((len(zs),len(ys),len(xs)) if zs is not None else (len(ys),len(xs)),np.nan)
@@ -124,6 +124,7 @@ class MotorScanRunner(WorkflowTask):
             for save in (
                 lambda:np.savez_compressed(folder/'heatmap.npz',x_um=xs,y_um=ys,counts=counts,**({'z_um':zs} if z is not None else {})),
                 lambda:self.save_plots(folder,xs,ys,zs,counts,result),
+                lambda:self.save_z_mfd(folder,zs,result) if zs is not None else None,
             ):
                 try:save()
                 except Exception as exc:save_errors.append(str(exc))
@@ -166,3 +167,26 @@ class MotorScanRunner(WorkflowTask):
             axes.plot(fit['x0_um'],fit['y0_um'],'r+')
             axes.add_patch(Ellipse((fit['x0_um'],fit['y0_um']),major,minor,angle=angle,fill=False,edgecolor='white'))
         axes.set_title(title,color='black');figure.tight_layout();figure.savefig(folder/filename,dpi=160)
+
+
+    @staticmethod
+    def save_z_mfd(folder,zs,result):
+        """Export principal-axis MFDs without re-fitting or altering measurement data."""
+        from matplotlib.figure import Figure
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+        from labremote.devices.fpga.scan_model import ellipse_geometry
+        figure=Figure(figsize=(7,4),facecolor='white');FigureCanvasAgg(figure)
+        axis=figure.add_subplot(111)
+        fits={entry['iz']:entry['fit'] for entry in result.get('z_fits',[])}
+        values=np.full((len(zs),2),np.nan)
+        for iz,fit in fits.items():
+            if 0<=iz<len(zs) and fit and 'error' not in fit:
+                values[iz]=ellipse_geometry(fit)[:2]
+        for i,(label,style) in enumerate((('Major MFD','o-'),('Minor MFD','s-'))):
+            axis.plot(zs,values[:,i],style,label=label)
+        axis.set_xlabel('Z position (µm)');axis.set_ylabel('MFD (µm)')
+        axis.set_title('Z–MFD · '+result.get('status','completed'))
+        axis.grid(True,alpha=.25);axis.legend()
+        if not np.isfinite(values).any():
+            axis.text(.5,.5,'No valid MFD fits',transform=axis.transAxes,ha='center',va='center')
+        figure.tight_layout();figure.savefig(folder/'z_mfd.png',dpi=160)
