@@ -31,18 +31,18 @@ class PIDTab(QtWidgets.QWidget):
         from labremote.data_paths import DATA_ROOT
         self.log_location=QtWidgets.QLabel('Automatic CSV log: ' + str(DATA_ROOT / 'pid'))
         self.log_location.setWordWrap(True);self.log_location.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse);root.addWidget(self.log_location)
-        self.values=QtWidgets.QLabel('MDT voltage: — V | Raw peak mean: — THz | Fitted peak mean: — THz | OSA frequency: — THz | Error: — GHz');self.values.setWordWrap(True);root.addWidget(self.values)
-        root.addWidget(QtWidgets.QLabel('Graph: latest 100 PID corrections; raw/fitted frequencies averaged over the same traces. CSV: all processed traces from start.'))
+        self.values=QtWidgets.QLabel('MDT voltage: — V | Raw peak: — THz | Fitted peak: — THz | PID mean: — THz | Error: — GHz');self.values.setWordWrap(True);root.addWidget(self.values)
+        root.addWidget(QtWidgets.QLabel('Graph: latest 100 OSA traces. Voltage correction uses the configured average count. CSV: all processed traces from start.'))
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(8,3));self.canvas=FigureCanvasQTAgg(self.figure);root.addWidget(self.canvas,1)
         self.voltage_axis=self.figure.add_subplot(111);self.frequency_axis=self.voltage_axis.twinx()
-        self.voltage_line,=self.voltage_axis.plot([],[],color='tab:blue',label='MDT voltage')
-        self.frequency_line,=self.frequency_axis.plot([],[],color='tab:orange',label='Raw peak mean')
-        self.fitted_frequency_line,=self.frequency_axis.plot([],[],color='tab:green',ls='--',label='Fitted peak mean')
+        self.voltage_line,=self.voltage_axis.plot([],[],color='tab:blue',marker='.',label='MDT voltage')
+        self.frequency_line,=self.frequency_axis.plot([],[],color='tab:orange',marker='.',label='Raw peak')
+        self.fitted_frequency_line,=self.frequency_axis.plot([],[],color='tab:green',ls='--',marker='.',label='Fitted peak')
         self.voltage_axis.set_xlabel('Elapsed seconds');self.voltage_axis.set_ylabel('MDT voltage (V)')
         self.frequency_axis.set_ylabel('OSA frequency (THz)');self.frequency_axis.ticklabel_format(axis='y',style='plain',useOffset=False)
-        self.voltage_axis.grid(True,alpha=.25);self.voltage_axis.legend([self.voltage_line,self.frequency_line,self.fitted_frequency_line],['MDT voltage','Raw peak mean','Fitted peak mean'],loc='upper left')
+        self.voltage_axis.grid(True,alpha=.25);self.voltage_axis.legend([self.voltage_line,self.frequency_line,self.fitted_frequency_line],['MDT voltage','Raw peak','Fitted peak'],loc='upper left')
         self.figure.subplots_adjust(left=.12,right=.8,bottom=.2,top=.94)
         worker.task_progress.connect(self.progress);worker.task_changed.connect(lambda *_:self.controls())
         self.timer=QtCore.QTimer(self);self.timer.timeout.connect(self.tick);self.timer.start(1000);self.tick()
@@ -85,15 +85,19 @@ class PIDTab(QtWidgets.QWidget):
             self.voltage_line.set_data([],[]);self.frequency_line.set_data([],[]);self.fitted_frequency_line.set_data([],[]);self.canvas.draw_idle()
         if data.get('log_path'):self.log_location.setText('CSV log: ' + data['log_path'])
         self.status.setText(data.get('status',data.get('phase',''))+(' — '+data['error'] if data.get('error') else ''))
-        self.readouts.update({key:data[key] for key in ('voltage_v','measured_thz','raw_mean_thz','fit_mean_thz','error_ghz','snr_db','batch_collected','batch_size') if key in data})
+        self.readouts.update({key:data[key] for key in ('voltage_v','measured_thz','raw_thz','fit_thz','error_ghz','snr_db','batch_collected','batch_size') if key in data})
         def number(key,precision):
             value=self.readouts.get(key)
             return f'{value:.{precision}f}' if isinstance(value,(int,float)) else '—'
-        self.values.setText(f"MDT voltage: {number('voltage_v',6)} V | Raw peak mean: {number('raw_mean_thz',9)} THz | Fitted peak mean: {number('fit_mean_thz',9)} THz | OSA frequency: {number('measured_thz',9)} THz | Error: {number('error_ghz',6)} GHz"
+        self.values.setText(f"MDT voltage: {number('voltage_v',6)} V | Raw peak: {number('raw_thz',9)} THz | Fitted peak: {number('fit_thz',9)} THz | PID mean: {number('measured_thz',9)} THz | Error: {number('error_ghz',6)} GHz"
             + (' | Traces: '+str(self.readouts['batch_collected'])+'/'+str(self.readouts.get('batch_size','?')) if 'batch_collected' in self.readouts else ''))
-        sample=data.get('samples',0)
-        if sample and sample!=self.last_sample:
-            self.last_sample=sample;self.history.append((time.monotonic(),self.readouts.get('voltage_v',float('nan')),data.get('raw_mean_thz') if data.get('raw_mean_thz') is not None else float('nan'),data.get('fit_mean_thz') if data.get('fit_mean_thz') is not None else float('nan')))
+        # Progress snapshots retain previous fields during HOLD/status events.
+        # Only a new completed OSA trace should append a graph point.
+        phase=data.get('phase','')
+        sample=data.get('request_id') or data.get('samples',0)
+        is_trace=phase=='AVERAGING' or phase.startswith('RUNNING') or not phase
+        if is_trace and sample and sample!=self.last_sample:
+            self.last_sample=sample;self.history.append((time.monotonic(),self.readouts.get('voltage_v',float('nan')),data.get('raw_thz') if data.get('raw_thz') is not None else float('nan'),data.get('fit_thz') if data.get('fit_thz') is not None else float('nan')))
             if self.history_origin is None:self.history_origin=self.history[0][0]
             t=[r[0]-self.history_origin for r in self.history]
             self.voltage_line.set_data(t,[r[1] for r in self.history]);self.frequency_line.set_data(t,[r[2] for r in self.history]);self.fitted_frequency_line.set_data(t,[r[3] for r in self.history])

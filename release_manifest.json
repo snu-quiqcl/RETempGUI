@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "PID raw and fitted frequency display",
+  "revision_note": "PID per-trace live display",
   "files": [
     {
       "path": ".gitattributes",
@@ -1744,8 +1744,8 @@
     },
     {
       "path": "labremote/ui/pid_tab.py",
-      "bytes": 9644,
-      "sha256": "2e6cdb10c86dcc5a03dcf7b382caf5d13f6ffc479d067079b2bb1ee4d334136c"
+      "bytes": 9889,
+      "sha256": "a1ebdcdba70c456c50c28a85697eeb1f71e3339783be1ac9fea062616bf77ddf"
     },
     {
       "path": "labremote/ui/pulse_experiment_tab.py",
