@@ -159,6 +159,10 @@ class MotorScanRunner(WorkflowTask):
         axes.set_xlabel('X position (um)',color='black');axes.set_ylabel('Y position (um)',color='black')
         colorbar=figure.colorbar(image,ax=axes);colorbar.set_label('PMT counts (mean)',color='black');colorbar.ax.tick_params(colors='black')
         if fit and 'error' not in fit:
+            from labremote.devices.fpga.scan_model import ellipse_geometry
+            major,minor,angle=ellipse_geometry(fit)
+            title+=("\n" if title else "")+f'Major MFD={major:.3f} µm, Minor MFD={minor:.3f} µm, θ={angle:.2f}°'
+            if not fit.get('angle_reliable',True):title+=' (angle uncertain)'
             axes.plot(fit['x0_um'],fit['y0_um'],'r+')
-            axes.add_patch(Ellipse((fit['x0_um'],fit['y0_um']),fit['coupling_mfd_x_um'],fit['coupling_mfd_y_um'],fill=False,edgecolor='white'))
+            axes.add_patch(Ellipse((fit['x0_um'],fit['y0_um']),major,minor,angle=angle,fill=False,edgecolor='white'))
         axes.set_title(title,color='black');figure.tight_layout();figure.savefig(folder/filename,dpi=160)

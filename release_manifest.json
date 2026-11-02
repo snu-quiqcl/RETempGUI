@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Single oven 399 shutter: output ON then open, close before current ramp down",
+  "revision_note": "Rotated Gaussian MFD fitting, principal axes and angle display",
   "files": [
     {
       "path": ".gitattributes",
@@ -93,6 +93,11 @@
       "sha256": "1bd8ee86c0525a269e1b9ae5a493fb1ad54a02d985be4ad52b05261681b2b851"
     },
     {
+      "path": "docs/MOTOR_BACKLASH_KO.md",
+      "bytes": 3524,
+      "sha256": "c3ca8b3605455ea43f3f3e0720c06a68dcff0bfb222d7a4722b5537cee1a0119"
+    },
+    {
       "path": "docs/OVEN_DETECTION_MODES_KO.md",
       "bytes": 7270,
       "sha256": "e0ce4e6e3640abc402662b33549e9852c858e57fdda2cd9d14bd85ad09f5e5a6"
@@ -116,6 +121,16 @@
       "path": "docs/RELEASE_REVIEW.md",
       "bytes": 5081,
       "sha256": "fb80080505dd558ce39127a4304950a57ec117de0473989f519ecb05ceb624f9"
+    },
+    {
+      "path": "docs/ROTATED_MFD_KO.md",
+      "bytes": 2253,
+      "sha256": "7814fe7daae410f0c9fd5172f7fa499078017958d3fc161a59e25ab58d4766dd"
+    },
+    {
+      "path": "docs/SCAN_GOTO_MAX_KO.md",
+      "bytes": 1961,
+      "sha256": "eaf01f09a9fd21360bd46f6eb48d56dda08143667b722795a458d187dc16df97"
     },
     {
       "path": "docs/WORKFLOW_CCD_FPGA_KO.md",
@@ -144,8 +159,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 29763,
-      "sha256": "6428150078e541da42e70ac67dc07b9c72b58dc333cb21ffa3145f2a6fbdf3ac"
+      "bytes": 30305,
+      "sha256": "747f7acf408f6c589c89a6bd1e7c203b9c554190558df464bbc7100dd54b0cad"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -479,8 +494,8 @@
     },
     {
       "path": "labremote/config/operations/motors/parameter_registry.yml",
-      "bytes": 861,
-      "sha256": "b60b635aed2f81829ae899adf5cdbbfc415eedc28eead8abff332aca559b8fd1"
+      "bytes": 1026,
+      "sha256": "7bb776959cce1905dee8fbf5d2680a8534e0b86a265ec92265be341b8a6c98d1"
     },
     {
       "path": "labremote/config/operations/mso7054/parameter_registry.yml",
@@ -754,8 +769,8 @@
     },
     {
       "path": "labremote/devices/fpga/scan_model.py",
-      "bytes": 3368,
-      "sha256": "411811a08a76bd5021eaf4c2751f67681ff9a8c09922513a2f38685295c68cf8"
+      "bytes": 6612,
+      "sha256": "a930496d5438c4e0e3886e8898b39cf58f2c3d043606345d9d45f86f323d72b5"
     },
     {
       "path": "labremote/devices/fpga/sequence_file.py",
@@ -1549,8 +1564,8 @@
     },
     {
       "path": "labremote/runtime/motor_scan_runner.py",
-      "bytes": 12475,
-      "sha256": "57fec7b70bc870f3fa8be43e6b20893bfaa583a52d150c821a377ec8437ca860"
+      "bytes": 12775,
+      "sha256": "c0925489ee9731d7ce0aebfa4c7ecb104769a85169ec8c5631acdcc9f0645b70"
     },
     {
       "path": "labremote/runtime/network.py",
@@ -1609,8 +1624,8 @@
     },
     {
       "path": "labremote/runtime/workflow_runner.py",
-      "bytes": 7514,
-      "sha256": "d2958b27716eace522bd5b1d39fba0b010dd9534e6518d554bab023381743b5c"
+      "bytes": 7535,
+      "sha256": "92f9af885666676ee482e096f86da2dea5b2f4b990564cedd0f72fe17066ae26"
     },
     {
       "path": "labremote/sequence_examples/pmt_exposure.py",
@@ -1684,13 +1699,13 @@
     },
     {
       "path": "labremote/ui/motor_scan_tab.py",
-      "bytes": 20788,
-      "sha256": "2f4f1a51f9891f0ce119ee781ddb9462551b08250e7004e21a5ad3407a842b15"
+      "bytes": 26225,
+      "sha256": "88dc26d9e2689ccaafdc8a9d69d89109c3d11ea943d6aaeae726dbf811c29807"
     },
     {
       "path": "labremote/ui/motor_tab.py",
-      "bytes": 9032,
-      "sha256": "14bf0ef021ba36cca5880b4ae55295f654f47a5e71e2a85ffc973f067e8e3cc3"
+      "bytes": 13596,
+      "sha256": "47ecd62f560b25830e773fcd22a4452b5a60ea7534225bd5ec46fafc369af4c7"
     },
     {
       "path": "labremote/ui/pid_tab.py",

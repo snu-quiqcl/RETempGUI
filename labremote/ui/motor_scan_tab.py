@@ -22,7 +22,8 @@ class MotorScanTab(QtWidgets.QWidget):
         self.run_id=None;self.data=None;self.fields={};self.latest_state={};self.z_values=[];self.fit_artists=[]
         self.title,self.defaults=SCAN_TABS[number-1]
         self.position_labels={};self.manual_move=None
-        self.zoom_selector=None
+        self.zoom_selector=None;self.goto_task=None;self.scan_axes={};self.scan_scales={};self.scan_identities={}
+        self.manual_label="Z move completed"
         cfg=load_device_config('fpga',getattr(parent,'name',None) or worker.name or 'fpga_local')['scan_defaults']
         self.scales={axis+'_um_per_unit':cfg[axis+'_um_per_unit'] for axis in 'xyz'}
         root=QtWidgets.QVBoxLayout(self);root.setContentsMargins(6,6,6,6);root.setSpacing(4)
@@ -35,7 +36,7 @@ class MotorScanTab(QtWidgets.QWidget):
         self.mfd_axes=self.mfd_figure.add_subplot(111);self.mfd_axes.set_facecolor('#101a2b')
         self.mfd_axes.set_xlabel('Z position (µm)',color='#dce5f4');self.mfd_axes.set_ylabel('MFD (µm)',color='#dce5f4')
         self.mfd_axes.tick_params(colors='#dce5f4');self.mfd_axes.grid(alpha=.2)
-        self.mfd_lines=[self.mfd_axes.plot([],[],style,label=label)[0] for style,label in [('o-','MFD X'),('s-','MFD Y')]]
+        self.mfd_lines=[self.mfd_axes.plot([],[],style,label=label)[0] for style,label in [('o-','Major MFD'),('s-','Minor MFD')]]
         self.mfd_axes.legend();self.mfd_figure.subplots_adjust(left=.12,right=.97,bottom=.36,top=.9)
         root.addWidget(self.mfd_canvas);self.mfd_canvas.hide()
         plane_line=QtWidgets.QHBoxLayout();plane_line.setSpacing(6);root.addLayout(plane_line)
@@ -44,6 +45,12 @@ class MotorScanTab(QtWidgets.QWidget):
         plane_line.addWidget(QtWidgets.QLabel('View Z'));plane_line.addWidget(self.view_plane);plane_line.addWidget(self.follow_z)
         self.fit_label=QtWidgets.QLabel('MFD: fit after a completed scan');self.fit_label.setWordWrap(True)
         plane_line.addWidget(self.fit_label,1)
+        self.zoom_btn=QtWidgets.QPushButton('Drag zoom');self.zoom_btn.setCheckable(True);self.zoom_btn.setChecked(True);plane_line.addWidget(self.zoom_btn)
+        self.zoom_btn.toggled.connect(lambda active:self.zoom_selector.set_active(active) if self.zoom_selector is not None else None)
+        self.goto_max_btn=QtWidgets.QPushButton('Go to Max');plane_line.addWidget(self.goto_max_btn)
+        self.goto_max_btn.clicked.connect(self.go_to_max)
+        self.goto_max_btn.setToolTip('Move to the measured global maximum (all Z planes); zoom does not restrict the search')
+        self.canvas.mpl_connect('button_press_event',lambda event:self.reset_xy_zoom() if event.dblclick and event.button==1 else None)
         self.reset_zoom_btn=QtWidgets.QPushButton('Reset XY zoom');plane_line.addWidget(self.reset_zoom_btn)
         self.reset_zoom_btn.clicked.connect(self.reset_xy_zoom)
         self.canvas.setToolTip('Left-drag to zoom XY; Reset XY zoom restores the full scan')
@@ -91,7 +98,7 @@ class MotorScanTab(QtWidgets.QWidget):
         browse=QtWidgets.QPushButton('Save folder');line.addWidget(browse);browse.clicked.connect(self.browse)
         self.start_btn=QtWidgets.QPushButton('Start scan');self.stop_btn=QtWidgets.QPushButton('Stop / save partial')
         line.addWidget(self.start_btn);line.addWidget(self.stop_btn)
-        self.start_btn.clicked.connect(self.start);self.stop_btn.clicked.connect(lambda:self.api.stop_scan(self.number))
+        self.start_btn.clicked.connect(self.start);self.stop_btn.clicked.connect(self.stop_motion)
         note=QtWidgets.QLabel('Absolute coordinates · 1000 µm = 1 mm · X ascends each row · No automatic return')
         settings.addWidget(note)
         self.config_widgets=[self.load_btn,self.z_enabled,self.channel,self.directory,browse,*self.fields.values()]
@@ -138,7 +145,7 @@ class MotorScanTab(QtWidgets.QWidget):
             if self.isVisible() and not self.reserved(api) and not api.worker.has_requests():
                 api.status()
         if self.manual_move is not None and self.manual_move.done.is_set():
-            self.status.setText(str(self.manual_move.error) if self.manual_move.error else 'Z move completed')
+            self.status.setText(str(self.manual_move.error) if self.manual_move.error else self.manual_label)
             self.manual_move=None
         self.controls()
 
@@ -148,7 +155,10 @@ class MotorScanTab(QtWidgets.QWidget):
         moving=self.manual_move is not None and not self.manual_move.done.is_set()
         ready=all(self.available(api) and not self.reserved(api) for api in motors)
         self.start_btn.setEnabled(not running and not moving and ready and not self.worker.waveform_runner.running() and self.worker.ps is not None)
-        self.stop_btn.setEnabled(running)
+        self.stop_btn.setEnabled(running or moving)
+        max_axes='xyz' if self.z_values else 'xy'
+        max_apis=[self.motor_api(a) for a in max_axes]
+        self.goto_max_btn.setEnabled(not running and not moving and self.data is not None and bool(np.isfinite(self.data).any()) and all(self.available(a) and not self.reserved(a) for a in max_apis))
         for field in self.config_widgets:field.setEnabled(not running)
         for key in ('z_start_um','z_stop_um','z_step_um'):self.fields[key].setEnabled(not running and self.z_enabled.isChecked())
         z=self.motor_api('z')
@@ -162,6 +172,7 @@ class MotorScanTab(QtWidgets.QWidget):
             if not self.available(api) or self.reserved(api) or self.worker.scan_runners[self.number].running():
                 raise RuntimeError('Connect Z motor and stop its scan before moving')
             if self.manual_move is not None and not self.manual_move.done.is_set():return
+            self.manual_label='Z move completed'
             target=self.z_target.value()/self.scales['z_um_per_unit']
             def move(worker):
                 # Recheck at execution, in case a workflow claimed the motor after the click.
@@ -206,6 +217,50 @@ class MotorScanTab(QtWidgets.QWidget):
             self.status.setText('Scan settings loaded: '+str(path));self.controls()
         except Exception as exc:self.status.setText('Cannot load scan settings: '+str(exc))
 
+    def stop_motion(self):
+        self.api.stop_scan(self.number)
+        if self.goto_task is not None and self.goto_task.running():self.goto_task.cancel()
+        elif self.manual_move is not None:self.manual_move.request_cancel()
+
+    def maximum_target(self):
+        if self.data is None or not np.isfinite(self.data).any():raise ValueError('No finite measured scan points')
+        index=np.unravel_index(np.argmax(np.where(np.isfinite(self.data),self.data,-np.inf)),self.data.shape)
+        indices=dict(zip('zyx' if self.z_values else 'yx',index))
+        target={a:float(self.scan_axes[a][i]) for a,i in indices.items()}
+        if not all(math.isfinite(v) for v in target.values()):raise ValueError('Invalid scan coordinates')
+        return target,float(self.data[index])
+
+    def go_to_max(self):
+        try:
+            from labremote.runtime.workflow_runner import WorkflowTask,_TASK_LOCK
+            target,value=self.maximum_target()
+            axes=[a for a in 'zxy' if a in target]
+            apis={a:self.motor_api(a) for a in axes}
+            with _TASK_LOCK:
+                if self.worker.scan_runners[self.number].running() or (self.manual_move is not None and not self.manual_move.done.is_set()):raise RuntimeError('Stop scan/movement before Go to Max')
+                for a,api in apis.items():
+                    if not self.available(api) or self.reserved(api):raise RuntimeError('Connect idle '+a.upper()+' motor first')
+                    if api.worker._execution_device!=self.scan_identities.get(a):raise RuntimeError('Motor connection changed since scan; scan again before Go to Max')
+                if len({api.worker._execution_device for api in apis.values()})!=len(apis):raise RuntimeError('Target axes must use distinct motors')
+                if self.goto_task is not None:self.goto_task.join()
+                task=WorkflowTask(apis[axes[0]].worker,'MOTOR_GOTO_MAX');self.goto_task=task
+                native={a:target[a]/self.scan_scales[a+'_um_per_unit'] for a in axes}
+                def execute():
+                    from labremote.config.device_config import load_device_config
+                    # Validate every target and motor before moving the first axis.
+                    for a in axes:
+                        limits=load_device_config('motors',apis[a].worker.name)['limits']
+                        if not limits['min_position']<=native[a]<=limits['max_position']:raise ValueError('Maximum outside '+a.upper()+' travel limits')
+                        status=task.call(device_api(apis[a].worker,group=task.group).status())
+                        if status.get('online') is False or status.get('status') not in ('standby','completed'):raise RuntimeError('Open and stop all target motors first')
+                    for a in axes:
+                        task.check();task.call(device_api(apis[a].worker,group=task.group).move(native[a]))
+                    return {'target_um':target,'counts':value}
+                self.manual_label='Go to Max completed: '+', '.join(f'{a.upper()}={target[a]:.3f} µm' for a in axes)
+                self.manual_move=task.launch(execute,[apis[a].worker for a in axes],{'target_um':target,'counts':value,'scan':self.number})
+            self.status.setText('Moving to measured maximum: '+str(target));self.controls()
+        except Exception as exc:self.status.setText('Go to Max: '+str(exc))
+
     def zoom_xy(self,press,release):
         if self.data is None or any(v is None for v in (press.xdata,press.ydata,release.xdata,release.ydata)):return
         left,right,bottom,top=self.image.get_extent()
@@ -240,6 +295,9 @@ class MotorScanTab(QtWidgets.QWidget):
         self.latest_state=state
         if self.run_id!=run_id and 'xs' in state:
             self.run_id=run_id;xs=state['xs'];ys=state['ys'];self.z_values=state.get('zs',[])
+            self.scan_axes={'x':list(xs),'y':list(ys),'z':list(self.z_values)}
+            self.scan_scales={**self.scales,**{k:v for k,v in getattr(runner,'settings',{}).items() if k in self.scales}}
+            self.scan_identities={a:self.motor_api(a).worker._execution_device for a in ('xyz' if self.z_values else 'xy') if self.motor_api(a) is not None}
             shape=(len(self.z_values),len(ys),len(xs)) if self.z_values else (len(ys),len(xs))
             self.data=np.full(shape,np.nan)
             self.mfd_canvas.setVisible(bool(self.z_values))
@@ -254,7 +312,8 @@ class MotorScanTab(QtWidgets.QWidget):
             blank=self.data[0] if self.z_values else self.data
             self.image=self.axes.imshow(np.ma.masked_invalid(blank),origin='lower',aspect='equal',extent=[xs[0]-dx/2,xs[-1]+dx/2,ys[0]-dy/2,ys[-1]+dy/2])
             from matplotlib.widgets import RectangleSelector
-            self.zoom_selector=RectangleSelector(self.axes,self.zoom_xy,useblit=False,button=[1],minspanx=5,minspany=5,spancoords='pixels',interactive=False)
+            self.zoom_selector=RectangleSelector(self.axes,self.zoom_xy,useblit=False,button=[1],minspanx=5,minspany=5,spancoords='pixels',interactive=False,props={'facecolor':'#63b3ff','edgecolor':'white','alpha':.25,'fill':True})
+            self.zoom_selector.set_active(self.zoom_btn.isChecked())
             colorbar=self.figure.colorbar(self.image,ax=self.axes);colorbar.set_label('PMT counts (mean)',color='#dce5f4');colorbar.ax.tick_params(colors='#dce5f4')
             self.axes.set_xlabel('X position (um)',color='#dce5f4');self.axes.set_ylabel('Y position (um)',color='#dce5f4');self.figure.subplots_adjust(left=.10,right=.88,bottom=.12,top=.94)
         if self.data is not None and state.get('point') is not None:
@@ -282,8 +341,11 @@ class MotorScanTab(QtWidgets.QWidget):
             from matplotlib.patches import Ellipse
             if 'error' in fit:lines.append('Elliptical fit unavailable: '+fit['error'])
             else:
-                lines.append(f"Elliptical MFD: X={fit['coupling_mfd_x_um']:.3f} µm, Y={fit['coupling_mfd_y_um']:.3f} µm; R²={fit['r_squared']:.4f}")
-                artist=Ellipse((fit['x0_um'],fit['y0_um']),fit['coupling_mfd_x_um'],fit['coupling_mfd_y_um'],fill=False,edgecolor='white')
+                from labremote.devices.fpga.scan_model import ellipse_geometry
+                major,minor,angle=ellipse_geometry(fit)
+                angle_text=f'{angle:.2f}°' if fit.get('angle_reliable',True) else f'{angle:.2f}° (uncertain)'
+                lines.append(f"MFD: Major={major:.3f} µm, Minor={minor:.3f} µm; θ={angle_text}; R²={fit['r_squared']:.4f}")
+                artist=Ellipse((fit['x0_um'],fit['y0_um']),major,minor,angle=angle,fill=False,edgecolor='white')
                 self.axes.add_patch(artist);self.fit_artists.append(artist);lines.extend(fit['warnings'])
         self.fit_label.setText('\n'.join(lines) if lines else 'Partial scan: fit skipped' if state.get('status') in ('failed','cancelled') else 'MFD: measuring')
         self.render_mfd()
@@ -292,7 +354,8 @@ class MotorScanTab(QtWidgets.QWidget):
     def render_mfd(self):
         if not self.z_values:return
         fits={entry['iz']:entry['fit'] for entry in self.latest_state.get('z_fits',[])}
-        for line,key in zip(self.mfd_lines,('coupling_mfd_x_um','coupling_mfd_y_um')):
-            values=[fits.get(i,{}).get(key,np.nan) for i in range(len(self.z_values))]
+        from labremote.devices.fpga.scan_model import ellipse_geometry
+        for index,line in enumerate(self.mfd_lines):
+            values=[ellipse_geometry(fits[i])[index] if i in fits and 'error' not in fits[i] else np.nan for i in range(len(self.z_values))]
             line.set_data(self.z_values,values)
         self.mfd_axes.relim();self.mfd_axes.autoscale_view();self.mfd_canvas.draw_idle()

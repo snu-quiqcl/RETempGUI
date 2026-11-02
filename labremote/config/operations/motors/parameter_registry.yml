@@ -44,3 +44,12 @@ parameters:
   readable: false
   verification: none
   monitor: false
+
+- pattern: motors.backlash
+  kind: number
+  writable: true
+  verification: readback
+  minimum: -12
+  maximum: 12
+  abs_tolerance: 0.00003
+  monitor: false

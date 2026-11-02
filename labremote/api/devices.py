@@ -586,6 +586,18 @@ class FPGAAPI(DeviceAPI):
 
 
 class MotorAPI(DeviceAPI):
+    def read_backlash(self):
+        return self.acquire('backlash')
+
+    def set_backlash(self, value):
+        def execute(w):
+            from labremote.runtime.io import Context
+            state=Context().acquire(w.ps.status)
+            if not state.get('online') or state.get('status')!='standby':
+                raise RuntimeError('Open and stop motor before changing backlash')
+            return Context().assign(w.ps.backlash,value)
+        return self._submit('BACKLASH_SET',execute,arguments={'backlash_mm':value})
+
     def connect_motor(self, host, port, name):
         return self.connect(host, port, name)
 

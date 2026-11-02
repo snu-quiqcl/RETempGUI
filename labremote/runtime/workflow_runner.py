@@ -45,7 +45,7 @@ def motor_identity(worker):
 def conflicting_scan(participants):
     keys={motor_identity(w) for w in participants}-{None}
     tasks={task for w in participants for task in w._background_tasks}
-    return any(task.label=='MOTOR_SCAN' and task.running() and
+    return any(task.label in ('MOTOR_SCAN','MOTOR_GOTO_MAX') and task.running() and
                keys.intersection(motor_identity(w) for w in task.participants)
                for task in tasks)
 
