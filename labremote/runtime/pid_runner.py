@@ -27,7 +27,7 @@ def validate_settings(settings):
     return c
 
 
-def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float, *, include_curve=False):
+def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float, *, include_curve=False, diagnostic_fit=False):
     import numpy as np
     x = np.asarray(spectrum.get("frequency_thz", []), dtype=float)
     y = np.asarray(spectrum.get("power_dbm", []), dtype=float)
@@ -47,7 +47,8 @@ def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float, *, in
     if snr < min_snr:
         raise InvalidSpectrum(f"Insufficient SNR: {snr:.2f} dB")
     fit = None
-    if use_fit:
+    fit_error = None
+    if use_fit or diagnostic_fit:
         try:
             from scipy.optimize import curve_fit
             import numpy as np
@@ -67,8 +68,10 @@ def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float, *, in
             if not np.isfinite(pars).all():
                 raise ValueError("Fit returned non-finite values")
         except Exception as exc:
-            raise InvalidSpectrum(f"Fit required but unavailable: {exc}") from exc
-    result = {"raw_thz": raw, "fit_thz": fit, "peak_dbm": peak,
+            fit = None
+            fit_error = str(exc)
+            if use_fit: raise InvalidSpectrum(f"Fit required but unavailable: {exc}") from exc
+    result = {"raw_thz": raw, "fit_thz": fit, "fit_error": fit_error, "peak_dbm": peak,
             "noise_floor_dbm": floor, "snr_db": snr,
             "selected_thz": fit if use_fit else raw}
     if include_curve and use_fit:
@@ -81,24 +84,29 @@ class PIDMath:
     def __init__(self,c,voltage,now):
         self.c=dict(c);self.initial=self.current=voltage
         self.last_dt=self.last_out=now;self.integral=0.;self.previous=None;self.derivative=0.
-        self.batch=[];self.gap=False
+        self.batch=[];self.raw_batch=[];self.fit_batch=[];self.gap=False
 
     def reset_batch(self):
-        self.batch.clear();self.previous=None;self.derivative=0.;self.gap=True
+        self.batch.clear();self.raw_batch.clear();self.fit_batch.clear();self.previous=None;self.derivative=0.;self.gap=True
 
     def update(self,c):
         if any(self.c[k]!=c[k] for k in ('target_thz','kp_v_per_ghz','ki_v_per_ghz_s','kd_v_s_per_ghz')):self.reset_batch()
         self.c=dict(c)
 
     def feed(self,spectrum,now):
-        c=self.c;peak=estimate_peak(spectrum,c['use_fit'],c['minimum_snr_db'])
+        c=self.c;peak=estimate_peak(spectrum,c['use_fit'],c['minimum_snr_db'],diagnostic_fit=True)
         if peak['peak_dbm']<c['min_peak_dbm']:raise InvalidSpectrum('Peak below minimum power')
         single_error=(c['target_thz']-peak['selected_thz'])*1000
         if not math.isfinite(single_error) or abs(single_error)>c['capture_ghz']:raise InvalidSpectrum('Outside PID capture range')
         self.batch.append(peak['selected_thz']);measured=sum(self.batch)/len(self.batch)
-        data=dict(**peak,batch_collected=len(self.batch),batch_size=c['average_count'],measured_thz=measured)
+        self.raw_batch.append(peak['raw_thz']);self.fit_batch.append(peak['fit_thz'])
+        raw_mean=sum(self.raw_batch)/len(self.raw_batch)
+        fit_mean=(sum(self.fit_batch)/len(self.fit_batch)
+                  if all(value is not None and math.isfinite(value) for value in self.fit_batch) else None)
+        data=dict(**peak,batch_collected=len(self.batch),batch_size=c['average_count'],measured_thz=measured,
+                  raw_mean_thz=raw_mean,fit_mean_thz=fit_mean)
         if len(self.batch)<c['average_count']:return None,data
-        self.batch.clear();err=(c['target_thz']-measured)*1000
+        self.batch.clear();self.raw_batch.clear();self.fit_batch.clear();err=(c['target_thz']-measured)*1000
         dt=0. if self.gap else max(.001,now-self.last_dt);self.gap=False;self.last_dt=now
         deadband=abs(err)<=c['deadband_ghz']
         if deadband:err=0.
@@ -151,7 +159,30 @@ class PIDRunner(WorkflowTask):
         if time.monotonic()-self.last_valid>c['max_gap_s']:raise RuntimeError('No valid OSA spectrum within maximum gap; voltage HOLD')
         return source
 
+    def publish(self, **changes):
+        log = getattr(self, '_csv_log', None)
+        if log is not None:
+            log.write(changes, self.current_config)
+            changes['log_path'] = str(log.path)
+        return super().publish(**changes)
+
     def run_pid(self):
+        from labremote.runtime.pid_log import PIDLog
+        log = PIDLog(self.worker.name, self.current_config)
+        self._csv_log = log
+        outcome = 'STOPPED'
+        try:
+            log.write({'phase': 'START'}, self.current_config)
+            return self._run_pid()
+        except BaseException as error:
+            outcome = type(error).__name__ + ': ' + str(error)
+            raise
+        finally:
+            self._csv_log = None
+            try: log.write({'phase': 'END', 'outcome': outcome}, self.current_config)
+            finally: log.close()
+
+    def _run_pid(self):
         from labremote.api.devices import device_api
         api=device_api(self.worker,group=self.group)
         c=dict(self.current_config);source=self.osa_worker.feedback_snapshot(include_spectrum=False)
@@ -180,10 +211,11 @@ class PIDRunner(WorkflowTask):
                 math_pid.reset_batch();self.publish(phase='HOLD: '+str(exc),batch_collected=0);continue
             self.last_valid=frame['acquired_at']
             if proposed is None:
-                self.publish(phase='AVERAGING',**data);continue
+                self.publish(phase='AVERAGING',voltage_v=math_pid.current,voltage_before_v=math_pid.current,request_id=last_id,**data);continue
             self.guard()
+            voltage_before = math_pid.current
             if abs(proposed-math_pid.current)>.001:
                 actual=self.call(api.pid_step(c['axis'],proposed,expected=math_pid.current,max_delta=data['max_change_v'],minimum=c['min_v'],maximum=c['max_v'],guard=self.guard))
                 math_pid.current=actual;math_pid.last_out=now
             samples+=1
-            self.publish(phase='RUNNING' if data['error_ghz'] else 'RUNNING: deadband',voltage_v=math_pid.current,samples=samples,request_id=last_id,**data)
+            self.publish(phase='RUNNING' if data['error_ghz'] else 'RUNNING: deadband',voltage_v=math_pid.current,voltage_before_v=voltage_before,samples=samples,request_id=last_id,**data)

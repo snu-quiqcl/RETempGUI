@@ -210,3 +210,13 @@ parameters:
   writable: false
   verification: none
   monitor: false
+
+- pattern: mso7054.ch*_impedance
+  kind: string
+  writable: true
+  verification: readback
+  choices: [OMEG, FIFT]
+  readback_parser: token
+  readback_aliases:
+    FIFTY: FIFT
+  monitor: false

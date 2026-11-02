@@ -27,6 +27,7 @@ class DS1052ETab(QtWidgets.QWidget):
     slopes=('POS','NEG')
     sweeps=('AUTO','NORM','SING')
     shared_waveform_path=None
+    graph_display_controls=True
     log_message=QtCore.pyqtSignal(str)
 
     def __init__(self,name,host,port,parent=None):
@@ -176,45 +177,46 @@ class DS1052ETab(QtWidgets.QWidget):
         label=QtWidgets.QLabel('Frequency/Vpp are estimates measured by the oscilloscope, not settable output values. '
            'Read settings updates the values; Monitoring refreshes settings every 60 seconds.')
         label.setWordWrap(True)
-        g.addWidget(label,2,0,1,5)
+        g.addWidget(label,len(self.channels),0,1,5)
         settings.addWidget(measures,1,1)
         root.addLayout(settings)
 
-        viewing=QtWidgets.QGroupBox('Graph display mode (does NOT change the scope)')
-        g=QtWidgets.QGridLayout(viewing)
-        self.plot_mode=QtWidgets.QComboBox()
-        self.plot_mode.addItems((
-            'Follow physical V/div (8 vertical divisions)',
-            'Fit each waveform (autoscale)',
-            'Manual graph limits',
-        ))
-        self.plot_mode.currentIndexChanged.connect(lambda _index:self._render())
-        g.addWidget(QtWidgets.QLabel('Graph mode'),0,0)
-        g.addWidget(self.plot_mode,0,1,1,3)
-        note=QtWidgets.QLabel(
-            'Follow V/div reproduces the oscilloscope vertical display. '
-            'Fit waveform rescales the graph to the observed voltage and can '
-            'hide V/div changes.')
-        note.setWordWrap(True)
-        g.addWidget(note,1,0,1,4)
-        self.x_min=self._text('-0.006');self.x_max=self._text('0.006')
-        self.y_min={ch:self._text('-4') for ch in self.channels}
-        self.y_max={ch:self._text('4') for ch in self.channels}
-        self.plot_apply=QtWidgets.QPushButton('Apply manual graph limits')
-        self.plot_apply.clicked.connect(self._render)
-        g.addWidget(QtWidgets.QLabel('X min (s)'),2,0)
-        g.addWidget(self.x_min,2,1)
-        g.addWidget(QtWidgets.QLabel('X max (s)'),2,2)
-        g.addWidget(self.x_max,2,3)
-        for row,ch in enumerate(self.channels,start=3):
-            for col,title in ((0,ch+' Y min (V)'),(2,ch+' Y max (V)')):
-                lab=QtWidgets.QLabel(title)
-                lab.setStyleSheet('color: '+COLORS[ch]+';')
-                g.addWidget(lab,row,col)
-            g.addWidget(self.y_min[ch],row,1)
-            g.addWidget(self.y_max[ch],row,3)
-        g.addWidget(self.plot_apply,3+len(self.channels),0,1,2)
-        root.addWidget(viewing)
+        if self.graph_display_controls:
+            viewing=QtWidgets.QGroupBox('Graph display mode (does NOT change the scope)')
+            g=QtWidgets.QGridLayout(viewing)
+            self.plot_mode=QtWidgets.QComboBox()
+            self.plot_mode.addItems((
+                'Follow physical V/div (8 vertical divisions)',
+                'Fit each waveform (autoscale)',
+                'Manual graph limits',
+            ))
+            self.plot_mode.currentIndexChanged.connect(lambda _index:self._render())
+            g.addWidget(QtWidgets.QLabel('Graph mode'),0,0)
+            g.addWidget(self.plot_mode,0,1,1,3)
+            note=QtWidgets.QLabel(
+                'Follow V/div reproduces the oscilloscope vertical display. '
+                'Fit waveform rescales the graph to the observed voltage and can '
+                'hide V/div changes.')
+            note.setWordWrap(True)
+            g.addWidget(note,1,0,1,4)
+            self.x_min=self._text('-0.006');self.x_max=self._text('0.006')
+            self.y_min={ch:self._text('-4') for ch in self.channels}
+            self.y_max={ch:self._text('4') for ch in self.channels}
+            self.plot_apply=QtWidgets.QPushButton('Apply manual graph limits')
+            self.plot_apply.clicked.connect(self._render)
+            g.addWidget(QtWidgets.QLabel('X min (s)'),2,0)
+            g.addWidget(self.x_min,2,1)
+            g.addWidget(QtWidgets.QLabel('X max (s)'),2,2)
+            g.addWidget(self.x_max,2,3)
+            for row,ch in enumerate(self.channels,start=3):
+                for col,title in ((0,ch+' Y min (V)'),(2,ch+' Y max (V)')):
+                    lab=QtWidgets.QLabel(title)
+                    lab.setStyleSheet('color: '+COLORS[ch]+';')
+                    g.addWidget(lab,row,col)
+                g.addWidget(self.y_min[ch],row,1)
+                g.addWidget(self.y_max[ch],row,3)
+            g.addWidget(self.plot_apply,3+len(self.channels),0,1,2)
+            root.addWidget(viewing)
         self._buttons()
 
     @staticmethod

@@ -340,6 +340,10 @@ class DS1052EAPI(DeviceAPI):
 
 
 class MSO7054API(DS1052EAPI):
+    def configure_impedance(self, channel, impedance):
+        from labremote.operation.mso7054.configure_impedance import configure_impedance
+        return self._submit('IMPEDANCE', lambda w: configure_impedance(w.ps, channel, impedance))
+
     def start_waveform(self,channels=('CH1','CH2','CH3','CH4'),*,interval_s=1.0):
         return self.worker.waveform_runner.start(channels,interval_s,self.group)
 

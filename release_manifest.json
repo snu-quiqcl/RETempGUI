@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Decay microsecond UI inputs",
+  "revision_note": "PID raw and fitted frequency display",
   "files": [
     {
       "path": ".gitattributes",
@@ -174,8 +174,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 30305,
-      "sha256": "747f7acf408f6c589c89a6bd1e7c203b9c554190558df464bbc7100dd54b0cad"
+      "bytes": 30551,
+      "sha256": "b76c4f474082ab783ac7b7526015ef7b3068ad3408c518bf300bf009a40c6c65"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -514,8 +514,8 @@
     },
     {
       "path": "labremote/config/operations/mso7054/parameter_registry.yml",
-      "bytes": 4400,
-      "sha256": "b4cd7a695f61ad5a95e9b62ba395446662c1ad2308ce639c1502b7bcc3968131"
+      "bytes": 4603,
+      "sha256": "780dd40ae31163ea1a07975f2dad6d68796a314e78035c0d816123ac0c4f6880"
     },
     {
       "path": "labremote/config/operations/osa/parameter_registry.yml",
@@ -729,8 +729,8 @@
     },
     {
       "path": "labremote/devices/ds1052e/tab.py",
-      "bytes": 26789,
-      "sha256": "19b7a9d2ff23f5955da2d8713ea4f451ff6875974f48f749c428d0d82a32d8d7"
+      "bytes": 27020,
+      "sha256": "c00fbfaa903849a260d6353db562313f6498381bc6b1994082bdbb62a67ba887"
     },
     {
       "path": "labremote/devices/ds1052e/worker.py",
@@ -894,8 +894,8 @@
     },
     {
       "path": "labremote/devices/mso7054/tab.py",
-      "bytes": 1710,
-      "sha256": "ad003c029f3d2fb88e10859361d08b374324c325706b3423eab051fc231e5b41"
+      "bytes": 11466,
+      "sha256": "6744bbe180f2e84dec9cb947a3689ca2ad6c50ec5f9c36df015a43d40edf4cbe"
     },
     {
       "path": "labremote/devices/mso7054/worker.py",
@@ -1313,6 +1313,11 @@
       "sha256": "c47dc981001c3e9dc1d35ba1b97ec9e745d2bfa3cfd2fd5fb18fd19ecb305ec1"
     },
     {
+      "path": "labremote/operation/mso7054/configure_impedance.py",
+      "bytes": 590,
+      "sha256": "f3d15f2ef025254c1ff19b9095c3ccb85a99a589e00422831f8ee88d35fee512"
+    },
+    {
       "path": "labremote/operation/mso7054/configure_trigger.py",
       "bytes": 456,
       "sha256": "6074adddcbba779644c41672518390e94b3cd0c1a77443ef097b1f5782708400"
@@ -1608,9 +1613,14 @@
       "sha256": "a94f2c1d49577ae12509c844274aa3f0111a8adb59e344614c3731133421a18e"
     },
     {
+      "path": "labremote/runtime/pid_log.py",
+      "bytes": 1919,
+      "sha256": "8c7766aae087e65d5a001a89afb1e39a912a6df4c869df91379e80ae7f2d650a"
+    },
+    {
       "path": "labremote/runtime/pid_runner.py",
-      "bytes": 11649,
-      "sha256": "fa64ffeeecb7effb46c91b8f5f7aaad916df3405212d57c75faa24332982723b"
+      "bytes": 13357,
+      "sha256": "04170e92e379217eba680f6731580eafb29710897ea0245cd011a355abcbc951"
     },
     {
       "path": "labremote/runtime/recording.py",
@@ -1734,8 +1744,8 @@
     },
     {
       "path": "labremote/ui/pid_tab.py",
-      "bytes": 6997,
-      "sha256": "7df837dfe6648a81c9b60aac336dba4c838e3a60d7e09d5e4f113d76d7ccfd22"
+      "bytes": 9644,
+      "sha256": "2e6cdb10c86dcc5a03dcf7b382caf5d13f6ffc479d067079b2bb1ee4d334136c"
     },
     {
       "path": "labremote/ui/pulse_experiment_tab.py",
