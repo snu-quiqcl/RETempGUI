@@ -1,0 +1,1796 @@
+{
+  "project": "RETempGUI",
+  "revision_note": "Single oven 399 shutter: output ON then open, close before current ramp down",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 156,
+      "sha256": "94f64a5ac419824ed0e33824534f2442c3a6cc1f4afa2e80e70e02faab34d0a5"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 1339,
+      "sha256": "1ada0346b9c9c633d3c84ea868c52eb675ecf9dfc9a21a7c9c52d91e0955e1ff"
+    },
+    {
+      "path": "README.md",
+      "bytes": 17778,
+      "sha256": "3bd6bf6ddb9d683851ccfc6ea1ed0763f6e8a2f935f1e8d538680c75950ecc28"
+    },
+    {
+      "path": "constraints-tested.txt",
+      "bytes": 391,
+      "sha256": "c81d9a1bb6e81bb0bddd28811c3b528a04fecfd74674d20d523e49127f74b6e8"
+    },
+    {
+      "path": "docs/AUTO_MONITOR_KO.md",
+      "bytes": 2548,
+      "sha256": "a12b4660808904e527966020d9423b35e74dfd7f8f2d511cfb700efd5fa5658a"
+    },
+    {
+      "path": "docs/CCD_CONTROLS_KO.md",
+      "bytes": 6715,
+      "sha256": "489fc0850e563242e949fe641472a704999e40eecb5a1e64cb0810bbc5790bc8"
+    },
+    {
+      "path": "docs/CCD_GUIDE_KO.md",
+      "bytes": 9483,
+      "sha256": "6bd617f58fd16de9316ec31d4b762b5dcd168119aec3d834c80aac7999b0cd55"
+    },
+    {
+      "path": "docs/CONFIGURATION.md",
+      "bytes": 5275,
+      "sha256": "f41795ca4a8431143d5a7496b9c0c4d3ed9644aab2d2aa13ed818a99f5491773"
+    },
+    {
+      "path": "docs/DAILY_CHARACTERIZATION_KO.md",
+      "bytes": 21720,
+      "sha256": "90520e7c086e327d6125a46f6bbfaad4f70e91eb1af47e420d89205c13c45910"
+    },
+    {
+      "path": "docs/DECAY_KO.md",
+      "bytes": 6562,
+      "sha256": "3dfd07435b38a84bb151d7138e1fbfba82f09c10ba8d6b4954925ebf28354ccd"
+    },
+    {
+      "path": "docs/DEVICE_GUIDE_KO.md",
+      "bytes": 41070,
+      "sha256": "50a35562ba19991067acd050493348b48479e851e7bab862ab94442654e00ef4"
+    },
+    {
+      "path": "docs/EXPERIMENT_ARCHIVE_KO.md",
+      "bytes": 6886,
+      "sha256": "25165965456e4c7ec6a29d47a1bb15e22df420b2de7f82296713a970773d528f"
+    },
+    {
+      "path": "docs/EXPERIMENT_UI_KO.md",
+      "bytes": 4981,
+      "sha256": "e97d018c9ca423e34442f6c920d6a05d8b29aade58647d340f3eb69d752405b6"
+    },
+    {
+      "path": "docs/FLIP_DISPLAY_KO.md",
+      "bytes": 2301,
+      "sha256": "cc4c64b3e653c6517bd4f5e7b30148ea0f56f3b897580efc5a7d954006e075c9"
+    },
+    {
+      "path": "docs/FLIP_SETUP_KO.md",
+      "bytes": 6272,
+      "sha256": "c9a7c1af988768513531ae0488dd7e4620021bc4cb1ee4ef386ba272cc7a3354"
+    },
+    {
+      "path": "docs/FLIP_WINDOWS_KO.md",
+      "bytes": 3523,
+      "sha256": "7762e59bee1b49262654be1de12766b5f315f94208d8300c9d5444a31c0a206e"
+    },
+    {
+      "path": "docs/LOCAL_SETUP_KO.md",
+      "bytes": 7180,
+      "sha256": "71d00804e54ab8d0125b89a545dbf0ed66d3e9d7f2a353074c8ebb833d922571"
+    },
+    {
+      "path": "docs/MONITOR_KO.md",
+      "bytes": 2336,
+      "sha256": "1bd8ee86c0525a269e1b9ae5a493fb1ad54a02d985be4ad52b05261681b2b851"
+    },
+    {
+      "path": "docs/OVEN_DETECTION_MODES_KO.md",
+      "bytes": 7270,
+      "sha256": "e0ce4e6e3640abc402662b33549e9852c858e57fdda2cd9d14bd85ad09f5e5a6"
+    },
+    {
+      "path": "docs/OVEN_LOADING_KO.md",
+      "bytes": 10392,
+      "sha256": "cf1e83a92cfc9b0796a841c0f143606dfa2d362dbb82aa0565d20bd6ebfb7867"
+    },
+    {
+      "path": "docs/OVEN_REVIEW.md",
+      "bytes": 1783,
+      "sha256": "0a471da5d822631be83f1cc785f116f4121d4e4c007c8928fe86ecc2dc458963"
+    },
+    {
+      "path": "docs/PRIVACY_REVIEW.md",
+      "bytes": 2098,
+      "sha256": "4192ca22636e4f1fc04a74e8bb997962599aa8265cea177dcd302709f178c849"
+    },
+    {
+      "path": "docs/RELEASE_REVIEW.md",
+      "bytes": 5081,
+      "sha256": "fb80080505dd558ce39127a4304950a57ec117de0473989f519ecb05ceb624f9"
+    },
+    {
+      "path": "docs/WORKFLOW_CCD_FPGA_KO.md",
+      "bytes": 4664,
+      "sha256": "9b9bb2ac61f8a89e6f9a9f9bf1b5b0db3f4887290940e27f33a92a3cc7ebf80d"
+    },
+    {
+      "path": "docs/WORKFLOW_QUEUE_KO.md",
+      "bytes": 6778,
+      "sha256": "bca6fd80c0ee3058bf6d8e50b6e295ea2fa686475c168c9077d1a05824dc64ec"
+    },
+    {
+      "path": "lab_remote_gui.py",
+      "bytes": 151,
+      "sha256": "021cf8e32a125437c4fbcb20454657b30e03fba0540ed8fd7c4092343b926982"
+    },
+    {
+      "path": "labremote/__init__.py",
+      "bytes": 65,
+      "sha256": "936340ddd4d9c525cd4e8cee02e82b5145164bd617a1128d35826cf34e1936a7"
+    },
+    {
+      "path": "labremote/api/__init__.py",
+      "bytes": 55,
+      "sha256": "0242bba25a20ed2d5f4250763429a65557b6f73d36b04704129a90201239598b"
+    },
+    {
+      "path": "labremote/api/devices.py",
+      "bytes": 29763,
+      "sha256": "6428150078e541da42e70ac67dc07b9c72b58dc333cb21ffa3145f2a6fbdf3ac"
+    },
+    {
+      "path": "labremote/characterization/__init__.py",
+      "bytes": 60,
+      "sha256": "878de8ecaff2c79ae3358b28bae61bd025129b99aa0c01fcee2072485608d421"
+    },
+    {
+      "path": "labremote/characterization/archive.py",
+      "bytes": 5126,
+      "sha256": "52e84de36395f453dc372d1ee89d3085e5585b46265a17107334311e49b661b6"
+    },
+    {
+      "path": "labremote/characterization/config.py",
+      "bytes": 4855,
+      "sha256": "a0f2ed2b3f76f897aabd054868aca13cff2c83093f27356ba89a016fc52edf0c"
+    },
+    {
+      "path": "labremote/characterization/fluorescence.py",
+      "bytes": 2954,
+      "sha256": "924d3c86cab502f535ee4ddf7c60c119b3ff3f808b58132daed72cbedf5b77a0"
+    },
+    {
+      "path": "labremote/characterization/initialization_analysis.py",
+      "bytes": 3313,
+      "sha256": "b0c0082e875a8754257794a19406a8837c91f4121927f56d5962533685d14c8c"
+    },
+    {
+      "path": "labremote/characterization/initialization_sequence.py",
+      "bytes": 3475,
+      "sha256": "5a249b22c03e1931d09a3d76a446711d2af04ab5ffe363d2330f71689a0653fd"
+    },
+    {
+      "path": "labremote/characterization/live_pulse.py",
+      "bytes": 4582,
+      "sha256": "77490208fb138d1929bc3e0b1e6da899d8cf1d226d62c38e8ea7d7863869c875"
+    },
+    {
+      "path": "labremote/characterization/pulse_experiment.py",
+      "bytes": 10850,
+      "sha256": "e576b178c8a587631984319a2591dc8e9869f17383a0e64e1c87dfeef42a8bfc"
+    },
+    {
+      "path": "labremote/characterization/pulse_runner.py",
+      "bytes": 5909,
+      "sha256": "b63fa0c705aaf0b37977db9a7c67923118efd690ac0e8dc35932011d88ec1069"
+    },
+    {
+      "path": "labremote/characterization/rabi.py",
+      "bytes": 7569,
+      "sha256": "0b7d0bcd44878f3a82d4f13e544bfe2264ab90a137fffc5d7c2901cb77c4d40e"
+    },
+    {
+      "path": "labremote/characterization/rabi_runner.py",
+      "bytes": 5550,
+      "sha256": "5ba6159e128f93ec635c306d0035f1adfc2b7568e03332be6e2a19bfe17ef228"
+    },
+    {
+      "path": "labremote/characterization/rabi_sequence.py",
+      "bytes": 4410,
+      "sha256": "0ab6b59b362d6ca139a5274dd39f02bdba0d60a1ffcd5874df3f012d4c71998d"
+    },
+    {
+      "path": "labremote/characterization/ramsey_fit.py",
+      "bytes": 7439,
+      "sha256": "45e742214f64fa573d3eecc4768ea56a915233d47b8bed275ef9a895c1d4d706"
+    },
+    {
+      "path": "labremote/characterization/ramsey_sequence.py",
+      "bytes": 5151,
+      "sha256": "9d3cce1c1295623ad41ee7f4070789399d3c24d0857c8406effdc29a7ccbb627"
+    },
+    {
+      "path": "labremote/characterization/runner.py",
+      "bytes": 5590,
+      "sha256": "f8478ba003c8e1f472ecb5c0d45c82a2e98e29289fd7a05499a27576b9a0190c"
+    },
+    {
+      "path": "labremote/characterization/spam_sequence.py",
+      "bytes": 4406,
+      "sha256": "e7a99cf1e448575dee8a8233f47aebd8069ea3ff0af8a2ee907a244338d6bd5e"
+    },
+    {
+      "path": "labremote/config/__init__.py",
+      "bytes": 79,
+      "sha256": "8699729e40d7662ca386783d71a50ca83696b592157b6c42b4343630422a991b"
+    },
+    {
+      "path": "labremote/config/device_config.py",
+      "bytes": 7541,
+      "sha256": "de94f803aee41e9abfdd72a8b8723f7b4032e05160046b30c9fa2cd2a88d1568"
+    },
+    {
+      "path": "labremote/config/devices/anapico/device_config.yml",
+      "bytes": 572,
+      "sha256": "d7dd093a4c7c15ba9c59372df03eab7c786c6fbb0653e9616b76951fa3b1735f"
+    },
+    {
+      "path": "labremote/config/devices/connections.json",
+      "bytes": 4,
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f"
+    },
+    {
+      "path": "labremote/config/devices/dds4/device_config.yml",
+      "bytes": 59,
+      "sha256": "b110ec8219a040caba2d28f03798cc6da41267ab328a02472533dd358bc92d6a"
+    },
+    {
+      "path": "labremote/config/devices/ds1052e/device_config.yml",
+      "bytes": 83,
+      "sha256": "8cb5d1b593a3a61718421b755919e1ae9aeaa23c811d89ff5fbfcc722b129c55"
+    },
+    {
+      "path": "labremote/config/devices/flip/device_config.yml",
+      "bytes": 47,
+      "sha256": "a71eaeec32148050428e0774a64fec14f2e39b31d2c75ed3fb257cca8dbd8f1c"
+    },
+    {
+      "path": "labremote/config/devices/fpga/device_config.yml",
+      "bytes": 173,
+      "sha256": "964dfe1c13578e84b1e9b6b27163ec4ff4d65675cbb72e866afab3789499eb0a"
+    },
+    {
+      "path": "labremote/config/devices/keithley/device_config.yml",
+      "bytes": 319,
+      "sha256": "f78793e6b8fbbfacf288d4a3fe1d0dbefe507e0910608355517761d4f9a1e662"
+    },
+    {
+      "path": "labremote/config/devices/mdt/device_config.yml",
+      "bytes": 566,
+      "sha256": "1c9d2587e6e5045c203c799210d3f00e3009d7b24097ab319aa04e04acc4a22a"
+    },
+    {
+      "path": "labremote/config/devices/motors/device_config.yml",
+      "bytes": 596,
+      "sha256": "c06ab4cc85862531a139e683dbbad5ee14918ff95d34150613c271ee1087e533"
+    },
+    {
+      "path": "labremote/config/devices/mso7054/device_config.yml",
+      "bytes": 62,
+      "sha256": "bd3f3f53115e709fee5df4e3f0bdc8eb66196990d6fc37bfa0ab48e320db4e2d"
+    },
+    {
+      "path": "labremote/config/devices/osa/device_config.yml",
+      "bytes": 114,
+      "sha256": "305b977405cec9b8826180e6208e82f3662723a8c6dc72c10c32ea668466f38f"
+    },
+    {
+      "path": "labremote/config/devices/oven_psu/device_config.yml",
+      "bytes": 50,
+      "sha256": "9d05df128478e189702bb528a73607d5f64269dfb823ffcd9771f59bdb7af1f6"
+    },
+    {
+      "path": "labremote/config/devices/oven_relay/device_config.yml",
+      "bytes": 50,
+      "sha256": "9d05df128478e189702bb528a73607d5f64269dfb823ffcd9771f59bdb7af1f6"
+    },
+    {
+      "path": "labremote/config/devices/sg384/device_config.yml",
+      "bytes": 928,
+      "sha256": "86170fa0ac00e354738fbd6f637f388a7f2eeb44eb11ee5edac2009bc54cc1f2"
+    },
+    {
+      "path": "labremote/config/devices/thermotek/device_config.yml",
+      "bytes": 92,
+      "sha256": "08520e7fc12c0bc7bc9dc83b6f303c02e1520dae304af64135457403a48ebd39"
+    },
+    {
+      "path": "labremote/config/devices/windfreak/device_config.yml",
+      "bytes": 1496,
+      "sha256": "7dc4a58875349647f27776d95724bd18344d26a388716413fd3ac7226243e020"
+    },
+    {
+      "path": "labremote/config/equipment.py",
+      "bytes": 4240,
+      "sha256": "b4e454b2573020e1ae3d2bbaadb42beb805ca151c412285c9e82770e9b7c3409"
+    },
+    {
+      "path": "labremote/config/local_hardware.py",
+      "bytes": 1535,
+      "sha256": "b7f017afafbde094d4cb4e446495b93d22a8049041f0a5bafce47702dd25228f"
+    },
+    {
+      "path": "labremote/config/migration.py",
+      "bytes": 1902,
+      "sha256": "c6b74aad88b40c7a413112e1e47d98ae1781685f6c2c1eeb5c0c20cc60b38b2a"
+    },
+    {
+      "path": "labremote/config/operations/anapico/parameter_registry.yml",
+      "bytes": 1242,
+      "sha256": "b594db35ef86c67c6b581bc44e39b9b111b80c06ef33e67f4679a448c903e2bc"
+    },
+    {
+      "path": "labremote/config/operations/characterization/fluorescence_EA.json",
+      "bytes": 136,
+      "sha256": "3f80752813d5d0da6b398e4812886c528fee0e6111528bfafc9d997c81acfe80"
+    },
+    {
+      "path": "labremote/config/operations/characterization/fluorescence_EC.json",
+      "bytes": 136,
+      "sha256": "ed1c0fedec10a25b2e95e3b2a7ad15d810f6ccf78be50338f69750972d502314"
+    },
+    {
+      "path": "labremote/config/operations/characterization/fpga_roles.json",
+      "bytes": 197,
+      "sha256": "0065832c31d8a96e109768bfaad8daf4d5d95d1f38ca4df3678c11cc1c0b90f9"
+    },
+    {
+      "path": "labremote/config/operations/characterization/initialization_EA.json",
+      "bytes": 462,
+      "sha256": "24e1a9064f4fbc51695a8088bf104807552ccc5618e2fffb3834e2dfd728333d"
+    },
+    {
+      "path": "labremote/config/operations/characterization/initialization_EC.json",
+      "bytes": 462,
+      "sha256": "f752a730bc367ba80107b2a36e57e9bb8924c0beb5732b96e640dca26bdc6b2c"
+    },
+    {
+      "path": "labremote/config/operations/characterization/rabi_EA.json",
+      "bytes": 424,
+      "sha256": "3924f832df56402a442e8971927bfd96cb5c66daa017175cc0201346c404b311"
+    },
+    {
+      "path": "labremote/config/operations/characterization/rabi_EC.json",
+      "bytes": 424,
+      "sha256": "47531f8bff0794755a7fc1642aa1c6dacab14e636bacf4e66683522068fcf059"
+    },
+    {
+      "path": "labremote/config/operations/characterization/rabi_frequency_sweep.json",
+      "bytes": 877,
+      "sha256": "bf3bafec62c809f6ce7ecc0f13b698fe06ec2c48e1bf5fb970e3c1bc04dcd412"
+    },
+    {
+      "path": "labremote/config/operations/characterization/ramsey_EA.json",
+      "bytes": 567,
+      "sha256": "e03a9acfed0006d6c0b3c1fdb8ba160e6a35516c1847fc4c84e52886b0808356"
+    },
+    {
+      "path": "labremote/config/operations/characterization/ramsey_EC.json",
+      "bytes": 567,
+      "sha256": "26cb7635903681f8ac3b8dfc0a7048e965b971c9cd8cb126d5b5329afbc1a783"
+    },
+    {
+      "path": "labremote/config/operations/characterization/spam_EA.json",
+      "bytes": 435,
+      "sha256": "70df204d04093c77b301a47cf6d61ff366fe97260f0ee1e8c6241ba335924235"
+    },
+    {
+      "path": "labremote/config/operations/characterization/spam_EC.json",
+      "bytes": 435,
+      "sha256": "5dff728692a3bf365847d61b0b6198925a57a15f7c7ac1c7e0e6bd536a53e1ab"
+    },
+    {
+      "path": "labremote/config/operations/dds4/parameter_registry.yml",
+      "bytes": 1018,
+      "sha256": "e776345d697970b401cffa6eae038a4b88377b3fc3d0b1486e51368b5a19f04c"
+    },
+    {
+      "path": "labremote/config/operations/decay/EA_171_dual.json",
+      "bytes": 779,
+      "sha256": "43d48c78deefec1fa2585e2a70427cf2dde38b6c04b58a017c0b3cce78c9dc9f"
+    },
+    {
+      "path": "labremote/config/operations/decay/EA_171_single.json",
+      "bytes": 785,
+      "sha256": "2758f73fa6571c0267b506f532d86d2b0deb0da92696afcfec23cc53c79512ed"
+    },
+    {
+      "path": "labremote/config/operations/decay/EA_174_dual.json",
+      "bytes": 774,
+      "sha256": "74394d3d84812762fc73395c4918531e16854c097efb32142b01291aaf89d263"
+    },
+    {
+      "path": "labremote/config/operations/decay/EA_174_single.json",
+      "bytes": 780,
+      "sha256": "417baf7f9ad3318e6cebdff80778ce4f8cacdb804d9cc6dd5c9f9ca68cf4e532"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_171_dual.json",
+      "bytes": 779,
+      "sha256": "e5c13c383129f41a0f1746e277d13759972fdbb88ff5df71e409fc702d61f5c4"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_171_single.json",
+      "bytes": 785,
+      "sha256": "6d32db603dbc4f46a4e6489cdbd93490f7874785d2658bf46e9daa97724858a1"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_174_dual.json",
+      "bytes": 774,
+      "sha256": "f9b528550c18620779f009c594ee4d7bc541beee072bba2cb19a7f9f33c6a800"
+    },
+    {
+      "path": "labremote/config/operations/decay/EC_174_single.json",
+      "bytes": 780,
+      "sha256": "fce05b5e32788295602ad59321b473113b897a7cb17901a921525447053b9a52"
+    },
+    {
+      "path": "labremote/config/operations/ds1052e/parameter_registry.yml",
+      "bytes": 3284,
+      "sha256": "75e36d3415729856761555f1df91bf3150c2642d3351f31506f853abbf6e5367"
+    },
+    {
+      "path": "labremote/config/operations/flip/parameter_registry.yml",
+      "bytes": 214,
+      "sha256": "f954bd7f032156ad15180a3f2b7730fb1fc8a6f083f7c4e9dd673344bf61c0ab"
+    },
+    {
+      "path": "labremote/config/operations/flipper_routes.json",
+      "bytes": 127,
+      "sha256": "4a91212b7a91579c068e942d34b81ceac51105c6c6bf48c7b4bdcda71a25f05c"
+    },
+    {
+      "path": "labremote/config/operations/fpga/operation_config.yml",
+      "bytes": 412,
+      "sha256": "b17cf7b27ef6a432fc0a22c1fc67d1b5fdef17c39cc54586f215d7031a0c112b"
+    },
+    {
+      "path": "labremote/config/operations/fpga/parameter_registry.yml",
+      "bytes": 1510,
+      "sha256": "fb715b51d8ebdd3bf1d9bce61c02e43ca02e9259d55fabd389ac09f0c6fcf76d"
+    },
+    {
+      "path": "labremote/config/operations/keithley/parameter_registry.yml",
+      "bytes": 2039,
+      "sha256": "aec5f5bfe45bf23936161a7d0df43ac6ee4c9d3670e876927411707a1a134dbe"
+    },
+    {
+      "path": "labremote/config/operations/mdt/parameter_registry.yml",
+      "bytes": 831,
+      "sha256": "b8746a58e04f4db24e107cdc4f9ebc4989e3b2846349ef7045ef45aa3b117786"
+    },
+    {
+      "path": "labremote/config/operations/motors/parameter_registry.yml",
+      "bytes": 861,
+      "sha256": "b60b635aed2f81829ae899adf5cdbbfc415eedc28eead8abff332aca559b8fd1"
+    },
+    {
+      "path": "labremote/config/operations/mso7054/parameter_registry.yml",
+      "bytes": 4400,
+      "sha256": "b4cd7a695f61ad5a95e9b62ba395446662c1ad2308ce639c1502b7bcc3968131"
+    },
+    {
+      "path": "labremote/config/operations/osa/parameter_registry.yml",
+      "bytes": 2784,
+      "sha256": "14ee5f44fcc7d5c7f13e816f012ef166b414bb20d326cce94dc382861a680c22"
+    },
+    {
+      "path": "labremote/config/operations/oven_psu/parameter_registry.yml",
+      "bytes": 1817,
+      "sha256": "729ff890566b47ccd84b5c290ee6fbb8eec53383a5a24e3d9a0c6e35c137ff06"
+    },
+    {
+      "path": "labremote/config/operations/oven_relay/parameter_registry.yml",
+      "bytes": 532,
+      "sha256": "860b734d9726a3f7cc14dfc85086b02813981af72672b89a44d92105e1b7b96c"
+    },
+    {
+      "path": "labremote/config/operations/scan_roles.json",
+      "bytes": 553,
+      "sha256": "10c8364d5cb0d3af61e9a3670379c7911f47c9da360afd20ee1e17bb5e9edf5c"
+    },
+    {
+      "path": "labremote/config/operations/sg384/operation_config.yml",
+      "bytes": 163,
+      "sha256": "d02b86467f7154b5ca2b59cda1a29432a16fbffddbf2cb9a11c3ddf73c4cca18"
+    },
+    {
+      "path": "labremote/config/operations/sg384/parameter_registry.yml",
+      "bytes": 1298,
+      "sha256": "a8e9256fc0ddea21a5b3af536ff4734c1657f3bb7f13a921e6778a2baeb8d438"
+    },
+    {
+      "path": "labremote/config/operations/thermotek/parameter_registry.yml",
+      "bytes": 1176,
+      "sha256": "1a461a33c139e440a2f2eef776a31be8b7dea123d13b9a2e08dc2a0d4f70b8e2"
+    },
+    {
+      "path": "labremote/config/operations/windfreak/operation_config.yml",
+      "bytes": 134,
+      "sha256": "657bbbea16ca58b217573b2df51e7ce579b0cd3d7388f771acede2e20a8f2857"
+    },
+    {
+      "path": "labremote/config/operations/windfreak/parameter_registry.yml",
+      "bytes": 2464,
+      "sha256": "c679f02695d816e9e829bb79ddd4ebcadc9bec721f53377b828f0234f9d0d73e"
+    },
+    {
+      "path": "labremote/config/paths.py",
+      "bytes": 869,
+      "sha256": "bfc0885bc1b80f66a3ec82c5f437ca8e725ae46551a493ca755e2a530a05e0af"
+    },
+    {
+      "path": "labremote/config/ramp.py",
+      "bytes": 441,
+      "sha256": "393659c7ee6ad29fdbc260dddbd6f9093265febe464eba69c3f3f84da47a692a"
+    },
+    {
+      "path": "labremote/config/roles.py",
+      "bytes": 1070,
+      "sha256": "74db37344ac3144b3a757893d93302d726a57416ca2e8f27649f557a4c843c59"
+    },
+    {
+      "path": "labremote/config/settings.py",
+      "bytes": 1200,
+      "sha256": "1db78523544cf980b0d02bca65c8191287e3090578e2e21b5ebf512eff81c4bf"
+    },
+    {
+      "path": "labremote/config/ui/defaults.json",
+      "bytes": 466,
+      "sha256": "284439ce06872cac4d4007cf06a26c17c8b61160915454116c8b54ebb6cedf5a"
+    },
+    {
+      "path": "labremote/config/ui/equipment.json",
+      "bytes": 445,
+      "sha256": "2fb405b9fe7031be0407f980f4204116fcaa6490d4eb122ae182605aacfa46a8"
+    },
+    {
+      "path": "labremote/config/ui/flipper_display.json",
+      "bytes": 4,
+      "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f"
+    },
+    {
+      "path": "labremote/config/ui/monitor.json",
+      "bytes": 39,
+      "sha256": "43144306c2240c8fbbbea5e13c99e8464bc41923b412ae0acb91ee14a3a8546f"
+    },
+    {
+      "path": "labremote/decay/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/decay/config.py",
+      "bytes": 5632,
+      "sha256": "3839fdacf5415c601ac893a078e6c89fe54e0f0bb530edfbb9f9304dcb80b309"
+    },
+    {
+      "path": "labremote/decay/plotting.py",
+      "bytes": 3658,
+      "sha256": "9ac029a63269c2e6fca1315fda2a20c35a5558fce3e8a2aa4f7d47cb89d2b63a"
+    },
+    {
+      "path": "labremote/decay/runner.py",
+      "bytes": 5596,
+      "sha256": "b10998fe78ab756a89964856cd1957f9ce08b0e3f9b790519d6cd14696af247e"
+    },
+    {
+      "path": "labremote/decay/sequence.py",
+      "bytes": 22717,
+      "sha256": "ac64ac8658acc0d3ce325ec5ac4106e686f48e6f79129cc17e30c17fca5bded9"
+    },
+    {
+      "path": "labremote/devices/__init__.py",
+      "bytes": 130,
+      "sha256": "abefb7e451cea57eeccc6bebfe652df51e72af558a363e003154ce33b3bccf5f"
+    },
+    {
+      "path": "labremote/devices/anapico/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/anapico/monitor.py",
+      "bytes": 419,
+      "sha256": "6d8571269fe87067a10749d61f3a279b8d21352e969f70e9f0329285050a5428"
+    },
+    {
+      "path": "labremote/devices/anapico/worker.py",
+      "bytes": 556,
+      "sha256": "b8765ee454d47b6fd79f3c6f5007f4dd6daebfd494265f6681f69db6b36d0e5a"
+    },
+    {
+      "path": "labremote/devices/ccd/__init__.py",
+      "bytes": 62,
+      "sha256": "41c48416dd769459d6f70a2b3a2aa34043fb45847be93a0a987e1b57082346aa"
+    },
+    {
+      "path": "labremote/devices/ccd/backends.py",
+      "bytes": 3812,
+      "sha256": "348818b9cda3da4f3f560825da8ced652dcf74da5093ecd105242a16e6ba1b68"
+    },
+    {
+      "path": "labremote/devices/ccd/detection.py",
+      "bytes": 3146,
+      "sha256": "a1be85e47e47d5fe7a0a48a4bf50234f690a15f5231f17cf84c3c3e58c528b8f"
+    },
+    {
+      "path": "labremote/devices/ccd/process.py",
+      "bytes": 15561,
+      "sha256": "3370ec0d9285846351d81a27625aa579ad978d5cd97b95567eb0ba17830eb907"
+    },
+    {
+      "path": "labremote/devices/ccd/tab.py",
+      "bytes": 26031,
+      "sha256": "3ad57aafa8e0d5554adb76d4887917e41c7a2ce38c411ce01f2ccf5532161467"
+    },
+    {
+      "path": "labremote/devices/ccd/vendor/QuIQCL_ThorCam.py",
+      "bytes": 25638,
+      "sha256": "9b1d49bc12c1aa0f60d1270e06175d3f5f9728dc9dd831678806b0845bd30793"
+    },
+    {
+      "path": "labremote/devices/ccd/vendor/ThorCamBase.py",
+      "bytes": 2891,
+      "sha256": "42794a3a71ff5415eab5dc8693ca937f86c80acb63c1b970ebcbf6a4e7b994ed"
+    },
+    {
+      "path": "labremote/devices/ccd/vendor/__init__.py",
+      "bytes": 62,
+      "sha256": "8e950383a9b00e28a8b34aa5cf1fcb0d6e9f93ffe5a4cee06a0c03ff9533db3a"
+    },
+    {
+      "path": "labremote/devices/ccd/worker.py",
+      "bytes": 13855,
+      "sha256": "61a2a9f6b204d20be2edfefbe1f11dda72f3134bfac3f7bdc118a58268e03196"
+    },
+    {
+      "path": "labremote/devices/dds4/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/dds4/monitor.py",
+      "bytes": 585,
+      "sha256": "2ebdc2fed8862c405f8ac28f95009ba297de04842c07203d530eb279e26687dd"
+    },
+    {
+      "path": "labremote/devices/dds4/worker.py",
+      "bytes": 1400,
+      "sha256": "39d0eb88a362d5725251fc0247701f0d4f6b54423a542f2d163853e0a65d3263"
+    },
+    {
+      "path": "labremote/devices/ds1052e/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/ds1052e/monitor.py",
+      "bytes": 539,
+      "sha256": "032c1856ea105e685c7a40dd5fb1f6a91d1975a31c7e1a8318b8006c538a1eca"
+    },
+    {
+      "path": "labremote/devices/ds1052e/tab.py",
+      "bytes": 26789,
+      "sha256": "19b7a9d2ff23f5955da2d8713ea4f451ff6875974f48f749c428d0d82a32d8d7"
+    },
+    {
+      "path": "labremote/devices/ds1052e/worker.py",
+      "bytes": 441,
+      "sha256": "b13c0be96d6136cec3e9efb4c10749194f107d4e77a3ece356d1452526c7ea8d"
+    },
+    {
+      "path": "labremote/devices/flip/__init__.py",
+      "bytes": 73,
+      "sha256": "de9a0c161ae6f6e105c22bf8d9b9820f38773e0e28d360f72a5730450221d340"
+    },
+    {
+      "path": "labremote/devices/flip/display.py",
+      "bytes": 1438,
+      "sha256": "c3fb89cd55559aa8966ee88eee22358d5acdd2293aecd4857cb357b9b0fa9d92"
+    },
+    {
+      "path": "labremote/devices/flip/routing.py",
+      "bytes": 3098,
+      "sha256": "58b3ecbee3ce0007021d9e1529246cbbc11b95a21fd94bb9f257ff1aebede4bc"
+    },
+    {
+      "path": "labremote/devices/flip/settings.py",
+      "bytes": 2020,
+      "sha256": "ff7f813f1aa9c81b398b9840047fa9948632fd405e8bc2830786185c5f932517"
+    },
+    {
+      "path": "labremote/devices/flip/tab.py",
+      "bytes": 28949,
+      "sha256": "5435a7963ab7fa79b23442336090ffb7392e98f926372fdbea2010319b47be86"
+    },
+    {
+      "path": "labremote/devices/flip/worker.py",
+      "bytes": 896,
+      "sha256": "a9a5e7f27cd83bb053137ec7022b1d622340996fe0026edc70ec8b75ad86a1f6"
+    },
+    {
+      "path": "labremote/devices/fpga/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/fpga/adapter.py",
+      "bytes": 3690,
+      "sha256": "bc2836230a7ac552fb7d020b81591936ad99fd29edb1c259e585c9d8131c4ed9"
+    },
+    {
+      "path": "labremote/devices/fpga/controller.py",
+      "bytes": 10471,
+      "sha256": "e584faf146778b190b13ba714fc4e5b201893bff0d6c02719cfbb75fd9c7e5a9"
+    },
+    {
+      "path": "labremote/devices/fpga/monitor.py",
+      "bytes": 177,
+      "sha256": "1b9da6a2c35f7ff0b0e87f35c60576b1fde340eeced611493a298610d2f1f850"
+    },
+    {
+      "path": "labremote/devices/fpga/ports.py",
+      "bytes": 1751,
+      "sha256": "14fa35449660673289fb7f34ccf82dde611d5d277a9fa38d2baf9e8624b272f1"
+    },
+    {
+      "path": "labremote/devices/fpga/scan_model.py",
+      "bytes": 3368,
+      "sha256": "411811a08a76bd5021eaf4c2751f67681ff9a8c09922513a2f38685295c68cf8"
+    },
+    {
+      "path": "labremote/devices/fpga/sequence_file.py",
+      "bytes": 1891,
+      "sha256": "0e21bcd59037071af757523cb8b4de2c4c3c40379474a0c72cf7df2cbf734cbe"
+    },
+    {
+      "path": "labremote/devices/fpga/vendor/ArtyS7_v1_02.py",
+      "bytes": 27305,
+      "sha256": "bad194ca6e0dd36e4972b97ee3e252f1c01db457cc6dc7d4dc0864393605177b"
+    },
+    {
+      "path": "labremote/devices/fpga/vendor/HardwareDefinition_remote_ent_test_ec.py",
+      "bytes": 2397,
+      "sha256": "367becffdedd2f2614976a3e5c6df2a186a015011a21124693a7a7fb2d8ff975"
+    },
+    {
+      "path": "labremote/devices/fpga/vendor/HardwareDefinition_v4_04.py",
+      "bytes": 6520,
+      "sha256": "07792f32eb598a10d1de33e9b3156fae7caba6f820ce805de78551e15700f801"
+    },
+    {
+      "path": "labremote/devices/fpga/vendor/SequencerProgram_v1_08.py",
+      "bytes": 49508,
+      "sha256": "00700b909f9c49c984ff3e41fa6e45c641d6f9315fe9bb289adbbe1075057c59"
+    },
+    {
+      "path": "labremote/devices/fpga/vendor/SequencerUtility_v1_03.py",
+      "bytes": 3874,
+      "sha256": "de9ff96d726329d447c397c3d07380a37ce01f60c5dbfb1701a82e0def0af1d2"
+    },
+    {
+      "path": "labremote/devices/fpga/vendor/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/fpga/worker.py",
+      "bytes": 2242,
+      "sha256": "11590d47c93d8c6e68c0fa7acc1a896945acc40394fecb40d978c7314e0d4ca5"
+    },
+    {
+      "path": "labremote/devices/keithley/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/keithley/monitor.py",
+      "bytes": 621,
+      "sha256": "83bd6f7d4448d5c6bf8cfd196e1de6251460aea8dcb5f5829c21b6b621ed7823"
+    },
+    {
+      "path": "labremote/devices/keithley/worker.py",
+      "bytes": 369,
+      "sha256": "6fc08c327bf3a85919b8c55efff3cb361369dc3228df4a2ef89e0fa2a3caa61f"
+    },
+    {
+      "path": "labremote/devices/mdt/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/mdt/monitor.py",
+      "bytes": 364,
+      "sha256": "68a3bf3cb23ced445d4b572293a5abd0be3749eb860f47aebe9f52616df388cf"
+    },
+    {
+      "path": "labremote/devices/mdt/worker.py",
+      "bytes": 513,
+      "sha256": "c9401c92b6e89ed0a0ea8bdbf8f05ef2eb137d9a01afd61bd250811512c6a441"
+    },
+    {
+      "path": "labremote/devices/motors/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/motors/monitor.py",
+      "bytes": 177,
+      "sha256": "0a234d74830aa798e6a366b79400da8b7cece978702e5638b20c5d2b893ffc52"
+    },
+    {
+      "path": "labremote/devices/motors/worker.py",
+      "bytes": 1433,
+      "sha256": "a9a8f755c4f787805cde6de49ab2479ec4cfa75e49d283fc26ac05cc1c73b70a"
+    },
+    {
+      "path": "labremote/devices/mso7054/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/mso7054/monitor.py",
+      "bytes": 701,
+      "sha256": "569667e5fb1e8a581d0005dded17a25c3650b7228e1604b0fe758c1ba55e9ba0"
+    },
+    {
+      "path": "labremote/devices/mso7054/tab.py",
+      "bytes": 1710,
+      "sha256": "ad003c029f3d2fb88e10859361d08b374324c325706b3423eab051fc231e5b41"
+    },
+    {
+      "path": "labremote/devices/mso7054/worker.py",
+      "bytes": 443,
+      "sha256": "8795a99b4bdc19162bb05b8d0239b76f90209d844573039e60730c3c6c2432c8"
+    },
+    {
+      "path": "labremote/devices/osa/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/osa/monitor.py",
+      "bytes": 280,
+      "sha256": "21471cbbe5bbe1d36efdee06a81c6bd1f8bd5be340bc942585ef06f071ecaa21"
+    },
+    {
+      "path": "labremote/devices/osa/worker.py",
+      "bytes": 2574,
+      "sha256": "20f8210ddc10d4180696893cc9bdedfbb49ebeba04c1622365e10c2bbb638b22"
+    },
+    {
+      "path": "labremote/devices/oven/__init__.py",
+      "bytes": 42,
+      "sha256": "39f9e4b82a58095e7cf0dc910b628ff01982fe634bf5ab92f8753059e188030e"
+    },
+    {
+      "path": "labremote/devices/oven/panel.py",
+      "bytes": 13775,
+      "sha256": "c27c0f4ff527713afdb5b9a9030b8e16b979894206e72b85cbe4e957c3699f49"
+    },
+    {
+      "path": "labremote/devices/oven/runner.py",
+      "bytes": 11996,
+      "sha256": "cebbe817173a6d70612466cf1bcf8093c379f6a6f91205e6ebc4f3ec55ee7f8e"
+    },
+    {
+      "path": "labremote/devices/oven/settings.py",
+      "bytes": 2154,
+      "sha256": "686adc4714929506642b5c9e57beff4f2a7ba6d1d93500435cee108f2dd6bef2"
+    },
+    {
+      "path": "labremote/devices/oven/worker.py",
+      "bytes": 2007,
+      "sha256": "2f03307c260c46d80331a6cc9239714cd64c1509238a135ea5c3ca344c4fbaa7"
+    },
+    {
+      "path": "labremote/devices/sg384/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/sg384/monitor.py",
+      "bytes": 397,
+      "sha256": "4a9277abd1dc9ccb2704037061b965f71b4e81e21efcb5dfbf0ab1c326674481"
+    },
+    {
+      "path": "labremote/devices/sg384/worker.py",
+      "bytes": 543,
+      "sha256": "bc6ac95ace0bd8185846a941622f2fda41f799b83cc886368e63531bf4d94602"
+    },
+    {
+      "path": "labremote/devices/thermotek/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/devices/thermotek/monitor.py",
+      "bytes": 277,
+      "sha256": "c029307f084e98bf258d175448ee29d9a008cfb8b87acefc02041419fced436f"
+    },
+    {
+      "path": "labremote/devices/thermotek/worker.py",
+      "bytes": 483,
+      "sha256": "ed59dc443dfc0f9bb333debfe3549ac500bc4d6c83caf5c32abf5da7e2a8dc3a"
+    },
+    {
+      "path": "labremote/devices/windfreak/__init__.py",
+      "bytes": 211,
+      "sha256": "30f97c8cea06cbcfa36dc2f65799244a0730d8be42a4649235a5e9a78a49bfed"
+    },
+    {
+      "path": "labremote/devices/windfreak/monitor.py",
+      "bytes": 1081,
+      "sha256": "fc47e0cb77926b4669679304be34427a65312852f81b269bb50c33caf4ae3eaa"
+    },
+    {
+      "path": "labremote/devices/windfreak/tab.py",
+      "bytes": 30450,
+      "sha256": "71ab95f02525de4fdb9c2e5e0aa5fc2ee983b28dc094977b8c633a400d71004b"
+    },
+    {
+      "path": "labremote/devices/windfreak/worker.py",
+      "bytes": 526,
+      "sha256": "335015499880dc08aa6690d235a89df558bbfd67f4624483f3bd8ad89c70d826"
+    },
+    {
+      "path": "labremote/operation/__init__.py",
+      "bytes": 29,
+      "sha256": "c4cafce7afb38400329810ca3b45aa3626575dc470dec6c4b050bbf64820943a"
+    },
+    {
+      "path": "labremote/operation/anapico/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/anapico/anapico_off.py",
+      "bytes": 201,
+      "sha256": "1a6d3b2fef819277021173eae5139edf1b581473014fbe0a13b80b9f944cd6e6"
+    },
+    {
+      "path": "labremote/operation/anapico/anapico_on.py",
+      "bytes": 196,
+      "sha256": "c55e126ff0f565d30c67084b7f8edbbba2149c30273ee303ed1b26ab4ba39502"
+    },
+    {
+      "path": "labremote/operation/anapico/configure_external_reference.py",
+      "bytes": 280,
+      "sha256": "013ec8b41c6937a34932654b189d2c718f18b9a40cc0898b8a0f26b554c81f07"
+    },
+    {
+      "path": "labremote/operation/anapico/read_snapshot.py",
+      "bytes": 346,
+      "sha256": "e7ea1f4ebfb32c07d776f85093ffae22f51f60ffe99f659e2ac6b00715bc9cc4"
+    },
+    {
+      "path": "labremote/operation/anapico/set_frequency.py",
+      "bytes": 140,
+      "sha256": "68349393fa545ad9115030e2930ce72cdf0a77727a6bad5338fc103968e630d3"
+    },
+    {
+      "path": "labremote/operation/anapico/set_internal_reference.py",
+      "bytes": 149,
+      "sha256": "a69220c647ba8da088b0b950cba1953a3ccfb7c5ccdbb13cdf323317906aaed7"
+    },
+    {
+      "path": "labremote/operation/anapico/set_phase.py",
+      "bytes": 132,
+      "sha256": "7c94d4d1102203c0ce98fab53a97162a438544e4eb09ef3fe50fa4ca539bbed5"
+    },
+    {
+      "path": "labremote/operation/anapico/set_reference_output.py",
+      "bytes": 220,
+      "sha256": "99d78f4cac4162ee19a375c74ae4515aa8e9f7dcb592f1692ffb2970d2ad27d9"
+    },
+    {
+      "path": "labremote/operation/dds4/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/dds4/all_off.py",
+      "bytes": 250,
+      "sha256": "1d51e75ed1d69edc9bfe56e758ddd7f110ce96fa8963652af3c22d14937004ad"
+    },
+    {
+      "path": "labremote/operation/dds4/dds_off.py",
+      "bytes": 254,
+      "sha256": "e118cb906d35cdeff65bab2edef24118f8addbe8148d9529b504109d48fa2d32"
+    },
+    {
+      "path": "labremote/operation/dds4/dds_on.py",
+      "bytes": 253,
+      "sha256": "d312e4c306e8f9eea0de21ffa131c4ca9d2ffa3f45f6174700d88ad2db3e59ae"
+    },
+    {
+      "path": "labremote/operation/dds4/read_snapshot.py",
+      "bytes": 609,
+      "sha256": "b9e30f23d7dd98c2f93f8b96b9a82dd90e3fff9fdae85f17fd97205fcf765d7b"
+    },
+    {
+      "path": "labremote/operation/dds4/set_frequency.py",
+      "bytes": 177,
+      "sha256": "41a8d3e96f99132aba569124e0f639fe790e0917f885010f7d10f2b781fef3d0"
+    },
+    {
+      "path": "labremote/operation/dds4/set_phase.py",
+      "bytes": 170,
+      "sha256": "2354a34aba90a3285da836558263f4d3bfc0a366fa4fc452ac26c0137330919d"
+    },
+    {
+      "path": "labremote/operation/dds4/set_vva.py",
+      "bytes": 168,
+      "sha256": "3866fbd6bd81130c2937e06bdcd7403d0cebea5e9c08e98768e65f1fc47884fd"
+    },
+    {
+      "path": "labremote/operation/ds1052e/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/ds1052e/configure_horizontal.py",
+      "bytes": 216,
+      "sha256": "c47dc981001c3e9dc1d35ba1b97ec9e745d2bfa3cfd2fd5fb18fd19ecb305ec1"
+    },
+    {
+      "path": "labremote/operation/ds1052e/configure_trigger.py",
+      "bytes": 454,
+      "sha256": "a346a9a59e4c91abd095398c410079d9d7890bc24b69aa40b1899516cd5278c8"
+    },
+    {
+      "path": "labremote/operation/ds1052e/configure_vertical.py",
+      "bytes": 356,
+      "sha256": "6ba42dd34a37c0e4f05e16eb4f0dbf3709e9339e0738b03580e6cedebb32be02"
+    },
+    {
+      "path": "labremote/operation/ds1052e/read_snapshot.py",
+      "bytes": 471,
+      "sha256": "826cf13a9aa16aafef99c82376604d40815ef67b9bf0790928dfb9f2897ee083"
+    },
+    {
+      "path": "labremote/operation/ds1052e/read_waveforms.py",
+      "bytes": 1305,
+      "sha256": "99c08e5c6c1a169cb8726da9621ce74ba9f4f5554c66a09cbac1e2eaa10a901e"
+    },
+    {
+      "path": "labremote/operation/ds1052e/run.py",
+      "bytes": 125,
+      "sha256": "a60b7989f38ebcd31f12e34ca355582b4e3399232a7b77de45aba3a18e609006"
+    },
+    {
+      "path": "labremote/operation/ds1052e/set_channel_display.py",
+      "bytes": 354,
+      "sha256": "fdda487df9c7934e9a2ce9cbb12fbbcbb7eb36855ce90f575406473dc142f223"
+    },
+    {
+      "path": "labremote/operation/ds1052e/stop.py",
+      "bytes": 127,
+      "sha256": "9913d8966c6c82f9d6dbecd3e8d86e34a9567b3302469980d2f7e9026f11c89d"
+    },
+    {
+      "path": "labremote/operation/flip/__init__.py",
+      "bytes": 26,
+      "sha256": "2d5915d4d9808a06aca06dd7d9d59346e2f5de8bd23a346c4cbcbb0d3bd176d3"
+    },
+    {
+      "path": "labremote/operation/flip/control.py",
+      "bytes": 228,
+      "sha256": "7667481841398016566b20310f9ef79a5d94243851041f974a60b0b2aa732f8b"
+    },
+    {
+      "path": "labremote/operation/flip/read_snapshot.py",
+      "bytes": 113,
+      "sha256": "d912152299d21bfce6b363f5ed37183bdf1d24e81dc0ceffd60f13c8258b1359"
+    },
+    {
+      "path": "labremote/operation/fpga/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/fpga/decay.py",
+      "bytes": 4190,
+      "sha256": "303db4dfea00323cb3c0a9f01ceb2a62d03b70a52ecfe0fb7745b8d42dcdb5a9"
+    },
+    {
+      "path": "labremote/operation/fpga/fluorescence.py",
+      "bytes": 3132,
+      "sha256": "bcaaa04e0dd237cf37587a66306053430cf1f33b3e6d444bc09246309313f785"
+    },
+    {
+      "path": "labremote/operation/fpga/measure.py",
+      "bytes": 219,
+      "sha256": "b6f820dc894d3e85ee849a192b4d1e40cfce10a7d4777235ee6dd91e8b84e4c8"
+    },
+    {
+      "path": "labremote/operation/fpga/measure_counts.py",
+      "bytes": 1014,
+      "sha256": "f2092ce92f4f97083e7ce5df1640242f8655887678ae741dbdc0077dc86d5a47"
+    },
+    {
+      "path": "labremote/operation/fpga/pulse_experiment.py",
+      "bytes": 4644,
+      "sha256": "64187e14d2f191f56dc8b8591c1f8a7ad11c3827a91c5573219e94a51c9f0f81"
+    },
+    {
+      "path": "labremote/operation/fpga/rabi.py",
+      "bytes": 3365,
+      "sha256": "f0cd55b0edb19c7918961d8b93735b8aa3bbc2859605c6faf718895f2212f0bd"
+    },
+    {
+      "path": "labremote/operation/fpga/read_snapshot.py",
+      "bytes": 282,
+      "sha256": "b202dea24c40dde4cefb1de62f78549092fc0175fca8683914749affe0419860"
+    },
+    {
+      "path": "labremote/operation/fpga/run_sequence_file.py",
+      "bytes": 179,
+      "sha256": "b01435f084908ac3cf89c2d9d5b37377ddc148c40b2c2fb77a1aaa9d65d5b799"
+    },
+    {
+      "path": "labremote/operation/fpga/set_output.py",
+      "bytes": 261,
+      "sha256": "59b337e596ed92d48d7e7649f4e935f817ad53dc4668906b03ff9c447a73d520"
+    },
+    {
+      "path": "labremote/operation/keithley/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/keithley/all_off.py",
+      "bytes": 190,
+      "sha256": "6f8d0e379982e1e328b67856241f8a80bf05a17a8e60173ed1ffd2eec6da3e99"
+    },
+    {
+      "path": "labremote/operation/keithley/off.py",
+      "bytes": 260,
+      "sha256": "a72414ea08cdd183ff6078decc44bd0e95a4105c917bb9ad0ca6bba30290de83"
+    },
+    {
+      "path": "labremote/operation/keithley/on.py",
+      "bytes": 258,
+      "sha256": "bac4963aed389c6b0ba9fa61c2f1e17723f739eaefd53d16bfbb56bdf3fd8471"
+    },
+    {
+      "path": "labremote/operation/keithley/read_snapshot.py",
+      "bytes": 1592,
+      "sha256": "15c66787d08e7279b3c9b3891d0e9f132fc46ed80d7932e2a17760e8f8ad7af7"
+    },
+    {
+      "path": "labremote/operation/keithley/set_current.py",
+      "bytes": 283,
+      "sha256": "1c28d8af475793229290183bbd75facab03409ea8edb2861129fb462a7301f70"
+    },
+    {
+      "path": "labremote/operation/keithley/set_voltage.py",
+      "bytes": 283,
+      "sha256": "f58fd9791d5167626d5f2ffd9ea2aece79745db50062470aead3867cebd7d313"
+    },
+    {
+      "path": "labremote/operation/keithley/set_voltage_limit.py",
+      "bytes": 288,
+      "sha256": "3812acbeb97a1106837cfe8bcc350b8fd15e54640d524e0cce4f60e1e5f1e2fe"
+    },
+    {
+      "path": "labremote/operation/keithley/set_voltage_limit_enabled.py",
+      "bytes": 302,
+      "sha256": "694f41c5529aee71112df40518b8a1e3c9afa1da230c2763b429c29d1f4d5b7c"
+    },
+    {
+      "path": "labremote/operation/mdt/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/mdt/pid_step.py",
+      "bytes": 276,
+      "sha256": "99758805206ce92eab62abcae4cdbd9486f81f8d1ddca3eccef3234b6b0a3621"
+    },
+    {
+      "path": "labremote/operation/mdt/read_snapshot.py",
+      "bytes": 469,
+      "sha256": "e2a8b5962601fe960beba72c5de412bfe1a4104f1c5f34ef8dbd543d27305bff"
+    },
+    {
+      "path": "labremote/operation/mdt/set_master_scan.py",
+      "bytes": 131,
+      "sha256": "8426a5b05d586c50a2acb7d59261462618f7a512b512bcc30e42c68c529d4891"
+    },
+    {
+      "path": "labremote/operation/mdt/set_voltage.py",
+      "bytes": 210,
+      "sha256": "10cb9fae32839674a520cd85bdd04b94a80a30ea5421f1c3a1f440b3cfcd7c80"
+    },
+    {
+      "path": "labremote/operation/motors/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/motors/close.py",
+      "bytes": 150,
+      "sha256": "7cd98ec71ef4f412df25be24e93291a96a81d7ff1ce29fc9fee9686ac026c26d"
+    },
+    {
+      "path": "labremote/operation/motors/home.py",
+      "bytes": 148,
+      "sha256": "39265285a1de226bf3f3faedd45b60fc7798271f451c4a68d5feedb5f3f81c47"
+    },
+    {
+      "path": "labremote/operation/motors/move.py",
+      "bytes": 151,
+      "sha256": "b233c231d17047b9b99eb002bf40822eeeabc4bbb061df03baccc21f9b6c08a7"
+    },
+    {
+      "path": "labremote/operation/motors/move_relative.py",
+      "bytes": 297,
+      "sha256": "9986fe0b38cce115d0448fd5c3fbf860a32cc3e1207a0a2c6961b77fb741d706"
+    },
+    {
+      "path": "labremote/operation/motors/open.py",
+      "bytes": 148,
+      "sha256": "7b6f2edb05ca6c0bdccdbfeeba2774ed32d845d383c6f4a5060bf00497fa6ffb"
+    },
+    {
+      "path": "labremote/operation/motors/read_snapshot.py",
+      "bytes": 282,
+      "sha256": "4e0a28bb9f7a38ddbf672c04793b73a52dc564afbd01dde5e424773e1f34149c"
+    },
+    {
+      "path": "labremote/operation/motors/stop.py",
+      "bytes": 148,
+      "sha256": "ee5641389bd3abe2f2349a29a74ffc21b79fce00b182d2b0a94d63620bfb8b90"
+    },
+    {
+      "path": "labremote/operation/mso7054/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/mso7054/configure_horizontal.py",
+      "bytes": 216,
+      "sha256": "c47dc981001c3e9dc1d35ba1b97ec9e745d2bfa3cfd2fd5fb18fd19ecb305ec1"
+    },
+    {
+      "path": "labremote/operation/mso7054/configure_trigger.py",
+      "bytes": 456,
+      "sha256": "6074adddcbba779644c41672518390e94b3cd0c1a77443ef097b1f5782708400"
+    },
+    {
+      "path": "labremote/operation/mso7054/configure_vertical.py",
+      "bytes": 366,
+      "sha256": "605fe628718ebdc697c35cd436d0d8a7395f38fceca336a82c663202c412bf18"
+    },
+    {
+      "path": "labremote/operation/mso7054/read_snapshot.py",
+      "bytes": 2138,
+      "sha256": "44ee0476dacbd98310d9e073ff8f5200dde8e425f18974b1c0a68674342b09d7"
+    },
+    {
+      "path": "labremote/operation/mso7054/read_waveforms.py",
+      "bytes": 1378,
+      "sha256": "853c0551fd9ccb391145139525f7ff1c7415ec348487981b299c669a152b5129"
+    },
+    {
+      "path": "labremote/operation/mso7054/run.py",
+      "bytes": 110,
+      "sha256": "1ca0e51f8aff7c387fb732ac9d7e979e411c18ea82bb7b226a43ddcb6e5041a2"
+    },
+    {
+      "path": "labremote/operation/mso7054/set_channel_display.py",
+      "bytes": 287,
+      "sha256": "853a1c947beee070f1e3340c9cf36b07e0ba055d92c25de7f90dba145a01bd3b"
+    },
+    {
+      "path": "labremote/operation/mso7054/stop.py",
+      "bytes": 112,
+      "sha256": "596a35000a70647f98cb11c99cf0c38df89eb854fd2f82cdea0c4004c604caa3"
+    },
+    {
+      "path": "labremote/operation/osa/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/osa/abort.py",
+      "bytes": 95,
+      "sha256": "ce71ba73447d370061b2b178cf62559193c08c85f191a1d24c0ef7d346726242"
+    },
+    {
+      "path": "labremote/operation/osa/read_snapshot.py",
+      "bytes": 385,
+      "sha256": "50d8a260b1921efe1c00f088ab3e9a2c812ed687bee27b7fee347605fc5945bc"
+    },
+    {
+      "path": "labremote/operation/osa/read_spectrum.py",
+      "bytes": 273,
+      "sha256": "fd5e5c39d84390d6a4fdecebc9326dea918b455c286775465fe8cdc97f414f87"
+    },
+    {
+      "path": "labremote/operation/osa/set_auto_reference.py",
+      "bytes": 129,
+      "sha256": "676eca3f7c6224f496c309a609869841526c9b5635d3502a7f038b91161ff2cc"
+    },
+    {
+      "path": "labremote/operation/osa/set_level.py",
+      "bytes": 191,
+      "sha256": "0cd2988f4eca8d92b8628e8b61eb9658f4ade076716ce83475736115d3c8a3a9"
+    },
+    {
+      "path": "labremote/operation/osa/set_range.py",
+      "bytes": 226,
+      "sha256": "0f2fcc1707ba63dce566b06fa242c5a5ab0793d7ce2977d9f082333189163897"
+    },
+    {
+      "path": "labremote/operation/osa/set_trace.py",
+      "bytes": 110,
+      "sha256": "b2030f691b6948536670d29e6cb7acd5e6ed729183483220b7deee85920e4dd9"
+    },
+    {
+      "path": "labremote/operation/osa/zero.py",
+      "bytes": 98,
+      "sha256": "8ff4af4c9c11d2768c58f295dd18242d14b52c55846b8453d6f7255a7ae23d69"
+    },
+    {
+      "path": "labremote/operation/oven_psu/__init__.py",
+      "bytes": 78,
+      "sha256": "b96f4da27395a2ad71e83d9744661b1399b28ce7b0b0adc95271f6782644a69b"
+    },
+    {
+      "path": "labremote/operation/oven_psu/control.py",
+      "bytes": 2519,
+      "sha256": "3a146d32d0c73143610c69922d50badaa8adeebdb96532c1a28dd9f500c67489"
+    },
+    {
+      "path": "labremote/operation/oven_relay/__init__.py",
+      "bytes": 71,
+      "sha256": "f34474b942344d3702f2026b903371182dcaa094f01b7622231cb0c2c7327bc5"
+    },
+    {
+      "path": "labremote/operation/oven_relay/control.py",
+      "bytes": 982,
+      "sha256": "90cdb65d40aa47aeaf235e66352e0f8b5108a4eb4bb9a8f96825719a891f5997"
+    },
+    {
+      "path": "labremote/operation/sg384/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/sg384/read_reference_events.py",
+      "bytes": 142,
+      "sha256": "4556fe3dbd191d78939675a44b20efa062832e6bc495dc9f74cc1b7280fdc937"
+    },
+    {
+      "path": "labremote/operation/sg384/read_snapshot.py",
+      "bytes": 328,
+      "sha256": "50d89b027a2d7435bb9a4ae2ff3e66ebda738ed16c4447d1bd6220a4c204fc62"
+    },
+    {
+      "path": "labremote/operation/sg384/set_frequency.py",
+      "bytes": 140,
+      "sha256": "68349393fa545ad9115030e2930ce72cdf0a77727a6bad5338fc103968e630d3"
+    },
+    {
+      "path": "labremote/operation/sg384/set_phase.py",
+      "bytes": 132,
+      "sha256": "7c94d4d1102203c0ce98fab53a97162a438544e4eb09ef3fe50fa4ca539bbed5"
+    },
+    {
+      "path": "labremote/operation/sg384/set_power.py",
+      "bytes": 1231,
+      "sha256": "2a2f96a11eeaf273c540910506b3559322e7df58d11936aea70b5f0ca5d127cc"
+    },
+    {
+      "path": "labremote/operation/sg384/sg384_off.py",
+      "bytes": 820,
+      "sha256": "7e780da76a74dc9fdd41f5840616be9edf95e866e38eb588c6e536026ca9d665"
+    },
+    {
+      "path": "labremote/operation/sg384/sg384_on.py",
+      "bytes": 221,
+      "sha256": "b7186c39fe28e6e4d2a2d03d30f44b02b6c5242d2c61648d30ca1ae1985aabbf"
+    },
+    {
+      "path": "labremote/operation/thermotek/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "labremote/operation/thermotek/read_snapshot.py",
+      "bytes": 446,
+      "sha256": "25d3c1a7829b3672f2e7804c35a0eff3a6066ab6a368b9b8692dcdae3360fed6"
+    },
+    {
+      "path": "labremote/operation/thermotek/set_target.py",
+      "bytes": 127,
+      "sha256": "4801448b30b2f20e3d0b33a55af57bb9ad688eb69dacc7c8757b0a262e274568"
+    },
+    {
+      "path": "labremote/operation/thermotek/start.py",
+      "bytes": 157,
+      "sha256": "490fe1e548c74a75619f869f6796fca453b22fc53d33a3916fb0c11761440f81"
+    },
+    {
+      "path": "labremote/operation/thermotek/stop.py",
+      "bytes": 157,
+      "sha256": "d0ad789a7ddf504b563a157adec3d12ed4d669c88faf7cab0b7a2c149b3189d4"
+    },
+    {
+      "path": "labremote/operation/windfreak/__init__.py",
+      "bytes": 490,
+      "sha256": "757025892e748d4cdd267abfaa9a92c6add8619e6ef5106bae97b642cd2662fd"
+    },
+    {
+      "path": "labremote/operation/windfreak/configure_external_reference.py",
+      "bytes": 309,
+      "sha256": "73953eec69a11579c0593a8f8b25603e9541d03708b9e1f314e331712b374a1b"
+    },
+    {
+      "path": "labremote/operation/windfreak/read_snapshot.py",
+      "bytes": 1287,
+      "sha256": "c4ecc426079388ed201af6c0ddcf817b9ceceb05712cf5baea7b176c669bcaa8"
+    },
+    {
+      "path": "labremote/operation/windfreak/set_frequency.py",
+      "bytes": 312,
+      "sha256": "2cfe511543639b953ae4554227ff3b2241f69fd622dfa9e8a1fd5443e9dc8309"
+    },
+    {
+      "path": "labremote/operation/windfreak/set_internal_reference_10mhz.py",
+      "bytes": 265,
+      "sha256": "ee263008d95d9e6bd18e398e99463e043481ddf69140541d544d737680a84f14"
+    },
+    {
+      "path": "labremote/operation/windfreak/set_internal_reference_27mhz.py",
+      "bytes": 265,
+      "sha256": "9d48ff27cb1fad42a74ba56f8c7d932c781e25e5b0d6342c73821e04b114d6d4"
+    },
+    {
+      "path": "labremote/operation/windfreak/set_phase.py",
+      "bytes": 305,
+      "sha256": "284540e2b7dde058f0a364f8057796dab0172703016603cffbaa14ecdc70583a"
+    },
+    {
+      "path": "labremote/operation/windfreak/set_power.py",
+      "bytes": 880,
+      "sha256": "8846d71827fc06ef978395162db5b4cc106adfa721f12933d60a99b784e9df43"
+    },
+    {
+      "path": "labremote/operation/windfreak/windfreak_off.py",
+      "bytes": 824,
+      "sha256": "6b7603976b6b5b14bafebd32547e660ab9e16f90ebfaac4d93a16af78ca211ee"
+    },
+    {
+      "path": "labremote/operation/windfreak/windfreak_on.py",
+      "bytes": 229,
+      "sha256": "d76b865b71ee39b75214eee1ea62a71814d157d9e28152c440e1a7c94afcca33"
+    },
+    {
+      "path": "labremote/runtime/__init__.py",
+      "bytes": 79,
+      "sha256": "8699729e40d7662ca386783d71a50ca83696b592157b6c42b4343630422a991b"
+    },
+    {
+      "path": "labremote/runtime/acquisition_worker.py",
+      "bytes": 952,
+      "sha256": "8698374ed11b5dfcd6a49fc19368d9a199cc10167ea1821eefbcf06957a8f68b"
+    },
+    {
+      "path": "labremote/runtime/auto_monitor.py",
+      "bytes": 5846,
+      "sha256": "7c636c2fa8eab9364c37fb3a79b8dafc2a75c8ab72cdf1f34fe0517816b953dc"
+    },
+    {
+      "path": "labremote/runtime/bindings.py",
+      "bytes": 1494,
+      "sha256": "87779106caef599042ce1788ea6a058d516e88298bfbd546e38838d283274d17"
+    },
+    {
+      "path": "labremote/runtime/characterization_guard.py",
+      "bytes": 1243,
+      "sha256": "ab4673b68f9e9c819e4e1d11a3e85a19c69b9b61305c03b72d3f6f2283f312db"
+    },
+    {
+      "path": "labremote/runtime/device_worker.py",
+      "bytes": 6455,
+      "sha256": "556aa0d5d52e9d14b2128d891b7a90b6aebfffafa28a31589034adcb75203091"
+    },
+    {
+      "path": "labremote/runtime/discovery.py",
+      "bytes": 4831,
+      "sha256": "3ac8ce8cc7f0fc85e7a200f103b091f107f281c96f0c8560deaecebca66625fb"
+    },
+    {
+      "path": "labremote/runtime/errors.py",
+      "bytes": 374,
+      "sha256": "fc17645b400219ecd67574fecda19896616eea02b8c7b6ea1c13fe1b5c0b93fe"
+    },
+    {
+      "path": "labremote/runtime/io.py",
+      "bytes": 819,
+      "sha256": "68c9ca48efbaccb455ea4e8865afc7c1d19860242fd8c5782439e56241f252cb"
+    },
+    {
+      "path": "labremote/runtime/jobs.py",
+      "bytes": 6383,
+      "sha256": "203f6ccac69bc0fa2ab3568e9922744305731f6f416894df9ff6a780310462ef"
+    },
+    {
+      "path": "labremote/runtime/json_response.py",
+      "bytes": 1712,
+      "sha256": "5a94669406f98e4d05c42f150992acc1476f9579f748dcf1b31ae700a39a82ce"
+    },
+    {
+      "path": "labremote/runtime/monitor.py",
+      "bytes": 2377,
+      "sha256": "4e9d5d6dfd88ba103b75f90adcb0d7b66ddf90ccad34254ad0b839a170d79f15"
+    },
+    {
+      "path": "labremote/runtime/motor_scan_runner.py",
+      "bytes": 12475,
+      "sha256": "57fec7b70bc870f3fa8be43e6b20893bfaa583a52d150c821a377ec8437ca860"
+    },
+    {
+      "path": "labremote/runtime/network.py",
+      "bytes": 900,
+      "sha256": "e5ec714a35e3b3920a7a24473013bcade9ed5b4c2cf45fab0c9406d532ba0dcb"
+    },
+    {
+      "path": "labremote/runtime/ownership.py",
+      "bytes": 1436,
+      "sha256": "cbcdb0da790a8b2c96dfacd62b91f872fc498a7ba1dd367de74255209b5002bc"
+    },
+    {
+      "path": "labremote/runtime/parameters.py",
+      "bytes": 30283,
+      "sha256": "a94f2c1d49577ae12509c844274aa3f0111a8adb59e344614c3731133421a18e"
+    },
+    {
+      "path": "labremote/runtime/pid_runner.py",
+      "bytes": 11392,
+      "sha256": "dbc5fa63d51f015865f2c33543e81b377cf0033629d17132dadfa90a2ae2d6b0"
+    },
+    {
+      "path": "labremote/runtime/recording.py",
+      "bytes": 3925,
+      "sha256": "69e48cdcd3247170126a8fae74fc38b15c822e61f9f6fe0a924652e904f20221"
+    },
+    {
+      "path": "labremote/runtime/runner.py",
+      "bytes": 5483,
+      "sha256": "1c9f729424865ec0976335bebd3e2dfc403941249828f726fc632985fa3950f4"
+    },
+    {
+      "path": "labremote/runtime/transport.py",
+      "bytes": 1170,
+      "sha256": "0d0da0693433dae8d0930504821cc982c82bac8532098595a87902ad109f6c6e"
+    },
+    {
+      "path": "labremote/runtime/waveform_runner.py",
+      "bytes": 5002,
+      "sha256": "c34ebe37388c484804aa6922171f6cd541b23cb6cc677a3f443203497d764d24"
+    },
+    {
+      "path": "labremote/runtime/workflow_loader.py",
+      "bytes": 2011,
+      "sha256": "d41f226e166623ded12a182fa54a40e6ae3355c7110dbcb13bd6f84d4523393d"
+    },
+    {
+      "path": "labremote/runtime/workflow_queue.py",
+      "bytes": 9571,
+      "sha256": "7caa225a2ad3b08790fc2a24a7dc5e467d16536455443f8a826c7d806010b792"
+    },
+    {
+      "path": "labremote/runtime/workflow_result.py",
+      "bytes": 2205,
+      "sha256": "ebde4f5683ff2071504b7c59c84cb72d90c8df0cd86deeea322a99f434791327"
+    },
+    {
+      "path": "labremote/runtime/workflow_runner.py",
+      "bytes": 7514,
+      "sha256": "d2958b27716eace522bd5b1d39fba0b010dd9534e6518d554bab023381743b5c"
+    },
+    {
+      "path": "labremote/sequence_examples/pmt_exposure.py",
+      "bytes": 547,
+      "sha256": "4d5569b1c02ef53a92de8f729271b99eec8bc9eb9bbc31d24b7d356d704a8387"
+    },
+    {
+      "path": "labremote/ui/__init__.py",
+      "bytes": 79,
+      "sha256": "8699729e40d7662ca386783d71a50ca83696b592157b6c42b4343630422a991b"
+    },
+    {
+      "path": "labremote/ui/auxiliary_tab.py",
+      "bytes": 21737,
+      "sha256": "42a7140677ca004f813b626aa38f5006d4d166263f29cf115141d250fafb156f"
+    },
+    {
+      "path": "labremote/ui/connection_status.py",
+      "bytes": 476,
+      "sha256": "bd468cae869b444b7d841541f452495860dc15e0e02ee3451deed7eae62ad766"
+    },
+    {
+      "path": "labremote/ui/daily_characterization.py",
+      "bytes": 10307,
+      "sha256": "8e3cc05b5e1bb1f4bba1f2f986ed5599df5e302af3f33ac33d033e27b82f2085"
+    },
+    {
+      "path": "labremote/ui/decay_tab.py",
+      "bytes": 8136,
+      "sha256": "938a6d4eef7c67908ca0cd5f728ec14140b4b0d5d0d1ab9ccd373e283869d713"
+    },
+    {
+      "path": "labremote/ui/detail_window.py",
+      "bytes": 1989,
+      "sha256": "627287227cb27be07c4e5d76ca053be88fc57f1857238208c856cc28b2cdb6d3"
+    },
+    {
+      "path": "labremote/ui/equipment_configuration.py",
+      "bytes": 5072,
+      "sha256": "5f92c63d863981461ce5a0a5932cc29f89b5e050c69cd4922254a25c5fffe2cd"
+    },
+    {
+      "path": "labremote/ui/equipment_tab.py",
+      "bytes": 15861,
+      "sha256": "fc07946045ca50b7550c5a355259461b5f0e9ccbdf5dc2fdfcc52de672936c16"
+    },
+    {
+      "path": "labremote/ui/experiment_shell.py",
+      "bytes": 22452,
+      "sha256": "271df0fc9fe896078c0fed050850a73717ef97bc4de0bf73adc4ef2c4011c1b2"
+    },
+    {
+      "path": "labremote/ui/fpga_count_tab.py",
+      "bytes": 11261,
+      "sha256": "f52f96b0483193c6177f9ab245776fc87622151e8d0902cbb7dd75ca1ae6ec6f"
+    },
+    {
+      "path": "labremote/ui/library_updates.py",
+      "bytes": 4264,
+      "sha256": "02b07170315428b32cdf65279fef3fb68cc7951bc387ab4921511021045edb51"
+    },
+    {
+      "path": "labremote/ui/main_window.py",
+      "bytes": 17324,
+      "sha256": "d3b4afd982e62115bfc863b6bd73fdebc2bd13fe316385d780ae25e5bc548999"
+    },
+    {
+      "path": "labremote/ui/monitor_dashboard.py",
+      "bytes": 10434,
+      "sha256": "40707e84895920e0cd9fa51e3f0966a98d53e86ed52c852c6b181fd68da5f279"
+    },
+    {
+      "path": "labremote/ui/motor_scan_tab.py",
+      "bytes": 20788,
+      "sha256": "2f4f1a51f9891f0ce119ee781ddb9462551b08250e7004e21a5ad3407a842b15"
+    },
+    {
+      "path": "labremote/ui/motor_tab.py",
+      "bytes": 9032,
+      "sha256": "14bf0ef021ba36cca5880b4ae55295f654f47a5e71e2a85ffc973f067e8e3cc3"
+    },
+    {
+      "path": "labremote/ui/pid_tab.py",
+      "bytes": 6997,
+      "sha256": "7df837dfe6648a81c9b60aac336dba4c838e3a60d7e09d5e4f113d76d7ccfd22"
+    },
+    {
+      "path": "labremote/ui/pulse_experiment_tab.py",
+      "bytes": 9639,
+      "sha256": "98d7b51b72feb363a4935ec8591c922e27e1753edd18677051520161c3f192cb"
+    },
+    {
+      "path": "labremote/ui/queue_monitor.py",
+      "bytes": 6588,
+      "sha256": "81a12111f3fca78d44fdcd385b0147fed92503049d9a35b38d4ea112fb3a8be7"
+    },
+    {
+      "path": "labremote/ui/queue_tab.py",
+      "bytes": 9574,
+      "sha256": "73924f90e6c18b88969a33e0634c9dc3dfbe9f12ab0d0908350bf35ef73ce3e0"
+    },
+    {
+      "path": "labremote/ui/rabi_tab.py",
+      "bytes": 10096,
+      "sha256": "eaf0cb1be10bbe37dc629cc801fb40bfb83f4552c5fabdd0b75f4e36eada5f3f"
+    },
+    {
+      "path": "labremote/ui/rf_device_tab.py",
+      "bytes": 18728,
+      "sha256": "c2994e0ea3b368de66f0e9cb38e140128cd1b8c40184a05a82a815fda8a314b3"
+    },
+    {
+      "path": "labremote/ui/shutter_status.py",
+      "bytes": 1333,
+      "sha256": "351648c4f871688345d7e3f8c12ebb95165696712d5fe6069535fdb8b2576799"
+    },
+    {
+      "path": "labremote/ui/theme.py",
+      "bytes": 6484,
+      "sha256": "d5901f04e592be5083b13930bda7ac6c5c9e55ec89f191a69502b65bc1529ba1"
+    },
+    {
+      "path": "labremote/ui/theme_assets/check.svg",
+      "bytes": 161,
+      "sha256": "8f16de285686f70bc71fca2acb1018e0cc92f60bc56b4c41bcb3614f8bbda821"
+    },
+    {
+      "path": "labremote/ui/theme_assets/down.svg",
+      "bytes": 126,
+      "sha256": "65e0466cf41d84018b4c57f35937de1f32b474917d54fb7656cba271fee5c413"
+    },
+    {
+      "path": "labremote/ui/theme_assets/minus.svg",
+      "bytes": 143,
+      "sha256": "4f7dd22a4663a459060d85406312ac10e485101b0afd37deffd7e59ea9675397"
+    },
+    {
+      "path": "labremote/ui/theme_assets/up.svg",
+      "bytes": 126,
+      "sha256": "b05e386611cb4b622da0f13b51c81cbe331801898f4efd911f1f8ed11c702709"
+    },
+    {
+      "path": "labremote/ui/widgets/__init__.py",
+      "bytes": 79,
+      "sha256": "8699729e40d7662ca386783d71a50ca83696b592157b6c42b4343630422a991b"
+    },
+    {
+      "path": "labremote/ui/widgets/readback_inputs.py",
+      "bytes": 674,
+      "sha256": "a06b7d839656c5b585f142bbdb6c43c7b657ae2902b448ddae6bc15072c700ea"
+    },
+    {
+      "path": "labremote/ui/widgets/rf_layout.py",
+      "bytes": 1268,
+      "sha256": "ef059cfb3d87f9c1eded2626d2d81624d07a3f32dd2479a356f4b065d795a4b3"
+    },
+    {
+      "path": "labremote/ui/widgets/step_control.py",
+      "bytes": 2651,
+      "sha256": "9ae763fd7920f9afdeb695419621ee399eb3ff3cbf3e542bb0563a98cc1cb771"
+    },
+    {
+      "path": "labremote/ui/workflow_tab.py",
+      "bytes": 11269,
+      "sha256": "2c5325ad82bc6cd1f06d67f32d11a65b6ee9efd4d685712701cc181e43845609"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 201,
+      "sha256": "7f15519bacc11038add7ca68c4a7eeb99ed69cb0f1a8d60de245da1363ef75e3"
+    },
+    {
+      "path": "requirements_ccd.txt",
+      "bytes": 204,
+      "sha256": "755ae09c6c80a393da31bacb9dd6e3f2e372b26ed0f8937f7a7aba0f08803452"
+    },
+    {
+      "path": "requirements_client.txt",
+      "bytes": 429,
+      "sha256": "557b69257d46596d013329656981eb826bec0c082a3aa1a9b8963afe4f946718"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ LOCAL = CONFIG_ROOT/'operations/oven.local.json'
 PROFILES = {'EA_174': (5., .75), 'EA_171': (5., .75),
             'EC_174': (5., 1.4), 'EC_171': (5., 1.30)}
 DEFAULTS = {'chamber': 'EC', 'psu_name': 'oven_psu', 'relay_name': 'oven_relays',
-            'shutter': 'shutter_2', 'photoionization_shutter': 'shutter_1', 'timeout_s':600}
+            'shutter': 'shutter_1', 'photoionization_shutter': 'shutter_1', 'timeout_s':600}
 
 
 def load_settings():
@@ -16,6 +16,9 @@ def load_settings():
     if not isinstance(data, dict): raise ValueError('oven.local.json must be an object')
     result = dict(DEFAULTS)
     result.update({key: value for key, value in data.items() if key in DEFAULTS})
+    if 'photoionization_shutter' not in data and 'shutter' in data:
+        result['photoionization_shutter']=data['shutter']
+    result['shutter']=result['photoionization_shutter']  # Legacy read alias.
     validate_chamber(result['chamber'])
     if result['photoionization_shutter'] not in ('shutter_1','shutter_2'):
         raise ValueError('Select shutter_1 or shutter_2 for the 399 shutter')

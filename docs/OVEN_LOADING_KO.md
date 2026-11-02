@@ -7,8 +7,8 @@
 ## 설정과 사용
 
 1. 실제 CCD를 Thorcam으로 연결합니다. Dummy CCD를 연결한 상태에서는 실제 오븐 ON을 거부합니다.
-2. CCD 탭 오른쪽의 EC oven 영역에서 Connect oven devices를 누릅니다. 기본 이름은 oven_psu / oven_relays이며 화면에서 바꿀 수 있습니다.
-3. 기본 EC 셔터는 shutter_2입니다. 실제 배선에 따라 shutter_1 또는 shutter_2를 선택합니다. 별도의 연결 확인 체크박스는 없습니다. 이 선택을 임의로 물리적 검증된 것으로 간주하지 않습니다.
+2. CCD 탭 오른쪽의 EC oven 영역에서 Connect oven devices를 누릅니다. 기본 이름은 oven_psu / oven_relays이며 oven.local.json에서 설정합니다.
+3. 오븐/399 셔터는 하나이며 기본은 shutter_1입니다. 실제 배선에 따라 shutter_1 또는 shutter_2를 선택합니다. 별도의 연결 확인 체크박스는 없습니다. 이 선택을 임의로 물리적 검증된 것으로 간주하지 않습니다.
 4. 171 또는 174를 선택합니다. 기존 Ion detection의 threshold, 최소 면적, ROI, 목표 개수, 연속 프레임 수를 확인합니다. 이온 조건은 밝은 연결 영역 count >= target의 연속 판정이며 기존 CCD 알고리즘을 그대로 사용합니다.
 5. Oven ON을 누르면 아래 순서로 실행합니다. STOP / Oven OFF로 중단할 수 있습니다.
 
@@ -17,19 +17,19 @@
 | EC 171 | CH1 / P6V | 5.000 V | 1.30 A |
 | EC 174 | CH1 / P6V | 5.000 V | 1.40 A |
 
-EA 171/174의 5.000 V / 0.75 A 값은 profile에 보존하지만 이번 UI는 EC만 실행합니다. Flip mirror는 조작하지 않습니다. 선택하지 않은 셔터도 조작하지 않습니다.
+EA 171/174는 5.000 V / 0.75 A입니다. oven.local.json의 chamber로 EA/EC를 선택하며 활성화된 flipper 경로를 적용합니다. 선택하지 않은 셔터도 조작하지 않습니다.
 
 ## operation 순서
 
 1. `OVEN_OFF`: E3631A 전체 출력 OFF 및 readback. 세 출력의 측정 전류가 각각 20 mA 이하인지 최대 5초 동안 확인한 뒤에만 다음 단계로 갑니다.
-2. `OVEN_SHUTTER_CLOSE`: 선택한 EC 셔터 닫기.
-3. 기존 CCD 촬영을 멈추고 선택한 검출 설정을 적용한 뒤 연속 촬영을 시작합니다. 진행 중인 CCD 작업이나 ion wait가 있으면 시작 전 거부하므로 먼저 완료/취소하세요.
-4. `OVEN_ROUTE`: EC_171 또는 EC_174 선택 및 GPIO 상태 readback.
-5. `OVEN_CURRENT_SETUP`: tracking OFF, CH2/CH3 전압·전류 설정을 0으로 만들고 CH1 전류·전압을 설정합니다. E3631A의 OUTP는 전체 출력에 공통이므로 이 PSU는 오븐 전용으로 사용해야 합니다.
-6. `OVEN_SHUTTER_OPEN`: route 확인 후 EC 셔터 열기.
-7. `OVEN_ON`: 설정과 미사용 채널을 재확인하고 전체 출력 ON.
-8. `CCD_WAIT`: 새로운 프레임에서 목표 조건을 기다립니다. 별도 카메라 프로세스가 판정하므로 다른 탭을 보고 있어도 동작합니다. PSU 측정 V/A와 route/shutter 상태를 주기적으로 읽습니다.
-9. 성공·실패·취소·timeout 모두 `OVEN_OFF` → `OVEN_SHUTTER_CLOSE`를 실행합니다. 한 종료 operation이 실패해도 다른 종료 operation은 별도로 시도합니다.
+2. `OVEN_399_CLOSE`: 선택한 399 셔터 하나를 닫습니다.
+3. 활성화된 flipper 경로를 이동하고 검출 ON 모드이면 CCD 촬영/검출을 준비합니다.
+4. `OVEN_ROUTE`: EA/EC 및 동위원소 릴레이 선택.
+5. `OVEN_CURRENT_SETUP`: tracking OFF, 미사용 CH2/CH3 전압·전류 0, CH1 전류 0 A와 전압 제한 설정.
+6. `OVEN_ON`: 전체 출력 ON. 이 시점의 CH1 전류 설정은 0 A입니다.
+7. `OVEN_399_OPEN`: route 확인 후 선택한 399 셔터 OPEN. 다른 셔터는 변경하지 않습니다.
+8. `OVEN_RAMP_UP`: 0.15 A 단위 증가. CCD_WAIT로 포획을 기다리며 실제 V/A 및 route/shutter를 읽습니다.
+9. 포획·STOP·timeout·오류 때 `OVEN_399_CLOSE` → 전류 ramp down → PSU OFF. CLOSE 실패 때도 PSU 종료를 시도합니다.
 
 기본 10분 0초이며 오븐 패널의 분·초 입력으로 변경합니다. 제한 시간에는 setup을 포함한 task 실행 시작부터의 시간이 포함됩니다. timeout 이후 OFF/CLOSE 확인 작업이 추가로 진행됩니다. 진행 중인 통신 및 readback을 중간에 잘라 성공으로 처리하지 않으므로 실제 종료 완료 시점은 통신 응답 시간만큼 늦어질 수 있습니다.
 
@@ -46,7 +46,7 @@ def main(devices):
     from labremote.devices.oven.settings import load_settings
     local = load_settings()
     result = devices.ccd().load_oven(
-        171, shutter=local['shutter'],
+        171, photoionization_shutter=local['photoionization_shutter'],
         threshold=1000, min_area=3, target=1, consecutive_frames=3,
     ).wait()
     print(result)

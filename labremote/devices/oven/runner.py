@@ -25,14 +25,17 @@ class OvenLoadTask(WorkflowTask):
         self.ccd.oven_runner = self
         self.flip_routing = None
 
-    def start(self, isotope=171, *, shutter='shutter_2', shutter_confirmed=None,
+    def start(self, isotope=171, *, shutter=None, shutter_confirmed=None,
               threshold=1000, min_area=3, target=1, consecutive_frames=3, roi=None, parent=None, follow_viewport=False, detect_ions=True, timeout_s=None, photoionization_shutter=None, chamber=None):
         # shutter_confirmed is accepted only for compatibility with older workflows.
         with _TASK_LOCK:
             try:
                 if self.running(): raise RuntimeError('Oven loading is already running or stopping')
                 chamber=validate_chamber(load_settings()['chamber'] if chamber is None else chamber)
-                if photoionization_shutter is None:photoionization_shutter=load_settings()['photoionization_shutter']
+                if photoionization_shutter is None:
+                    photoionization_shutter=shutter if shutter is not None else load_settings()['photoionization_shutter']
+                # Legacy shutter is an alias; only the selected 399 shutter is operated.
+                shutter=photoionization_shutter
                 if photoionization_shutter not in ('shutter_1','shutter_2'):raise ValueError('Select shutter_1 or shutter_2 for the 399 shutter')
                 flip_plan=()
                 if self.flip_routing is not None:
@@ -109,15 +112,11 @@ class OvenLoadTask(WorkflowTask):
         try:
             self.publish(phase='PSU OFF / current verification', route=s['route'], timeout_s=s['timeout_s'])
             self._operation(self.psu, 'OVEN_OFF', power.off)
-            self._operation(self.relays, 'OVEN_SHUTTER_CLOSE', relay.close_shutter, s['shutter'])
-            if s['photoionization_shutter']!=s['shutter']:
-                self._operation(self.relays,'OVEN_399_CLOSE',relay.close_shutter,s['photoionization_shutter'])
+            self._operation(self.relays,'OVEN_399_CLOSE',relay.close_shutter,s['photoionization_shutter'])
             from labremote.operation.flip.control import move as flip_move
             for name,position in s['flip_plan']:
                 self.check()
                 self._operation(self.flip_routing.workers[name],'FLIP_ROUTE_MOVE',flip_move,position)
-            self.publish(phase='Open 399 shutter before current setup')
-            self._operation(self.relays,'OVEN_399_OPEN',relay.open_photoionization_shutter,s['photoionization_shutter'])
             if s['detect_ions']:
                 ccd = CCDAPI(self.ccd, group=self.group)
                 self.call(ccd.stop_acquisition())
@@ -126,12 +125,10 @@ class OvenLoadTask(WorkflowTask):
             self.publish(phase=f"Select {s['chamber']} oven / configure CH1", route=s['route'])
             self._operation(self.relays, 'OVEN_ROUTE', relay.select, s['route'])
             self._operation(self.psu, 'OVEN_CURRENT_SETUP', power.configure, voltage, current)
-            if s['shutter']!=s['photoionization_shutter']:
-                self._operation(self.relays, 'OVEN_SHUTTER_OPEN', relay.open_shutter, s['shutter'], s['route'])
-            else:
-                self._operation(self.relays,'OVEN_ROUTE_CHECK',relay.verify_route,s['shutter'],s['route'])
             self.check()
             self._operation(self.psu, 'OVEN_ON', power.on, voltage, current)
+            self.publish(phase='Output ON at zero current / open 399 shutter')
+            self._operation(self.relays,'OVEN_399_OPEN',relay.open_shutter,s['photoionization_shutter'],s['route'])
             self.publish(phase='Waiting for ions' if s['detect_ions'] else 'Oven ON · timeout / STOP only', voltage_limit_v=voltage, current_limit_a=current)
             remaining = max(.001, self._deadline-time.monotonic())
             if s['detect_ions']:
@@ -172,9 +169,7 @@ class OvenLoadTask(WorkflowTask):
             # Independent, uncancelled operations: attempt BOTH even if one fails.
             for worker, label, fn, args in (
                 (self.psu, 'OVEN_OFF', power.off if self.psu.io_fault else power.ramp_down,
-                 () if self.psu.io_fault else (ramp_current,)),
-                (self.relays, 'OVEN_SHUTTER_CLOSE', relay.close_shutter, (s['shutter'],))):
-                if label=='OVEN_SHUTTER_CLOSE' and s['shutter']==s['photoionization_shutter']:continue
+                 () if self.psu.io_fault else (ramp_current,)),):
                 try:self._operation(worker, label, fn, *args, cleanup=True)
                 except Exception as exc:failures.append(f'{label}: {exc}')
             if watch is not None:

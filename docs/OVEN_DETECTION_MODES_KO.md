@@ -13,16 +13,15 @@ Timeout은 분·초 두 입력으로 설정하며 기본은 **10분 0초**입니
 
 ## 오븐 시작/종료 순서
 
-1. PSU OFF 및 잔류 전류 확인
-2. 오븐 셔터 및 399 셔터 CLOSE
-3. 활성화된 EC flipper 경로 이동
-4. 399 셔터 OPEN 확인 후, 검출 ON 모드에서 CCD 준비
-5. EC 171/174 릴레이 선택 및 PSU 설정
-6. 선택한 셔터 OPEN 및 readback 검증
-7. PSU ON, 기존 0.15 A 단위 전류 ramp
-8. 종료 조건 이후 **399 셔터 CLOSE를 먼저 시도·확인**, 그다음 전류 ramp down, PSU OFF, 오븐 셔터 CLOSE 확인
+1. PSU OFF 및 잔류 전류 확인, 선택한 399 셔터 CLOSE
+2. 활성화된 EA/EC flipper 경로 이동
+3. 검출 ON 모드이면 기존 CCD 준비 과정 수행
+4. EA/EC 171/174 릴레이 선택, CH1 전류 0 A 및 전압 제한 설정
+5. PSU 출력 ON → 선택한 399 셔터 OPEN 및 route/readback 확인
+6. 전류를 0.15 A씩 증가시키고 포획 또는 timeout/STOP 대기
+7. 종료 시 **399 셔터 CLOSE → 전류 감소 → PSU OFF**
 
-셔터 OPEN 단계가 실패하면 PSU ON으로 진행하지 않습니다. GPIO/readback은 릴레이 서버가 반환한 상태이며 별도 위치 센서가 없다면 셔터 날개의 물리적 이동까지 확인하는 것은 아닙니다.
+오븐 셔터와 399 셔터는 같은 장치이며 선택한 셔터 하나만 동작합니다. 다른 셔터는 조작하지 않습니다. 셔터 OPEN 실패 시 양의 전류로 ramp하지 않고 CLOSE/OFF 정리를 시도합니다. GPIO/readback 확인은 릴레이 서버 상태이며 물리적 날개 위치 센서 확인은 아닙니다.
 
 셔터 상태는 오븐 패널과 Flipper 창에서 동일한 operation 상태를 표시합니다. OPEN은 초록, CLOSED는 빨강, 미연결/실패/미확인은 회색입니다. 오븐 작업 중에는 그 작업의 readback을 사용하고, 대기 상태의 조회는 기존 자동 조회 스케줄러를 사용합니다. 수동 셔터 창은 shutter_1과 shutter_2를 각각 상태 읽기 / OPEN / CLOSE할 수 있습니다. 오븐 실행 중에는 수동 조작을 잠급니다.
 
@@ -55,22 +54,23 @@ devices.ccd().load_oven(171, detect_ions=False, timeout_s=10*60).wait()
 
 ## 399 셔터 선택과 종료 순서
 
-CCD 아래 오븐 패널에 Oven shutter와 399 shutter를 별도로 표시합니다. 확인된 기본 구성은 오븐 shutter_2, 399 shutter_1입니다. 각 드롭다운에서 변경하면 다음 연결/Start 시 `labremote/config/operations/oven.local.json`에 저장됩니다.
+CCD 아래 오븐 패널의 **399 shutter** 하나로 선택합니다. 기본은 shutter_1이며 shutter_2로 변경할 수 있습니다. Connect/Start 때 `labremote/config/operations/oven.local.json`에 저장됩니다.
 
 ```json
 {
   "chamber": "EC",
   "psu_name": "oven_psu",
   "relay_name": "oven_relays",
-  "shutter": "shutter_2",
   "photoionization_shutter": "shutter_1",
   "timeout_s": 600
 }
 ```
 
-시작 시 PSU OFF/잔류 전류와 안전한 경로 전환을 확인한 뒤 399 셔터를 엽니다. 399 OPEN은 CCD 준비 및 전류 설정/ramp보다 먼저 수행합니다. STOP·포획·timeout·오류에는 399 CLOSE가 종료 절차의 첫 operation입니다. 진행 중인 통신은 완료를 기다리지만, 전류 ramp down 완료를 기다렸다가 399를 닫는 방식은 사용하지 않습니다. 399 CLOSE 실패 시 오류를 남기고 전류 감소/PSU OFF/오븐 셔터 CLOSE를 계속 시도합니다. 두 역할에 같은 셔터를 지정하면 시작 OPEN과 종료 CLOSE를 중복 실행하지 않습니다.
+기존 파일에 shutter와 photoionization_shutter가 모두 있으면 photoionization_shutter만 사용합니다. UI에서 다음 저장 시 별도 shutter 키는 제거됩니다. 옛 파일에 shutter만 있으면 그 값을 사용합니다.
 
-실행 중인 오븐 task가 없는 상태의 STOP도 399 CLOSE 시도 완료 후 PSU OFF를 요청합니다. 별도 workflow에서는 `load_oven(..., photoionization_shutter="shutter_1")`로 지정할 수 있고, 생략하면 로컬 설정을 읽습니다.
+Workflow는 `load_oven(..., photoionization_shutter="shutter_1")`로 선택합니다. 옛 `shutter=` 인자는 같은 장치의 별칭으로 지원하며 두 인자를 함께 지정하면 photoionization_shutter가 우선합니다. 둘 다 생략하면 로컬 설정을 사용합니다.
+
+STOP·포획·timeout·오류 시 399 CLOSE가 정리의 첫 operation입니다. CLOSE 실패 시에도 PSU 감소/OFF를 시도하고 정리 실패를 표시합니다. 실행 중이 아닐 때 STOP도 선택한 셔터 CLOSE 후 PSU OFF를 요청합니다. Flipper는 종료 시 마지막 위치를 유지합니다.
 
 ## EA/EC 요청은 어디서 결정되나
 
@@ -90,6 +90,6 @@ flipper_routes.local.json의 기존 host/port/names를 유지하고 아래처럼
 }
 ```
 
-auto_route=false면 자동 이동하지 않습니다. true인데 선택한 챔버 경로가 비어 있거나 장비가 연결되지 않으면 가열을 시작하지 않습니다. 399 셔터와 Oven shutter 번호는 oven.local.json의 별도 설정이며 챔버 이름으로 자동 추정하지 않습니다.
+auto_route=false면 자동 이동하지 않습니다. true인데 선택한 챔버 경로가 비어 있거나 장비가 연결되지 않으면 가열을 시작하지 않습니다. 399 셔터 번호는 oven.local.json에서 설정하며 챔버 이름으로 자동 추정하지 않습니다.
 
 Workflow의 load_oven()도 chamber 생략 시 같은 로컬 설정을 읽습니다. 한 요청만 명시하려면 `devices.ccd().load_oven(171, chamber="EA").wait()`처럼 지정할 수 있습니다. UI 작업의 표시 챔버와 다른 명시적 workflow 요청은 operation의 route에 기록됩니다.

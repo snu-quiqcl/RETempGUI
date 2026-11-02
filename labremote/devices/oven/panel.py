@@ -39,10 +39,9 @@ class OvenPanel(QtWidgets.QGroupBox):
         self.relay_name.setParent(self);self.relay_name.hide()
         self.connect_button = QtWidgets.QPushButton('Connect oven devices')
         self.isotope = QtWidgets.QComboBox();self.isotope.addItems(['171','174'])
-        self.shutter = QtWidgets.QComboBox();self.shutter.addItems(['shutter_2','shutter_1'])
-        self.shutter.setCurrentText(config['shutter'])
         self.photoionization_shutter=QtWidgets.QComboBox();self.photoionization_shutter.addItems(['shutter_1','shutter_2'])
         self.photoionization_shutter.setCurrentText(config['photoionization_shutter'])
+        self.shutter=self.photoionization_shutter  # Compatibility alias for one physical shutter.
         self.timeout_minutes=QtWidgets.QSpinBox();self.timeout_minutes.setRange(0,9999);self.timeout_minutes.setSuffix(' 분')
         self.timeout_seconds=QtWidgets.QSpinBox();self.timeout_seconds.setRange(0,59);self.timeout_seconds.setSuffix(' 초')
         seconds=config.get('timeout_s',600)
@@ -54,20 +53,20 @@ class OvenPanel(QtWidgets.QGroupBox):
         self.start_button = QtWidgets.QPushButton('Oven ON · timeout / STOP 종료')
         self.stop_button = QtWidgets.QPushButton('STOP / Oven OFF')
         self.measured = QtWidgets.QLabel('CH1 현재 측정값: — V / — A')
-        self.shutter_state=QtWidgets.QLabel('오븐 셔터 위치 미확인')
         self.photo_shutter_state=QtWidgets.QLabel('399 셔터 위치 미확인')
+        self.shutter_state=self.photo_shutter_state
         self.state = QtWidgets.QLabel(config_error or '검출 ON: 포획 / timeout / STOP 종료 · 검출 OFF: timeout / STOP 종료')
         self.state.setWordWrap(True)
         warning = QtWidgets.QLabel('E3631A OFF는 전체 출력에 적용됩니다. CH2/CH3는 0으로 설정합니다. Flipper 자동 전환은 로컬 매핑을 활성화한 경우에만 수행합니다.')
         warning.setWordWrap(True)
-        for row,(label,widget) in enumerate(((f'{self.chamber} isotope',self.isotope),('Oven shutter',self.shutter),('399 shutter',self.photoionization_shutter))):
+        for row,(label,widget) in enumerate(((f'{self.chamber} isotope',self.isotope),('399 shutter',self.photoionization_shutter))):
             grid.addWidget(QtWidgets.QLabel(label),row,0);grid.addWidget(widget,row,1)
         timeout_row=QtWidgets.QHBoxLayout();timeout_row.addWidget(self.timeout_minutes);timeout_row.addWidget(self.timeout_seconds)
-        grid.addWidget(QtWidgets.QLabel('Timeout'),3,0);grid.addLayout(timeout_row,3,1)
-        grid.addWidget(self.shutter_state,4,0);grid.addWidget(self.photo_shutter_state,4,1)
-        for row,widget in enumerate((self.profile,warning,self.connect_button),5):grid.addWidget(widget,row,0,1,2)
-        grid.addWidget(self.start_button,8,0);grid.addWidget(self.stop_button,8,1)
-        grid.addWidget(self.measured,9,0,1,2);grid.addWidget(self.state,10,0,1,2)
+        grid.addWidget(QtWidgets.QLabel('Timeout'),2,0);grid.addLayout(timeout_row,2,1)
+        grid.addWidget(self.photo_shutter_state,3,0,1,2)
+        for row,widget in enumerate((self.profile,warning,self.connect_button),4):grid.addWidget(widget,row,0,1,2)
+        grid.addWidget(self.start_button,7,0);grid.addWidget(self.stop_button,7,1)
+        grid.addWidget(self.measured,8,0,1,2);grid.addWidget(self.state,9,0,1,2)
         self.connect_button.clicked.connect(self._connect)
         self.start_button.clicked.connect(self._start)
         self.stop_button.clicked.connect(self._stop)
@@ -91,7 +90,7 @@ class OvenPanel(QtWidgets.QGroupBox):
     def _config(self):
         if self._config_error:raise ValueError(self._config_error)
         return dict(chamber=self.chamber,psu_name=self.psu_name.text().strip(),relay_name=self.relay_name.text().strip(),
-                    shutter=self.shutter.currentText(),photoionization_shutter=self.photoionization_shutter.currentText(),timeout_s=self.timeout_minutes.value()*60+self.timeout_seconds.value())
+                    photoionization_shutter=self.photoionization_shutter.currentText(),timeout_s=self.timeout_minutes.value()*60+self.timeout_seconds.value())
 
     def _connect(self):
         if self.task.running() or self.psu.has_requests() or self.relays.has_requests():return
@@ -117,7 +116,7 @@ class OvenPanel(QtWidgets.QGroupBox):
             panel=self.ccd_panel
             detection=panel._detection_enabled
             if detection and panel.detection_roi() is None:raise ValueError('CCD 화면에 센서 이미지를 표시하세요.')
-            self.handle=self.task.start(int(self.isotope.currentText()),chamber=self.chamber,shutter=self.shutter.currentText(),
+            self.handle=self.task.start(int(self.isotope.currentText()),chamber=self.chamber,
                 threshold=panel.threshold.value(),min_area=panel.area.value(),
                 target=panel.target.value(),consecutive_frames=panel.consecutive.value(),
                 roi=panel.detection_roi() if detection else None, follow_viewport=detection,
@@ -131,7 +130,7 @@ class OvenPanel(QtWidgets.QGroupBox):
         else:
             # Even idle STOP closes 399 first; failure must not suppress PSU OFF.
             import threading
-            shutter=self.shutter.currentText();photo=self.photoionization_shutter.currentText()
+            photo=self.photoionization_shutter.currentText()
             guard=threading.Lock();submitted=[False]
             barrier=threading.Event();self._idle_stop_barriers.append(barrier)
             def after_close(handle):
@@ -141,8 +140,6 @@ class OvenPanel(QtWidgets.QGroupBox):
                     submitted[0]=True
                 try:
                     DeviceAPI(self.psu)._submit('OVEN_OFF',lambda w:power.off(w.ps))
-                    if shutter!=photo:
-                        DeviceAPI(self.relays)._submit('OVEN_SHUTTER_CLOSE',lambda w:relay.close_shutter(w.ps,shutter))
                 finally:barrier.set()
             closed=DeviceAPI(self.relays)._submit('OVEN_399_CLOSE',lambda w:relay.close_shutter(w.ps,photo))
             closed.subscribe(after_close)
@@ -185,7 +182,7 @@ class OvenPanel(QtWidgets.QGroupBox):
         import time
         active=self.task.running()
         self.active_changed.emit(active)
-        for widget in (self.connect_button,self.psu_name,self.relay_name,self.isotope,self.shutter,self.photoionization_shutter,self.timeout_minutes,self.timeout_seconds):
+        for widget in (self.connect_button,self.psu_name,self.relay_name,self.isotope,self.photoionization_shutter,self.timeout_minutes,self.timeout_seconds):
             widget.setEnabled(not active and not self._closing)
         ready=all(w.ps is not None and not w.connection_error and not w.io_fault and not w._closing for w in (self.psu,self.relays))
         from labremote.ui.connection_status import connection_color
@@ -194,7 +191,6 @@ class OvenPanel(QtWidgets.QGroupBox):
         self.start_button.setText('Oven ON · 포획 시 자동 종료' if detection else 'Oven ON · timeout / STOP 종료')
         self.start_button.setEnabled(not getattr(self,'_config_error','') and ready and (not detection or self.ccd_panel.connected) and not active and not self._closing and self.ccd_panel._start_after_detection is None)
         from labremote.ui.shutter_status import show_shutter
-        show_shutter(self.shutter_state,self.relays,self.shutter.currentText())
         show_shutter(self.photo_shutter_state,self.relays,self.photoionization_shutter.currentText())
         self._idle_stop_barriers=[event for event in getattr(self,'_idle_stop_barriers',[]) if not event.is_set()]
         if self._closing:
