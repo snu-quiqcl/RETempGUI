@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "PID stopped target apply",
+  "revision_note": "Completed PID batch mean display",
   "files": [
     {
       "path": ".gitattributes",
@@ -1369,8 +1369,8 @@
     },
     {
       "path": "labremote/operation/osa/read_spectrum.py",
-      "bytes": 273,
-      "sha256": "fd5e5c39d84390d6a4fdecebc9326dea918b455c286775465fe8cdc97f414f87"
+      "bytes": 709,
+      "sha256": "7b8ec4ec7149b096eec5aa0246314054870f995090db609587c59b18be5b9d13"
     },
     {
       "path": "labremote/operation/osa/set_auto_reference.py",
@@ -1614,13 +1614,13 @@
     },
     {
       "path": "labremote/runtime/pid_log.py",
-      "bytes": 1919,
-      "sha256": "8c7766aae087e65d5a001a89afb1e39a912a6df4c869df91379e80ae7f2d650a"
+      "bytes": 1958,
+      "sha256": "d9148d32846c8309ea80d4ac329e5601e9fbee8db547e8547bb900a59ee39496"
     },
     {
       "path": "labremote/runtime/pid_runner.py",
-      "bytes": 13411,
-      "sha256": "2afe35fe6ff5fc64e7648ddc355e2455d5a1bc888a821d784666004985ceb3f6"
+      "bytes": 14210,
+      "sha256": "680d6cd453fedd0e40ba1603223e439981e640bb1ef29db3eb18782ae8d2da5e"
     },
     {
       "path": "labremote/runtime/recording.py",
@@ -1674,8 +1674,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 22272,
-      "sha256": "4a6a3454be3ac80d090b59193a045e2004eefd6522d50e16b2fad9f622409632"
+      "bytes": 22436,
+      "sha256": "c07197736121e6cf7881f80b1cbdb596f12a71eaa9df7785b1456591c8613296"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -1744,8 +1744,8 @@
     },
     {
       "path": "labremote/ui/pid_tab.py",
-      "bytes": 11830,
-      "sha256": "be507f635fc8100bb4e38c3154fbb8eb2946a0b9168ee6c35ccdfb7e09d4df6f"
+      "bytes": 12916,
+      "sha256": "53c80af511b23bdeff022f7cd8701b7cbdf3fbb063689dd2deb391d3c162ac58"
     },
     {
       "path": "labremote/ui/pulse_experiment_tab.py",

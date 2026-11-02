@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import time
 from copy import deepcopy
+from collections import deque
 from labremote.runtime.workflow_runner import WorkflowTask
 from labremote.config.device_config import load_device_config,operation_config
 
@@ -74,7 +75,7 @@ def estimate_peak(spectrum: dict[str, Any], use_fit: bool, min_snr: float, *, in
     result = {"raw_thz": raw, "fit_thz": fit, "fit_error": fit_error, "peak_dbm": peak,
             "noise_floor_dbm": floor, "snr_db": snr,
             "selected_thz": fit if use_fit else raw}
-    if include_curve and use_fit:
+    if include_curve and fit is not None:
         curve_x=np.linspace(float(xx[0]),float(xx[-1]),max(200,len(xx)))
         result.update(fit_frequency_thz=curve_x.tolist(),fit_power_dbm=model(curve_x,*pars).tolist())
     return result
@@ -84,6 +85,7 @@ class PIDMath:
     def __init__(self,c,voltage,now):
         self.c=dict(c);self.initial=self.current=voltage
         self.last_dt=self.last_out=now;self.integral=0.;self.previous=None;self.derivative=0.
+        self.moving_raw=deque(maxlen=c['average_count'])
         self.batch=[];self.raw_batch=[];self.fit_batch=[];self.gap=False
 
     def reset_batch(self):
@@ -94,17 +96,27 @@ class PIDMath:
         self.c=dict(c)
 
     def feed(self,spectrum,now):
-        c=self.c;peak=estimate_peak(spectrum,c['use_fit'],c['minimum_snr_db'],diagnostic_fit=True)
+        c=self.c
+        cached=spectrum.get('_peak_analysis')
+        if cached is None:
+            peak=estimate_peak(spectrum,c['use_fit'],c['minimum_snr_db'],diagnostic_fit=True)
+        else:
+            peak={key:value for key,value in cached.items() if key not in ('fit_frequency_thz','fit_power_dbm')}
+            if peak['snr_db']<c['minimum_snr_db']:raise InvalidSpectrum('Insufficient SNR')
+            if c['use_fit'] and peak['fit_thz'] is None:raise InvalidSpectrum('Fit required but unavailable: '+str(peak.get('fit_error')))
+            peak['selected_thz']=peak['fit_thz'] if c['use_fit'] else peak['raw_thz']
         if peak['peak_dbm']<c['min_peak_dbm']:raise InvalidSpectrum('Peak below minimum power')
         single_error=(c['target_thz']-peak['selected_thz'])*1000
         if not math.isfinite(single_error) or abs(single_error)>c['capture_ghz']:raise InvalidSpectrum('Outside PID capture range')
+        self.moving_raw.append(peak['raw_thz'])
         self.batch.append(peak['selected_thz']);measured=sum(self.batch)/len(self.batch)
         self.raw_batch.append(peak['raw_thz']);self.fit_batch.append(peak['fit_thz'])
         raw_mean=sum(self.raw_batch)/len(self.raw_batch)
         fit_mean=(sum(self.fit_batch)/len(self.fit_batch)
                   if all(value is not None and math.isfinite(value) for value in self.fit_batch) else None)
         data=dict(**peak,batch_collected=len(self.batch),batch_size=c['average_count'],measured_thz=measured,
-                  raw_mean_thz=raw_mean,fit_mean_thz=fit_mean,target_thz=c['target_thz'])
+                  raw_mean_thz=raw_mean,fit_mean_thz=fit_mean,target_thz=c['target_thz'],
+                  raw_moving_mean_thz=sum(self.moving_raw)/len(self.moving_raw),moving_count=len(self.moving_raw))
         if len(self.batch)<c['average_count']:return None,data
         self.batch.clear();self.raw_batch.clear();self.fit_batch.clear();err=(c['target_thz']-measured)*1000
         dt=0. if self.gap else max(.001,now-self.last_dt);self.gap=False;self.last_dt=now

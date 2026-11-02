@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from labremote.data_paths import DATA_ROOT
 
 FIELDS = ('time_utc', 'elapsed_s', 'phase', 'request_id', 'raw_thz', 'fit_thz',
-          'fit_error', 'selected_thz', 'measured_thz', 'raw_mean_thz', 'fit_mean_thz', 'batch_collected', 'batch_size',
+          'fit_error', 'selected_thz', 'measured_thz', 'raw_mean_thz', 'fit_mean_thz', 'raw_moving_mean_thz', 'moving_count', 'batch_collected', 'batch_size',
           'samples', 'voltage_before_v', 'voltage_v', 'target_thz', 'error_ghz',
           'peak_dbm', 'snr_db', 'axis', 'osa_name', 'use_fit', 'average_count',
           'kp_v_per_ghz', 'ki_v_per_ghz_s', 'kd_v_s_per_ghz', 'outcome')

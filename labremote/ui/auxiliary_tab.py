@@ -255,9 +255,11 @@ class AuxiliaryTab(QtWidgets.QWidget):
         value=handle.result;self.figure.clear();axis=self.figure.add_subplot(111)
         if handle.action=='SPECTRUM':
             axis.plot(value['frequency_thz'],value['power_dbm'],color='#57baff',label='Measured',linewidth=1.3)
-            from labremote.runtime.pid_runner import estimate_peak,InvalidSpectrum
+            from labremote.runtime.pid_runner import InvalidSpectrum
             try:
-                fit=estimate_peak(value,True,0.,include_curve=True)
+                fit=value.get('_peak_analysis')
+                if not fit or fit.get('fit_thz') is None:
+                    raise InvalidSpectrum(value.get('_peak_analysis_error') or (fit or {}).get('fit_error') or 'No worker fit available')
                 axis.plot(fit['fit_frequency_thz'],fit['fit_power_dbm'],color='#ffb347',linestyle='--',linewidth=2,label='sech² fit')
             except InvalidSpectrum as exc:
                 axis.text(.02,.96,'Fit unavailable: '+str(exc),transform=axis.transAxes,va='top',fontsize=8)
