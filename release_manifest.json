@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Six-panel decay analysis and batch histograms",
+  "revision_note": "Decay microsecond UI inputs",
   "files": [
     {
       "path": ".gitattributes",
@@ -54,8 +54,8 @@
     },
     {
       "path": "docs/DECAY_SIX_PLOTS_KO.md",
-      "bytes": 2242,
-      "sha256": "7f8f9842f7c7e882f35f66739235e103be69213a00365959c08d21e3c4871499"
+      "bytes": 3611,
+      "sha256": "158ad39199ad58a3373379277b43229987fbcf1e8e7ade50e2a82fa8c7a7ba6d"
     },
     {
       "path": "docs/DEVICE_GUIDE_KO.md",
@@ -619,13 +619,13 @@
     },
     {
       "path": "labremote/decay/config.py",
-      "bytes": 5710,
-      "sha256": "ebfe89469b8cfa833be90f83413eef05460867186fc46cd163c94a229a41a37c"
+      "bytes": 6583,
+      "sha256": "b46edafeb37efe16b896654dba5094e7ca80097fcf7b198c662899b1d58636dd"
     },
     {
       "path": "labremote/decay/plotting.py",
-      "bytes": 8138,
-      "sha256": "3f6931d3c11f7ec8344c184fa0fe96ab2b9bff53e9785fb094f9d702b57edbe1"
+      "bytes": 9008,
+      "sha256": "39273287805be656fd4fbc079c720982fcd37a06559bbbefe9a63d113b5519ee"
     },
     {
       "path": "labremote/decay/runner.py",
@@ -1679,8 +1679,8 @@
     },
     {
       "path": "labremote/ui/decay_tab.py",
-      "bytes": 8558,
-      "sha256": "c6c843ac9c8654abd29e5e448f169ecc82de6fce289bb8f8822776c3f8fe2cdc"
+      "bytes": 9929,
+      "sha256": "82494ff3a629b58f22860a80b05b905541f7cc371251738f64d5046cb48b7b1e"
     },
     {
       "path": "labremote/ui/detail_window.py",

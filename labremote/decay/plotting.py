@@ -3,6 +3,15 @@ import numpy as np
 
 BIN_NS = 1.25
 
+def data_y_limits(lines):
+    """Use only measured series, excluding fits, markers and shaded regions."""
+    maximum=0.
+    for line in lines:
+        values=np.asarray(line.get_ydata(),dtype=float)
+        finite=values[np.isfinite(values)]
+        if finite.size:maximum=max(maximum,float(finite.max()))
+    return (0.,maximum*1.05 if maximum>0 else 1.)
+
 def fit_decay(x, y):
     """Fit observed counts, not a fixed reference lifetime."""
     from scipy.optimize import curve_fit, OptimizeWarning
@@ -33,7 +42,7 @@ class DecayPlot:
         for i,label in enumerate(self.labels):
             for k,axis in enumerate(self.axes):
                 self.series[k].append(axis.plot([],[],'o-',ms=3,lw=1,color=colors[i],label=label)[0])
-            self.fit_lines.append(self.axes[0].plot([],[],'--',lw=1.5,color=colors[i],label=label+' fit')[0])
+            self.fit_lines.append(self.axes[0].plot([],[],'--',lw=1.5,color=colors[i],label='_nolegend_')[0])
             self.probability_lines.append(self.probability_axis.plot([],[],':',lw=1.4,color=colors[i])[0])
         titles=['1  Accumulated decay','2  Latest batch decay','3  Accumulated pulse + 5 clocks','4  Latest batch pulse + 5 clocks','5  Decay totals per batch','6  Pulse totals per batch']
         for k,axis in enumerate(self.axes):
@@ -48,7 +57,9 @@ class DecayPlot:
             if lower==start:self.axes[k].text(.03,.9,'Empty pulse window',transform=self.axes[k].transAxes,fontsize=8)
         self.fit_note=self.axes[0].text(.02,.03,'',transform=self.axes[0].transAxes,fontsize=7)
         self.batch_note=self.axes[1].text(.02,.9,'',transform=self.axes[1].transAxes,fontsize=8)
-        figure.subplots_adjust(left=.09,right=.88,bottom=.08,top=.95,wspace=.48,hspace=.58)
+        figure.suptitle(f"{c['chamber']} · {c['mode']} · {', '.join(self.labels[:self.channels])}\n"
+            f"Communication: {c['SIGNAL_THRESHOLD']} bin = {lower:g} ns | Decay: {c['DECAY_THRESHOLD']} bin = {start:g} ns | 1 bin = 1.25 ns",fontsize=10)
+        figure.subplots_adjust(left=.09,right=.88,bottom=.08,top=.9,wspace=.48,hspace=.58)
 
     def _channels(self,values):
         values=np.asarray(values,dtype=float)
@@ -84,10 +95,12 @@ class DecayPlot:
                 self.fit_lines[i].set_data(xx,yy);notes.append(f"{label}: τ={f['tau_ns']:.2f} ns")
             else:self.fit_lines[i].set_data([],[]);notes.append(label+': fit unavailable')
         self.fit_note.set_text(' | '.join(notes))
-        for axis in (*self.axes,self.probability_axis):
-            axis.relim();axis.autoscale_view();axis.set_ylim(bottom=0)
-        for k in (0,1):self.axes[k].set_xlim(t[start]-.25,t[-1]+.25)
-        for k in (2,3):self.axes[k].set_xlim(t[lower]-.25,t[end-1]+.25)
+        for axis,lines in zip(self.axes,self.series):
+            axis.relim();axis.autoscale_view(scalex=True,scaley=False);axis.set_ylim(*data_y_limits(lines))
+        self.probability_axis.relim();self.probability_axis.autoscale_view(scalex=False,scaley=False)
+        self.probability_axis.set_ylim(*data_y_limits(self.probability_lines))
+        for k in (0,1):self.axes[k].set_xlim(t[start],max(t[-1],t[start]+BIN_NS))
+        for k in (2,3):self.axes[k].set_xlim(t[lower],max(t[end-1],t[lower]+BIN_NS))
         return self.fits
 
 class Accumulator:

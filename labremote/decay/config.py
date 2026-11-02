@@ -6,6 +6,27 @@ from labremote.config.paths import CONFIG_ROOT
 from labremote.devices.fpga.controller import hd,OUTPUTS
 
 ROOT=CONFIG_ROOT/'operations/decay'
+SEQUENCER_CLOCK_US = 0.01
+TIME_LABELS = {
+    'TIME_COOL': 'Cooling (µs)',
+    'TIME_INIT': 'Initialization / 174 AOM hold (µs)',
+    'waiting_time_for_AOM_off': 'AOM off wait (µs)',
+    'waiting_time_for_AOM_on': 'AOM on wait (µs; single only)',
+    'waiting_time_for_stopwatch': 'Stopwatch wait (µs)',
+}
+
+def time_to_display(key,value):
+    return value*SEQUENCER_CLOCK_US if key in TIME_LABELS else value
+
+def time_from_display(key,value):
+    if key not in TIME_LABELS:return value
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value):
+        raise ValueError('Invalid time: '+key)
+    clocks=round(value/SEQUENCER_CLOCK_US)
+    if not math.isclose(value,clocks*SEQUENCER_CLOCK_US,abs_tol=1e-9,rel_tol=0):
+        raise ValueError('Time must be a multiple of 0.01 µs: '+key)
+    return int(clocks)
+
 MODES=('171_single','174_single','171_dual','174_dual')
 LABELS={'171_single':'171','174_single':'174','171_dual':'171 Interferometer','174_dual':'174 Interferometer'}
 INPUTS=tuple(n for n in hd.input_mapping.values() if hasattr(hd,n+'_stopwatch_result'))

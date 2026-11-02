@@ -13,8 +13,14 @@ class DecayExperimentTab(QtWidgets.QWidget):
         split=QtWidgets.QSplitter();root.addWidget(split,1);scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(370);split.addWidget(scroll)
         left=QtWidgets.QWidget();scroll.setWidget(left);form=QtWidgets.QFormLayout(left)
         for key,label,lo,hi in config.FIELDS:
-            box=QtWidgets.QDoubleSpinBox() if key in ('timeout_s','reference_tau_ns') else QtWidgets.QSpinBox();box.setRange(lo,hi)
+            is_time=key in config.TIME_LABELS
+            box=QtWidgets.QDoubleSpinBox() if is_time or key in ('timeout_s','reference_tau_ns') else QtWidgets.QSpinBox()
             if isinstance(box,QtWidgets.QDoubleSpinBox):box.setDecimals(2)
+            box.setRange(config.time_to_display(key,lo),config.time_to_display(key,hi))
+            if is_time:
+                label=config.TIME_LABELS[key];box.setSingleStep(config.SEQUENCER_CLOCK_US)
+                box.setToolTip('Input: µs. 0.01 µs = 1 sequencer clock (10 ns). Saved settings retain integer clocks. Stopwatch histogram bins are separately 1.25 ns.')
+            box.setKeyboardTracking(False)
             self.fields[key]=box
             if key=='reference_tau_ns':box.hide()  # Keep old profiles readable; no fixed-lifetime curve.
             else:form.addRow(label,box)
@@ -31,6 +37,9 @@ class DecayExperimentTab(QtWidgets.QWidget):
         for text,fn in [('Save folder',self.choose_folder),('Open result',self.load_result)]:
             b=QtWidgets.QPushButton(text);b.clicked.connect(fn);row.addWidget(b)
         self.status=QtWidgets.QLabel('Idle');self.status.setWordWrap(True);layout.addWidget(self.status)
+        self.profile_note=QtWidgets.QLabel();self.profile_note.setWordWrap(True);layout.addWidget(self.profile_note)
+        for key in ('SIGNAL_THRESHOLD','DECAY_THRESHOLD'):self.fields[key].valueChanged.connect(self.update_profile_note)
+        for key in ('PMT1','PMT2'):self.roles[key].currentTextChanged.connect(self.update_profile_note)
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(14,12));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumSize(900,850);plot_scroll=QtWidgets.QScrollArea();plot_scroll.setWidgetResizable(True);plot_scroll.setWidget(self.canvas);layout.addWidget(plot_scroll,1);split.setSizes([420,900])
@@ -38,9 +47,16 @@ class DecayExperimentTab(QtWidgets.QWidget):
         except Exception as exc:self.populate(config.defaults(chamber,mode));self.status.setText(str(exc))
         worker.task_progress.connect(self.progress);self.timer=QtCore.QTimer(self);self.timer.timeout.connect(self.controls);self.timer.start(300);self.controls()
     def populate(self,c):
-        for k,b in self.fields.items():b.setValue(c[k])
+        for k,b in self.fields.items():b.setValue(config.time_to_display(k,c[k]))
         for k,b in self.roles.items():b.setCurrentText(c['roles'][k])
-    def value(self):return config.validate(dict(schema_version=1,chamber=self.chamber,mode=self.mode,roles={k:b.currentText() for k,b in self.roles.items()},**{k:b.value() for k,b in self.fields.items()}))
+        self.update_profile_note()
+
+    def update_profile_note(self):
+        lower=self.fields['SIGNAL_THRESHOLD'].value();start=self.fields['DECAY_THRESHOLD'].value()
+        channels=[self.roles['PMT1'].currentText()]+([self.roles['PMT2'].currentText()] if self.mode.endswith('dual') else [])
+        self.profile_note.setText(f"{self.chamber} · {self.mode} · Inputs: {', '.join(channels)} · "
+            f"Communication {lower} bin = {lower*1.25:g} ns · Decay {start} bin = {start*1.25:g} ns")
+    def value(self):return config.validate(dict(schema_version=1,chamber=self.chamber,mode=self.mode,roles={k:b.currentText() for k,b in self.roles.items()},**{k:config.time_from_display(k,b.value()) for k,b in self.fields.items()}))
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load decay settings',str(config.ROOT),'JSON (*.json)')
         if path:
