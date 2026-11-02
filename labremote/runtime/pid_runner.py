@@ -104,7 +104,7 @@ class PIDMath:
         fit_mean=(sum(self.fit_batch)/len(self.fit_batch)
                   if all(value is not None and math.isfinite(value) for value in self.fit_batch) else None)
         data=dict(**peak,batch_collected=len(self.batch),batch_size=c['average_count'],measured_thz=measured,
-                  raw_mean_thz=raw_mean,fit_mean_thz=fit_mean)
+                  raw_mean_thz=raw_mean,fit_mean_thz=fit_mean,target_thz=c['target_thz'])
         if len(self.batch)<c['average_count']:return None,data
         self.batch.clear();self.raw_batch.clear();self.fit_batch.clear();err=(c['target_thz']-measured)*1000
         dt=0. if self.gap else max(.001,now-self.last_dt);self.gap=False;self.last_dt=now
@@ -192,7 +192,7 @@ class PIDRunner(WorkflowTask):
         if self.call(api.acquire('master_scan_enabled')):raise RuntimeError('Disable Master Scan before PID')
         voltage=self.call(api.acquire(c['axis'].lower()+'.voltage'))
         if not c['min_v']<=voltage<=c['max_v']:raise RuntimeError('Current voltage outside PID bounds')
-        math_pid=PIDMath(c,voltage,time.monotonic());self.publish(phase='ARMED: waiting for a new OSA trace',voltage_v=voltage,samples=0)
+        math_pid=PIDMath(c,voltage,time.monotonic());self.publish(phase='ARMED: waiting for a new OSA trace',voltage_v=voltage,samples=0,target_thz=c['target_thz'])
         samples=0
         while True:
             source=self.guard();frame=source['frame']

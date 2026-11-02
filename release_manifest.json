@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "PID per-trace live display",
+  "revision_note": "PID detuning display",
   "files": [
     {
       "path": ".gitattributes",
@@ -1619,8 +1619,8 @@
     },
     {
       "path": "labremote/runtime/pid_runner.py",
-      "bytes": 13357,
-      "sha256": "04170e92e379217eba680f6731580eafb29710897ea0245cd011a355abcbc951"
+      "bytes": 13411,
+      "sha256": "2afe35fe6ff5fc64e7648ddc355e2455d5a1bc888a821d784666004985ceb3f6"
     },
     {
       "path": "labremote/runtime/recording.py",
@@ -1744,8 +1744,8 @@
     },
     {
       "path": "labremote/ui/pid_tab.py",
-      "bytes": 9889,
-      "sha256": "a1ebdcdba70c456c50c28a85697eeb1f71e3339783be1ac9fea062616bf77ddf"
+      "bytes": 10282,
+      "sha256": "74001a88ff815b28f81fca252cfb47ffb9cb30f90f3d60b40659e5f9b4793c16"
     },
     {
       "path": "labremote/ui/pulse_experiment_tab.py",
