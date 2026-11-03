@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Daily characterization and decay default storage grouped by run-start date",
+  "revision_note": "All default measurement destinations grouped by tab/device and session-start date",
   "files": [
     {
       "path": ".gitattributes",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/DAC_SETUP_KO.md",
-      "bytes": 9554,
-      "sha256": "bec5d0fd7606caeac6d79f0e71525fdb68efe2daba3e710a29a793450d6dfb18"
+      "bytes": 9707,
+      "sha256": "f1e258bc7d07356fb1e0556d867fd2d214068871399c2a6373f06251a3f3c5c0"
     },
     {
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
@@ -74,8 +74,8 @@
     },
     {
       "path": "docs/EXPERIMENT_DATA_KO.md",
-      "bytes": 3517,
-      "sha256": "be7d8e35067808e34ba537b2ca071680d82998685d73fa74d0bb3abb7654ece1"
+      "bytes": 5102,
+      "sha256": "f0a902c24a3f282d343d1cdbcc3f462fb5620c99e7ae9142ec6773d92d0cbea0"
     },
     {
       "path": "docs/EXPERIMENT_UI_KO.md",
@@ -204,8 +204,8 @@
     },
     {
       "path": "labremote/characterization/archive.py",
-      "bytes": 5285,
-      "sha256": "d64e5ccdaa9713320e4798fed255614ed8b4468ad73eed8d7acd9510d4ba3f2b"
+      "bytes": 5261,
+      "sha256": "070e58b5e504154530bd7d4866b09d6f035e521a98acc7f5c56e4aa5ca329dec"
     },
     {
       "path": "labremote/characterization/config.py",
@@ -634,8 +634,8 @@
     },
     {
       "path": "labremote/data_paths.py",
-      "bytes": 3935,
-      "sha256": "79a83a640c11369dafd04ff06c0108aa8775971f89a220b3b4eeb1be321c7a3f"
+      "bytes": 4518,
+      "sha256": "69a8712e75538ce00aeeb5c88cfc028cf17763d1bf7cbfa7d68089b4c46a2973"
     },
     {
       "path": "labremote/decay/__init__.py",
@@ -704,8 +704,8 @@
     },
     {
       "path": "labremote/devices/ccd/tab.py",
-      "bytes": 26049,
-      "sha256": "b45a1f0034d6c6f1230105565b7eb9422c2db197f6dadd6d5f211180ec61fb68"
+      "bytes": 26348,
+      "sha256": "8be12425f8f2ff3a55e0bf0443618f30385921dc582687e9083a0ac08ccea81a"
     },
     {
       "path": "labremote/devices/ccd/vendor/QuIQCL_ThorCam.py",
@@ -739,8 +739,8 @@
     },
     {
       "path": "labremote/devices/dac/worker.py",
-      "bytes": 7546,
-      "sha256": "462cb9c17c478daf8203340e0ce107c46c39790b12bb8552fe7564f76c63dc66"
+      "bytes": 7727,
+      "sha256": "9d8ac1f790a98aa13df55071538461fa57da6537098d69d047318ea45dbac803"
     },
     {
       "path": "labremote/devices/dds4/__init__.py",
@@ -934,8 +934,8 @@
     },
     {
       "path": "labremote/devices/mso7054/tab.py",
-      "bytes": 11466,
-      "sha256": "6744bbe180f2e84dec9cb947a3689ca2ad6c50ec5f9c36df015a43d40edf4cbe"
+      "bytes": 11570,
+      "sha256": "aebc6fdd921eac1b7eb50591a00df78c9661922e407599dd4e9fb71618d73fad"
     },
     {
       "path": "labremote/devices/mso7054/worker.py",
@@ -1654,8 +1654,8 @@
     },
     {
       "path": "labremote/runtime/pid_log.py",
-      "bytes": 1958,
-      "sha256": "d9148d32846c8309ea80d4ac329e5601e9fbee8db547e8547bb900a59ee39496"
+      "bytes": 1991,
+      "sha256": "74d4326728d53dfa266a063f39dc0a87629f9d48c5f50259de4d75eafebb2dfb"
     },
     {
       "path": "labremote/runtime/pid_runner.py",
@@ -1689,8 +1689,8 @@
     },
     {
       "path": "labremote/runtime/workflow_queue.py",
-      "bytes": 9646,
-      "sha256": "6b9e3b5f31a4bb3bfc95fca96457d97d8268cf3316faa353b33f030cb2eac01b"
+      "bytes": 9638,
+      "sha256": "9fcc98ed6fb4034ef39b00ce346c44ecf6bb992cc3cdffa7e686a27f5d7dc33e"
     },
     {
       "path": "labremote/runtime/workflow_result.py",
@@ -1939,8 +1939,8 @@
     },
     {
       "path": "trap_dac/service.py",
-      "bytes": 11810,
-      "sha256": "79264f86f84cb04c4d68688daba5675ff99156576f03005f08e6f1c6bfdeba01"
+      "bytes": 12109,
+      "sha256": "1ccae2f407c671477a56972b9c733670d82c4e94df7b6c6d9ffd6167f93ac999"
     },
     {
       "path": "trap_dac/timing.py",

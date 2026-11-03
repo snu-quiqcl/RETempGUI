@@ -4,7 +4,7 @@ import json
 import re
 import time
 from datetime import datetime, timezone
-from labremote.data_paths import DATA_ROOT
+from labremote.data_paths import DATA_ROOT, tab_data_directory
 
 FIELDS = ('time_utc', 'elapsed_s', 'phase', 'request_id', 'raw_thz', 'fit_thz',
           'fit_error', 'selected_thz', 'measured_thz', 'raw_mean_thz', 'fit_mean_thz', 'raw_moving_mean_thz', 'moving_count', 'batch_collected', 'batch_size',
@@ -16,7 +16,7 @@ class PIDLog:
     def __init__(self, name, settings):
         self.origin = time.monotonic()
         safe_name = re.sub(r'[^A-Za-z0-9_-]', '_', str(name)) or 'mdt'
-        folder = DATA_ROOT / 'pid' / safe_name
+        folder = tab_data_directory(None, 'pid', safe_name)
         folder.mkdir(parents=True, exist_ok=True)
         self.path = folder / (datetime.now().strftime('%Y%m%d_%H%M%S_%f') + '.csv')
         self.path.with_suffix('.json').write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding='utf-8')

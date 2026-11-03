@@ -36,7 +36,7 @@ class DACWorker(DeviceWorker):
         return self.description
 
     def run_remote(self,action,payload):
-        from labremote.data_paths import DATA_ROOT
+        from labremote.data_paths import DATA_ROOT, tab_data_directory
         handle=CURRENT_JOB.get()
         request_id=handle.request_id if handle else uuid4().hex
         if action in ('initialize','apply','step','sequence'):
@@ -45,7 +45,7 @@ class DACWorker(DeviceWorker):
         # Immutable JSON snapshot; UI edits cannot mutate an in-flight operation.
         payload=json.loads(json.dumps(payload,allow_nan=False))
         chamber=self.description['device']
-        folder=DATA_ROOT/'dac'/chamber/'runs'/request_id
+        folder=tab_data_directory(None,'dac',chamber)/'runs'/request_id
         atomic_json(folder/'request.json',dict(action=action,payload=payload,configuration=self.description['configuration']))
         state=None;stop_sent=False;last_heartbeat=time.monotonic();last_row=-1
         try:

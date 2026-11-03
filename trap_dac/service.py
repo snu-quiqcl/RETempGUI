@@ -10,6 +10,7 @@ import threading
 import time
 import os
 import re
+from datetime import date
 from pathlib import Path
 from uuid import uuid4
 from .configuration import load_config, DeviceConfig
@@ -98,7 +99,7 @@ class DACService:
                 if old['owner']!=owner or old['request_hash']!=request_hash:raise ValueError('Request ID reused with different content')
                 return self.status(request_id)
             if self._active:raise RuntimeError('DAC busy: manual/sequence requests are not queued')
-            if (self.data_root/'runs'/request_id).exists():raise RuntimeError('Request ID already archived; do not replay after server restart')
+            if (self.data_root/'runs'/request_id).exists() or any(self.data_root.glob('*/runs/'+request_id)):raise RuntimeError('Request ID already archived; do not replay after server restart')
             if action not in ('connect','reload_config') and self.session is None:raise RuntimeError('Connect DAC first')
             if action in ('initialize','apply','step','sequence'):
                 if payload.get('fingerprint')!=fingerprint(self.config):raise ValueError('Server mapping/calibration changed; reload configuration')
@@ -126,7 +127,7 @@ class DACService:
 
     def _execute(self, job, payload, parsed):
         action=job['action'];event=job['event'];result=None;error='';status='completed'
-        folder=self.data_root/'runs'/job['job_id']
+        folder=self.data_root/date.today().isoformat()/'runs'/job['job_id']
         try:
             atomic_json(folder/'request.json',dict(action=action,payload=payload,configuration=self.config.as_dict(),readback_verified=False))
             if event.is_set():raise InterruptedError('Stopped before execution')

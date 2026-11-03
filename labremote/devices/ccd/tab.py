@@ -2,7 +2,7 @@
 import time
 from datetime import datetime
 from pathlib import Path
-from labremote.data_paths import data_directory
+from labremote.data_paths import data_directory, tab_data_directory
 from PyQt5 import QtCore, QtWidgets
 import pyqtgraph as pg
 from .worker import CCDWorker, CCDAPI
@@ -350,7 +350,7 @@ class CCDTab(QtWidgets.QWidget):
         self._viewport_sent = roi
 
     def _capture(self):
-        path = str(Path(self.directory.text()) / (datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'.tif')) if self.autosave.isChecked() else None
+        path = str(tab_data_directory(self.directory.text(), 'ccd', self.oven_panel.chamber) / (datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'.tif')) if self.autosave.isChecked() else None
         self.api.capture(self.frames.value(), timeout_s=max(60., self.frames.value()*self.exposure.value()/1000+10), save_path=path)
 
     def _completed(self, handle):
@@ -445,7 +445,11 @@ class CCDTab(QtWidgets.QWidget):
         if path: self.directory.setText(path)
 
     def _save(self):
-        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save CCD image', str(Path(self.directory.text())/'capture.tif'), 'TIFF (*.tif);;PNG (*.png)')
+        folder = tab_data_directory(self.directory.text(), 'ccd', self.oven_panel.chamber)
+        try: folder.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            self.status.setText('CCD save directory: '+str(exc)); return
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save CCD image', str(folder/'capture.tif'), 'TIFF (*.tif);;PNG (*.png)')
         if path: self.api.save(path, sequence=False, roi_only=False)
 
     def still_running(self): return self.worker.isRunning() or self.oven_panel.still_running()

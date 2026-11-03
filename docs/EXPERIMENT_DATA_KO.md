@@ -48,3 +48,27 @@ fit 결과를 확정하지 않으므로 Z–MFD 이미지에 유효한 fit 없�
 이미지 저장은 종료 정리 시 수행하며, 원본 데이터·저장 형식은 유지합니다.
 
 날짜는 실험 시작 시 UI PC의 로컬 날짜로 결정합니다. 실행 도중 자정이 지나도 같은 실행 폴더를 유지합니다. 이전에 저장된 자동 날짜 경로는 다음 실행 시 당일로 갱신하며, 사용자가 지정한 별도 저장 경로와 workflow sweep 하위 경로는 그대로 유지합니다. 기존 데이터는 이동하지 않습니다.
+
+
+## 모든 측정 기본 경로의 날짜 분류
+
+아래 YYYY-MM-DD는 측정/기록 시작 시 저장 PC의 로컬 날짜입니다.
+
+- scans/EA_collection|EA_excitation|EC_collection|EC_excitation/YYYY-MM-DD/실행폴더
+- characterization/EA|EC/실험종류/YYYY-MM-DD/실행폴더
+- decay/EA|EC/동위원소_모드/YYYY-MM-DD/실행폴더
+- input_counts/입력채널/YYYY-MM-DD/CSV
+- ccd/EA|EC/YYYY-MM-DD/TIFF 또는 PNG
+- pid/장비이름/YYYY-MM-DD/CSV 및 JSON
+- mso7054/장비이름/peak_history/YYYY-MM-DD/CSV
+- queues/YYYY-MM-DD/queue실행폴더 (Queue 탭 자체가 분류 단위)
+- dac/EA|EC/YYYY-MM-DD/runs/요청ID (서버와 UI 양쪽)
+- characterization/series/YYYY-MM-DD/series실행폴더 (EA/EC와 실험 종류를 지정한 recipe는 해당 실험 폴더 사용)
+
+진행 중 자정이 지나도 해당 실행의 파일은 분리하지 않습니다. 이전 자동 날짜 경로를
+다음 실행에 재사용하면 당일 날짜로 변경합니다. 직접 지정한 custom 경로와 workflow
+sweep의 point 폴더는 그대로 유지합니다. 이미 저장된 파일은 이동하지 않습니다.
+반복해서 불러오는 DAC 프리셋/sequence 원본은 라이브러리이므로 기존 위치를 유지합니다.
+설정 파일과 logs/operations의 진단 기록은 측정 데이터 경로 변경 대상이 아닙니다.
+서버 DAC 기록에도 적용하려면 trap_dac/service.py를 서버에 옮긴 뒤 해당 서버를 재시작합니다.
+labremote/data와 모든 하위 날짜 폴더는 기존 Git ignore 규칙으로 제외됩니다.

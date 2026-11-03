@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from labremote.devices.ds1052e.tab import COLORS
-from labremote.data_paths import DATA_ROOT
+from labremote.data_paths import DATA_ROOT, tab_data_directory
 from PyQt5 import QtWidgets
 from labremote.runtime.parameters import LIBRARY
 
@@ -78,7 +78,7 @@ class MSO7054Tab(DS1052ETab):
         self.save_peak.setChecked(True)
         for widget in (self.track_start, self.track_stop, self.clear_peak, self.save_peak): row.addWidget(widget)
         self.peak_status = QtWidgets.QLabel('Stopped'); layout.addWidget(self.peak_status)
-        self.peak_folder = DATA_ROOT / 'mso7054' / 'peak_history'
+        self.peak_folder = DATA_ROOT / 'mso7054' / self.device_name / 'peak_history'
         self.peak_save_location = QtWidgets.QLabel('Save folder: ' + str(self.peak_folder))
         self.peak_save_location.setWordWrap(True)
         from PyQt5 import QtCore
@@ -121,7 +121,7 @@ class MSO7054Tab(DS1052ETab):
         if self.tracking: return
         try:
             if self.save_peak.isChecked():
-                folder = self.peak_folder; folder.mkdir(parents=True, exist_ok=True)
+                folder = tab_data_directory(self.peak_folder, 'mso7054', self.device_name, 'peak_history'); folder.mkdir(parents=True, exist_ok=True)
                 path = folder / (datetime.now().strftime('%Y%m%d_%H%M%S_%f') + '.csv')
                 self._peak_file = path.open('x', newline='', encoding='utf-8')
                 self._peak_writer = csv.writer(self._peak_file)

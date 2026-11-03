@@ -38,10 +38,7 @@ def scan_data_directory(directory, number):
     """Split the shared scan default by tab; preserve explicit custom folders."""
     if type(number) is not int or not 1 <= number <= len(SCAN_FOLDERS):
         raise ValueError('Scan number must be 1..4')
-    base = resolve_data_directory(directory, 'scans')
-    if base == data_directory('scans'):
-        return base / SCAN_FOLDERS[number - 1]
-    return base
+    return tab_data_directory(directory, 'scans', SCAN_FOLDERS[number - 1])
 
 
 def _experiment_directory(directory, category, *parts):
@@ -82,4 +79,17 @@ def counts_directory(directory, channel_name):
     # Names originate from the active hardware definition, never inferred EA/EC.
     if not isinstance(channel_name, str) or not channel_name.isidentifier():
         raise ValueError('Invalid input channel name')
-    return _experiment_directory(directory, 'input_counts', channel_name)
+    return tab_data_directory(directory, 'input_counts', channel_name)
+
+
+def tab_data_directory(directory, category, *parts):
+    """Default tab/device data destination, dated once when a session starts."""
+    return _dated_experiment_directory(directory, category, *parts)
+
+
+def series_directory(directory, recipe):
+    chamber = recipe.get('chamber') if isinstance(recipe, dict) else None
+    experiment = recipe.get('experiment') if isinstance(recipe, dict) else None
+    if chamber in ('EA', 'EC') and experiment in ('fluorescence', 'rabi', 'ramsey', 'spam', 'initialization'):
+        return characterization_directory(directory, chamber, experiment)
+    return tab_data_directory(directory, 'characterization', 'series')

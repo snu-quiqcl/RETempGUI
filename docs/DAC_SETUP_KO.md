@@ -105,8 +105,8 @@ UI가 보낸 보정값으로 서버 보정값을 덮어쓰지 않습니다. 설�
 
 ## 저장과 API
 
-UI: `labremote/data/dac/EA|EC/presets`, `sequences`, `runs/<request-id>`.
-서버: `<data_root>/EA|EC/runs/<request-id>`에 요청·전체 설정·결과를 저장합니다.
+UI: `labremote/data/dac/EA|EC/presets`, `sequences`, `YYYY-MM-DD/runs/<request-id>`.
+서버: `<data_root>/EA|EC/YYYY-MM-DD/runs/<request-id>`에 요청·전체 설정·결과를 저장합니다.
 sequence는 그 실행 폴더 안에 기존 형식의 전체 계획/최종 보고서와 행별 전압 JSON을 보존합니다.
 UI progress는 최신 진행 스냅샷이며 완전한 행별 기록은 서버에 있습니다.
 두 PC의 파일은 자동 동기화되지 않습니다. 서버 데이터를 따로 복사해 보관하세요.
