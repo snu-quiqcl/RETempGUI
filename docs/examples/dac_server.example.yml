@@ -1,0 +1,30 @@
+# Merge these two entries into the EXISTING instruments: mapping.
+# initialize: true creates the server object, NOT DAC hardware initialization.
+# Replace every /ABSOLUTE and REPLACE token. Keep real settings local.
+instruments:
+  dac_ea:
+    type: trap_dac.qcodes_driver.DAC81416
+    initialize: true
+    init:
+      config_path: /ABSOLUTE/trap_dac/configs/EA.local.json
+      serial_port: /dev/serial/by-id/REPLACE_EA_DAC_USB
+      data_root: /ABSOLUTE/RETempGUI/labremote/data/dac
+      lease_seconds: 5.0
+      internal_reference: false
+    gui:
+      type: generic
+      kwargs:
+        parameters-hide: [IDN]
+  dac_ec:
+    type: trap_dac.qcodes_driver.DAC81416
+    initialize: true
+    init:
+      config_path: /ABSOLUTE/trap_dac/configs/EC.local.json
+      serial_port: /dev/serial/by-id/REPLACE_EC_DAC_USB
+      data_root: /ABSOLUTE/RETempGUI/labremote/data/dac
+      lease_seconds: 5.0
+      internal_reference: false
+    gui:
+      type: generic
+      kwargs:
+        parameters-hide: [IDN]

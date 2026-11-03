@@ -1,5 +1,6 @@
 """Measurement storage defaults, independent of the launch working directory."""
 from pathlib import Path
+from datetime import date
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = Path(__file__).resolve().parent / 'data'
@@ -48,17 +49,34 @@ def _experiment_directory(directory, category, *parts):
     # Explicit per-run directories (e.g. archived sweep points) remain intact.
     return base.joinpath(*parts) if base == data_directory(category) else base
 
+def _dated_experiment_directory(directory, category, *parts):
+    """Resolve the date once per run; roll old auto-generated UI paths forward.
+
+    Custom destinations and explicit workflow sweep-point folders remain intact.
+    Existing undated files are never moved.
+    """
+    base = resolve_data_directory(directory, category)
+    tab = data_directory(category).joinpath(*parts)
+    automatic = base in (data_directory(category), tab)
+    if base.parent == tab:
+        try:
+            automatic = date.fromisoformat(base.name).isoformat() == base.name
+        except ValueError:
+            pass
+    return tab / date.today().isoformat() if automatic else base
+
+
 def characterization_directory(directory, chamber, experiment):
     if chamber not in ('EA', 'EC'):
         raise ValueError('Invalid chamber')
     if experiment not in ('fluorescence', 'rabi', 'ramsey', 'spam', 'initialization'):
         raise ValueError('Invalid characterization experiment')
-    return _experiment_directory(directory, 'characterization', chamber, experiment)
+    return _dated_experiment_directory(directory, 'characterization', chamber, experiment)
 
 def decay_directory(directory, chamber, mode):
     if chamber not in ('EA', 'EC') or mode not in ('171_single', '174_single', '171_dual', '174_dual'):
         raise ValueError('Invalid decay chamber/mode')
-    return _experiment_directory(directory, 'decay', chamber, mode.replace('_dual', '_interferometer'))
+    return _dated_experiment_directory(directory, 'decay', chamber, mode.replace('_dual', '_interferometer'))
 
 def counts_directory(directory, channel_name):
     # Names originate from the active hardware definition, never inferred EA/EC.

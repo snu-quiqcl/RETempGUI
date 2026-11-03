@@ -31,6 +31,7 @@ def identify_family(driver_class, name='', *, methods=(), submodules=()):
     typ = str(driver_class).lower().replace('_', '')
     if (REQUIRED_WINDFREAK_METHODS <= set(methods) and REQUIRED_WINDFREAK_SUBMODULES <= set(submodules)) or ('windfreak' in typ and 'synthhd' in typ):
         return 'windfreak_synthhd'
+    if 'dac81416' in typ:return 'trap_dac81416'
     if 'mff101' in typ or 'mff002' in typ:return 'thorlabs_mff'
     if 'aq6373' in typ:return 'yokogawa_aq6373'
     if 'mdt693b' in typ:return 'mdt693b'

@@ -1,0 +1,434 @@
+{
+  "schema_version": 1,
+  "device": "EC",
+  "default_port": "",
+  "hardware": {
+    "chips": 2,
+    "outputs_per_chip": 16,
+    "range_v": 20
+  },
+  "calibration_offsets": [
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "electrodes": [
+    {
+      "id": "L0",
+      "label": "8",
+      "chip": 0,
+      "channel": 0,
+      "position": {
+        "side": "left",
+        "row": 0
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L1",
+      "label": "9",
+      "chip": 0,
+      "channel": 1,
+      "position": {
+        "side": "left",
+        "row": 1
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L2",
+      "label": "10",
+      "chip": 0,
+      "channel": 2,
+      "position": {
+        "side": "left",
+        "row": 2
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L3",
+      "label": "11",
+      "chip": 0,
+      "channel": 3,
+      "position": {
+        "side": "left",
+        "row": 3
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L4",
+      "label": "12",
+      "chip": 0,
+      "channel": 4,
+      "position": {
+        "side": "left",
+        "row": 4
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L5",
+      "label": "13",
+      "chip": 0,
+      "channel": 5,
+      "position": {
+        "side": "left",
+        "row": 5
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L6",
+      "label": "14",
+      "chip": 0,
+      "channel": 6,
+      "position": {
+        "side": "left",
+        "row": 6
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L7",
+      "label": "15",
+      "chip": 0,
+      "channel": 7,
+      "position": {
+        "side": "left",
+        "row": 7
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L8",
+      "label": "16",
+      "chip": 0,
+      "channel": 8,
+      "position": {
+        "side": "left",
+        "row": 8
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L9",
+      "label": "17",
+      "chip": 0,
+      "channel": 9,
+      "position": {
+        "side": "left",
+        "row": 9
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L10",
+      "label": "18",
+      "chip": 0,
+      "channel": 10,
+      "position": {
+        "side": "left",
+        "row": 10
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L11",
+      "label": "19",
+      "chip": 0,
+      "channel": 11,
+      "position": {
+        "side": "left",
+        "row": 11
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L12",
+      "label": "20",
+      "chip": 0,
+      "channel": 12,
+      "position": {
+        "side": "left",
+        "row": 12
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L13",
+      "label": "21",
+      "chip": 0,
+      "channel": 13,
+      "position": {
+        "side": "left",
+        "row": 13
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L14",
+      "label": "22",
+      "chip": 0,
+      "channel": 14,
+      "position": {
+        "side": "left",
+        "row": 14
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L_IN",
+      "label": "IN1",
+      "chip": 0,
+      "channel": 15,
+      "position": {
+        "side": "left",
+        "row": 15
+      },
+      "role": "inner",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R0",
+      "label": "53",
+      "chip": 1,
+      "channel": 0,
+      "position": {
+        "side": "right",
+        "row": 0
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R1",
+      "label": "52",
+      "chip": 1,
+      "channel": 1,
+      "position": {
+        "side": "right",
+        "row": 1
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R2",
+      "label": "51",
+      "chip": 1,
+      "channel": 2,
+      "position": {
+        "side": "right",
+        "row": 2
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R3",
+      "label": "50",
+      "chip": 1,
+      "channel": 3,
+      "position": {
+        "side": "right",
+        "row": 3
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R4",
+      "label": "49",
+      "chip": 1,
+      "channel": 4,
+      "position": {
+        "side": "right",
+        "row": 4
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R5",
+      "label": "48",
+      "chip": 1,
+      "channel": 5,
+      "position": {
+        "side": "right",
+        "row": 5
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R6",
+      "label": "47",
+      "chip": 1,
+      "channel": 6,
+      "position": {
+        "side": "right",
+        "row": 6
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R7",
+      "label": "46",
+      "chip": 1,
+      "channel": 7,
+      "position": {
+        "side": "right",
+        "row": 7
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R8",
+      "label": "45",
+      "chip": 1,
+      "channel": 8,
+      "position": {
+        "side": "right",
+        "row": 8
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R9",
+      "label": "44",
+      "chip": 1,
+      "channel": 9,
+      "position": {
+        "side": "right",
+        "row": 9
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R10",
+      "label": "43",
+      "chip": 1,
+      "channel": 10,
+      "position": {
+        "side": "right",
+        "row": 10
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R11",
+      "label": "42",
+      "chip": 1,
+      "channel": 11,
+      "position": {
+        "side": "right",
+        "row": 11
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R12",
+      "label": "41",
+      "chip": 1,
+      "channel": 12,
+      "position": {
+        "side": "right",
+        "row": 12
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R13",
+      "label": "40",
+      "chip": 1,
+      "channel": 13,
+      "position": {
+        "side": "right",
+        "row": 13
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R14",
+      "label": "39",
+      "chip": 1,
+      "channel": 14,
+      "position": {
+        "side": "right",
+        "row": 14
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R_IN",
+      "label": "IN2",
+      "chip": 1,
+      "channel": 15,
+      "position": {
+        "side": "right",
+        "row": 15
+      },
+      "role": "inner",
+      "default_voltage": 0.0
+    }
+  ]
+}

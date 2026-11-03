@@ -6,7 +6,7 @@ from labremote.config.ramp import PowerConfig
 from labremote.operation.windfreak.set_power import set_power
 from labremote.config.device_config import load_rf_device_config
 
-SUPPORTED_FAMILIES = frozenset({'windfreak', 'sg384', 'anapico', 'dds4', 'ds1052e', 'mso7054', 'thermotek', 'keithley', 'osa', 'mdt', 'fpga', 'motors', 'ccd'})
+SUPPORTED_FAMILIES = frozenset({'windfreak', 'sg384', 'anapico', 'dds4', 'ds1052e', 'mso7054', 'thermotek', 'keithley', 'osa', 'mdt', 'fpga', 'motors', 'ccd', 'dac'})
 
 class DeviceAPI:
     def __init__(self, worker, channel=None, group=None):
@@ -173,6 +173,10 @@ class Devices:
         from labremote.devices.ccd.worker import CCDAPI
         return CCDAPI(self._workers['ccd', name], group=self.group)
 
+    def dac(self, name):
+        from labremote.devices.dac.worker import DACAPI
+        return DACAPI(self._workers['dac',name],group=self.group)
+
     def motor(self, name):
         return MotorAPI(self._workers['motors',name],group=self.group)
 
@@ -188,6 +192,9 @@ class Devices:
 
 def device_api(worker, family=None, *, channel=None, group=None):
     family = family or worker.family
+    if family == 'dac':
+        from labremote.devices.dac.worker import DACAPI
+        return DACAPI(worker,channel,group)
     if family == 'ccd':
         from labremote.devices.ccd.worker import CCDAPI
         return CCDAPI(worker, channel, group)

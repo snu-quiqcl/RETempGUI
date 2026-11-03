@@ -242,3 +242,11 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 ## Workflow Queue
 
 메인 창의 Queue에서 workflow 순서·반복·실패 정책을 설정하고, Queue Monitor에서 실시간/저장된 결과를 확인합니다. EA/EC 개별 실험 탭은 유지됩니다. [사용법 및 결과 저장 구조](docs/WORKFLOW_QUEUE_KO.md)를 참고하세요.
+
+
+## EA / EC chip-trap DAC
+
+Server-owned USB DAC81416 control is available from the DAC equipment window.
+See [DAC installation, initialization, workflow and storage](docs/DAC_SETUP_KO.md).
+Copy the ignored `trap_dac/configs/EA.local.json` and `EC.local.json` separately to the server.
+Connect never initializes outputs; UI lease loss stops an active sequence after the current row.

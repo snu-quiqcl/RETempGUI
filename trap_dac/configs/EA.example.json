@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "device": "EA",
+  "default_port": "",
+  "hardware": {
+    "chips": 2,
+    "outputs_per_chip": 16,
+    "range_v": 20
+  },
+  "calibration_offsets": [
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "electrodes": [
+    {
+      "id": "L0",
+      "label": "L0",
+      "chip": 0,
+      "channel": 0,
+      "position": {
+        "side": "left",
+        "row": 0
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L1",
+      "label": "L1",
+      "chip": 0,
+      "channel": 1,
+      "position": {
+        "side": "left",
+        "row": 1
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L2",
+      "label": "L2",
+      "chip": 0,
+      "channel": 2,
+      "position": {
+        "side": "left",
+        "row": 2
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L3",
+      "label": "L3",
+      "chip": 0,
+      "channel": 3,
+      "position": {
+        "side": "left",
+        "row": 3
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L4",
+      "label": "L4",
+      "chip": 0,
+      "channel": 4,
+      "position": {
+        "side": "left",
+        "row": 4
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L5",
+      "label": "L5",
+      "chip": 0,
+      "channel": 5,
+      "position": {
+        "side": "left",
+        "row": 5
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L6",
+      "label": "L6",
+      "chip": 0,
+      "channel": 6,
+      "position": {
+        "side": "left",
+        "row": 6
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L7",
+      "label": "L7",
+      "chip": 0,
+      "channel": 7,
+      "position": {
+        "side": "left",
+        "row": 7
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "L_IN",
+      "label": "innerDC",
+      "chip": 0,
+      "channel": 8,
+      "position": {
+        "side": "left",
+        "row": 8
+      },
+      "role": "inner",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R0",
+      "label": "R0",
+      "chip": 1,
+      "channel": 0,
+      "position": {
+        "side": "right",
+        "row": 7
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R1",
+      "label": "R1",
+      "chip": 1,
+      "channel": 1,
+      "position": {
+        "side": "right",
+        "row": 6
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R2",
+      "label": "R2",
+      "chip": 1,
+      "channel": 2,
+      "position": {
+        "side": "right",
+        "row": 5
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R3",
+      "label": "R3",
+      "chip": 1,
+      "channel": 3,
+      "position": {
+        "side": "right",
+        "row": 4
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R4",
+      "label": "R4",
+      "chip": 1,
+      "channel": 4,
+      "position": {
+        "side": "right",
+        "row": 3
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R5",
+      "label": "R5",
+      "chip": 1,
+      "channel": 5,
+      "position": {
+        "side": "right",
+        "row": 2
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R6",
+      "label": "R6",
+      "chip": 1,
+      "channel": 6,
+      "position": {
+        "side": "right",
+        "row": 1
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R7",
+      "label": "R7",
+      "chip": 1,
+      "channel": 7,
+      "position": {
+        "side": "right",
+        "row": 0
+      },
+      "role": "outer",
+      "default_voltage": 0.0
+    },
+    {
+      "id": "R_IN",
+      "label": "innerDC",
+      "chip": 1,
+      "channel": 8,
+      "position": {
+        "side": "right",
+        "row": 8
+      },
+      "role": "inner",
+      "default_voltage": 0.0
+    }
+  ]
+}

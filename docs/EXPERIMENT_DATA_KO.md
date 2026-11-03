@@ -27,8 +27,8 @@ Workflow의 scan 번호에도 같은 규칙을 적용합니다. 과거 기본 �
 
 ## 실험별 기본 하위 폴더
 
-- `characterization/EA|EC/fluorescence|rabi|ramsey|spam|initialization/`
-- `decay/EA|EC/171_single|174_single|171_interferometer|174_interferometer/`
+- `characterization/EA|EC/fluorescence|rabi|ramsey|spam|initialization/YYYY-MM-DD/`
+- `decay/EA|EC/171_single|174_single|171_interferometer|174_interferometer/YYYY-MM-DD/`
 - `input_counts/<선택한 FPGA 입력 이름>/` (예: PMTA, PMTC, PMTFA, PMTFC)
 
 Input counts는 Save CSV log를 체크해야 저장되며 CSV 열과 측정 방식은 그대로입니다.
@@ -46,3 +46,5 @@ XY 이미지에는 유효한 fitting의 회전 타원이 표시됩니다.
 Z–MFD의 fitting 실패 지점은 빈 구간으로 표시합니다. 중단·실패한 scan은 기존 정책대로
 fit 결과를 확정하지 않으므로 Z–MFD 이미지에 유효한 fit 없음이 표시될 수 있습니다.
 이미지 저장은 종료 정리 시 수행하며, 원본 데이터·저장 형식은 유지합니다.
+
+날짜는 실험 시작 시 UI PC의 로컬 날짜로 결정합니다. 실행 도중 자정이 지나도 같은 실행 폴더를 유지합니다. 이전에 저장된 자동 날짜 경로는 다음 실행 시 당일로 갱신하며, 사용자가 지정한 별도 저장 경로와 workflow sweep 하위 경로는 그대로 유지합니다. 기존 데이터는 이동하지 않습니다.

@@ -59,7 +59,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self._closing = False
         self._workers_shutdown = False
         self.dynamic_windfreak_tabs = {}
-        self.family_tabs = {"windfreak": self.dynamic_windfreak_tabs, "sg384": {}, "anapico": {}, "dds4": {}, "ds1052e": {}, 'mso7054':{}, 'thermotek':{}, 'keithley':{}, 'osa':{}, 'mdt':{}, 'fpga':{}, 'motors':{}}
+        self.family_tabs = {"windfreak": self.dynamic_windfreak_tabs, "sg384": {}, "anapico": {}, "dds4": {}, "ds1052e": {}, 'mso7054':{}, 'thermotek':{}, 'keithley':{}, 'osa':{}, 'mdt':{}, 'fpga':{}, 'motors':{}, 'dac':{}}
         self.setWindowTitle('RETempUI V1.00 | RF + oscillo + local CCD')
         self.resize(1370, 920)
         menu = self.menuBar().addMenu('Operation 기록')
@@ -99,7 +99,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self.oscillo_tabs.addTab(mso_tabs,'MSO7054')
         self.mira_tabs=QtWidgets.QTabWidget();self.others_tabs=QtWidgets.QTabWidget()
         self.device_tabs.addTab(self.mira_tabs,'mira');self.device_tabs.addTab(self.others_tabs,'others')
-        for family,title,parent in [('thermotek','THERMOTEK',self.mira_tabs),('keithley','Keithley',self.others_tabs),('osa','OSA',self.mira_tabs),('mdt','MDT',self.mira_tabs),('fpga','FPGA',self.device_tabs)]:
+        for family,title,parent in [('thermotek','THERMOTEK',self.mira_tabs),('keithley','Keithley',self.others_tabs),('osa','OSA',self.mira_tabs),('mdt','MDT',self.mira_tabs),('fpga','FPGA',self.device_tabs),('dac','DAC',self.device_tabs)]:
             tabs=QtWidgets.QTabWidget();self.family_subtabs[family]=tabs;parent.addTab(tabs,title)
         from labremote.ui.motor_tab import MotorTab
         self.motor_tab=MotorTab(self,endpoint=self._endpoint);self.family_subtabs['motors']=self.motor_tab
@@ -136,7 +136,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         add.clicked.connect(lambda:self.register_equipment(self.manual_family.currentText(),self.manual_name.text().strip()))
         for name in (*configured_instrument_names('windfreak'), *cfg.get('windfreak_names', [])):
             self._add(name)
-        for family in ('sg384','anapico','dds4','ds1052e','mso7054','thermotek','keithley','osa','mdt','fpga','motors'):
+        for family in ('sg384','anapico','dds4','ds1052e','mso7054','thermotek','keithley','osa','mdt','fpga','motors','dac'):
             for name in (*configured_instrument_names(family), *cfg.get(family+'_names', [])):
                 self._add_family(family,name)
         self.close_timer = QtCore.QTimer(self); self.close_timer.timeout.connect(self._close_ready)
@@ -144,6 +144,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         from labremote.ui.tab_help import TabHelp
         self.tab_help=TabHelp(self)
         QtWidgets.QApplication.instance().installEventFilter(self.tab_help)
+        from labremote.ui.input_state import InputState
+        self.input_state=InputState(self)
+        self.input_state.restore()
 
     def _logging(self, enabled):
         self.cfg['operation_detailed_logging'] = enabled
@@ -175,7 +178,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self.flip_tab.accept_server_devices(endpoint,devices)
         candidates=[]
         for d in devices:
-            family={'windfreak_synthhd':'windfreak','srs_sg384':'sg384','anapico_apsyn420':'anapico','dds4_ad9912_vva':'dds4','rigol_ds1052e':'ds1052e','rigol_mso7054':'mso7054','thermotek_t257p':'thermotek','keithley_2231a':'keithley','yokogawa_aq6373':'osa','mdt693b':'mdt','thorlabs_mff':'flip'}.get(d.family)
+            family={'windfreak_synthhd':'windfreak','srs_sg384':'sg384','anapico_apsyn420':'anapico','dds4_ad9912_vva':'dds4','rigol_ds1052e':'ds1052e','rigol_mso7054':'mso7054','thermotek_t257p':'thermotek','keithley_2231a':'keithley','yokogawa_aq6373':'osa','mdt693b':'mdt','thorlabs_mff':'flip','trap_dac81416':'dac'}.get(d.family)
             if family:
                 from labremote.config.equipment import FAMILY_GROUP
                 candidates.append(dict(family=family,name=d.name,group=FAMILY_GROUP[family],enabled=False))
@@ -207,15 +210,20 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             return
         if name in panels:
             tabs.setCurrentWidget(panels[name]);return
-        if family in ('ds1052e','mso7054'):
+        if family=='dac':
+            from labremote.devices.dac.tab import DACPanel
+            panel=DACPanel(name,*self._endpoint(),self)
+        elif family in ('ds1052e','mso7054'):
             panel={'ds1052e':DS1052ETab,'mso7054':MSO7054Tab}[family](name,*self._endpoint(),self)
         elif family in ('thermotek','keithley'):panel=EquipmentTab(family,name,*self._endpoint(),self)
-        elif family in ('osa','mdt','fpga','motors'):panel=AuxiliaryTab(family,name,*self._endpoint(),self)
+        elif family in ('osa','mdt','fpga','motors','dac'):panel=AuxiliaryTab(family,name,*self._endpoint(),self)
         else:panel=RFDeviceTab(family,name,*self._endpoint(),self)
         if family in ("mdt","fpga"):panel.attach_automation(self._bindings)
         panel.endpoint_provider=self._endpoint
         panel.log_message.connect(self.log.appendPlainText)
-        panels[name]=panel;tabs.addTab(panel,name)
+        title=panel.config.device if family=='dac' and name in ('dac_ea','dac_ec') else name
+        panels[name]=panel;tabs.addTab(panel,title)
+        if family=='dac':tabs.addTab(panel.sequence_tab,title+' Sequence')
         if family=='fpga':
             from .daily_characterization import DailyCharacterization
             panel.daily_tab=DailyCharacterization(panel.worker,self._bindings,self)
@@ -244,6 +252,8 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             if not self.workflow_tab.confirm_close() or not self.queue_tab.confirm_close():
                 event.ignore()
                 return
+            self.input_state.save()
+            self.input_state.stop()
             self._closing = True
             self.connection_queue.clear()
             for detail in [*self.detail_windows.values(),self.connection_settings_window]:detail.setEnabled(False)

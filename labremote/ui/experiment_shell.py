@@ -26,7 +26,7 @@ class ExperimentShellMixin:
         self.cfg['equipment_configuration']=str(self.profile_path) if self.profile_path else ''
         self.ccd_tab.apply_display_config(self.equipment_profile.get('ccd_display',{}))
         # Reparent existing widgets. No replacement workers, connections, or operations.
-        detailed=[('RF',self.rf_tabs),('미라',self.mira_tabs),('CCD',self.ccd_tab),('FPGA',self.family_subtabs['fpga']),('오실로스코프',self.oscillo_tabs),('기타',self.others_tabs)]
+        detailed=[('RF',self.rf_tabs),('미라',self.mira_tabs),('CCD',self.ccd_tab),('FPGA',self.family_subtabs['fpga']),('오실로스코프',self.oscillo_tabs),('기타',self.others_tabs),('DAC',self.family_subtabs['dac'])]
         for title,widget in detailed:
             index=self.device_tabs.indexOf(widget)
             if index>=0:self.device_tabs.removeTab(index)

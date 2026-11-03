@@ -16,5 +16,6 @@
   "osa_names": [],
   "mdt_names": [],
   "fpga_names": [],
-  "motors_names": []
+  "motors_names": [],
+  "dac_names": []
 }
