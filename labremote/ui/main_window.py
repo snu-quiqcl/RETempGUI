@@ -231,6 +231,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             from .decay_tab import DecayTab
             panel.decay_tab=DecayTab(panel.worker,self)
             tabs.addTab(panel.decay_tab,'Decay' if len(panels)==1 else 'Decay · '+name)
+            from .hom_tab import HOMTab
+            panel.hom_tab=HOMTab(panel.worker,self)
+            tabs.addTab(panel.hom_tab,'HOM' if len(panels)==1 else 'HOM · '+name)
 
     def _panels(self):
         return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()
@@ -261,6 +264,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             self.queue_tab.shutdown()
             for panel in self.family_tabs['fpga'].values():
                 if hasattr(panel,'daily_tab'):panel.daily_tab.shutdown()
+                if hasattr(panel,'hom_tab'):panel.hom_tab.shutdown()
             self.discovery_worker.shutdown()
             self.centralWidget().setEnabled(False)
             for p in self._panels():p.worker.cancel_backgrounds()

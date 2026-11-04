@@ -514,6 +514,11 @@ class FPGAAPI(DeviceAPI):
 
     def stop_decay(self):return self.worker.decay_runner.cancel()
 
+    def run_hom(self,*,settings=None,settings_file=None,directory=None):
+        return self.worker.hom_runner.start(settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
+
+    def stop_hom(self):return self.worker.hom_runner.cancel()
+
     def run_initialization(self,chamber,*,settings=None,settings_file=None,directory=None):
         return self.worker.initialization_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
 
