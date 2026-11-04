@@ -1,5 +1,8 @@
 import csv
 import hashlib
+import json
+import os
+import time
 from pathlib import Path
 from labremote.data_paths import decay_directory
 from datetime import datetime
@@ -25,46 +28,81 @@ class DecayRunner(WorkflowTask):
         from labremote.devices.fpga.adapter import Cancellation
         from labremote.devices.fpga.controller import hd
         from labremote.operation.fpga.decay import run
-        c=self.settings['settings'];folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Decay_'+c['chamber']+'_'+c['mode']+'_'+self.handle.request_id)
+        c=self.settings['settings'];run_id=self.handle.request_id
+        started_at=datetime.now().astimezone().isoformat(timespec='milliseconds');run_clock=time.monotonic()
+        folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Decay_'+c['chamber']+'_'+c['mode']+'_'+run_id)
         folder.mkdir(parents=True,exist_ok=False)
-        sources={n:hashlib.sha256((Path(__file__).parent/n).read_bytes()).hexdigest() for n in ('config.py','sequence.py','runner.py','plotting.py')}
-        import shutil
-        source_root=folder/'source';source_root.mkdir()
-        for name in sources:shutil.copyfile(Path(__file__).parent/name,source_root/name)
-        operation=Path(__file__).resolve().parents[1]/'operation/fpga/decay.py'
-        for name,path in [('operation.py',operation),('hardware_definition.py',Path(hd.__file__)),('HardwareDefinition_v4_04.py',Path(hd.__file__).with_name('HardwareDefinition_v4_04.py'))]:
-            shutil.copyfile(path,source_root/name);sources[name]=hashlib.sha256(path.read_bytes()).hexdigest()
-        config.save(folder/'configuration.json',dict(settings=c,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,sequencer_clock_ns=10,stopwatch_bin_ns=1.25,source_sha256=sources,
-            acquisition_note='One FPGA execution per PC batch; no trial chunk splitting; 16-bit histogram bins; SYNC arrival required'))
+        source_paths={name:Path(__file__).parent/name for name in ('config.py','sequence.py','runner.py','plotting.py','storage.py')}
+        source_paths.update(operation=Path(__file__).resolve().parents[1]/'operation/fpga/decay.py',
+            hardware_definition=Path(hd.__file__),hardware_base=Path(hd.__file__).with_name('HardwareDefinition_v4_04.py'))
+        metadata=dict(settings=c,fpga=self.worker.name,hardware_definition=hd.__name__,
+            sequencer_clock_ns=10,stopwatch_bin_ns=1.25,
+            time_settings_us={key:config.time_to_display(key,c[key]) for key in config.TIME_LABELS},
+            source_sha256={name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in source_paths.items()},
+            acquisition_note='One FPGA execution per zero-based PC batch; 16-bit histogram bins; SYNC arrival required.',
+            trials_note='programmed_trials is configured repetitions, not observed valid SYNC or photon events.',
+            timestamp_note='Timezone-aware PC timestamps. Batch start includes preparation; sequencer_started_at follows the start command; finish includes FIFO reception. Not FPGA event timestamps.',
+            raw_note='row_index is zero-based within each batch; valid describes the received packet, not completeness of the entire batch.')
         acc=Accumulator(c);error=None
+        report=dict(schema_version=2,experiment='decay',chamber=c['chamber'],mode=c['mode'],run_id=run_id,
+            folder=str(folder),started_at=started_at,finished_at=None,elapsed_s=0.,status='running',error='',
+            completed_batches=0,expected_batches=c['outer_loop'],failed_batches=0,cancelled_batches=0,
+            batch_in_progress=None)
+        def checkpoint():
+            data=acc.data();report['completed_batches']=len(data['batches'])
+            report['elapsed_s']=time.monotonic()-run_clock
+            histogram=dict(bin=list(range(c['MAX_TIME_DIFFERENCE'])),time_ns=[i*1.25 for i in range(c['MAX_TIME_DIFFERENCE'])],
+                channel_names=[c['roles']['PMT'+str(i+1)] for i in range(acc.channels)],counts=data['counts'],
+                programmed_trials=data['trials'],completed_batches=len(data['batches']))
+            config.save(folder/'results.json',dict(report,configuration=metadata,histogram=histogram))
         self.publish(chamber=c['chamber'],mode=c['mode'],phase='Starting',folder=str(folder),total=c['outer_loop'])
+        checkpoint()
         try:
-            with (folder/'raw_fifo.csv').open('w',newline='',encoding='utf-8') as raw,(folder/'chunks.jsonl').open('w',encoding='utf-8') as chunks:
-                import json
-                writer=csv.writer(raw);writer.writerow(['batch','chunk','fifo_0','fifo_1','fifo_2','tag','valid'])
+            with (folder/'raw_fifo.csv').open('w',newline='',encoding='utf-8') as raw,(folder/'batches.jsonl').open('w',encoding='utf-8') as batches:
+                writer=csv.writer(raw);writer.writerow(['run_id','batch','row_index','fifo_0','fifo_1','fifo_2','tag','valid','raw_record'])
+                raw.flush();row_indices={}
                 def rows(batch,chunk,values,valid):
-                    if isinstance(values,list):
-                        for r in values:writer.writerow([batch,chunk,*(r if isinstance(r,(list,tuple)) else [repr(r)]),int(valid)])
-                    else:writer.writerow([batch,chunk,repr(values),0])
+                    records=values if isinstance(values,list) else [values]
+                    for row in records:
+                        index=row_indices.get(batch,0);row_indices[batch]=index+1
+                        shaped=isinstance(row,(list,tuple)) and len(row)==4
+                        fields=list(row) if shaped else ['']*4
+                        writer.writerow([run_id,batch,index,*fields,int(valid),'' if shaped else repr(row)])
                     raw.flush()
                 def received(chunk):
-                    chunks.write(json.dumps(chunk,allow_nan=False)+'\n');chunks.flush();acc.add(chunk)
-                    self.publish(phase='Measuring',live=acc.data(),completed_batches=sum(b['complete'] for b in acc.batches.values()))
-                self.call(DeviceAPI(self.worker,group=self.group)._submit('DECAY_ACQUIRE',lambda w:run(w.raw_device.controller,c,Cancellation(),rows,received)))
+                    acc.add(chunk)
+                    self.publish(phase='Measuring',live=acc.data(),completed_batches=len(acc.batches))
+                def batch_event(event):
+                    event=dict(event,run_id=run_id)
+                    if event['event']=='started':report['batch_in_progress']=event['batch']
+                    else:
+                        report['batch_in_progress']=None
+                        if event['status']=='completed':
+                            data=acc.batches[event['batch']]
+                            for key in ('histograms','decay_counts','prompt_counts','prompt_counts_by_channel'):
+                                event[key]=data[key]
+                        elif event['status']=='failed':report['failed_batches']+=1
+                        elif event['status']=='cancelled':report['cancelled_batches']+=1
+                    # Persist raw bytes and the append-only batch event before replacing
+                    # the summary, so interrupted runs can be reconstructed.
+                    raw.flush();os.fsync(raw.fileno())
+                    batches.write(json.dumps(event,ensure_ascii=False,allow_nan=False)+'\n');batches.flush();os.fsync(batches.fileno())
+                    checkpoint()
+                self.call(DeviceAPI(self.worker,group=self.group)._submit('DECAY_ACQUIRE',
+                    lambda w:run(w.raw_device.controller,c,Cancellation(),rows,received,on_batch=batch_event)))
         except Exception as exc:error=exc
-        data=acc.data();report=dict(experiment='decay',chamber=c['chamber'],mode=c['mode'],run_id=self.handle.request_id,folder=str(folder),completed_batches=sum(b['complete'] for b in data['batches']),expected_batches=c['outer_loop'])
+        data=acc.data()
         try:
-            config.save(folder/'histogram.json',data)
-            with (folder/'histogram.csv').open('w',newline='',encoding='utf-8') as stream:
-                writer=csv.writer(stream);writer.writerow(['bin','time_ns']+[c['roles']['PMT'+str(i+1)] for i in range(acc.channels)])
-                for i in range(c['MAX_TIME_DIFFERENCE']):writer.writerow([i,i*1.25]+[channel[i] for channel in data['counts']])
             from matplotlib.figure import Figure
             from matplotlib.backends.backend_agg import FigureCanvasAgg
-            fig=Figure(figsize=(14,12));FigureCanvasAgg(fig);plot=DecayPlot(fig,c);fits=plot.update(data);config.save(folder/'decay_fit.json',dict(bin_ns=1.25,decay_threshold_bin=c['DECAY_THRESHOLD'],fits=fits));fig.savefig(folder/'decay.png',dpi=160)
+            fig=Figure(figsize=(14,12));FigureCanvasAgg(fig);plot=DecayPlot(fig,c)
+            plot.update(data)  # Retain fitting in the figure, without serializing fit parameters.
+            fig.savefig(folder/'decay.png',dpi=160)
         except Exception as exc:error=error or exc
         if self.handle.cancelled() and error is None:error=OperationCancelled('Decay cancelled')
-        report.update(status='cancelled' if isinstance(error,OperationCancelled) else 'failed' if error else 'completed',error=str(error) if error else '')
-        config.save(folder/'result.json',report);self.results[c['chamber'],c['mode']]=dict(report=report,data=data,settings=c)
+        report.update(status='cancelled' if isinstance(error,OperationCancelled) else 'failed' if error else 'completed',
+            error=f'{type(error).__name__}: {error}' if error else '',finished_at=datetime.now().astimezone().isoformat(timespec='milliseconds'))
+        checkpoint();self.results[c['chamber'],c['mode']]=dict(report=report,data=data,settings=c)
         self.publish(phase=report['status'],result=report,live=data)
         if error:raise error
         return report

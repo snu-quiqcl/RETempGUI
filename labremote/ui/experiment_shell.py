@@ -24,6 +24,7 @@ class ExperimentShellMixin:
             # A missing/broken selection must not silently connect a different set.
             self.equipment_profile={'schema_version':1,'name':'구성 파일 확인 필요','devices':[]};startup_error=str(exc)
         self.cfg['equipment_configuration']=str(self.profile_path) if self.profile_path else ''
+        self._profile_load_error=bool(startup_error)
         self.ccd_tab.apply_display_config(self.equipment_profile.get('ccd_display',{}))
         # Reparent existing widgets. No replacement workers, connections, or operations.
         detailed=[('RF',self.rf_tabs),('미라',self.mira_tabs),('CCD',self.ccd_tab),('FPGA',self.family_subtabs['fpga']),('오실로스코프',self.oscillo_tabs),('기타',self.others_tabs),('DAC',self.family_subtabs['dac'])]
@@ -70,6 +71,7 @@ class ExperimentShellMixin:
         for entry in self.equipment_profile['devices']:
             if entry['enabled'] or entry['family'] in ('oven_psu','oven_relay'):self.ensure_equipment(entry)
         self.device_menu=self.menuBar().addMenu('장비')
+        self.device_menu.setToolTipsVisible(True)
         self.device_menu.aboutToShow.connect(self.populate_device_menu)
         self._observed_workers=set();self.refresh_experiment_home()
 
@@ -77,6 +79,9 @@ class ExperimentShellMixin:
         self.device_menu.clear()
         for title,window in self.detail_windows.items():
             action=self.device_menu.addAction(title)
+            description=self.tab_help.description(title)
+            if description:
+                action.setToolTip(description)
             action.triggered.connect(window.open)
 
     def open_device_control(self,family,name=None):
@@ -164,6 +169,7 @@ class ExperimentShellMixin:
         for entry in validated['devices']:
             if entry['enabled'] or entry['family'] in ('oven_psu','oven_relay'):self.ensure_equipment(entry)
         self.ccd_tab.apply_display_config(validated.get('ccd_display',{}))
+        self._profile_load_error=False
         self.equipment_profile=validated;self.profile_path=Path(path) if path else self.profile_path
         self.cfg['equipment_configuration']=str(self.profile_path) if self.profile_path else ''
         self.profile_dirty=path is None;self.profile_errors.clear();self.refresh_experiment_home()
@@ -195,12 +201,19 @@ class ExperimentShellMixin:
         except Exception as exc:self.shell_message.setText(str(exc));return False
 
     def connect_equipment(self,group=None):
+        if self._discovery_pending:
+            self.shell_message.setText('서버 장비 목록 조회가 끝난 뒤 연결하세요.');return
         if self._closing or self.workflows_running() or self.active_experiment_tasks():self.shell_message.setText('실행 중인 작업 종료 후 연결하세요.');return
         if self.connection_queue or self.connection_handle is not None:return
         self.connection_queue=deque(self.selected_equipment(group));self.shell_message.setText('선택한 장비를 순서대로 연결합니다. 실패한 장비는 재연결 버튼으로 다시 시도하세요.')
         self.pump_connections()
 
     def connect_equipment_entry(self,entry):
+        from .discovered_equipment import AUTO_FAMILIES
+        inventory=self._server_inventory
+        if (inventory is not None and inventory[0]==self._endpoint() and entry['family'] in AUTO_FAMILIES
+                and (entry['family'],entry['name']) not in inventory[1]):
+            raise ConnectionError('현재 서버 목록에서 찾을 수 없음 · Rescan 후 다시 연결하세요.')
         self.ensure_equipment(entry);family,name=entry['family'],entry['name'];worker=self.equipment_worker(entry)
         if family=='ccd':
             if not worker.isRunning():worker._closing=False;worker.start()
@@ -266,13 +279,14 @@ class ExperimentShellMixin:
     def refresh_experiment_home(self):
         from .connection_status import connection_color
         if self._closing:return
+        self._flush_discovered()
         self.pump_connections()
         for panel in self._panels():
             worker=panel.worker
             if id(worker) not in self._observed_workers and hasattr(worker,'failure'):
                 self._observed_workers.add(id(worker))
                 worker.failure.connect(self.show_shell_failure)
-        selected=self.selected_equipment();busy=bool(self.connection_queue or self.connection_handle is not None)
+        selected=self.selected_equipment();busy=bool(self._discovery_pending or self.connection_queue or self.connection_handle is not None)
         active=self.workflows_running() or bool(self.active_experiment_tasks())
         for group,label in self.group_labels.items():
             entries=[e for e in selected if e['group']==group];connected=sum(self.equipment_connected(e) for e in entries)

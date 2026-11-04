@@ -20,9 +20,9 @@ sqrt(max(counts,1)) 가중 표준편차를 사용하며 데이터가 부족하�
 기존 reference_tau_ns는 옛 설정 호환을 위해 보존하지만 fitting에 사용하지 않습니다.
 화면은 PC batch 완료 시 한 번 갱신됩니다. 배치 내부 chunk 분할은 제거했으며, 배치별 FPGA 실행도 한 번입니다. 옛 partial/chunk 결과 파일은 계속 읽을 수 있습니다.
 
-원본 raw_fifo.csv, chunks.jsonl, histogram.csv와 기존 histogram.json 필드는 보존합니다.
-histogram.json의 각 batch에 histograms, prompt_counts_by_channel을 추가합니다.
-최종 fit은 decay_fit.json, 6개 그래프는 decay.png에 저장됩니다.
+새 실행은 results.json, batches.jsonl, raw_fifo.csv, decay.png 네 파일로 저장합니다.
+results.json에는 전체 설정과 누적 histogram을, batches.jsonl에는 배치 시작/종료·실패·중단 기록과 완료 배치별 histograms/prompt_counts_by_channel을 저장합니다.
+fitting 수치는 별도 저장하지 않습니다. 화면과 decay.png에는 fitting을 유지하고, 결과를 다시 열 때 계산합니다. 기존 result.json/configuration.json/histogram.json 결과도 열 수 있습니다.
 기존 파일에 배치별 histogram이 없으면 마지막 chunk를 batch로 오인하여 표시하지 않고 unavailable로 표시합니다.
 기존 누적 데이터와 배치 합계는 계속 열 수 있습니다.
 

@@ -33,6 +33,7 @@ def identify_family(driver_class, name='', *, methods=(), submodules=()):
         return 'windfreak_synthhd'
     if 'dac81416' in typ:return 'trap_dac81416'
     if 'mff101' in typ or 'mff002' in typ:return 'thorlabs_mff'
+    if 'rpiovenrelay' in typ:return 'oven_relay'
     if 'aq6373' in typ:return 'yokogawa_aq6373'
     if 'mdt693b' in typ:return 'mdt693b'
     if 'ds1052e' in typ: return 'rigol_ds1052e'

@@ -58,6 +58,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self.cfg = cfg
         self._closing = False
         self._workers_shutdown = False
+        self._discovery_pending = True
+        self._deferred_discovery = None
+        self._server_inventory = None
         self.dynamic_windfreak_tabs = {}
         self.family_tabs = {"windfreak": self.dynamic_windfreak_tabs, "sg384": {}, "anapico": {}, "dds4": {}, "ds1052e": {}, 'mso7054':{}, 'thermotek':{}, 'keithley':{}, 'osa':{}, 'mdt':{}, 'fpga':{}, 'motors':{}, 'dac':{}}
         self.setWindowTitle('RETempUI V1.00 | RF + oscillo + local CCD')
@@ -147,6 +150,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         from labremote.ui.input_state import InputState
         self.input_state=InputState(self)
         self.input_state.restore()
+        QtCore.QTimer.singleShot(0, self._scan)
 
     def _logging(self, enabled):
         self.cfg['operation_detailed_logging'] = enabled
@@ -154,7 +158,17 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
 
     def _endpoint(self): return self.discovery_host.text().strip(), self.discovery_port.value()
 
+    def _discovery_busy(self):
+        return (self.workflows_running() or bool(self.active_experiment_tasks())
+                or bool(self.connection_queue) or self.connection_handle is not None
+                or self.flip_tab._discovering or self.flip_tab._bulk_active
+                or self.ccd_tab.oven_panel.task.running() or self.flip_tab.routing.task.running())
+
     def _scan(self):
+        if self._closing or not self.rescan_btn.isEnabled():return
+        if self._discovery_busy():
+            self.shell_message.setText('작업과 연결이 끝난 뒤 서버 목록을 다시 조회하세요.');return
+        self._discovery_pending=True
         from .connection_status import connection_color
         connection_color(self.rescan_btn,'pending')
         self.rescan_btn.setEnabled(False)
@@ -165,26 +179,69 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         from .connection_status import connection_color
         connection_color(self.rescan_btn,'error')
         self.rescan_btn.setEnabled(True)
+        self._discovery_pending=False
+        self._server_inventory=None
+        self.shell_message.setText('서버 목록 조회 실패 · 기존 구성 유지. 서버 확인 후 Rescan을 누르세요.')
         self.log.appendPlainText(message)
 
     def _discovered(self, devices):
         self.rescan_btn.setEnabled(True)
-        if self._closing: return
+        if self._closing:return
         endpoint=getattr(self,'_scan_endpoint',self._endpoint())
         if endpoint!=self._endpoint():
+            self._discovery_pending=False
             self.log.appendPlainText('Server address changed; rescan the current server.');return
+        if self._discovery_busy():
+            self._deferred_discovery=(endpoint,list(devices))
+            self.shell_message.setText('서버 목록 반영 대기 · 현재 작업 종료 후 반영합니다.');return
+        self._apply_discovered(endpoint,devices)
+
+    def _apply_discovered(self, endpoint, devices):
+        from .discovered_equipment import discovery_candidates, merge_discovered
         from .connection_status import connection_color
+        self._deferred_discovery=None
+        self._discovery_pending=False
+        if endpoint!=self._endpoint() or self._closing:return
         connection_color(self.rescan_btn,'connected')
-        self.flip_tab.accept_server_devices(endpoint,devices)
-        candidates=[]
-        for d in devices:
-            family={'windfreak_synthhd':'windfreak','srs_sg384':'sg384','anapico_apsyn420':'anapico','dds4_ad9912_vva':'dds4','rigol_ds1052e':'ds1052e','rigol_mso7054':'mso7054','thermotek_t257p':'thermotek','keithley_2231a':'keithley','yokogawa_aq6373':'osa','mdt693b':'mdt','thorlabs_mff':'flip','trap_dac81416':'dac'}.get(d.family)
-            if family:
-                from labremote.config.equipment import FAMILY_GROUP
-                candidates.append(dict(family=family,name=d.name,group=FAMILY_GROUP[family],enabled=False))
-                if family in self.family_tabs and self.equipment_enabled(family,d.name):self._add_family(family,d.name)
+        candidates=discovery_candidates(devices)
         self._equipment_candidates=candidates
-        self.log.appendPlainText('Discovery complete: supported devices added.')
+        self._server_inventory=(endpoint,{(e['family'],e['name']) for e in candidates})
+        if self._profile_load_error:
+            self.shell_message.setText('구성 파일 오류를 해결한 후 다시 조회하세요.');return
+        try:
+            document,notes=merge_discovered(self.equipment_profile,candidates)
+        except ValueError as exc:
+            self.shell_message.setText(str(exc));return
+        if document!=self.equipment_profile:
+            self.equipment_profile=document;self.profile_dirty=True
+        self.flip_tab.accept_server_devices(endpoint,devices)
+        from labremote.config.device_config import configured_instrument_names
+        from .discovered_equipment import AUTO_FAMILIES
+        found=self._server_inventory[1]
+        for entry in self.selected_equipment():
+            key=(entry['family'],entry['name'])
+            if key not in found:
+                if entry['family'] in AUTO_FAMILIES and not self.equipment_connected(entry):
+                    self.profile_errors[key]='현재 서버 목록에서 찾을 수 없음'
+                continue
+            try:
+                # Existing workers and workflow bridges are never replaced.
+                if self.equipment_worker(entry) is None or entry['family']=='oven_relay':
+                    self.ensure_equipment(entry)
+                self.profile_errors.pop(key,None)
+                if entry['family'] in ('windfreak','sg384','anapico','dds4'):
+                    if entry['name'] not in configured_instrument_names(entry['family']):
+                        notes.append(entry['name']+': 공통 기본 설정 사용 · 장비별 출력 제한을 확인하세요.')
+            except Exception as exc:
+                self.profile_errors[key]=str(exc);notes.append(entry['name']+': '+str(exc))
+        message='서버 장비 목록 반영 완료 · 전체 연결을 누르세요.'
+        if notes:message+='\n'+'\n'.join(notes)
+        self.shell_message.setText(message);self.log.appendPlainText(message)
+
+    def _flush_discovered(self):
+        pending=self._deferred_discovery
+        if pending is not None and not self._discovery_busy():
+            self._apply_discovered(*pending)
 
     def _add(self, name):
         if not name or self._closing: return
@@ -237,6 +294,15 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
 
     def _panels(self):
         return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()
+
+    def _assert_workflow_ready(self):
+        if self._discovery_pending or self.connection_queue or self.connection_handle is not None:
+            raise RuntimeError('서버 검색과 전체 연결이 끝난 뒤 실행하세요.')
+        for family,panels in self.family_tabs.items():
+            for name,panel in panels.items():
+                identity=getattr(panel.worker,'_execution_device',None)
+                if panel.connected and family!='fpga' and identity and identity[:2]!=self._endpoint():
+                    raise RuntimeError('서버 주소가 변경되었습니다. 기존 연결을 해제하고 다시 연결하세요.')
 
     def _bindings(self):
         bindings = {family+':'+name:(family,p.worker.operation_bridge)

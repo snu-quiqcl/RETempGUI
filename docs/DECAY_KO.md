@@ -44,16 +44,22 @@ EA는 AOMA/EOM_7GA1/2/EOM_2GA, EC는 AOMC/EOM_7GC1/2/EOM_2GC를 기본으로 사
 
 | 파일 | 내용 |
 |---|---|
-| configuration.json | 원래 요청 조건, 역할 매핑, FPGA/HD 정보, 두 시간 단위, 소스 해시 |
-| source/ | 사용한 decay 코드와 HD/operation 사본 |
-| raw_fifo.csv | batch/chunk별 수신 원시 histogram word와 tag/검증 결과 |
-| chunks.jsonl | 완료된 배치별 histogram, 실제 groups/trials/경과시간 (호환용 파일명 유지) |
-| histogram.json | 누적값, 최신 chunk, batch별 집계, 실제 완료 trials |
-| histogram.csv | bin, 시간(ns), PMT별 누적 counts |
-| decay.png | 마지막 결과 이미지 |
-| result.json | 완료/중단/실패 및 완료 batch 수 |
+| results.json | 전체 설정/포트 매핑, FPGA/HD 정보, 단위와 코드 해시, 실행 시작·종료/상태, 최종 누적 histogram |
+| batches.jsonl | 배치마다 started/finished 기록, 시작·종료/시퀀서 시작 요청 시각, 소요 시간, 완료·실패·중단 상태. 완료 배치는 채널별 histogram과 decay/pulse 합계 포함 |
+| raw_fifo.csv | run_id, batch, row_index, 원시 histogram word 3개, tag, 수신 패킷 검증 결과. 잘못된 형태는 raw_record에 보존 |
+| decay.png | fitting 곡선을 포함한 마지막 결과 이미지 |
 
-FPGA가 아직 전송하지 않은 내부 histogram은 Stop 시 복구할 수 없습니다. 전송 도중 중단된 batch의 수신 word는 raw_fifo.csv에 남지만, 완전한 batch가 아니므로 누적 histogram에는 넣지 않습니다. 파일을 0으로 채워 정상 측정처럼 처리하지 않습니다. `Open result`에서 해당 탭과 동일한 chamber/mode의 result.json을 열어 다시 표시합니다.
+새 실행은 위 네 파일만 생성합니다. fitting 수치 JSON과 소스 복사본은 저장하지 않습니다. 코드 해시는 results.json에 보존하며 화면/이미지의 fitting은 유지합니다.
+
+results.json의 schema_version은 2입니다. configuration.settings는 실행에 사용한 내부 설정값이며, configuration.time_settings_us는 시간 설정을 µs로 환산한 값입니다. 시퀀서 1 clock은 10 ns, histogram 1 bin은 1.25 ns입니다. histogram에는 bin/time_ns/channel_names/counts와 완료 배치의 programmed_trials를 저장합니다. programmed_trials는 설정값을 곱한 시행 횟수로, 실제 유효 SYNC 또는 광자 검출 수가 아닙니다.
+
+batch와 row_index는 0부터 시작합니다. 배치 started는 준비 작업 직전, sequencer_started_at은 FPGA 시작 명령 반환 직후, finished_at은 수신/검증 종료 시 PC에서 기록한 시간대 포함 ISO 시각입니다. FPGA 자체의 정밀 타임스탬프가 아닙니다. elapsed_s는 PC의 단조 증가 시계로 계산합니다. 시작만 있고 종료가 없는 배치는 프로그램 강제 종료 등으로 마무리되지 않은 배치입니다.
+
+배치마다 raw와 batches 기록을 flush/fsync한 뒤 results.json을 임시 파일 교체 방식으로 갱신합니다. 비정상 종료 후 결과를 열면 batches.jsonl의 완료 기록으로 histogram을 재구성하고, 마지막에 잘린 JSON 행은 무시합니다. 실행 상태가 running인 채 남은 결과는 interrupted로 표시합니다.
+
+FPGA가 아직 전송하지 않은 내부 histogram은 Stop 시 복구할 수 없습니다. 전송 도중 중단된 배치의 수신 word는 raw_fifo.csv에 남지만, 완전한 배치가 아니므로 누적 histogram에는 넣지 않습니다. raw의 valid는 패킷 검증 결과이지 전체 배치 완료 여부가 아닙니다.
+
+`Open result`에서 해당 탭과 동일한 chamber/mode의 results.json을 엽니다. batches.jsonl은 같은 폴더에 함께 보관하세요. 기존 result.json + configuration.json + histogram.json 형식도 그대로 열 수 있습니다. 결과를 열 때 fitting은 다시 계산합니다.
 
 ## Workflow API
 

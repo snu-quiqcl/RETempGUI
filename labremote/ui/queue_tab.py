@@ -88,6 +88,9 @@ class QueueTab(QtWidgets.QWidget):
     def start(self):
         if self.still_running():return
         try:
+            owner=getattr(self.bindings_provider,'__self__',None)
+            guard=getattr(owner,'_assert_workflow_ready',None)
+            if guard is not None:guard()
             if not self.directory.text().strip():raise ValueError('Choose save folder')
             self.thread=QueueThread(self.bindings_provider(),self.plan(),self.directory.text(),self);self.thread.changed.connect(self.progress);self.thread.failed.connect(self.status.setText);self.thread.finished.connect(self.controls);self.thread.start();self.status.setText('Starting Queue');self.controls()
         except Exception as exc:self.status.setText(str(exc))

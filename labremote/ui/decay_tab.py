@@ -102,12 +102,13 @@ class DecayExperimentTab(QtWidgets.QWidget):
                 self.plot.update(data);self.canvas.draw_idle();self.revision=data['chunks']
             except Exception as exc:self.status.setText('Display: '+str(exc))
     def load_result(self):
-        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Open decay result',self.directory.text(),'Result (result.json)')
+        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Open decay result',self.directory.text(),'Decay results (results.json result.json)')
         if path:
             try:
-                p=Path(path);report=config.read(p)
+                from labremote.decay.storage import load_result
+                report,c,data=load_result(path)
                 if report.get('experiment')!='decay' or (report['chamber'],report['mode'])!=(self.chamber,self.mode):raise ValueError('Result differs from tab')
-                c=config.read(p.parent/'configuration.json')['settings'];self.plot=DecayPlot(self.figure,c);self.plot.update(config.read(p.parent/'histogram.json'));self.canvas.draw_idle();self.status.setText(report['status']+' · '+path)
+                self.plot=DecayPlot(self.figure,c);self.plot.update(data);self.canvas.draw_idle();self.status.setText(report['status']+' · '+path)
             except Exception as exc:self.status.setText(str(exc))
 
 class DecayTab(QtWidgets.QTabWidget):

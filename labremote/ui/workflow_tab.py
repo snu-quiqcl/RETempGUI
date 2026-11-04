@@ -182,7 +182,13 @@ class WorkflowTab(QtWidgets.QWidget):
         except (SyntaxError, ValueError) as error:
             self.status.setText(f'실행 불가: {error}')
             return
-        bindings = {key: value for key, value in self.bindings_provider().items() if value[0] in SUPPORTED_FAMILIES}
+        try:
+            owner=getattr(self.bindings_provider,'__self__',None)
+            guard=getattr(owner,'_assert_workflow_ready',None)
+            if guard is not None:guard()
+            bindings = {key: value for key, value in self.bindings_provider().items() if value[0] in SUPPORTED_FAMILIES}
+        except RuntimeError as error:
+            self.status.setText(f'실행 불가: {error}');return
         if not bindings:
             self.status.setText('실행 불가: 먼저 사용할 장비를 연결하세요.')
             return
