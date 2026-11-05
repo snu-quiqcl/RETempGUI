@@ -11,7 +11,7 @@ class HOMTab(QtWidgets.QWidget):
         super().__init__(parent); self.worker=worker; self.host=parent; self.api=device_api(worker)
         self.fields={}; self.inputs={}; self.outputs={}; self.plot=None; self.run_id=None; self.revision=-1
         root=QtWidgets.QVBoxLayout(self)
-        note=QtWidgets.QLabel('HOM · All received coincidence bins · Δt = PMTC − PMTA · 1.25 ns/bin · Probabilities normalized to valid SYNC trials'); note.setWordWrap(True); root.addWidget(note)
+        note=QtWidgets.QLabel('HOM · All received coincidence bins · Δt = PMTC - PMTA · 1.25 ns/bin · Probabilities normalized to valid SYNC trials'); note.setWordWrap(True); root.addWidget(note)
         split=QtWidgets.QSplitter(); root.addWidget(split,1)
         scroll=QtWidgets.QScrollArea(); scroll.setWidgetResizable(True); scroll.setMinimumWidth(355); split.addWidget(scroll)
         self.settings_panel=QtWidgets.QWidget(); scroll.setWidget(self.settings_panel); form=QtWidgets.QFormLayout(self.settings_panel)
@@ -23,15 +23,18 @@ class HOMTab(QtWidgets.QWidget):
             box.setRange(lo*factor,hi*factor); box.setKeyboardTracking(False)
             if timing:box.setSingleStep(.01); box.setToolTip('0.01 µs = one sequencer clock; includes original instruction budget.')
             form.addRow(label,box); self.fields[key]=box
+        self.trial_note=QtWidgets.QLabel(); self.trial_note.setWordWrap(True); form.addRow(self.trial_note)
+        for key in ('run_number','inner_loop_number','outer_loop_in_fpga'):
+            self.fields[key].valueChanged.connect(self.update_trials)
         for role in ('PMTA','PMTC','SYNC'):
             box=QtWidgets.QComboBox(); box.addItems(config.INPUTS); form.addRow(role+' input',box); self.inputs[role]=box
         self.aomb=QtWidgets.QCheckBox('Control AOMB'); form.addRow(self.aomb)
         for role in ('AOMA','AOMC','TRIG','AOMB'):
-            row=QtWidgets.QWidget(); layout=QtWidgets.QHBoxLayout(row); layout.setContentsMargins(0,0,0,0)
-            port=QtWidgets.QComboBox(); port.addItems(['0','2'] if role=='AOMB' else ['0'])
-            pin=QtWidgets.QComboBox(); layout.addWidget(QtWidgets.QLabel('Port')); layout.addWidget(port); layout.addWidget(QtWidgets.QLabel('Pin')); layout.addWidget(pin,1)
-            self.outputs[role]=(port,pin); form.addRow(role+' output',row)
-            port.currentTextChanged.connect(lambda _,r=role:self.update_pins(r)); self.update_pins(role)
+            box=QtWidgets.QComboBox()
+            box.addItems([name for name,(_,port,_) in config.OUTPUTS.items() if role=='AOMB' or port==config.hd.external_control_port])
+            self.outputs[role]=box; form.addRow(role+' output',box)
+        mapping_note=QtWidgets.QLabel('Pin definitions: vendor/HardwareDefinition_remote_ent_test_ec.py (restart after editing)')
+        mapping_note.setWordWrap(True); form.addRow(mapping_note)
         for text,fn in [('Load settings',self.load),('Save settings',self.save),('Save settings as…',self.save_as)]:
             button=QtWidgets.QPushButton(text); button.clicked.connect(fn); form.addRow(button)
         right=QtWidgets.QWidget(); split.addWidget(right); layout=QtWidgets.QVBoxLayout(right)
@@ -55,20 +58,21 @@ class HOMTab(QtWidgets.QWidget):
         worker.task_progress.connect(self.progress)
         self.timer=QtCore.QTimer(self); self.timer.timeout.connect(self.controls); self.timer.start(300); self.controls()
 
-    def update_pins(self,role):
-        port,pin=self.outputs[role]; old=pin.currentText(); pin.clear()
-        pin.addItems(sorted(n for n,(p,_) in config.PINS.items() if p==int(port.currentText())))
-        if pin.findText(old)>=0:pin.setCurrentText(old)
+    def update_trials(self):
+        n=1
+        for key in ('run_number','inner_loop_number','outer_loop_in_fpga'):n*=self.fields[key].value()
+        self.trial_note.setText(f'Configured trials / batch: {n:,}')
 
     def populate(self,c):
+        c=config.validate(c)
         for k,b in self.fields.items():b.setValue(c[k]*(config.CLOCK_US if k in config.TIMES else 1))
         for k,b in self.inputs.items():b.setCurrentText(c['inputs'][k])
-        for k,(port,pin) in self.outputs.items():port.setCurrentText(str(c['outputs'][k]['port'])); pin.setCurrentText(c['outputs'][k]['pin'])
-        self.aomb.setChecked(c['aomb_enabled'])
+        for k,box in self.outputs.items():box.setCurrentText(c['outputs'][k])
+        self.aomb.setChecked(c['aomb_enabled']); self.update_trials()
 
     def value(self):
-        return config.validate(dict(schema_version=1,aomb_enabled=self.aomb.isChecked(),inputs={k:b.currentText() for k,b in self.inputs.items()},
-            outputs={k:dict(port=int(port.currentText()),pin=pin.currentText()) for k,(port,pin) in self.outputs.items()},**{k:config.from_display(k,b.value()) for k,b in self.fields.items()}))
+        return config.validate(dict(schema_version=2,aomb_enabled=self.aomb.isChecked(),inputs={k:b.currentText() for k,b in self.inputs.items()},
+            outputs={k:box.currentText() for k,box in self.outputs.items()},**{k:config.from_display(k,b.value()) for k,b in self.fields.items()}))
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load HOM settings',str(config.ROOT),'JSON (*.json)')
@@ -131,22 +135,23 @@ class HOMTab(QtWidgets.QWidget):
     def render(self,data,c):
         if self.plot is None:self.plot=HOMPlot(self.figure,c)
         self.plot.update(data); self.canvas.draw_idle()
-        m=data['metrics']
+        m=dict(data['metrics'])
+        pr=m.get('p_reference'); ph=m.get('p_hom')
+        m['total_visibility']=1-ph/pr if pr and ph is not None else None
         def fmt(k):return '—' if m[k] is None else f'{m[k]:.5g}'
         last=data.get('latest'); latest='' if last is None else f" · Latest A/C/total: {sum(last['a']):,} / {sum(last['c']):,} / {sum(last['a'])+sum(last['c']):,}"
-        self.metrics.setText(f"Valid trials: {data['trials']:,} · Missing SYNC: {data['missing_sync']:,}"+latest+'\n'+
+        self.metrics.setText(f"SYNC-confirmed trials: {data['trials']:,} · Trials without SYNC: {data['missing_sync']:,}"+latest+'\n'+
             f"p_PMTA={fmt('p_pmta')} · p_PMTC={fmt('p_pmtc')} · Total decay counts/trial={fmt('p_decay_total')}\n"+
-            f"P(HOM)={fmt('p_hom')} · P(reference)={fmt('p_reference')} · HOM/reference={fmt('hom_reference_ratio')}\n"+
-            f"Estimated trials/coincidence: {fmt('expected_trials_per_coincidence')} · Estimated seconds/coincidence: {fmt('estimated_seconds_per_coincidence')} (batch elapsed time; no event timestamps)")
+            f"P(HOM)={fmt('p_hom')} · P(reference)={fmt('p_reference')} · Total visibility="+('—' if m['total_visibility'] is None else f"{100*m['total_visibility']:.2f}%"))
+        self.metrics.setToolTip('Trials are not photon counts. SYNC-confirmed trials include attempts with no PMT detection. Trials without SYNC have no SYNC stopwatch completion flag. Total visibility = 1 - P(HOM)/P(reference), integrated over all received delay bins.')
 
     def open_result(self):
-        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Open HOM result',self.directory.text(),'Result (result.json)')
+        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Open HOM result',self.directory.text(),'HOM results (results.json result.json)')
         if path:
             try:
-                p=Path(path); result=config.read(p)
-                if result.get('experiment')!='hom':raise ValueError('This is not a HOM result')
-                c=config.validate(config.read(p.parent/'configuration.json')['settings'])
-                self.plot=None; self.render(config.read(p.parent/'histogram.json'),c); self.status.setText(result['status']+' · '+path)
+                from labremote.hom.storage import load_result
+                result,c,data=load_result(path)
+                self.plot=None; self.render(data,c); self.status.setText(result['status']+' · '+path)
             except Exception as exc:self.status.setText(str(exc))
 
     def shutdown(self):

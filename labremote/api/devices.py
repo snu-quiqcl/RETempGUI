@@ -519,6 +519,12 @@ class FPGAAPI(DeviceAPI):
 
     def stop_hom(self):return self.worker.hom_runner.cancel()
 
+    def run_entanglement(self,*,settings=None,settings_file=None,directory=None):
+        return self.worker.entanglement_runner.start(settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
+
+    def stop_entanglement(self):return self.worker.entanglement_runner.cancel()
+
+
     def run_initialization(self,chamber,*,settings=None,settings_file=None,directory=None):
         return self.worker.initialization_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
 

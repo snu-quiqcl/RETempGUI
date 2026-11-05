@@ -19,6 +19,8 @@ class FPGAWorker(AcquisitionWorker):
         self.decay_runner=DecayRunner(self)
         from labremote.hom.runner import HOMRunner
         self.hom_runner=HOMRunner(self)
+        from labremote.entanglement.runner import EntanglementRunner
+        self.entanglement_runner=EntanglementRunner(self)
         self.ramsey_runner=PulseRunner(self,'ramsey');self.spam_runner=PulseRunner(self,'spam');self.initialization_runner=PulseRunner(self,'initialization')
 
     def enqueue(self,handle):

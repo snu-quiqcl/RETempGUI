@@ -31,7 +31,7 @@ def run(controller,c,cancelled,on_rows,on_chunk,on_batch=None):
         for batch in range(c['outer_loop']):
             check()
             started_at=datetime.now().astimezone().isoformat(timespec='milliseconds')
-            batch_clock=time.monotonic();received_rows=0;sequencer_started_at=None
+            batch_clock=time.monotonic();received_rows=0;sequencer_started_at=None;first_fifo_received_at=None;last_fifo_received_at=None
             status='failed';error=''
             if on_batch:on_batch(dict(event='started',batch=batch,status='running',started_at=started_at,
                 finished_at=None,programmed_trials=c['run_number']*c['outer_loop_in_fpga']*c['wo_cooling_number']))
@@ -51,6 +51,8 @@ def run(controller,c,cancelled,on_rows,on_chunk,on_batch=None):
                         check()
                         if time.monotonic()>deadline:raise TimeoutError('Decay FIFO timeout')
                         size=min(available,500);values=d.read_fifo_data(size)
+                        last_fifo_received_at=datetime.now().astimezone().isoformat(timespec='milliseconds')
+                        if first_fifo_received_at is None:first_fifo_received_at=last_fifo_received_at
                         valid=isinstance(values,list) and len(values)==size and len(rows)+size<=expected and all(isinstance(r,(list,tuple)) and len(r)==4 and all(type(v) is int and 0<=v<=65535 for v in r) and r[3]==100 for r in values)
                         received_rows+=len(values) if isinstance(values,list) else 1
                         on_rows(batch,0,values,valid)
@@ -71,7 +73,7 @@ def run(controller,c,cancelled,on_rows,on_chunk,on_batch=None):
             finally:
                 if on_batch:on_batch(dict(event='finished',batch=batch,status=status,error=error,
                     started_at=started_at,finished_at=datetime.now().astimezone().isoformat(timespec='milliseconds'),
-                    sequencer_started_at=sequencer_started_at,elapsed_s=time.monotonic()-batch_clock,
+                    sequencer_started_at=sequencer_started_at,first_fifo_received_at=first_fifo_received_at,last_fifo_received_at=last_fifo_received_at,elapsed_s=time.monotonic()-batch_clock,
                     received_fifo_rows=received_rows,expected_fifo_rows=expected,
                     programmed_trials=c['run_number']*c['outer_loop_in_fpga']*c['wo_cooling_number']))
     except Exception as original:

@@ -1,6 +1,5 @@
 import csv
 import hashlib
-import json
 import os
 import time
 from pathlib import Path
@@ -11,6 +10,7 @@ from labremote.runtime.errors import OperationCancelled
 from labremote.api.devices import DeviceAPI
 from . import config
 from .plotting import Accumulator,DecayPlot
+from .storage import measurement
 
 class DecayRunner(WorkflowTask):
     def __init__(self,worker):
@@ -43,50 +43,50 @@ class DecayRunner(WorkflowTask):
             trials_note='programmed_trials is configured repetitions, not observed valid SYNC or photon events.',
             timestamp_note='Timezone-aware PC timestamps. Batch start includes preparation; sequencer_started_at follows the start command; finish includes FIFO reception. Not FPGA event timestamps.',
             raw_note='row_index is zero-based within each batch; valid describes the received packet, not completeness of the entire batch.')
-        acc=Accumulator(c);error=None
-        report=dict(schema_version=2,experiment='decay',chamber=c['chamber'],mode=c['mode'],run_id=run_id,
+        acc=Accumulator(c);error=None;batch_records=[]
+        report=dict(schema_version=3,experiment='decay',chamber=c['chamber'],mode=c['mode'],run_id=run_id,
             folder=str(folder),started_at=started_at,finished_at=None,elapsed_s=0.,status='running',error='',
             completed_batches=0,expected_batches=c['outer_loop'],failed_batches=0,cancelled_batches=0,
             batch_in_progress=None)
         def checkpoint():
             data=acc.data();report['completed_batches']=len(data['batches'])
             report['elapsed_s']=time.monotonic()-run_clock
-            histogram=dict(bin=list(range(c['MAX_TIME_DIFFERENCE'])),time_ns=[i*1.25 for i in range(c['MAX_TIME_DIFFERENCE'])],
-                channel_names=[c['roles']['PMT'+str(i+1)] for i in range(acc.channels)],counts=data['counts'],
-                programmed_trials=data['trials'],completed_batches=len(data['batches']))
-            config.save(folder/'results.json',dict(report,configuration=metadata,histogram=histogram))
+            final=measurement(data['counts'],data['trials'],c)
+            final['completed_batches']=len(data['batches'])
+            config.save(folder/'results.json',dict(report,configuration=metadata,
+                axes=dict(decay_time_ns=[i*1.25 for i in range(c['MAX_TIME_DIFFERENCE'])]),batches=batch_records,final=final))
         self.publish(chamber=c['chamber'],mode=c['mode'],phase='Starting',folder=str(folder),total=c['outer_loop'])
         checkpoint()
         try:
-            with (folder/'raw_fifo.csv').open('w',newline='',encoding='utf-8') as raw,(folder/'batches.jsonl').open('w',encoding='utf-8') as batches:
-                writer=csv.writer(raw);writer.writerow(['run_id','batch','row_index','fifo_0','fifo_1','fifo_2','tag','valid','raw_record'])
+            with (folder/'raw_fifo.csv').open('w',newline='',encoding='utf-8') as raw:
+                writer=csv.writer(raw);writer.writerow(['run_id','batch','row_index','received_at','fifo_0','fifo_1','fifo_2','tag','valid','raw_record'])
                 raw.flush();row_indices={}
                 def rows(batch,chunk,values,valid):
+                    received_at=datetime.now().astimezone().isoformat(timespec='milliseconds')
                     records=values if isinstance(values,list) else [values]
                     for row in records:
                         index=row_indices.get(batch,0);row_indices[batch]=index+1
                         shaped=isinstance(row,(list,tuple)) and len(row)==4
                         fields=list(row) if shaped else ['']*4
-                        writer.writerow([run_id,batch,index,*fields,int(valid),'' if shaped else repr(row)])
+                        writer.writerow([run_id,batch,index,received_at,*fields,int(valid),'' if shaped else repr(row)])
                     raw.flush()
                 def received(chunk):
                     acc.add(chunk)
                     self.publish(phase='Measuring',live=acc.data(),completed_batches=len(acc.batches))
                 def batch_event(event):
                     event=dict(event,run_id=run_id)
-                    if event['event']=='started':report['batch_in_progress']=event['batch']
+                    kind=event.pop('event')
+                    if kind=='started':
+                        report['batch_in_progress']=event['batch'];batch_records.append(event)
                     else:
                         report['batch_in_progress']=None
                         if event['status']=='completed':
                             data=acc.batches[event['batch']]
-                            for key in ('histograms','decay_counts','prompt_counts','prompt_counts_by_channel'):
-                                event[key]=data[key]
+                            event.update(measurement(data['histograms'],data['trials'],c))
                         elif event['status']=='failed':report['failed_batches']+=1
                         elif event['status']=='cancelled':report['cancelled_batches']+=1
-                    # Persist raw bytes and the append-only batch event before replacing
-                    # the summary, so interrupted runs can be reconstructed.
+                        batch_records[-1].update(event)
                     raw.flush();os.fsync(raw.fileno())
-                    batches.write(json.dumps(event,ensure_ascii=False,allow_nan=False)+'\n');batches.flush();os.fsync(batches.fileno())
                     checkpoint()
                 self.call(DeviceAPI(self.worker,group=self.group)._submit('DECAY_ACQUIRE',
                     lambda w:run(w.raw_device.controller,c,Cancellation(),rows,received,on_batch=batch_event)))

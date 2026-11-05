@@ -291,6 +291,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             from .hom_tab import HOMTab
             panel.hom_tab=HOMTab(panel.worker,self)
             tabs.addTab(panel.hom_tab,'HOM' if len(panels)==1 else 'HOM · '+name)
+            from .entanglement_tab import EntanglementTab
+            panel.entanglement_tab=EntanglementTab(panel.worker,self)
+            tabs.addTab(panel.entanglement_tab,'Entanglement' if len(panels)==1 else 'Entanglement · '+name)
 
     def _panels(self):
         return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()
@@ -331,6 +334,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             for panel in self.family_tabs['fpga'].values():
                 if hasattr(panel,'daily_tab'):panel.daily_tab.shutdown()
                 if hasattr(panel,'hom_tab'):panel.hom_tab.shutdown()
+                if hasattr(panel,'entanglement_tab'):panel.entanglement_tab.shutdown()
             self.discovery_worker.shutdown()
             self.centralWidget().setEnabled(False)
             for p in self._panels():p.worker.cancel_backgrounds()

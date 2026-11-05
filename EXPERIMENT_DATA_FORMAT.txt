@@ -1,0 +1,42 @@
+Decay / HOM 저장 형식
+=====================
+새 실행의 측정 데이터는 results.json 하나로 완결됩니다.
+별도 raw_fifo.csv와 decay.png 또는 hom.png를 남깁니다.
+HOM의 기존 source/ 실행 소스 사본도 유지합니다. batches.jsonl은 새로 만들지 않습니다.
+기존 실행의 저장 파일은 변경하지 않으며 Open result에서 구형 형식도 읽을 수 있습니다.
+
+results.json
+  experiment, run_id, status: 실험 종류, 실행 ID, 완료/중단/실패/실행 중 상태.
+  started_at, finished_at, elapsed_s: 전체 실행 시각과 경과시간.
+  configuration: 실제 설정, 매핑, 단위, 소스 해시.
+  axes: decay_time_ns 및 HOM의 hom_delay_ns.
+  batches: 배치별 데이터 목록 (batch 번호는 0부터).
+    started_at, finished_at, elapsed_s
+    sequencer_started_at, first_fifo_received_at, last_fifo_received_at
+    histogram: 해당 배치의 검출기별 전체 bin 및 Total, HOM은 coincidence와 reference 포함.
+    counts: decay count, Total count, HOM coincidence count.
+    trials: programmed_trials, valid_sync_trials, missing_sync_trials,
+            normalization_trials, normalization_basis.
+    probabilities: 해당 배치의 확률; HOM에는 total_visibility도 포함.
+    status, error: 미완료/실패/중단 상태 및 오류.
+  final: 완료된 모든 배치를 합친 histogram, counts, trials, probabilities,
+         completed_batches. HOM은 final.decay_fit도 포함.
+
+Decay의 histogram.counts는 channel_names 순서의 채널별 배열입니다.
+Decay counts.decay_channels는 DECAY_THRESHOLD 이후 적분값입니다.
+Decay는 유효 SYNC 수를 별도로 전송하지 않으므로 valid_sync_trials와
+missing_sync_trials는 null이고 확률 분모는 설정 반복 수(programmed_trials)입니다.
+HOM histogram.a/c/total은 decay 배열, hom은 coincidence 배열입니다.
+HOM의 확률 분모는 실제 SYNC 확인 시도 수(valid_sync_trials)입니다.
+Total decay 확률 항목은 검출수/시도수이며 하나 이상 검출될 사건확률은 아닙니다.
+
+final은 마지막 배치가 아니라 완료된 모든 배치의 합입니다.
+미완료 배치는 시작/종료/수신 시각과 상태를 남기고 histogram/확률은 저장하지 않습니다.
+그 배치에서 받은 원본은 raw_fifo.csv에 남으며 final의 합계와 분모에 포함하지 않습니다.
+시작하지 않은 배치는 batches에 추가하지 않습니다.
+프로그램이 강제 종료되면 마지막 results.json checkpoint를 열 수 있으며 running은 interrupted로 표시됩니다.
+
+시각은 timezone이 포함된 PC 시각입니다. 광자 검출 시각과 다릅니다.
+HOM은 기존 upload 시작/종료 시각과 timings_s 통신 API 호출 소요시간도 유지합니다.
+그 소요시간에는 PC 소프트웨어/드라이버 처리가 포함됩니다.
+배치 시작, 배치 종료, 실험 종료마다 임시 파일을 교체해 results.json을 갱신합니다.
