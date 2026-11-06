@@ -3,7 +3,7 @@ from dataclasses import replace
 from pathlib import Path
 import time
 from PyQt5 import QtCore, QtGui, QtWidgets as W
-from labremote.config.dac import load_config, DeviceConfig, DEFAULT_CONFIG_DIR, configuration_path_setting
+from labremote.config.dac import DeviceConfig, configuration_path_setting
 from labremote.devices.dac.model import VoltageSet, example, load_preset, atomic_json, suggested_filename
 from labremote.devices.dac.sequence import VoltageSequence, SequenceRow, load_sequence, save_sequence, parse_rows
 from labremote.operation.dac.timing import ManualTiming, SequenceOptions
@@ -28,6 +28,10 @@ class ChipTrap(W.QWidget):
     def paintEvent(self,event):
         p=QtGui.QPainter(self);p.setRenderHint(p.Antialiasing)
         p.fillRect(self.rect(),QtGui.QColor('#eef2f7'))
+        if not self.config.electrodes:
+            p.setPen(QtGui.QColor('#344256'))
+            p.drawText(self.rect(),QtCore.Qt.AlignCenter,'Load client mapping')
+            return
         w=self.width();x=w/2;top=40;bottom=self.height()-45
         p.setPen(QtGui.QColor('#344256'));p.drawText(self.rect().adjusted(0,5,0,0),QtCore.Qt.AlignTop|QtCore.Qt.AlignHCenter,self.config.device+' CHIP TRAP')
         outer={s:[e for e in self.config.for_side(s) if e.role=='outer'] for s in ('left','right')}
@@ -62,13 +66,13 @@ class DACPanel(W.QWidget):
         super().__init__(parent);self.name=name;self.host=host;self.port=port;self.connected=False
         self.endpoint_provider=None;self.handle=None;self.last_sent=None;self._busy=False
         self.worker=DACWorker();self.worker.name=name;self.api=DACAPI(self.worker)
-        self.config=load_config(DEFAULT_CONFIG_DIR/('EA.example.json' if 'ea' in name.lower() else 'EC.example.json'))
         configuration_error=None
         try:self.config=self.worker.load_configuration()
         except (OSError, ValueError) as exc:
-            # load_config wraps missing/unreadable/invalid files in ValueError.
-            # Keep the example for display only; the worker remains unconfigured.
             configuration_error=str(exc)
+            # Empty UI placeholder only, never assigned to the hardware worker.
+            chamber='EA' if 'ea' in name.lower() else 'EC'
+            self.config=DeviceConfig(chamber,'',(),((0.0,)*16,(0.0,)*16))
         self.folder=DATA_ROOT/'dac'/self.config.device/'presets';self.sequence_folder=DATA_ROOT/'dac'/self.config.device/'sequences'
         self.manual_timing=ManualTiming();self.options=SequenceOptions()
         root=W.QVBoxLayout(self);connection=W.QHBoxLayout();root.addLayout(connection)
@@ -106,7 +110,7 @@ class DACPanel(W.QWidget):
         self.restore_local_settings()
         if self.worker.config is None:
             self.report('Load client mapping to select your actual calibration file. '
-                        'Example values are display-only. '+(configuration_error or ''))
+                        'No mapping is loaded; output is disabled. '+(configuration_error or ''))
         self.worker.connected.connect(self.on_connected);self.worker.disconnected.connect(self.on_disconnected)
         self.worker.snapshot.connect(lambda data,label:self.accept_state(data))
         self.worker.task_progress.connect(self.progress)
@@ -146,13 +150,13 @@ class DACPanel(W.QWidget):
         self.connected=True;self.accept_state(info);self.busy(False)
 
     def on_disconnected(self,message):
-        self.connected=False;self.connection_label.setText(self.name+' · disconnected');self.connection_label.setStyleSheet('');self.busy(False)
+        self.connected=False;self.connection_label.setText(self.name+' · disconnected');self.busy(False)
 
     def accept_state(self,info):
         if not isinstance(info,dict) or 'configuration' not in info:return
         new=DeviceConfig.from_dict(info['configuration'])
         if new!=self.config:
-            old=self.config;draft=self.draft() if hasattr(self,'editors') else None
+            old=self.config;draft=self.draft() if getattr(self,'editors',None) else None
             self.config=new;self.folder=DATA_ROOT/'dac'/new.device/'presets';self.sequence_folder=DATA_ROOT/'dac'/new.device/'sequences'
             self.rebuild()
             if draft and old.wiring()==new.wiring():
@@ -163,7 +167,6 @@ class DACPanel(W.QWidget):
         self.last_sent=info.get('last_sent')
         for eid,label in self.sent_labels.items():label.setText('--' if self.last_sent is None else f'{self.last_sent[eid]:.5f}')
         self.connection_label.setText(f'{self.name} / {new.device} · '+('Ready (TX only)' if info.get('ready') else 'USB connected · initialize required' if info.get('connected') else 'USB closed'))
-        self.connection_label.setStyleSheet('color: #177749' if info.get('connected') else '')
         self.sent_note.setText('Last sent, not measured · LDAC '+str(info.get('last_ldac')))
         self.busy(self.worker.has_requests())
 
@@ -176,6 +179,22 @@ class DACPanel(W.QWidget):
         self.connect_button.setEnabled(not value);self.disconnect_button.setEnabled(self.connected and not value)
         self.sequence_tab.start_button.setEnabled(ready and not value)
         self.sequence_tab.stop_button.setEnabled(value)
+        self.update_connection_colors()
+
+    def update_connection_colors(self):
+        # Action colors remain consistent; disabled actions are visibly muted.
+        for button,background,border,hover,muted in (
+            (self.connect_button,'#166534','#4ade80','#15803d','#193b2b'),
+            (self.disconnect_button,'#991b1b','#f87171','#b91c1c','#40252a'),
+        ):
+            button.setStyleSheet(
+                f'QPushButton {{ background-color: {background}; color: #ffffff; '
+                f'border: 1px solid {border}; border-radius: 4px; padding: 6px 10px; }}'
+                f'QPushButton:hover {{ background-color: {hover}; }}'
+                f'QPushButton:disabled {{ background-color: {muted}; color: #94a3b8; '
+                'border-color: #475569; }')
+        color='#4ade80' if self.connected else '#f87171'
+        self.connection_label.setStyleSheet(f'color: {color}; font-weight: 600;')
 
     def rebuild(self):
         self.editors={};self.sent_labels={}
@@ -214,6 +233,7 @@ class DACPanel(W.QWidget):
         for field in self.editors.values():field.setSingleStep(value)
 
     def draft(self):
+        if not self.config.electrodes:raise RuntimeError('Load client mapping before editing voltages')
         for field in self.editors.values():field.interpretText()
         return VoltageSet.from_values(self.config,{eid:f.value() for eid,f in self.editors.items()},name=self.preset_name.text(),notes=self.notes.toPlainText())
 

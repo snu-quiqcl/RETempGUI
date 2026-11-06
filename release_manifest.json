@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/DAC_SETUP_KO.md",
-      "bytes": 6406,
-      "sha256": "d948971791fc3db1cd9725524d790bcda702b39e1ed4c1d1f5dc4e324cba3e77"
+      "bytes": 6663,
+      "sha256": "9c0010e2aa2f0abed2f2409485433670b72c4cd74726b622d0fe98a67a4204d4"
     },
     {
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
@@ -799,8 +799,8 @@
     },
     {
       "path": "labremote/devices/dac/tab.py",
-      "bytes": 27828,
-      "sha256": "041eea0b4963448a9a6b4a7569efbd7ab0c5aa35c7ced8d3e38072220863a8fc"
+      "bytes": 28838,
+      "sha256": "58ce27f1da32977d8e05a6f7a700f9158ce02b77b9279c02c3b3c7b8a1f5c87e"
     },
     {
       "path": "labremote/devices/dac/worker.py",

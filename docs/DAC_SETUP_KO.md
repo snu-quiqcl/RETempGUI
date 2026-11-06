@@ -24,6 +24,8 @@ internal_reference는 실제 보드 배선에 맞춰 서버 생성 인자로 지
 
 기존 `labremote/config/devices/dac/EA.local.json`, `EC.local.json`은 클라이언트에 둡니다.
 실제 보정값은 공개 example 파일로 대체하지 않습니다.
+UI 실행에 example 파일은 필요하지 않습니다. local 설정만 있으면 정상 동작합니다.
+설정 파일이 없거나 유효하지 않으면 빈 매핑 화면으로 시작하며 Load client mapping으로 실제 설정을 선택합니다.
 기본값은 장비 이름에 EA가 포함되면 EA.local.json, 그 외는 EC.local.json입니다.
 다른 매핑은 DAC 화면의 Load client mapping에서 선택합니다. 경로는 UI 설정에 저장됩니다.
 기존 UI 설정의 trap_dac/configs 경로는 새 config/devices/dac 위치로 해석됩니다.
