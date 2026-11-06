@@ -191,6 +191,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
         self.connected=True;self.status.setText(self.name+' — Connected');self._buttons();self.api.refresh()
 
     def _disconnected(self,message):
+        if hasattr(self,'output_pending'):self.output_pending.clear()
         self.connected=False;self.status.setText(message);self._snapshot();self._buttons()
 
     def _snapshot(self,*args):
@@ -212,7 +213,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
                 individual_time=max(individual.attempted_at,individual.observed_at)
                 latest=individual if individual_time>state_time else state
                 value=None;commanded=False
-                pending=name in self.output_pending.values() or latest.verification=='pending'
+                pending=self.connected and (name in self.output_pending.values() or latest.verification=='pending')
                 failed=latest.error is not None or latest.verification in ('failed','mismatch')
                 if latest.quality=='valid' and not failed and not pending:
                     value=individual.observed if latest is individual else (state.observed or {}).get(name)
@@ -237,8 +238,11 @@ class AuxiliaryTab(QtWidgets.QWidget):
     def _toggle_output(self,name):
         value=not bool(self.output_buttons[name].property('outputValue'))
         handle=self.api.set_output(name,value)
+        # enqueue may reject synchronously and emit completion before returning.
+        # Register first, then re-check completion so a finished request cannot stick.
         self.output_pending[handle.request_id]=name
-        self._snapshot()
+        if handle.done.is_set():self._result(handle)
+        else:self._snapshot()
 
     def _result(self,handle):
         if self.family=='fpga' and handle.done.is_set():
@@ -246,7 +250,11 @@ class AuxiliaryTab(QtWidgets.QWidget):
         self._buttons()
         if not handle.done.is_set() or self._closing:return
         self._snapshot()
-        if handle.error is not None:return
+        if handle.error is not None:
+            if handle.action=='SET_OUTPUT':
+                self.message.setText(str(handle.error))
+                self.log_message.emit(self.name+' · '+str(handle.error))
+            return
         self.message.setText(handle.action+' completed')
         if handle.action=='SET_OUTPUT':self.api.refresh()
         if self.family=='fpga' or handle.action not in ('SPECTRUM','MEASURE'):return

@@ -11,6 +11,8 @@
     "FPGA": "FPGA 입력 계수, 출력 제어 및 실험 탭입니다.",
     "Daily characterization": "EA/EC의 Fluorescence, Rabi, Ramsey, SPAM, Initialization 실험입니다.",
     "Decay": "EA/EC, 171/174 및 interferometer 유무에 따른 decay 측정입니다.",
+    "Micromotion": "외부 RF 입력 확인, RF–photon correlation, L_IN/R_IN 2D scan과 계곡 보상 직선 fitting입니다.",
+    "Micromotion · fpga_local": "외부 RF 입력 확인, RF–photon correlation, L_IN/R_IN 2D scan과 계곡 보상 직선 fitting입니다.",
     "Input counts": "선택한 FPGA 입력의 photon counts를 측정합니다. Save CSV log 선택 시 CSV를 저장합니다.",
     "Workflow": "장비 제어와 실험 operation을 조합해 실행합니다.",
     "Queue": "Workflow의 실행 순서, 반복 및 실패 처리 정책을 지정합니다.",

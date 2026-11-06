@@ -1,0 +1,3202 @@
+{
+  "schema_version": 1,
+  "description": "Editable startup defaults. Last-session input_state.local.json wins per field. Restart to reload. inputs overrides families.",
+  "families": {
+    "anapico": {
+      "ref_out_enabled": {
+        "kind": "check",
+        "value": false
+      },
+      "ref_out_freq": {
+        "kind": "choice",
+        "value": "10 MHz"
+      },
+      "rows/external_lock_frequency/editor": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/external_lock_frequency/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/external_lock_frequency/step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/external_lock_frequency/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/frequency/editor": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "rows/frequency/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/frequency/step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/frequency/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/phase/editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/phase/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      }
+    },
+    "dac": {
+      "editors/L0": {
+        "kind": "number",
+        "value": -0.575
+      },
+      "editors/L1": {
+        "kind": "number",
+        "value": 0.75
+      },
+      "editors/L2": {
+        "kind": "number",
+        "value": 0.75
+      },
+      "editors/L3": {
+        "kind": "number",
+        "value": -1.25
+      },
+      "editors/L4": {
+        "kind": "number",
+        "value": -1.25
+      },
+      "editors/L5": {
+        "kind": "number",
+        "value": 0.75
+      },
+      "editors/L6": {
+        "kind": "number",
+        "value": 0.75
+      },
+      "editors/L7": {
+        "kind": "number",
+        "value": 0.575
+      },
+      "editors/L_IN": {
+        "kind": "number",
+        "value": 0.084
+      },
+      "editors/R0": {
+        "kind": "number",
+        "value": 0.575
+      },
+      "editors/R1": {
+        "kind": "number",
+        "value": 0.25
+      },
+      "editors/R2": {
+        "kind": "number",
+        "value": 0.25
+      },
+      "editors/R3": {
+        "kind": "number",
+        "value": -1.75
+      },
+      "editors/R4": {
+        "kind": "number",
+        "value": -1.75
+      },
+      "editors/R5": {
+        "kind": "number",
+        "value": 0.25
+      },
+      "editors/R6": {
+        "kind": "number",
+        "value": 0.25
+      },
+      "editors/R7": {
+        "kind": "number",
+        "value": -0.575
+      },
+      "editors/R_IN": {
+        "kind": "number",
+        "value": 0.531
+      },
+      "initial_mode": {
+        "kind": "choice",
+        "value": "0 V"
+      },
+      "ldac": {
+        "kind": "check",
+        "value": true
+      },
+      "notes": {
+        "kind": "multiline",
+        "value": ""
+      },
+      "preset_name": {
+        "kind": "text",
+        "value": "Manual"
+      },
+      "sequence_tab/hold": {
+        "kind": "number",
+        "value": 0.1
+      },
+      "sequence_tab/ldac": {
+        "kind": "check",
+        "value": true
+      },
+      "sequence_tab/name": {
+        "kind": "text",
+        "value": "Transport"
+      },
+      "sequence_tab/pre_ldac": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "sequence_tab/reuse": {
+        "kind": "check",
+        "value": true
+      },
+      "step": {
+        "kind": "number",
+        "value": 0.01
+      },
+      "editors/L10": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "editors/L11": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/L12": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/L13": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/L14": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/L8": {
+        "kind": "number",
+        "value": -1.0
+      },
+      "editors/L9": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "editors/R10": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "editors/R11": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/R12": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/R13": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/R14": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/R8": {
+        "kind": "number",
+        "value": -0.5
+      },
+      "editors/R9": {
+        "kind": "number",
+        "value": 1.0
+      }
+    },
+    "dds4": {
+      "rows/ch1.frequency_hz/editor": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "rows/ch1.frequency_hz/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch1.frequency_hz/step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch1.frequency_hz/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch1.phase_deg/editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch1.phase_deg/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch1.vva_level/editor": {
+        "kind": "number",
+        "value": 0
+      },
+      "rows/ch1.vva_level/step": {
+        "kind": "number",
+        "value": 1
+      },
+      "rows/ch2.frequency_hz/editor": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "rows/ch2.frequency_hz/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch2.frequency_hz/step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch2.frequency_hz/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch2.phase_deg/editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch2.phase_deg/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch2.vva_level/editor": {
+        "kind": "number",
+        "value": 0
+      },
+      "rows/ch2.vva_level/step": {
+        "kind": "number",
+        "value": 1
+      },
+      "rows/ch3.frequency_hz/editor": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "rows/ch3.frequency_hz/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch3.frequency_hz/step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch3.frequency_hz/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch3.phase_deg/editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch3.phase_deg/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch3.vva_level/editor": {
+        "kind": "number",
+        "value": 0
+      },
+      "rows/ch3.vva_level/step": {
+        "kind": "number",
+        "value": 1
+      },
+      "rows/ch4.frequency_hz/editor": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "rows/ch4.frequency_hz/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch4.frequency_hz/step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch4.frequency_hz/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/ch4.phase_deg/editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch4.phase_deg/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/ch4.vva_level/editor": {
+        "kind": "number",
+        "value": 0
+      },
+      "rows/ch4.vva_level/step": {
+        "kind": "number",
+        "value": 1
+      }
+    },
+    "ds1052e": {
+      "ch_checks/CH1": {
+        "kind": "check",
+        "value": false
+      },
+      "ch_checks/CH2": {
+        "kind": "check",
+        "value": false
+      },
+      "period": {
+        "kind": "number",
+        "value": 1000
+      },
+      "plot_mode": {
+        "kind": "choice",
+        "value": "Follow physical V/div (8 vertical divisions)"
+      },
+      "time_div": {
+        "kind": "text",
+        "value": "0.001"
+      },
+      "time_offset": {
+        "kind": "text",
+        "value": "0"
+      },
+      "trigger_ch": {
+        "kind": "choice",
+        "value": "CH1"
+      },
+      "trigger_level": {
+        "kind": "text",
+        "value": "0.0"
+      },
+      "trigger_slope": {
+        "kind": "choice",
+        "value": "POS"
+      },
+      "trigger_sweep": {
+        "kind": "choice",
+        "value": "AUTO"
+      },
+      "vert_div/CH1": {
+        "kind": "text",
+        "value": "1.0"
+      },
+      "vert_div/CH2": {
+        "kind": "text",
+        "value": "1.0"
+      },
+      "vert_off/CH1": {
+        "kind": "text",
+        "value": "0"
+      },
+      "vert_off/CH2": {
+        "kind": "text",
+        "value": "0"
+      },
+      "x_max": {
+        "kind": "text",
+        "value": "0.006"
+      },
+      "x_min": {
+        "kind": "text",
+        "value": "-0.006"
+      },
+      "y_max/CH1": {
+        "kind": "text",
+        "value": "4"
+      },
+      "y_max/CH2": {
+        "kind": "text",
+        "value": "4"
+      },
+      "y_min/CH1": {
+        "kind": "text",
+        "value": "-4"
+      },
+      "y_min/CH2": {
+        "kind": "text",
+        "value": "-4"
+      }
+    },
+    "fpga": {
+      "daily_tab/experiments/EA/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EA/fluorescence/${TODAY}"
+      },
+      "daily_tab/experiments/EA/fields/exposure_ms": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "daily_tab/experiments/EA/fields/num_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/experiments/EA/fields/num_repeat": {
+        "kind": "number",
+        "value": 20
+      },
+      "daily_tab/experiments/EA/fields/timeout_s": {
+        "kind": "number",
+        "value": 60.0
+      },
+      "daily_tab/experiments/EA/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "daily_tab/experiments/EA/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFA"
+      },
+      "daily_tab/experiments/EC/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EC/fluorescence/${TODAY}"
+      },
+      "daily_tab/experiments/EC/fields/exposure_ms": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "daily_tab/experiments/EC/fields/num_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/experiments/EC/fields/num_repeat": {
+        "kind": "number",
+        "value": 20
+      },
+      "daily_tab/experiments/EC/fields/timeout_s": {
+        "kind": "number",
+        "value": 60.0
+      },
+      "daily_tab/experiments/EC/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "daily_tab/experiments/EC/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFC"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EA/initialization/${TODAY}"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/N_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/N_init_control": {
+        "kind": "number",
+        "value": 21
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/N_threshold": {
+        "kind": "number",
+        "value": 4
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_cool": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 6
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_det": {
+        "kind": "number",
+        "value": 80.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_det_repeat": {
+        "kind": "number",
+        "value": 1
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_init_step": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/WAIT_AOM": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/roles/MW": {
+        "kind": "choice",
+        "value": "MW_A"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EA')/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFA"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EC/initialization/${TODAY}"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/N_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/N_init_control": {
+        "kind": "number",
+        "value": 21
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/N_threshold": {
+        "kind": "number",
+        "value": 4
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_cool": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 6
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_det": {
+        "kind": "number",
+        "value": 80.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_det_repeat": {
+        "kind": "number",
+        "value": 1
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_init_step": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/WAIT_AOM": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/roles/MW": {
+        "kind": "choice",
+        "value": "MW_C"
+      },
+      "daily_tab/pulse_experiments/('initialization', 'EC')/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFC"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EA/ramsey/${TODAY}"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/N_average": {
+        "kind": "number",
+        "value": 100
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/N_threshold": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_cool": {
+        "kind": "number",
+        "value": 400.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 10
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_det": {
+        "kind": "number",
+        "value": 50.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_det_repeat": {
+        "kind": "number",
+        "value": 1
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_init": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_wait_for_aom_off": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/fit_high_hz": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/fit_low_hz": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/half_pi_time": {
+        "kind": "number",
+        "value": 29.48
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/max_precession_count": {
+        "kind": "number",
+        "value": 20
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/precession_time": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/roles/MW": {
+        "kind": "choice",
+        "value": "MW_A"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EA')/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFA"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EC/ramsey/${TODAY}"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/N_average": {
+        "kind": "number",
+        "value": 100
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/N_threshold": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_cool": {
+        "kind": "number",
+        "value": 400.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 10
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_det": {
+        "kind": "number",
+        "value": 50.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_det_repeat": {
+        "kind": "number",
+        "value": 1
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_init": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_wait_for_aom_off": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/fit_high_hz": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/fit_low_hz": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/half_pi_time": {
+        "kind": "number",
+        "value": 29.48
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/max_precession_count": {
+        "kind": "number",
+        "value": 20
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/precession_time": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/roles/MW": {
+        "kind": "choice",
+        "value": "MW_C"
+      },
+      "daily_tab/pulse_experiments/('ramsey', 'EC')/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFC"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EA/spam/${TODAY}"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/N_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/N_repeat": {
+        "kind": "number",
+        "value": 10
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/N_threshold": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/T_PI": {
+        "kind": "number",
+        "value": 76.77
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/T_cool": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/T_det": {
+        "kind": "number",
+        "value": 80.0
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/T_init": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/WAIT_AOM": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/fields/timeout_s": {
+        "kind": "number",
+        "value": 30.0
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/roles/MW": {
+        "kind": "choice",
+        "value": "MW_A"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EA')/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFA"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EC/spam/${TODAY}"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/N_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/N_repeat": {
+        "kind": "number",
+        "value": 10
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/N_threshold": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/T_PI": {
+        "kind": "number",
+        "value": 59.96
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/T_cool": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/T_det": {
+        "kind": "number",
+        "value": 80.0
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/T_init": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/WAIT_AOM": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/fields/timeout_s": {
+        "kind": "number",
+        "value": 30.0
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/roles/MW": {
+        "kind": "choice",
+        "value": "MW_C"
+      },
+      "daily_tab/pulse_experiments/('spam', 'EC')/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFC"
+      },
+      "daily_tab/rabi_experiments/EA/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EA/rabi/${TODAY}"
+      },
+      "daily_tab/rabi_experiments/EA/fields/N_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/rabi_experiments/EA/fields/N_qubit_control": {
+        "kind": "number",
+        "value": 10
+      },
+      "daily_tab/rabi_experiments/EA/fields/N_threshold": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/rabi_experiments/EA/fields/T_cool": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/rabi_experiments/EA/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/rabi_experiments/EA/fields/T_det": {
+        "kind": "number",
+        "value": 60.0
+      },
+      "daily_tab/rabi_experiments/EA/fields/T_init": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "daily_tab/rabi_experiments/EA/fields/T_mw_step": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "daily_tab/rabi_experiments/EA/fields/WAIT_AOM": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "daily_tab/rabi_experiments/EA/fields/timeout_s": {
+        "kind": "number",
+        "value": 30.0
+      },
+      "daily_tab/rabi_experiments/EA/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "daily_tab/rabi_experiments/EA/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "daily_tab/rabi_experiments/EA/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "daily_tab/rabi_experiments/EA/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "daily_tab/rabi_experiments/EA/roles/MW": {
+        "kind": "choice",
+        "value": "MW_A"
+      },
+      "daily_tab/rabi_experiments/EA/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFA"
+      },
+      "daily_tab/rabi_experiments/EC/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/characterization/EC/rabi/${TODAY}"
+      },
+      "daily_tab/rabi_experiments/EC/fields/N_average": {
+        "kind": "number",
+        "value": 500
+      },
+      "daily_tab/rabi_experiments/EC/fields/N_qubit_control": {
+        "kind": "number",
+        "value": 10
+      },
+      "daily_tab/rabi_experiments/EC/fields/N_threshold": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/rabi_experiments/EC/fields/T_cool": {
+        "kind": "number",
+        "value": 500.0
+      },
+      "daily_tab/rabi_experiments/EC/fields/T_cool_repeat": {
+        "kind": "number",
+        "value": 2
+      },
+      "daily_tab/rabi_experiments/EC/fields/T_det": {
+        "kind": "number",
+        "value": 60.0
+      },
+      "daily_tab/rabi_experiments/EC/fields/T_init": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "daily_tab/rabi_experiments/EC/fields/T_mw_step": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "daily_tab/rabi_experiments/EC/fields/WAIT_AOM": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "daily_tab/rabi_experiments/EC/fields/timeout_s": {
+        "kind": "number",
+        "value": 30.0
+      },
+      "daily_tab/rabi_experiments/EC/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "daily_tab/rabi_experiments/EC/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "daily_tab/rabi_experiments/EC/roles/EOM_7G_1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "daily_tab/rabi_experiments/EC/roles/EOM_7G_2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "daily_tab/rabi_experiments/EC/roles/MW": {
+        "kind": "choice",
+        "value": "MW_C"
+      },
+      "daily_tab/rabi_experiments/EC/roles/PMT": {
+        "kind": "choice",
+        "value": "PMTFC"
+      },
+      "daily_tab/workflow/file_picker": {
+        "kind": "choice",
+        "value": "daily_fluorescence.py"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EA/171_interferometer/${TODAY}"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 85
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 120
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 82
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/outer_loop": {
+        "kind": "number",
+        "value": 1000
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 0.3
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 0.3
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.21
+      },
+      "decay_tab/experiments/('EA', '171_dual')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 10
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/AUX2": {
+        "kind": "choice",
+        "value": ""
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EA', '171_dual')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "decay_tab/experiments/('EA', '171_single')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EA/171_single/${TODAY}"
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 102
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 5.0
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/outer_loop": {
+        "kind": "number",
+        "value": 500
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 2
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EA', '171_single')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 10
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/AUX2": {
+        "kind": "choice",
+        "value": "AOMB"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EA', '171_single')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EA/174_interferometer/${TODAY}"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 86
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 120
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 86
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 0.05
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/outer_loop": {
+        "kind": "number",
+        "value": 100
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.21
+      },
+      "decay_tab/experiments/('EA', '174_dual')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/AUX2": {
+        "kind": "choice",
+        "value": ""
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EA', '174_dual')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "decay_tab/experiments/('EA', '174_single')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EA/174_single/${TODAY}"
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 120
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/outer_loop": {
+        "kind": "number",
+        "value": 100
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EA', '174_single')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/AUX2": {
+        "kind": "choice",
+        "value": ""
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GA"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GA1"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GA2"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EA', '174_single')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EC/171_interferometer/${TODAY}"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 85
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 120
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 82
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/outer_loop": {
+        "kind": "number",
+        "value": 1000
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 0.3
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 0.3
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.21
+      },
+      "decay_tab/experiments/('EC', '171_dual')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 10
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/AUX2": {
+        "kind": "choice",
+        "value": ""
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EC', '171_dual')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "decay_tab/experiments/('EC', '171_single')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EC/171_single/${TODAY}"
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 102
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 5.0
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/outer_loop": {
+        "kind": "number",
+        "value": 500
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 2
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EC', '171_single')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 10
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/AUX2": {
+        "kind": "choice",
+        "value": "AOMB"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EC', '171_single')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EC/174_interferometer/${TODAY}"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 86
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 120
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 86
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 0.05
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/outer_loop": {
+        "kind": "number",
+        "value": 100
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.21
+      },
+      "decay_tab/experiments/('EC', '174_dual')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/AUX2": {
+        "kind": "choice",
+        "value": ""
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EC', '174_dual')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "decay_tab/experiments/('EC', '174_single')/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/decay/EC/174_single/${TODAY}"
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/DECAY_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 120
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/SIGNAL_THRESHOLD": {
+        "kind": "number",
+        "value": 70
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/TIME_COOL": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/TIME_INIT": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/aux1_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/aux1_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/aux2_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/aux2_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/outer_loop": {
+        "kind": "number",
+        "value": 100
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/waiting_time_for_AOM_on": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "decay_tab/experiments/('EC', '174_single')/fields/wo_cooling_number": {
+        "kind": "number",
+        "value": 1
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/AOM": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/AUX1": {
+        "kind": "choice",
+        "value": "AOMM"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/AUX2": {
+        "kind": "choice",
+        "value": ""
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/EOM_2G": {
+        "kind": "choice",
+        "value": "EOM_2GC"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/EOM_7G1": {
+        "kind": "choice",
+        "value": "EOM_7GC1"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/EOM_7G2": {
+        "kind": "choice",
+        "value": "EOM_7GC2"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/PMT1": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/PMT2": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "decay_tab/experiments/('EC', '174_single')/roles/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "entanglement_tab/basis": {
+        "kind": "choice",
+        "value": "MW detuned"
+      },
+      "entanglement_tab/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/entanglement/${TODAY}"
+      },
+      "entanglement_tab/fields/aom_off_us": {
+        "kind": "number",
+        "value": 0.3
+      },
+      "entanglement_tab/fields/batches": {
+        "kind": "number",
+        "value": 100
+      },
+      "entanglement_tab/fields/coincidence_half_window_bins": {
+        "kind": "number",
+        "value": 10
+      },
+      "entanglement_tab/fields/cooling_us": {
+        "kind": "number",
+        "value": 5.0
+      },
+      "entanglement_tab/fields/decay_lower_a": {
+        "kind": "number",
+        "value": 86
+      },
+      "entanglement_tab/fields/decay_lower_c": {
+        "kind": "number",
+        "value": 86
+      },
+      "entanglement_tab/fields/detection_us": {
+        "kind": "number",
+        "value": 100.0
+      },
+      "entanglement_tab/fields/detuning_hz": {
+        "kind": "number",
+        "value": -2000.0
+      },
+      "entanglement_tab/fields/fpga_loops": {
+        "kind": "number",
+        "value": 10
+      },
+      "entanglement_tab/fields/groups_per_loop": {
+        "kind": "number",
+        "value": 50000
+      },
+      "entanglement_tab/fields/initialization_us": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "entanglement_tab/fields/inner_trials": {
+        "kind": "number",
+        "value": 10
+      },
+      "entanglement_tab/fields/mirror_wait_ms": {
+        "kind": "number",
+        "value": 600.0
+      },
+      "entanglement_tab/fields/phase_magnitude_deg": {
+        "kind": "number",
+        "value": 175.0
+      },
+      "entanglement_tab/fields/pi_ea_us": {
+        "kind": "number",
+        "value": 81.1
+      },
+      "entanglement_tab/fields/pi_ec_us": {
+        "kind": "number",
+        "value": 70.58
+      },
+      "entanglement_tab/fields/stopwatch_wait_us": {
+        "kind": "number",
+        "value": 0.21
+      },
+      "entanglement_tab/fields/threshold_ea": {
+        "kind": "number",
+        "value": 2
+      },
+      "entanglement_tab/fields/threshold_ec": {
+        "kind": "number",
+        "value": 2
+      },
+      "entanglement_tab/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "hom_tab/aomb": {
+        "kind": "check",
+        "value": true
+      },
+      "hom_tab/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/hom/${TODAY}"
+      },
+      "hom_tab/fields/MAX_TIME_DIFFERENCE": {
+        "kind": "number",
+        "value": 120
+      },
+      "hom_tab/fields/THRESHOLD_A": {
+        "kind": "number",
+        "value": 86
+      },
+      "hom_tab/fields/THRESHOLD_C": {
+        "kind": "number",
+        "value": 86
+      },
+      "hom_tab/fields/TIME_1US": {
+        "kind": "number",
+        "value": 1.5
+      },
+      "hom_tab/fields/aomb_end": {
+        "kind": "number",
+        "value": 1
+      },
+      "hom_tab/fields/aomb_start": {
+        "kind": "number",
+        "value": 1
+      },
+      "hom_tab/fields/batches": {
+        "kind": "number",
+        "value": 500
+      },
+      "hom_tab/fields/inner_loop_number": {
+        "kind": "number",
+        "value": 2
+      },
+      "hom_tab/fields/outer_loop_in_fpga": {
+        "kind": "number",
+        "value": 100
+      },
+      "hom_tab/fields/run_number": {
+        "kind": "number",
+        "value": 50000
+      },
+      "hom_tab/fields/timeout_s": {
+        "kind": "number",
+        "value": 120.0
+      },
+      "hom_tab/fields/waiting_time_for_AOM_off": {
+        "kind": "number",
+        "value": 0.25
+      },
+      "hom_tab/fields/waiting_time_for_stopwatch": {
+        "kind": "number",
+        "value": 0.25
+      },
+      "hom_tab/inputs/PMTA": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "hom_tab/inputs/PMTC": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "hom_tab/inputs/SYNC": {
+        "kind": "choice",
+        "value": "SYNC"
+      },
+      "hom_tab/outputs/AOMA": {
+        "kind": "choice",
+        "value": "AOMA"
+      },
+      "hom_tab/outputs/AOMB": {
+        "kind": "choice",
+        "value": "AOMB"
+      },
+      "hom_tab/outputs/AOMC": {
+        "kind": "choice",
+        "value": "AOMC"
+      },
+      "hom_tab/outputs/TRIG": {
+        "kind": "choice",
+        "value": "TRIG"
+      },
+      "input_tab/average": {
+        "kind": "number",
+        "value": 1
+      },
+      "input_tab/channel": {
+        "kind": "choice",
+        "value": "PMTA / jb_0"
+      },
+      "input_tab/directory": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/input_counts"
+      },
+      "input_tab/exposure": {
+        "kind": "number",
+        "value": 100.0
+      },
+      "input_tab/interval": {
+        "kind": "number",
+        "value": 0.5
+      },
+      "input_tab/logging": {
+        "kind": "check",
+        "value": false
+      },
+      "input_tab/y_auto": {
+        "kind": "check",
+        "value": true
+      },
+      "input_tab/y_max": {
+        "kind": "number",
+        "value": 1000.0
+      },
+      "input_tab/y_min": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "port_choices": {
+        "kind": "choice",
+        "value": ""
+      },
+      "scan_tabs/0/channel": {
+        "kind": "choice",
+        "value": "PMTA"
+      },
+      "scan_tabs/0/config_widgets/1": {
+        "kind": "check",
+        "value": false
+      },
+      "scan_tabs/0/config_widgets/10": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/0/config_widgets/11": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/0/config_widgets/12": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/0/config_widgets/13": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/0/config_widgets/14": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/0/config_widgets/15": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "scan_tabs/0/config_widgets/16": {
+        "kind": "number",
+        "value": 100.0
+      },
+      "scan_tabs/0/config_widgets/3": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/scans/EA_collection/${TODAY}"
+      },
+      "scan_tabs/0/config_widgets/5": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/0/config_widgets/6": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/0/config_widgets/7": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/0/config_widgets/8": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/0/config_widgets/9": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/0/follow_z": {
+        "kind": "check",
+        "value": true
+      },
+      "scan_tabs/0/view_plane": {
+        "kind": "choice",
+        "value": ""
+      },
+      "scan_tabs/0/x_motor": {
+        "kind": "choice",
+        "value": "EA_px"
+      },
+      "scan_tabs/0/y_motor": {
+        "kind": "choice",
+        "value": "EA_py"
+      },
+      "scan_tabs/0/z_motor": {
+        "kind": "choice",
+        "value": "EA_pz"
+      },
+      "scan_tabs/0/z_target": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "scan_tabs/1/channel": {
+        "kind": "choice",
+        "value": "PMTFA"
+      },
+      "scan_tabs/1/config_widgets/1": {
+        "kind": "check",
+        "value": false
+      },
+      "scan_tabs/1/config_widgets/10": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/1/config_widgets/11": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/1/config_widgets/12": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/1/config_widgets/13": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/1/config_widgets/14": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/1/config_widgets/15": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "scan_tabs/1/config_widgets/16": {
+        "kind": "number",
+        "value": 100.0
+      },
+      "scan_tabs/1/config_widgets/3": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/scans/EA_excitation/${TODAY}"
+      },
+      "scan_tabs/1/config_widgets/5": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/1/config_widgets/6": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/1/config_widgets/7": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/1/config_widgets/8": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/1/config_widgets/9": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/1/follow_z": {
+        "kind": "check",
+        "value": true
+      },
+      "scan_tabs/1/view_plane": {
+        "kind": "choice",
+        "value": ""
+      },
+      "scan_tabs/1/x_motor": {
+        "kind": "choice",
+        "value": "EA_sx"
+      },
+      "scan_tabs/1/y_motor": {
+        "kind": "choice",
+        "value": "EA_sy"
+      },
+      "scan_tabs/1/z_motor": {
+        "kind": "choice",
+        "value": "EA_sz"
+      },
+      "scan_tabs/1/z_target": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "scan_tabs/2/channel": {
+        "kind": "choice",
+        "value": "PMTC"
+      },
+      "scan_tabs/2/config_widgets/1": {
+        "kind": "check",
+        "value": false
+      },
+      "scan_tabs/2/config_widgets/10": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/2/config_widgets/11": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/2/config_widgets/12": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/2/config_widgets/13": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/2/config_widgets/14": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/2/config_widgets/15": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "scan_tabs/2/config_widgets/16": {
+        "kind": "number",
+        "value": 100.0
+      },
+      "scan_tabs/2/config_widgets/3": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/scans/EC_collection/${TODAY}"
+      },
+      "scan_tabs/2/config_widgets/5": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/2/config_widgets/6": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/2/config_widgets/7": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/2/config_widgets/8": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/2/config_widgets/9": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/2/follow_z": {
+        "kind": "check",
+        "value": true
+      },
+      "scan_tabs/2/view_plane": {
+        "kind": "choice",
+        "value": ""
+      },
+      "scan_tabs/2/x_motor": {
+        "kind": "choice",
+        "value": "EC_px"
+      },
+      "scan_tabs/2/y_motor": {
+        "kind": "choice",
+        "value": "EC_py"
+      },
+      "scan_tabs/2/z_motor": {
+        "kind": "choice",
+        "value": "EC_pz"
+      },
+      "scan_tabs/2/z_target": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "scan_tabs/3/channel": {
+        "kind": "choice",
+        "value": "PMTFC"
+      },
+      "scan_tabs/3/config_widgets/1": {
+        "kind": "check",
+        "value": false
+      },
+      "scan_tabs/3/config_widgets/10": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/3/config_widgets/11": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/3/config_widgets/12": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/3/config_widgets/13": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/3/config_widgets/14": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/3/config_widgets/15": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "scan_tabs/3/config_widgets/16": {
+        "kind": "number",
+        "value": 100.0
+      },
+      "scan_tabs/3/config_widgets/3": {
+        "kind": "text",
+        "value": "${PROJECT_ROOT}/labremote/data/scans/EC_excitation/${TODAY}"
+      },
+      "scan_tabs/3/config_widgets/5": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/3/config_widgets/6": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/3/config_widgets/7": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "scan_tabs/3/config_widgets/8": {
+        "kind": "number",
+        "value": 5990.0
+      },
+      "scan_tabs/3/config_widgets/9": {
+        "kind": "number",
+        "value": 6010.0
+      },
+      "scan_tabs/3/follow_z": {
+        "kind": "check",
+        "value": true
+      },
+      "scan_tabs/3/view_plane": {
+        "kind": "choice",
+        "value": ""
+      },
+      "scan_tabs/3/x_motor": {
+        "kind": "choice",
+        "value": "EC_sx"
+      },
+      "scan_tabs/3/y_motor": {
+        "kind": "choice",
+        "value": "EC_sy"
+      },
+      "scan_tabs/3/z_motor": {
+        "kind": "choice",
+        "value": "EC_sz"
+      },
+      "scan_tabs/3/z_target": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "serial": {
+        "kind": "text",
+        "value": ""
+      }
+    },
+    "keithley": {
+      "qt/QCheckBox[0]": {
+        "kind": "check",
+        "value": false
+      },
+      "rows/ch1.target_current": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch1.target_voltage": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch1.voltage_limit": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch2.target_current": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch2.target_voltage": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch2.voltage_limit": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch3.target_current": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch3.target_voltage": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/ch3.voltage_limit": {
+        "kind": "number",
+        "value": 0.0
+      }
+    },
+    "mdt": {
+      "editors/x.voltage": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/y.voltage": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editors/z.voltage": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "pid_tab/axis": {
+        "kind": "choice",
+        "value": "X"
+      },
+      "pid_tab/fields/average_count": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "pid_tab/fields/capture_ghz": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "pid_tab/fields/deadband_ghz": {
+        "kind": "number",
+        "value": 0.005
+      },
+      "pid_tab/fields/derivative_filter_s": {
+        "kind": "number",
+        "value": 2.0
+      },
+      "pid_tab/fields/kd_v_s_per_ghz": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "pid_tab/fields/ki_v_per_ghz_s": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "pid_tab/fields/kp_v_per_ghz": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "pid_tab/fields/lease_s": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "pid_tab/fields/max_gap_s": {
+        "kind": "number",
+        "value": 90.0
+      },
+      "pid_tab/fields/max_slew_v_per_s": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "pid_tab/fields/max_step_v": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "pid_tab/fields/max_v": {
+        "kind": "number",
+        "value": 75.0
+      },
+      "pid_tab/fields/min_peak_dbm": {
+        "kind": "number",
+        "value": -75.0
+      },
+      "pid_tab/fields/min_v": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "pid_tab/fields/minimum_snr_db": {
+        "kind": "number",
+        "value": 6.0
+      },
+      "pid_tab/fields/target_thz": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "pid_tab/osa": {
+        "kind": "choice",
+        "value": ""
+      },
+      "pid_tab/polarity": {
+        "kind": "choice",
+        "value": "+1"
+      },
+      "pid_tab/use_fit": {
+        "kind": "check",
+        "value": false
+      },
+      "qt/QTabWidget[0]/qt_tabwidget_stackedwidget/PIDTab[0]/QCheckBox[1]": {
+        "kind": "check",
+        "value": false
+      }
+    },
+    "motors": {
+      "backlash_editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "step": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "target": {
+        "kind": "text",
+        "value": "${INSTRUMENT}"
+      }
+    },
+    "mso7054": {
+      "ch_checks/CH1": {
+        "kind": "check",
+        "value": false
+      },
+      "ch_checks/CH2": {
+        "kind": "check",
+        "value": false
+      },
+      "ch_checks/CH3": {
+        "kind": "check",
+        "value": false
+      },
+      "ch_checks/CH4": {
+        "kind": "check",
+        "value": false
+      },
+      "impedance_controls/CH1/0": {
+        "kind": "choice",
+        "value": "High impedance (1 MΩ)"
+      },
+      "impedance_controls/CH2/0": {
+        "kind": "choice",
+        "value": "High impedance (1 MΩ)"
+      },
+      "impedance_controls/CH3/0": {
+        "kind": "choice",
+        "value": "High impedance (1 MΩ)"
+      },
+      "impedance_controls/CH4/0": {
+        "kind": "choice",
+        "value": "High impedance (1 MΩ)"
+      },
+      "period": {
+        "kind": "number",
+        "value": 1000
+      },
+      "save_peak": {
+        "kind": "check",
+        "value": true
+      },
+      "time_div": {
+        "kind": "text",
+        "value": "0.001"
+      },
+      "time_offset": {
+        "kind": "text",
+        "value": "0"
+      },
+      "trigger_ch": {
+        "kind": "choice",
+        "value": "CH1"
+      },
+      "trigger_level": {
+        "kind": "text",
+        "value": "0.0"
+      },
+      "trigger_slope": {
+        "kind": "choice",
+        "value": "POS"
+      },
+      "trigger_sweep": {
+        "kind": "choice",
+        "value": "AUTO"
+      },
+      "vert_div/CH1": {
+        "kind": "text",
+        "value": "1.0"
+      },
+      "vert_div/CH2": {
+        "kind": "text",
+        "value": "1.0"
+      },
+      "vert_div/CH3": {
+        "kind": "text",
+        "value": "1.0"
+      },
+      "vert_div/CH4": {
+        "kind": "text",
+        "value": "1.0"
+      },
+      "vert_off/CH1": {
+        "kind": "text",
+        "value": "0"
+      },
+      "vert_off/CH2": {
+        "kind": "text",
+        "value": "0"
+      },
+      "vert_off/CH3": {
+        "kind": "text",
+        "value": "0"
+      },
+      "vert_off/CH4": {
+        "kind": "text",
+        "value": "0"
+      }
+    },
+    "osa": {
+      "editors/db_per_div": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "editors/frequency_start_thz": {
+        "kind": "number",
+        "value": 370.0
+      },
+      "editors/frequency_stop_thz": {
+        "kind": "number",
+        "value": 380.0
+      },
+      "editors/reference_level_dbm": {
+        "kind": "number",
+        "value": -30.0
+      },
+      "interval": {
+        "kind": "number",
+        "value": 0.3
+      },
+      "spectrum_auto_y": {
+        "kind": "check",
+        "value": false
+      },
+      "spectrum_y_max": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "spectrum_y_min": {
+        "kind": "number",
+        "value": -100.0
+      },
+      "trace": {
+        "kind": "choice",
+        "value": "TRA"
+      }
+    },
+    "sg384": {
+      "rows/bnc_power_dbm/editor": {
+        "kind": "number",
+        "value": -11.938201
+      },
+      "rows/bnc_power_dbm/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/bnc_power_dbm/step_units": {
+        "kind": "choice",
+        "value": "dBm"
+      },
+      "rows/bnc_power_dbm/units": {
+        "kind": "choice",
+        "value": "dBm"
+      },
+      "rows/frequency/editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/frequency/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/frequency/step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/frequency/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/n_power_dbm/editor": {
+        "kind": "number",
+        "value": -11.938201
+      },
+      "rows/n_power_dbm/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/n_power_dbm/step_units": {
+        "kind": "choice",
+        "value": "dBm"
+      },
+      "rows/n_power_dbm/units": {
+        "kind": "choice",
+        "value": "dBm"
+      },
+      "rows/phase/editor": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/phase/step/edit": {
+        "kind": "number",
+        "value": 1.0
+      }
+    },
+    "thermotek": {
+      "diagnostic": {
+        "kind": "choice",
+        "value": "warning_register_raw"
+      },
+      "interval": {
+        "kind": "number",
+        "value": 6.0
+      },
+      "rows/temperature_setpoint": {
+        "kind": "number",
+        "value": 5.0
+      }
+    },
+    "windfreak": {
+      "ramp_dwell": {
+        "kind": "number",
+        "value": 0.2
+      },
+      "ref_target": {
+        "kind": "number",
+        "value": 10.0
+      },
+      "ref_units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/A/alias": {
+        "kind": "text",
+        "value": ""
+      },
+      "rows/A/frequency_hz": {
+        "kind": "number",
+        "value": 53.0
+      },
+      "rows/A/frequency_hz_step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/A/frequency_hz_step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/A/frequency_units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/A/phase_deg": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/A/phase_deg_step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/A/power_dbm": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/A/power_dbm_step/edit": {
+        "kind": "number",
+        "value": 0.1
+      },
+      "rows/B/alias": {
+        "kind": "text",
+        "value": ""
+      },
+      "rows/B/frequency_hz": {
+        "kind": "number",
+        "value": 53.0
+      },
+      "rows/B/frequency_hz_step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/B/frequency_hz_step/units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/B/frequency_units": {
+        "kind": "choice",
+        "value": "MHz"
+      },
+      "rows/B/phase_deg": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/B/phase_deg_step/edit": {
+        "kind": "number",
+        "value": 1.0
+      },
+      "rows/B/power_dbm": {
+        "kind": "number",
+        "value": 0.0
+      },
+      "rows/B/power_dbm_step/edit": {
+        "kind": "number",
+        "value": 0.1
+      }
+    }
+  },
+  "inputs": {
+    "ccd_tab/area": {
+      "kind": "number",
+      "value": 3.0
+    },
+    "ccd_tab/auto_levels": {
+      "kind": "check",
+      "value": true
+    },
+    "ccd_tab/autosave": {
+      "kind": "check",
+      "value": false
+    },
+    "ccd_tab/backend": {
+      "kind": "choice",
+      "value": "Thorcam"
+    },
+    "ccd_tab/color": {
+      "kind": "choice",
+      "value": "grey"
+    },
+    "ccd_tab/consecutive": {
+      "kind": "number",
+      "value": 3
+    },
+    "ccd_tab/directory": {
+      "kind": "text",
+      "value": "${PROJECT_ROOT}/labremote/data/ccd"
+    },
+    "ccd_tab/exposure": {
+      "kind": "number",
+      "value": 30.0
+    },
+    "ccd_tab/flip_h": {
+      "kind": "check",
+      "value": false
+    },
+    "ccd_tab/flip_v": {
+      "kind": "check",
+      "value": false
+    },
+    "ccd_tab/frames": {
+      "kind": "number",
+      "value": 1
+    },
+    "ccd_tab/gain": {
+      "kind": "number",
+      "value": 0
+    },
+    "ccd_tab/high": {
+      "kind": "number",
+      "value": 4095
+    },
+    "ccd_tab/level_step": {
+      "kind": "number",
+      "value": 1
+    },
+    "ccd_tab/low": {
+      "kind": "number",
+      "value": 0
+    },
+    "ccd_tab/markers_enabled": {
+      "kind": "check",
+      "value": true
+    },
+    "ccd_tab/oven_panel/isotope": {
+      "kind": "choice",
+      "value": "171"
+    },
+    "ccd_tab/oven_panel/photoionization_shutter": {
+      "kind": "choice",
+      "value": "shutter_1"
+    },
+    "ccd_tab/oven_panel/psu_name": {
+      "kind": "text",
+      "value": "oven_psu"
+    },
+    "ccd_tab/oven_panel/relay_name": {
+      "kind": "text",
+      "value": "oven_relays"
+    },
+    "ccd_tab/oven_panel/timeout_minutes": {
+      "kind": "number",
+      "value": 10
+    },
+    "ccd_tab/oven_panel/timeout_seconds": {
+      "kind": "number",
+      "value": 0
+    },
+    "ccd_tab/target": {
+      "kind": "number",
+      "value": 1
+    },
+    "ccd_tab/threshold": {
+      "kind": "number",
+      "value": 1000
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QComboBox[0]": {
+      "kind": "choice",
+      "value": "windfreak"
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QLineEdit[0]": {
+      "kind": "text",
+      "value": "127.0.0.1"
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QLineEdit[1]": {
+      "kind": "text",
+      "value": ""
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QSpinBox[0]": {
+      "kind": "number",
+      "value": 5555
+    },
+    "device/dac/dac_ec/editors/L0": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/L1": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/L2": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/L3": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/L4": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/L5": {
+      "kind": "number",
+      "value": 0.5
+    },
+    "device/dac/dac_ec/editors/L6": {
+      "kind": "number",
+      "value": 0.5
+    },
+    "device/dac/dac_ec/editors/L7": {
+      "kind": "number",
+      "value": -1.0
+    },
+    "device/dac/dac_ec/editors/L_IN": {
+      "kind": "number",
+      "value": 0.6964
+    },
+    "device/dac/dac_ec/editors/R0": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/R1": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/R2": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/R3": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/R4": {
+      "kind": "number",
+      "value": 0.0
+    },
+    "device/dac/dac_ec/editors/R5": {
+      "kind": "number",
+      "value": 1.0
+    },
+    "device/dac/dac_ec/editors/R6": {
+      "kind": "number",
+      "value": 1.0
+    },
+    "device/dac/dac_ec/editors/R7": {
+      "kind": "number",
+      "value": -0.5
+    },
+    "device/dac/dac_ec/editors/R_IN": {
+      "kind": "number",
+      "value": 0.2681
+    },
+    "device/sg384/sg384_EC/rows/bnc_power_dbm/editor": {
+      "kind": "number",
+      "value": -10.445528
+    },
+    "device/sg384/sg384_EC/rows/n_power_dbm/editor": {
+      "kind": "number",
+      "value": -10.445528
+    },
+    "flip_tab/selected": {
+      "kind": "choice",
+      "value": ""
+    },
+    "monitor_tab/columns": {
+      "kind": "number",
+      "value": 3
+    },
+    "monitor_tab/qt/QCheckBox[0]": {
+      "kind": "check",
+      "value": true
+    },
+    "queue_monitor/metric": {
+      "kind": "choice",
+      "value": "실행 시간 (s)"
+    },
+    "queue_tab/directory": {
+      "kind": "text",
+      "value": "${PROJECT_ROOT}/labremote/data/queues"
+    },
+    "queue_tab/repeat": {
+      "kind": "number",
+      "value": 1
+    },
+    "workflow_tab/file_picker": {
+      "kind": "choice",
+      "value": "daily_fluorescence.py"
+    }
+  }
+}

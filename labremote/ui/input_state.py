@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets as W
 from labremote.config.paths import CONFIG_ROOT
+from labremote.config.input_defaults import DEFAULT_INPUTS, load_input_defaults, resolve_default
 
 LOG=logging.getLogger(__name__)
 INPUTS=(W.QLineEdit,W.QAbstractSpinBox,W.QComboBox,W.QCheckBox,W.QRadioButton,W.QPlainTextEdit,W.QTextEdit,W.QSlider)
@@ -52,10 +53,12 @@ def apply_value(widget, saved):
 
 
 class InputState(QtCore.QObject):
-    def __init__(self,owner,path=None):
+    def __init__(self,owner,path=None,defaults_path=None):
         super().__init__(owner);self.owner=owner
         self.path=Path(path) if path else CONFIG_ROOT/'ui/input_state.local.json'
         self.saved={};self.seen={};self.pending={};self.active=True
+        self.defaults_path=Path(defaults_path) if defaults_path is not None else DEFAULT_INPUTS
+        self.defaults=load_input_defaults(self.defaults_path,self.report)
         self.timer=QtCore.QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(150)
         self.timer.timeout.connect(self.restore)
         try:
@@ -71,32 +74,39 @@ class InputState(QtCore.QObject):
         log=getattr(self.owner,'log',None)
         if log is not None:log.appendPlainText('UI input state: '+text)
 
-    def roots(self):
+    def roots(self,legacy=False):
         roots={}
         for family,panels in getattr(self.owner,'family_tabs',{}).items():
             for name,panel in panels.items():
                 key='device/'+family+'/'+name;roots[key]=panel
-                for attr in ('daily_tab','decay_tab','sequence_tab'):
+                for attr in (('daily_tab','decay_tab','sequence_tab') if legacy else
+                             ('daily_tab','decay_tab','sequence_tab','hom_tab','entanglement_tab','micromotion_tab')):
                     if hasattr(panel,attr):roots[key+'/'+attr]=getattr(panel,attr)
         for attr in ('ccd_tab','flip_tab','workflow_tab','queue_tab','monitor_tab','queue_monitor','connection_settings_window'):
             if hasattr(self.owner,attr):roots[attr]=getattr(self.owner,attr)
+        if not legacy:
+            if hasattr(self.owner,'motor_tab'):roots['motor_tab']=self.owner.motor_tab
+            for name,window in getattr(self.owner,'detail_windows',{}).items():
+                if window not in roots.values():roots['window/'+name]=window
         roots['main']=self.owner
         return roots
 
-    def fields(self):
-        roots=self.roots();root_ids={id(v) for v in roots.values()};result={};used=set()
+    def fields(self,legacy=False):
+        roots=self.roots(legacy=legacy);root_ids={id(v) for v in roots.values()};result={};used=set()
+        source_ids={id(getattr(w,'source',None)) for w in W.QApplication.allWidgets()} if not legacy else set()
         # Prefer stable Python attribute / dictionary keys (instrument, chamber, axis).
         for root_key,root in roots.items():
             visited=set()
             def walk(value,key,depth=0):
                 if depth>12:return
-                if isinstance(value,W.QWidget):
+                if isinstance(value,W.QWidget) or (not legacy and value is root and isinstance(value,QtCore.QObject)):
                     if id(value) in visited or (value is not root and id(value) in root_ids):return
                     visited.add(id(value))
-                    if value is not root and not (root.isAncestorOf(value) or getattr(value,'owner',None) is self.owner):return
+                    widget_root=root if isinstance(root,W.QWidget) else getattr(root,'tab',None)
+                    if value is not root and not (widget_root is not None and widget_root.isAncestorOf(value) or getattr(value,'owner',None) is self.owner):return
                     if isinstance(value,INPUTS):
                         # Python source documents retain their existing save/close workflow.
-                        if key.endswith('/source') and type(value).__module__.startswith('PyQt5'):return
+                        if id(value) in source_ids or (key.endswith('/source') and type(value).__module__.startswith('PyQt5')):return
                         if id(value) not in used and value_of(value) is not None:
                             used.add(id(value));result[key]=value
                         return
@@ -112,7 +122,7 @@ class InputState(QtCore.QObject):
             walk(root,root_key)
             # Cover locally-created fields which have no Python attribute.
             for widget in root.findChildren(W.QWidget):
-                if id(widget) in used or not isinstance(widget,INPUTS) or value_of(widget) is None:continue
+                if id(widget) in used or id(widget) in source_ids or not isinstance(widget,INPUTS) or value_of(widget) is None:continue
                 parent=widget;parts=[];owned=True
                 while parent is not root:
                     if parent is None or (parent is not widget and id(parent) in root_ids):owned=False;break
@@ -124,6 +134,8 @@ class InputState(QtCore.QObject):
                     parent=p
                 if owned:
                     used.add(id(widget));result[root_key+'/qt/'+'/'.join(reversed(parts))]=widget
+        if not legacy:
+            self.legacy_keys={id(widget):key for key,widget in self.fields(legacy=True).items()}
         return result
 
     def schedule(self,*_):
@@ -146,9 +158,22 @@ class InputState(QtCore.QObject):
                 widget.model().rowsInserted.connect(self.schedule)
                 widget.model().modelReset.connect(self.schedule)
                 widget.activated.connect(lambda _,k=key:self.pending.pop(k,None))
-            if key in self.saved:
+            saved_key=key if key in self.saved else self.legacy_keys.get(id(widget),key)
+            selected=self.saved.get(saved_key)
+            from_default=saved_key not in self.saved
+            if from_default:selected=resolve_default(self.defaults,key)
+            if selected is not None:
                 try:
-                    if apply_value(widget,self.saved[key]):self.pending.pop(key,None)
+                    if from_default:
+                        current=value_of(widget)
+                        if selected['kind']!=current['kind']:
+                            raise ValueError('Configured default kind differs from this input')
+                        if selected['kind']=='number':
+                            if not widget.minimum()<=selected['value']<=widget.maximum():
+                                raise ValueError('Configured default is outside the allowed input range')
+                            if not isinstance(widget,W.QDoubleSpinBox) and selected['value']!=int(selected['value']):
+                                raise ValueError('Integer input requires an integer default')
+                    if apply_value(widget,selected):self.pending.pop(key,None)
                     else:self.pending[key]=widget
                 except (TypeError,ValueError,RuntimeError) as error:self.report(key+': '+str(error));self.pending.pop(key,None)
         del blockers

@@ -96,6 +96,10 @@ class DACWorker(DeviceWorker):
         super().disconnect_device()
 
     def enqueue(self,handle):
+        from labremote.runtime.characterization_guard import enqueue
+        return enqueue(self,handle,self._enqueue_unreserved)
+
+    def _enqueue_unreserved(self,handle):
         if handle.action.startswith('DAC_') and self.has_requests():
             handle.finish(RuntimeError('DAC busy; request was not queued'))
             return handle

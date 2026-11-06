@@ -1,0 +1,5496 @@
+{
+  "schema_version": 1,
+  "fields": {
+    "ccd_tab/area": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 100000.0
+    },
+    "ccd_tab/auto_levels": {
+      "widget": "QCheckBox"
+    },
+    "ccd_tab/autosave": {
+      "widget": "QCheckBox"
+    },
+    "ccd_tab/backend": {
+      "widget": "QComboBox",
+      "choices": [
+        "Thorcam",
+        "Dummy"
+      ]
+    },
+    "ccd_tab/color": {
+      "widget": "QComboBox",
+      "choices": [
+        "grey",
+        "viridis",
+        "inferno"
+      ]
+    },
+    "ccd_tab/consecutive": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "ccd_tab/directory": {
+      "widget": "QLineEdit"
+    },
+    "ccd_tab/exposure": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.01,
+      "maximum": 60000.0
+    },
+    "ccd_tab/flip_h": {
+      "widget": "QCheckBox"
+    },
+    "ccd_tab/flip_v": {
+      "widget": "QCheckBox"
+    },
+    "ccd_tab/frames": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 50
+    },
+    "ccd_tab/gain": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "ccd_tab/high": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "ccd_tab/level_step": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "ccd_tab/low": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "ccd_tab/markers_enabled": {
+      "widget": "QCheckBox"
+    },
+    "ccd_tab/oven_panel/isotope": {
+      "widget": "QComboBox",
+      "choices": [
+        "171",
+        "174"
+      ]
+    },
+    "ccd_tab/oven_panel/photoionization_shutter": {
+      "widget": "QComboBox",
+      "choices": [
+        "shutter_1",
+        "shutter_2"
+      ]
+    },
+    "ccd_tab/oven_panel/psu_name": {
+      "widget": "QLineEdit"
+    },
+    "ccd_tab/oven_panel/relay_name": {
+      "widget": "QLineEdit"
+    },
+    "ccd_tab/oven_panel/timeout_minutes": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 9999
+    },
+    "ccd_tab/oven_panel/timeout_seconds": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 59
+    },
+    "ccd_tab/target": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "ccd_tab/threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QComboBox[0]": {
+      "widget": "QComboBox",
+      "choices": [
+        "windfreak",
+        "sg384",
+        "anapico",
+        "dds4",
+        "ds1052e",
+        "mso7054",
+        "thermotek",
+        "keithley",
+        "osa",
+        "mdt",
+        "fpga",
+        "motors",
+        "dac"
+      ]
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QLineEdit[0]": {
+      "widget": "QLineEdit"
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QLineEdit[1]": {
+      "widget": "QLineEdit"
+    },
+    "connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QSpinBox[0]": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/anapico/apsyn420_7g/ref_out_enabled": {
+      "widget": "QCheckBox"
+    },
+    "device/anapico/apsyn420_7g/ref_out_freq": {
+      "widget": "QComboBox",
+      "choices": [
+        "10 MHz",
+        "100 MHz"
+      ]
+    },
+    "device/anapico/apsyn420_7g/rows/external_lock_frequency/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 250.0
+    },
+    "device/anapico/apsyn420_7g/rows/external_lock_frequency/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/anapico/apsyn420_7g/rows/external_lock_frequency/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_7g/rows/external_lock_frequency/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_7g/rows/frequency/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 20000.0
+    },
+    "device/anapico/apsyn420_7g/rows/frequency/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/anapico/apsyn420_7g/rows/frequency/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_7g/rows/frequency/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_7g/rows/phase/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -360.0,
+      "maximum": 360.0
+    },
+    "device/anapico/apsyn420_7g/rows/phase/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/anapico/apsyn420_mw/ref_out_enabled": {
+      "widget": "QCheckBox"
+    },
+    "device/anapico/apsyn420_mw/ref_out_freq": {
+      "widget": "QComboBox",
+      "choices": [
+        "10 MHz",
+        "100 MHz"
+      ]
+    },
+    "device/anapico/apsyn420_mw/rows/external_lock_frequency/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 250.0
+    },
+    "device/anapico/apsyn420_mw/rows/external_lock_frequency/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/anapico/apsyn420_mw/rows/external_lock_frequency/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_mw/rows/external_lock_frequency/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_mw/rows/frequency/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 20000.0
+    },
+    "device/anapico/apsyn420_mw/rows/frequency/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/anapico/apsyn420_mw/rows/frequency/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_mw/rows/frequency/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/anapico/apsyn420_mw/rows/phase/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -360.0,
+      "maximum": 360.0
+    },
+    "device/anapico/apsyn420_mw/rows/phase/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dac/dac_ea/editors/L0": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L1": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L2": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L3": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L4": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/L_IN": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R0": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R1": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R2": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R3": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R4": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/editors/R_IN": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ea/initial_mode": {
+      "widget": "QComboBox",
+      "choices": [
+        "0 V",
+        "Current draft"
+      ]
+    },
+    "device/dac/dac_ea/ldac": {
+      "widget": "QCheckBox"
+    },
+    "device/dac/dac_ea/notes": {
+      "widget": "QPlainTextEdit"
+    },
+    "device/dac/dac_ea/preset_name": {
+      "widget": "QLineEdit"
+    },
+    "device/dac/dac_ea/sequence_tab/hold": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 86400.0
+    },
+    "device/dac/dac_ea/sequence_tab/ldac": {
+      "widget": "QCheckBox"
+    },
+    "device/dac/dac_ea/sequence_tab/name": {
+      "widget": "QLineEdit"
+    },
+    "device/dac/dac_ea/sequence_tab/pre_ldac": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000.0
+    },
+    "device/dac/dac_ea/sequence_tab/reuse": {
+      "widget": "QCheckBox"
+    },
+    "device/dac/dac_ea/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-05,
+      "maximum": 40.0
+    },
+    "device/dac/dac_ec/editors/L0": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L1": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L10": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L11": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L12": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L13": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L14": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L2": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L3": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L4": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L8": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L9": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/L_IN": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R0": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R1": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R10": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R11": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R12": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R13": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R14": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R2": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R3": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R4": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R8": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R9": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/editors/R_IN": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -20.0,
+      "maximum": 20.0
+    },
+    "device/dac/dac_ec/initial_mode": {
+      "widget": "QComboBox",
+      "choices": [
+        "0 V",
+        "Current draft"
+      ]
+    },
+    "device/dac/dac_ec/ldac": {
+      "widget": "QCheckBox"
+    },
+    "device/dac/dac_ec/notes": {
+      "widget": "QPlainTextEdit"
+    },
+    "device/dac/dac_ec/preset_name": {
+      "widget": "QLineEdit"
+    },
+    "device/dac/dac_ec/sequence_tab/hold": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 86400.0
+    },
+    "device/dac/dac_ec/sequence_tab/ldac": {
+      "widget": "QCheckBox"
+    },
+    "device/dac/dac_ec/sequence_tab/name": {
+      "widget": "QLineEdit"
+    },
+    "device/dac/dac_ec/sequence_tab/pre_ldac": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000.0
+    },
+    "device/dac/dac_ec/sequence_tab/reuse": {
+      "widget": "QCheckBox"
+    },
+    "device/dac/dac_ec/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-05,
+      "maximum": 40.0
+    },
+    "device/dds4/dds4/rows/ch1.frequency_hz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 400.0
+    },
+    "device/dds4/dds4/rows/ch1.frequency_hz/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch1.frequency_hz/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch1.frequency_hz/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch1.phase_deg/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/dds4/dds4/rows/ch1.phase_deg/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch1.vva_level/editor": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "device/dds4/dds4/rows/ch1.vva_level/step": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "device/dds4/dds4/rows/ch2.frequency_hz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 400.0
+    },
+    "device/dds4/dds4/rows/ch2.frequency_hz/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch2.frequency_hz/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch2.frequency_hz/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch2.phase_deg/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/dds4/dds4/rows/ch2.phase_deg/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch2.vva_level/editor": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "device/dds4/dds4/rows/ch2.vva_level/step": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "device/dds4/dds4/rows/ch3.frequency_hz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 400.0
+    },
+    "device/dds4/dds4/rows/ch3.frequency_hz/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch3.frequency_hz/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch3.frequency_hz/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch3.phase_deg/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/dds4/dds4/rows/ch3.phase_deg/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch3.vva_level/editor": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "device/dds4/dds4/rows/ch3.vva_level/step": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "device/dds4/dds4/rows/ch4.frequency_hz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 400.0
+    },
+    "device/dds4/dds4/rows/ch4.frequency_hz/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch4.frequency_hz/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch4.frequency_hz/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/dds4/dds4/rows/ch4.phase_deg/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/dds4/dds4/rows/ch4.phase_deg/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/dds4/dds4/rows/ch4.vva_level/editor": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "device/dds4/dds4/rows/ch4.vva_level/step": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "device/ds1052e/ds1052e_EA/ch_checks/CH1": {
+      "widget": "QCheckBox"
+    },
+    "device/ds1052e/ds1052e_EA/ch_checks/CH2": {
+      "widget": "QCheckBox"
+    },
+    "device/ds1052e/ds1052e_EA/period": {
+      "widget": "QSpinBox",
+      "minimum": 250,
+      "maximum": 15000
+    },
+    "device/ds1052e/ds1052e_EA/plot_mode": {
+      "widget": "QComboBox",
+      "choices": [
+        "Follow physical V/div (8 vertical divisions)",
+        "Fit each waveform (autoscale)",
+        "Manual graph limits"
+      ]
+    },
+    "device/ds1052e/ds1052e_EA/time_div": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/time_offset": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/trigger_ch": {
+      "widget": "QComboBox",
+      "choices": [
+        "CH1",
+        "CH2"
+      ]
+    },
+    "device/ds1052e/ds1052e_EA/trigger_level": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/trigger_slope": {
+      "widget": "QComboBox",
+      "choices": [
+        "POS",
+        "NEG"
+      ]
+    },
+    "device/ds1052e/ds1052e_EA/trigger_sweep": {
+      "widget": "QComboBox",
+      "choices": [
+        "AUTO",
+        "NORM",
+        "SING"
+      ]
+    },
+    "device/ds1052e/ds1052e_EA/vert_div/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/vert_div/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/vert_off/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/vert_off/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/x_max": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/x_min": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/y_max/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/y_max/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/y_min/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EA/y_min/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/ch_checks/CH1": {
+      "widget": "QCheckBox"
+    },
+    "device/ds1052e/ds1052e_EC/ch_checks/CH2": {
+      "widget": "QCheckBox"
+    },
+    "device/ds1052e/ds1052e_EC/period": {
+      "widget": "QSpinBox",
+      "minimum": 250,
+      "maximum": 15000
+    },
+    "device/ds1052e/ds1052e_EC/plot_mode": {
+      "widget": "QComboBox",
+      "choices": [
+        "Follow physical V/div (8 vertical divisions)",
+        "Fit each waveform (autoscale)",
+        "Manual graph limits"
+      ]
+    },
+    "device/ds1052e/ds1052e_EC/time_div": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/time_offset": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/trigger_ch": {
+      "widget": "QComboBox",
+      "choices": [
+        "CH1",
+        "CH2"
+      ]
+    },
+    "device/ds1052e/ds1052e_EC/trigger_level": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/trigger_slope": {
+      "widget": "QComboBox",
+      "choices": [
+        "POS",
+        "NEG"
+      ]
+    },
+    "device/ds1052e/ds1052e_EC/trigger_sweep": {
+      "widget": "QComboBox",
+      "choices": [
+        "AUTO",
+        "NORM",
+        "SING"
+      ]
+    },
+    "device/ds1052e/ds1052e_EC/vert_div/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/vert_div/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/vert_off/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/vert_off/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/x_max": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/x_min": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/y_max/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/y_max/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/y_min/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/ds1052e/ds1052e_EC/y_min/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EA/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EA/fields/exposure_ms": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 6000.0
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EA/fields/num_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EA/fields/num_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EA/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EA/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EA/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EC/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EC/fields/exposure_ms": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 6000.0
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EC/fields/num_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EC/fields/num_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EC/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EC/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/experiments/EC/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/N_init_control": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 512
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_det_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/T_init_step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.02,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/WAIT_AOM": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EA')/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/N_init_control": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 512
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_det_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/T_init_step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.02,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/WAIT_AOM": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('initialization', 'EC')/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_det_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_init": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/T_wait_for_aom_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/fit_high_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 50000000.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/fit_low_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 50000000.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/half_pi_time": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.07,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/max_precession_count": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 512
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/precession_time": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.02,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EA')/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_det_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_init": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/T_wait_for_aom_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/fit_high_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 50000000.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/fit_low_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 50000000.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/half_pi_time": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.07,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/max_precession_count": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 512
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/precession_time": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.02,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('ramsey', 'EC')/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1024
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/N_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/T_PI": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.07,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/T_init": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/WAIT_AOM": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EA')/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1024
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/N_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/T_PI": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.07,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/T_init": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/WAIT_AOM": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/pulse_experiments/('spam', 'EC')/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1024
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/N_qubit_control": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/T_init": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/T_mw_step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.07,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/WAIT_AOM": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EA/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/N_average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1024
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/N_qubit_control": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/N_threshold": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/T_cool": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/T_cool_repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/T_det": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/T_init": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/T_mw_step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.07,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/WAIT_AOM": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "AOMA",
+        "AOMC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_2GA",
+        "EOM_2GC"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/roles/EOM_7G_1": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA1",
+        "EOM_7GC1"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/roles/EOM_7G_2": {
+      "widget": "QComboBox",
+      "choices": [
+        "EOM_7GA2",
+        "EOM_7GC2"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/roles/MW": {
+      "widget": "QComboBox",
+      "choices": [
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/rabi_experiments/EC/roles/PMT": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/daily_tab/workflow/file_picker": {
+      "widget": "QComboBox",
+      "choices": [
+        "daily_fluorescence.py",
+        "daily_rabi.py",
+        "ea_ec_rf_off.py",
+        "ea_ec_rf_setup.py",
+        "ion_check_workflow.py",
+        "queue_entanglement.py",
+        "queue_hom.py",
+        "queue_spam.py"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_dual')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '171_single')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_dual')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EA', '174_single')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_dual')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '171_single')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_dual')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/DECAY_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 510
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/SIGNAL_THRESHOLD": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 509
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/TIME_COOL": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/TIME_INIT": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/aux1_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/aux1_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/aux2_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/aux2_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/outer_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/waiting_time_for_AOM_on": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/fields/wo_cooling_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/AOM": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/AUX1": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/AUX2": {
+      "widget": "QComboBox",
+      "choices": [
+        "",
+        "AOMM",
+        "AOMB"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/EOM_2G": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/EOM_7G1": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/EOM_7G2": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/PMT1": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/PMT2": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/decay_tab/experiments/('EC', '174_single')/roles/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/entanglement_tab/basis": {
+      "widget": "QComboBox",
+      "choices": [
+        "ZZ basis",
+        "MW detuned"
+      ]
+    },
+    "device/fpga/fpga_local/entanglement_tab/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/aom_off_us": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/batches": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1000000
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/coincidence_half_window_bins": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 120
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/cooling_us": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.4
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/decay_lower_a": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 119
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/decay_lower_c": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 119
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/detection_us": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.01,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/detuning_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -10000000.0,
+      "maximum": 10000000.0
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/fpga_loops": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/groups_per_loop": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/initialization_us": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.4
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/inner_trials": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/mirror_wait_ms": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.5,
+      "maximum": 32767.5
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/phase_magnitude_deg": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/pi_ea_us": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.14,
+      "maximum": 1310.84
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/pi_ec_us": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.14,
+      "maximum": 1310.84
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/stopwatch_wait_us": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/threshold_ea": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/threshold_ec": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/entanglement_tab/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 2.0,
+      "maximum": 86400.0
+    },
+    "device/fpga/fpga_local/hom_tab/aomb": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/hom_tab/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/hom_tab/fields/MAX_TIME_DIFFERENCE": {
+      "widget": "QSpinBox",
+      "minimum": 3,
+      "maximum": 255
+    },
+    "device/fpga/fpga_local/hom_tab/fields/THRESHOLD_A": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 254
+    },
+    "device/fpga/fpga_local/hom_tab/fields/THRESHOLD_C": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 254
+    },
+    "device/fpga/fpga_local/hom_tab/fields/TIME_1US": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.05,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/hom_tab/fields/aomb_end": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/hom_tab/fields/aomb_start": {
+      "widget": "QSpinBox",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "device/fpga/fpga_local/hom_tab/fields/batches": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 100000000
+    },
+    "device/fpga/fpga_local/hom_tab/fields/inner_loop_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/hom_tab/fields/outer_loop_in_fpga": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/hom_tab/fields/run_number": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "device/fpga/fpga_local/hom_tab/fields/timeout_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/hom_tab/fields/waiting_time_for_AOM_off": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.03,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/hom_tab/fields/waiting_time_for_stopwatch": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.04,
+      "maximum": 655.35
+    },
+    "device/fpga/fpga_local/hom_tab/inputs/PMTA": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/hom_tab/inputs/PMTC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/hom_tab/inputs/SYNC": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "SYNC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/hom_tab/outputs/AOMA": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/hom_tab/outputs/AOMB": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C",
+        "AOMB",
+        "AOMM",
+        "CCD_EC",
+        "CCD_EA"
+      ]
+    },
+    "device/fpga/fpga_local/hom_tab/outputs/AOMC": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/hom_tab/outputs/TRIG": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRIG",
+        "AOMC",
+        "EOM_7GC1",
+        "EOM_7GC2",
+        "EOM_2GC",
+        "AOMA",
+        "EOM_7GA1",
+        "EOM_7GA2",
+        "EOM_2GA",
+        "MW_A",
+        "MW_C"
+      ]
+    },
+    "device/fpga/fpga_local/input_tab/average": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "device/fpga/fpga_local/input_tab/channel": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA / jb_0",
+        "PMTC / jb_2",
+        "PMTFC / jb_4",
+        "PMTFA / jb_6"
+      ]
+    },
+    "device/fpga/fpga_local/input_tab/directory": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/input_tab/exposure": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 6000.0
+    },
+    "device/fpga/fpga_local/input_tab/interval": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 3600.0
+    },
+    "device/fpga/fpga_local/input_tab/logging": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/input_tab/y_auto": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/input_tab/y_max": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -1000000000000.0,
+      "maximum": 1000000000000.0
+    },
+    "device/fpga/fpga_local/input_tab/y_min": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -1000000000000.0,
+      "maximum": 1000000000000.0
+    },
+    "device/fpga/fpga_local/port_choices": {
+      "widget": "QComboBox",
+      "choices": []
+    },
+    "device/fpga/fpga_local/scan_tabs/0/channel": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/1": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/10": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/11": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/12": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/13": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/14": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 6000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/15": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 100000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/16": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 60000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/3": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/8": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/config_widgets/9": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/0/follow_z": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/0/view_plane": {
+      "widget": "QComboBox",
+      "choices": []
+    },
+    "device/fpga/fpga_local/scan_tabs/0/x_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EA_px"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/0/y_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EA_py"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/0/z_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EA_pz"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/0/z_target": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/channel": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/1": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/10": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/11": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/12": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/13": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/14": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 6000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/15": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 100000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/16": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 60000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/3": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/8": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/config_widgets/9": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/1/follow_z": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/1/view_plane": {
+      "widget": "QComboBox",
+      "choices": []
+    },
+    "device/fpga/fpga_local/scan_tabs/1/x_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EA_sx"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/1/y_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EA_sy"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/1/z_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EA_sz"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/1/z_target": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/channel": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/1": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/10": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/11": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/12": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/13": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/14": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 6000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/15": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 100000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/16": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 60000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/3": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/8": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/config_widgets/9": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/2/follow_z": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/2/view_plane": {
+      "widget": "QComboBox",
+      "choices": []
+    },
+    "device/fpga/fpga_local/scan_tabs/2/x_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EC_px"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/2/y_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EC_py"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/2/z_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EC_pz"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/2/z_target": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/channel": {
+      "widget": "QComboBox",
+      "choices": [
+        "PMTA",
+        "PMTC",
+        "PMTFC",
+        "PMTFA"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/1": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/10": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/11": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/12": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/13": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/14": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 6000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/15": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 100000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/16": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 60000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/3": {
+      "widget": "QLineEdit"
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/5": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/6": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/7": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/8": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/config_widgets/9": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/scan_tabs/3/follow_z": {
+      "widget": "QCheckBox"
+    },
+    "device/fpga/fpga_local/scan_tabs/3/view_plane": {
+      "widget": "QComboBox",
+      "choices": []
+    },
+    "device/fpga/fpga_local/scan_tabs/3/x_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EC_sx"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/3/y_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EC_sy"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/3/z_motor": {
+      "widget": "QComboBox",
+      "choices": [
+        "EC_sz"
+      ]
+    },
+    "device/fpga/fpga_local/scan_tabs/3/z_target": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/fpga/fpga_local/serial": {
+      "widget": "QLineEdit"
+    },
+    "device/keithley/keithley_ps/qt/QCheckBox[0]": {
+      "widget": "QCheckBox"
+    },
+    "device/keithley/keithley_ps/rows/ch1.target_current": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "device/keithley/keithley_ps/rows/ch1.target_voltage": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 5.0
+    },
+    "device/keithley/keithley_ps/rows/ch1.voltage_limit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 5.0
+    },
+    "device/keithley/keithley_ps/rows/ch2.target_current": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 3.0
+    },
+    "device/keithley/keithley_ps/rows/ch2.target_voltage": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 5.0
+    },
+    "device/keithley/keithley_ps/rows/ch2.voltage_limit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 5.0
+    },
+    "device/keithley/keithley_ps/rows/ch3.target_current": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 3.0
+    },
+    "device/keithley/keithley_ps/rows/ch3.target_voltage": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 5.0
+    },
+    "device/keithley/keithley_ps/rows/ch3.voltage_limit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 5.0
+    },
+    "device/mdt/mdt693b/editors/x.voltage": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 75.0
+    },
+    "device/mdt/mdt693b/editors/y.voltage": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 75.0
+    },
+    "device/mdt/mdt693b/editors/z.voltage": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 75.0
+    },
+    "device/mdt/mdt693b/pid_tab/axis": {
+      "widget": "QComboBox",
+      "choices": [
+        "X",
+        "Y",
+        "Z"
+      ]
+    },
+    "device/mdt/mdt693b/pid_tab/fields/average_count": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1.0,
+      "maximum": 100.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/capture_ghz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/deadband_ghz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/derivative_filter_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/kd_v_s_per_ghz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000000.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/ki_v_per_ghz_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000000.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/kp_v_per_ghz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000000.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/lease_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 2.0,
+      "maximum": 120.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/max_gap_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 3600.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/max_slew_v_per_s": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 150.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/max_step_v": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 150.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/max_v": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 150.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/min_peak_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -150.0,
+      "maximum": 50.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/min_v": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 150.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/minimum_snr_db": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 100.0
+    },
+    "device/mdt/mdt693b/pid_tab/fields/target_thz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000.0
+    },
+    "device/mdt/mdt693b/pid_tab/osa": {
+      "widget": "QComboBox",
+      "choices": []
+    },
+    "device/mdt/mdt693b/pid_tab/polarity": {
+      "widget": "QComboBox",
+      "choices": [
+        "+1",
+        "-1"
+      ]
+    },
+    "device/mdt/mdt693b/pid_tab/use_fit": {
+      "widget": "QCheckBox"
+    },
+    "device/mdt/mdt693b/qt/QTabWidget[0]/qt_tabwidget_stackedwidget/PIDTab[0]/QCheckBox[1]": {
+      "widget": "QCheckBox"
+    },
+    "device/motors/EA_px/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_px/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_px/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_px/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EA_py/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_py/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_py/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_py/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EA_pz/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_pz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_pz/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_pz/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EA_sx/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sx/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sx/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sx/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EA_sy/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sy/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sy/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sy/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EA_sz/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sz/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EA_sz/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EC_px/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_px/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_px/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_px/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EC_py/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_py/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_py/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_py/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EC_pz/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_pz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_pz/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_pz/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EC_sx/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sx/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sx/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sx/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EC_sy/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sy/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sy/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sy/target": {
+      "widget": "QLineEdit"
+    },
+    "device/motors/EC_sz/backlash_editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -12000.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sz/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sz/step": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 12000.0
+    },
+    "device/motors/EC_sz/target": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/ch_checks/CH1": {
+      "widget": "QCheckBox"
+    },
+    "device/mso7054/mso7054/ch_checks/CH2": {
+      "widget": "QCheckBox"
+    },
+    "device/mso7054/mso7054/ch_checks/CH3": {
+      "widget": "QCheckBox"
+    },
+    "device/mso7054/mso7054/ch_checks/CH4": {
+      "widget": "QCheckBox"
+    },
+    "device/mso7054/mso7054/impedance_controls/CH1/0": {
+      "widget": "QComboBox",
+      "choices": [
+        "High impedance (1 MΩ)",
+        "50 Ω"
+      ]
+    },
+    "device/mso7054/mso7054/impedance_controls/CH2/0": {
+      "widget": "QComboBox",
+      "choices": [
+        "High impedance (1 MΩ)",
+        "50 Ω"
+      ]
+    },
+    "device/mso7054/mso7054/impedance_controls/CH3/0": {
+      "widget": "QComboBox",
+      "choices": [
+        "High impedance (1 MΩ)",
+        "50 Ω"
+      ]
+    },
+    "device/mso7054/mso7054/impedance_controls/CH4/0": {
+      "widget": "QComboBox",
+      "choices": [
+        "High impedance (1 MΩ)",
+        "50 Ω"
+      ]
+    },
+    "device/mso7054/mso7054/period": {
+      "widget": "QSpinBox",
+      "minimum": 250,
+      "maximum": 15000
+    },
+    "device/mso7054/mso7054/save_peak": {
+      "widget": "QCheckBox"
+    },
+    "device/mso7054/mso7054/time_div": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/time_offset": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/trigger_ch": {
+      "widget": "QComboBox",
+      "choices": [
+        "CH1",
+        "CH2",
+        "CH3",
+        "CH4"
+      ]
+    },
+    "device/mso7054/mso7054/trigger_level": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/trigger_slope": {
+      "widget": "QComboBox",
+      "choices": [
+        "POS",
+        "NEG",
+        "RFAL"
+      ]
+    },
+    "device/mso7054/mso7054/trigger_sweep": {
+      "widget": "QComboBox",
+      "choices": [
+        "AUTO",
+        "NORM"
+      ]
+    },
+    "device/mso7054/mso7054/vert_div/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/vert_div/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/vert_div/CH3": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/vert_div/CH4": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/vert_off/CH1": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/vert_off/CH2": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/vert_off/CH3": {
+      "widget": "QLineEdit"
+    },
+    "device/mso7054/mso7054/vert_off/CH4": {
+      "widget": "QLineEdit"
+    },
+    "device/osa/aq6373/editors/db_per_div": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 20.0
+    },
+    "device/osa/aq6373/editors/frequency_start_thz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 856.5
+    },
+    "device/osa/aq6373/editors/frequency_stop_thz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 856.5
+    },
+    "device/osa/aq6373/editors/reference_level_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -100.0,
+      "maximum": 30.0
+    },
+    "device/osa/aq6373/interval": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.1,
+      "maximum": 3600.0
+    },
+    "device/osa/aq6373/spectrum_auto_y": {
+      "widget": "QCheckBox"
+    },
+    "device/osa/aq6373/spectrum_y_max": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -300.0,
+      "maximum": 100.0
+    },
+    "device/osa/aq6373/spectrum_y_min": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -300.0,
+      "maximum": 100.0
+    },
+    "device/osa/aq6373/trace": {
+      "widget": "QComboBox",
+      "choices": [
+        "TRA",
+        "TRB",
+        "TRC",
+        "TRD",
+        "TRE",
+        "TRF",
+        "TRG"
+      ]
+    },
+    "device/sg384/sg384_EA/rows/bnc_power_dbm/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -47.0,
+      "maximum": -11.938201
+    },
+    "device/sg384/sg384_EA/rows/bnc_power_dbm/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/sg384/sg384_EA/rows/bnc_power_dbm/step_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EA/rows/bnc_power_dbm/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EA/rows/frequency/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 4050.0
+    },
+    "device/sg384/sg384_EA/rows/frequency/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/sg384/sg384_EA/rows/frequency/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/sg384/sg384_EA/rows/frequency/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/sg384/sg384_EA/rows/n_power_dbm/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -110.0,
+      "maximum": -11.938201
+    },
+    "device/sg384/sg384_EA/rows/n_power_dbm/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/sg384/sg384_EA/rows/n_power_dbm/step_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EA/rows/n_power_dbm/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EA/rows/phase/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -360.0,
+      "maximum": 360.0
+    },
+    "device/sg384/sg384_EA/rows/phase/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/sg384/sg384_EC/rows/bnc_power_dbm/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -47.0,
+      "maximum": -10.445528
+    },
+    "device/sg384/sg384_EC/rows/bnc_power_dbm/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/sg384/sg384_EC/rows/bnc_power_dbm/step_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EC/rows/bnc_power_dbm/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EC/rows/frequency/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 4050.0
+    },
+    "device/sg384/sg384_EC/rows/frequency/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/sg384/sg384_EC/rows/frequency/step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/sg384/sg384_EC/rows/frequency/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/sg384/sg384_EC/rows/n_power_dbm/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -110.0,
+      "maximum": -10.445528
+    },
+    "device/sg384/sg384_EC/rows/n_power_dbm/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/sg384/sg384_EC/rows/n_power_dbm/step_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EC/rows/n_power_dbm/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "dBm",
+        "Vpp"
+      ]
+    },
+    "device/sg384/sg384_EC/rows/phase/editor": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -360.0,
+      "maximum": 360.0
+    },
+    "device/sg384/sg384_EC/rows/phase/step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/thermotek/t257p/diagnostic": {
+      "widget": "QComboBox",
+      "choices": [
+        "warning_register_raw",
+        "alarm_l2_1_raw",
+        "alarm_l2_2_raw",
+        "control_sensor_raw",
+        "return_temperature_raw",
+        "external_rtd_temperature_raw",
+        "external_thermistor_temperature_raw",
+        "tec1_current_raw",
+        "tec2_current_raw",
+        "tec_drive_raw",
+        "pwm_raw",
+        "pid_status_raw",
+        "uptime_raw",
+        "high_supply_alarm_c_raw",
+        "low_supply_alarm_c_raw",
+        "high_ambient_alarm_c_raw",
+        "low_ambient_alarm_c_raw",
+        "low_flow_warning_lpm_raw",
+        "low_flow_alarm_lpm_raw",
+        "fan1_speed_hz_raw",
+        "fan2_speed_hz_raw",
+        "fan3_speed_hz_raw",
+        "fan4_speed_hz_raw"
+      ]
+    },
+    "device/thermotek/t257p/interval": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 3.0,
+      "maximum": 3600.0
+    },
+    "device/thermotek/t257p/rows/temperature_setpoint": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 5.0,
+      "maximum": 40.0
+    },
+    "device/windfreak/synthhd_2g/ramp_dwell": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000000.0
+    },
+    "device/windfreak/synthhd_2g/ref_target": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 100.0
+    },
+    "device/windfreak/synthhd_2g/ref_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_2g/rows/A/alias": {
+      "widget": "QLineEdit"
+    },
+    "device/windfreak/synthhd_2g/rows/A/frequency_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 53.0,
+      "maximum": 13600.0
+    },
+    "device/windfreak/synthhd_2g/rows/A/frequency_hz_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_2g/rows/A/frequency_hz_step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_2g/rows/A/frequency_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_2g/rows/A/phase_deg": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/windfreak/synthhd_2g/rows/A/phase_deg_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_2g/rows/A/power_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -60.0,
+      "maximum": 5.0
+    },
+    "device/windfreak/synthhd_2g/rows/A/power_dbm_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_2g/rows/B/alias": {
+      "widget": "QLineEdit"
+    },
+    "device/windfreak/synthhd_2g/rows/B/frequency_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 53.0,
+      "maximum": 13600.0
+    },
+    "device/windfreak/synthhd_2g/rows/B/frequency_hz_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_2g/rows/B/frequency_hz_step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_2g/rows/B/frequency_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_2g/rows/B/phase_deg": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/windfreak/synthhd_2g/rows/B/phase_deg_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_2g/rows/B/power_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -60.0,
+      "maximum": 5.0
+    },
+    "device/windfreak/synthhd_2g/rows/B/power_dbm_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_3g/ramp_dwell": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000000.0
+    },
+    "device/windfreak/synthhd_3g/ref_target": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 100.0
+    },
+    "device/windfreak/synthhd_3g/ref_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_3g/rows/A/alias": {
+      "widget": "QLineEdit"
+    },
+    "device/windfreak/synthhd_3g/rows/A/frequency_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 53.0,
+      "maximum": 13600.0
+    },
+    "device/windfreak/synthhd_3g/rows/A/frequency_hz_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_3g/rows/A/frequency_hz_step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_3g/rows/A/frequency_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_3g/rows/A/phase_deg": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/windfreak/synthhd_3g/rows/A/phase_deg_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_3g/rows/A/power_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -60.0,
+      "maximum": 5.0
+    },
+    "device/windfreak/synthhd_3g/rows/A/power_dbm_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_3g/rows/B/alias": {
+      "widget": "QLineEdit"
+    },
+    "device/windfreak/synthhd_3g/rows/B/frequency_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 53.0,
+      "maximum": 13600.0
+    },
+    "device/windfreak/synthhd_3g/rows/B/frequency_hz_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_3g/rows/B/frequency_hz_step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_3g/rows/B/frequency_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_3g/rows/B/phase_deg": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/windfreak/synthhd_3g/rows/B/phase_deg_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_3g/rows/B/power_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -60.0,
+      "maximum": 5.0
+    },
+    "device/windfreak/synthhd_3g/rows/B/power_dbm_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_760/ramp_dwell": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 1000000.0
+    },
+    "device/windfreak/synthhd_760/ref_target": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 10.0,
+      "maximum": 100.0
+    },
+    "device/windfreak/synthhd_760/ref_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_760/rows/A/alias": {
+      "widget": "QLineEdit"
+    },
+    "device/windfreak/synthhd_760/rows/A/frequency_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 53.0,
+      "maximum": 13600.0
+    },
+    "device/windfreak/synthhd_760/rows/A/frequency_hz_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_760/rows/A/frequency_hz_step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_760/rows/A/frequency_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_760/rows/A/phase_deg": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/windfreak/synthhd_760/rows/A/phase_deg_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_760/rows/A/power_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -60.0,
+      "maximum": 5.0
+    },
+    "device/windfreak/synthhd_760/rows/A/power_dbm_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_760/rows/B/alias": {
+      "widget": "QLineEdit"
+    },
+    "device/windfreak/synthhd_760/rows/B/frequency_hz": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 53.0,
+      "maximum": 13600.0
+    },
+    "device/windfreak/synthhd_760/rows/B/frequency_hz_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 1e-06,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_760/rows/B/frequency_hz_step/units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_760/rows/B/frequency_units": {
+      "widget": "QComboBox",
+      "choices": [
+        "GHz",
+        "MHz",
+        "kHz",
+        "Hz"
+      ]
+    },
+    "device/windfreak/synthhd_760/rows/B/phase_deg": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.0,
+      "maximum": 360.0
+    },
+    "device/windfreak/synthhd_760/rows/B/phase_deg_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "device/windfreak/synthhd_760/rows/B/power_dbm": {
+      "widget": "QDoubleSpinBox",
+      "minimum": -60.0,
+      "maximum": 5.0
+    },
+    "device/windfreak/synthhd_760/rows/B/power_dbm_step/edit": {
+      "widget": "QDoubleSpinBox",
+      "minimum": 0.001,
+      "maximum": 1000000000000.0
+    },
+    "flip_tab/selected": {
+      "widget": "QComboBox",
+      "choices": []
+    },
+    "monitor_tab/columns": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "monitor_tab/qt/QCheckBox[0]": {
+      "widget": "QCheckBox"
+    },
+    "queue_monitor/metric": {
+      "widget": "QComboBox",
+      "choices": [
+        "실행 시간 (s)"
+      ]
+    },
+    "queue_tab/directory": {
+      "widget": "QLineEdit"
+    },
+    "queue_tab/repeat": {
+      "widget": "QSpinBox",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "workflow_tab/file_picker": {
+      "widget": "QComboBox",
+      "choices": [
+        "daily_fluorescence.py",
+        "daily_rabi.py",
+        "ea_ec_rf_off.py",
+        "ea_ec_rf_setup.py",
+        "ion_check_workflow.py",
+        "queue_entanglement.py",
+        "queue_hom.py",
+        "queue_spam.py"
+      ]
+    }
+  }
+}

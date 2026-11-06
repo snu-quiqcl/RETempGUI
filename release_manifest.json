@@ -1809,8 +1809,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 22436,
-      "sha256": "c07197736121e6cf7881f80b1cbdb596f12a71eaa9df7785b1456591c8613296"
+      "bytes": 22948,
+      "sha256": "594d52081a309ec63ed8dbdc13092882a43a6d9b82873da357f023b57871e56f"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -1854,8 +1854,8 @@
     },
     {
       "path": "labremote/ui/input_state.py",
-      "bytes": 9452,
-      "sha256": "329ac7637e281648ee4ecb3da45c13904e3a4121a089db95ecbe04694cb9e5a6"
+      "bytes": 11641,
+      "sha256": "13ee51653942041fcc9bca102b886416880cca57ca1e62d563a29e7ecf731851"
     },
     {
       "path": "labremote/ui/library_updates.py",
@@ -2036,6 +2036,46 @@
       "path": "tests/smoke_dac_rpc.py",
       "bytes": 3965,
       "sha256": "166c6a8609493b8b1654d70d2bc67440e94acaf09717077430999280bcd5da47"
+    },
+    {
+      "path": "labremote/config/ui/input_defaults.catalog.json",
+      "bytes": 154955,
+      "sha256": "643675f42295cbe51206677ddbdc5539afc54710afa63fafcd873af0f3d252a2"
+    },
+    {
+      "path": "tests/smoke_input_defaults.py",
+      "bytes": 2376,
+      "sha256": "eb7c2a1ce901c67f32bb58710c83e1901c2f7444ae16aae71fe8a093f41a1530"
+    },
+    {
+      "path": "labremote/config/input_defaults.py",
+      "bytes": 2812,
+      "sha256": "b66b153f8da27245a988324570ffbe5de9b3816f6f89f3122778fb1e57e90cfb"
+    },
+    {
+      "path": "tests/export_input_defaults.py",
+      "bytes": 4110,
+      "sha256": "2aebc8f96e60ce69cdcdc964ed34f35eb92d0b7533b32d5bbbfb8e47cf8a146c"
+    },
+    {
+      "path": "tests/test_shared_server_ui.py",
+      "bytes": 5770,
+      "sha256": "026d4f040af3a3cd3dc57b004a58e9f40d77e0843d3f2aaf4fa1d14ea4a3d574"
+    },
+    {
+      "path": "labremote/config/ui/input_defaults.json",
+      "bytes": 90959,
+      "sha256": "57a06a0dd56c928d42229376611089b253d2aafeeb7349c3d1b0afcb07dcfe52"
+    },
+    {
+      "path": "tests/test_input_defaults.py",
+      "bytes": 5840,
+      "sha256": "f1e95f4be0ce39f483c06d9175df2438682e4426ad6d9d87b695321a03309a74"
+    },
+    {
+      "path": "labremote/config/ui/INPUT_DEFAULTS.md",
+      "bytes": 3676,
+      "sha256": "8c20fd3e35d6853f3d54295571c3ef44f58529a69e372416284e22143f47b180"
     }
   ]
 }

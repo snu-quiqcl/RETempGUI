@@ -509,6 +509,12 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def run_micromotion(self, *, settings, mode='scan', dac=None, directory=None, candidate=None):
+        return self.worker.micromotion_runner.start(settings=settings,mode=mode,
+            dac=getattr(dac,'worker',dac),directory=directory,candidate=candidate,parent=self.group)
+
+    def stop_micromotion(self):return self.worker.micromotion_runner.cancel()
+
     def run_decay(self,chamber,mode,*,settings=None,settings_file=None,directory=None):
         return self.worker.decay_runner.start(chamber,mode,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
 
