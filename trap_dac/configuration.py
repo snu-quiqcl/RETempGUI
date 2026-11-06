@@ -160,7 +160,7 @@ def voltage_code(config, chip, channel, voltage):
         raise ValueError(f'DAC {chip}:{channel}: {voltage:g} V is outside +/-20 V.')
     offset = config.offsets[chip][channel]
     raw = (voltage - offset) / 40.0 * 65536 + 32768
-    if not 0 <= raw < 65536:
+    if not -20 <= voltage - offset <= 20 - 40.0 / 65536:
         raise ValueError(f'DAC {chip}:{channel}: {voltage:g} V exceeds the calibrated range (offset {offset:+g} V).')
     return int(raw)
 

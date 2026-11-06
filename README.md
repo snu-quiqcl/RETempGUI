@@ -248,5 +248,5 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 
 Server-owned USB DAC81416 control is available from the DAC equipment window.
 See [DAC installation, initialization, workflow and storage](docs/DAC_SETUP_KO.md).
-Copy the ignored `trap_dac/configs/EA.local.json` and `EC.local.json` separately to the server.
+DAC API v2: deploy only `server_deploy_latest/DAC81416` to the InstrumentServer PC. Keep `trap_dac/configs/EA.local.json` and `EC.local.json` on the client; Initialize sends offsets. Sequences execute on the client.
 Connect never initializes outputs; UI lease loss stops an active sequence after the current row.

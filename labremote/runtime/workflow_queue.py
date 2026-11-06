@@ -40,13 +40,49 @@ def freeze_job(filename,*,name=None,repeat=1,on_failure='stop',parameters=None):
     path=Path(filename).resolve();source=path.read_text(encoding='utf-8-sig');validate_workflow(source,str(path))
     return dict(id=uuid4().hex,name=name or path.stem,filename=str(path),source=source,sha256=hashlib.sha256(source.encode()).hexdigest(),repeat=repeat,on_failure=on_failure,parameters=deepcopy(parameters or {}))
 
+def is_group(job):
+    return isinstance(job,dict) and job.get('type')=='repeat_group'
+
+
+def make_group(jobs, *, name='Repeat Group', repeat=1, on_failure='stop'):
+    return dict(type='repeat_group',id=uuid4().hex,name=name,repeat=repeat,
+                on_failure=on_failure,jobs=deepcopy(jobs))
+
+
+def workflow_jobs(items):
+    for item in items:
+        yield from item['jobs'] if is_group(item) else [item]
+
+
 def validate_plan(plan):
-    if not isinstance(plan,dict) or plan.get('schema_version')!=1:raise ValueError('Queue schema_version must be 1')
+    if not isinstance(plan,dict) or type(plan.get('schema_version')) is not int or plan['schema_version'] not in (1,2):raise ValueError('Queue schema_version must be 1 or 2')
     if type(plan.get('repeat')) is not int or not 1<=plan['repeat']<=10000:raise ValueError('Queue repeat must be 1..10000')
     jobs=plan.get('jobs')
     if not isinstance(jobs,list) or not jobs or len(jobs)>10000:raise ValueError('Add at least one workflow (maximum 10000)')
     ids=set()
-    for j in jobs:
+    total=0
+    for item in jobs:
+        if is_group(item):
+            if plan['schema_version']!=2:raise ValueError('Repeat groups require schema_version 2')
+            if set(item)!={'type','id','name','repeat','on_failure','jobs'}:raise ValueError('Invalid repeat group fields')
+            if not all(isinstance(item[k],str) and item[k].strip() for k in ('id','name')):raise ValueError('Invalid group identity')
+            if item['id'] in ids:raise ValueError('Duplicate group/job ID')
+            ids.add(item['id'])
+            if type(item['repeat']) is not int or not 1<=item['repeat']<=10000:raise ValueError('Group repeat must be 1..10000')
+            if item['on_failure'] not in ('stop','skip_iteration'):raise ValueError('Invalid group failure policy')
+            if not isinstance(item['jobs'],list) or not item['jobs'] or len(item['jobs'])>10000:raise ValueError('Repeat group must contain workflows')
+            if any(is_group(child) for child in item['jobs']):raise ValueError('Nested repeat groups are not supported')
+            children=item['jobs']; multiplier=item['repeat']
+        else:
+            children=[item]; multiplier=1
+        for j in children:
+            validate_job(j,ids)
+            total+=j['repeat']*multiplier
+        if total*plan['repeat']>10000:raise ValueError('Maximum 10000 expanded steps')
+    return deepcopy(plan)
+
+
+def validate_job(j,ids):
         if not isinstance(j,dict) or set(j)!={'id','name','filename','source','sha256','repeat','on_failure','parameters'}:raise ValueError('Invalid Queue job fields')
         if not all(isinstance(j[k],str) and j[k] for k in ('id','name','filename','source','sha256')):raise ValueError('Invalid workflow identity/source')
         if j['id'] in ids:raise ValueError('Duplicate job ID')
@@ -56,8 +92,26 @@ def validate_plan(plan):
         json.dumps(j['parameters'],allow_nan=False)
         if hashlib.sha256(j['source'].encode()).hexdigest()!=j['sha256']:raise ValueError('Workflow source hash mismatch')
         validate_workflow(j['source'],j['filename'])
-    if sum(j['repeat'] for j in jobs)*plan['repeat']>10000:raise ValueError('Maximum 10000 expanded steps')
-    return deepcopy(plan)
+
+
+def expand_steps(plan):
+    steps=[]
+    def append(j,iteration,group=None,group_iteration=None):
+        for repetition in range(j['repeat']):
+            step=dict(step_id=f'step_{len(steps)+1:06d}',job_id=j['id'],name=j['name'],
+                      iteration=iteration,job_repeat=repetition+1,on_failure=j['on_failure'],status='pending')
+            if group is not None:
+                step.update(group_id=group['id'],group_name=group['name'],
+                            group_iteration=group_iteration,group_repeat=group['repeat'],
+                            group_on_failure=group['on_failure'])
+            steps.append(step)
+    for iteration in range(1,plan['repeat']+1):
+        for item in plan['jobs']:
+            if is_group(item):
+                for group_iteration in range(1,item['repeat']+1):
+                    for job in item['jobs']:append(job,iteration,item,group_iteration)
+            else:append(item,iteration)
+    return steps
 
 class QueueRunner:
     def __init__(self,bindings,plan,directory,publish=lambda state:None):
@@ -80,16 +134,13 @@ class QueueRunner:
         for w in workers:
             if (w.has_requests() if hasattr(w,'has_requests') else bool(getattr(w,'_handles',{}))) or any(t.running() for t in w._background_tasks) or (getattr(w,'waveform_runner',None) is not None and w.waveform_runner.running()):raise RuntimeError('Finish active device tasks before starting Queue')
         self.folder=self.directory/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_queue_'+uuid4().hex);self.folder.mkdir(parents=True,exist_ok=False)
-        steps=[]
-        for iteration in range(self.plan['repeat']):
-            for j in self.plan['jobs']:
-                for repetition in range(j['repeat']):
-                    steps.append(dict(step_id=f'step_{len(steps)+1:06d}',job_id=j['id'],name=j['name'],iteration=iteration+1,job_repeat=repetition+1,on_failure=j['on_failure'],status='pending'))
+        steps=expand_steps(self.plan)
         self.state=dict(schema_version=1,queue_id=self.folder.name,folder=str(self.folder),status='running',started_at=now(),plan=self.plan,steps=steps,error='')
-        self.commit();jobs={j['id']:j for j in self.plan['jobs']};any_failed=False
+        self.commit();jobs={j['id']:j for j in workflow_jobs(self.plan['jobs'])};any_failed=False
         try:
             for step in steps:
                 if self.stop.is_set():break
+                if step['status']!='pending':continue
                 if self.pause.is_set():
                     self.state['status']='paused';self.commit()
                     while self.pause.is_set() and not self.stop.wait(.1):pass
@@ -106,7 +157,10 @@ class QueueRunner:
                 try:
                     if local.is_set():raise OperationCancelled('Queue stopped before workflow load')
                     with load_workflow(job['source'],job['filename']) as workflow:
-                        result=run_workflow(self.bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context={k:step[k] for k in ('step_id','iteration','job_repeat')}|{'queue_id':self.state['queue_id']})
+                        context={k:step[k] for k in ('step_id','iteration','job_repeat','group_id','group_name','group_iteration','group_repeat') if k in step}
+                        context['queue_id']=self.state['queue_id']
+                        save(folder/'queue_context.json',context)
+                        result=run_workflow(self.bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context)
                 except Exception as exc:
                     error_details=traceback.format_exc()
                     dangerous=isinstance(exc,(ConnectionError,TimeoutError)) or any(w.connection_error for w in workers) or 'timeout' in str(exc).lower() or 'timed out' in str(exc).lower() or 'cleanup' in str(exc).lower() or 'idle state' in str(exc).lower()
@@ -122,7 +176,17 @@ class QueueRunner:
                 step.update(status=result.status,finished_at=now(),elapsed_s=time.monotonic()-started,result=summary,result_file=(folder/'workflow_result.json').relative_to(self.folder).as_posix())
                 any_failed |= result.status=='failed';self.commit()
                 if result.status=='cancelled':self.stop.set();break
-                if result.status=='failed' and (job['on_failure']=='stop' or not result.continue_allowed or result.cleanup_status in ('failed','unknown')):break
+                if result.status=='failed':
+                    if not result.continue_allowed or result.cleanup_status in ('failed','unknown'):break
+                    if 'group_id' in step:
+                        if step['group_on_failure']=='stop':break
+                        # Skip the rest of this cycle, never run entanglement after failed SPAM.
+                        for remaining in steps:
+                            if (remaining['status']=='pending' and
+                                    all(remaining.get(k)==step[k] for k in ('iteration','group_id','group_iteration'))):
+                                remaining.update(status='skipped',reason='Earlier workflow failed in this group iteration')
+                        self.commit()
+                    elif job['on_failure']=='stop':break
             terminal='cancelled' if self.stop.is_set() else 'failed' if any_failed else 'completed'
             for step in steps:
                 if step['status']=='pending':step.update(status='cancelled',reason='Queue ended before this step')

@@ -4,7 +4,7 @@ from pathlib import Path
 from labremote.data_paths import data_directory, resolve_data_directory
 from uuid import uuid4
 from PyQt5 import QtCore,QtWidgets
-from labremote.runtime.workflow_queue import QueueRunner,freeze_job,validate_plan,read,save
+from labremote.runtime.workflow_queue import QueueRunner,freeze_job,validate_plan,read,save,is_group,make_group
 
 class QueueThread(QtCore.QThread):
     changed=QtCore.pyqtSignal(object)
@@ -24,7 +24,12 @@ class QueueTab(QtWidgets.QWidget):
         for label,fn in [('Workflow 추가',self.add_file),('편집',self.edit_job),('복제',self.duplicate),('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('Queue 불러오기',self.load_plan),('Queue 저장',self.save_plan)]:
             b=QtWidgets.QPushButton(label);b.clicked.connect(fn);row.addWidget(b);self.edit_buttons.append(b)
         self.table=QtWidgets.QTableWidget(0,4);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일'])
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
+        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
+        row=QtWidgets.QHBoxLayout();layout.addLayout(row)
+        for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('각도별 그룹 생성',self.angle_groups),('그룹 밖에 추가',lambda:self.add_file(top_level=True))]:
+            button=QtWidgets.QPushButton(label);button.clicked.connect(fn);row.addWidget(button);self.edit_buttons.append(button)
+        row.addWidget(QtWidgets.QLabel('연속된 workflow를 선택해 묶습니다. 그룹 선택 후 추가하면 그룹 안에 들어갑니다.'))
+        self._row_refs=[]
         self.table.cellDoubleClicked.connect(lambda *_:self.edit_job())
         row=QtWidgets.QHBoxLayout();layout.addLayout(row);row.addWidget(QtWidgets.QLabel('전체 목록 반복'));self.repeat=QtWidgets.QSpinBox();self.repeat.setRange(1,10000);row.addWidget(self.repeat);self.repeat.valueChanged.connect(lambda *_:setattr(self,'dirty',True))
         self.directory=QtWidgets.QLineEdit(str(data_directory('queues')));row.addWidget(self.directory,1);self.folder_button=QtWidgets.QPushButton('저장 폴더');row.addWidget(self.folder_button);self.folder_button.clicked.connect(self.choose_folder)
@@ -34,20 +39,129 @@ class QueueTab(QtWidgets.QWidget):
         self.run_button.clicked.connect(self.start);self.pause_button.clicked.connect(self.pause);self.resume_button.clicked.connect(self.resume);self.stop_button.clicked.connect(self.shutdown)
         self.status=QtWidgets.QLabel('대기 중');self.status.setWordWrap(True);layout.addWidget(self.status);self.controls()
     def refresh(self,select=None):
-        self.table.setRowCount(len(self.jobs))
+        self._row_refs=[];entries=[]
         for i,j in enumerate(self.jobs):
-            for k,v in enumerate((j['name'],j['repeat'],j['on_failure'],j['filename'])):self.table.setItem(i,k,QtWidgets.QTableWidgetItem(str(v)))
-        if select is not None:self.table.selectRow(select)
-    def add_file(self):
+            self._row_refs.append((i,None));entries.append((j,False))
+            if is_group(j):
+                for child,k in enumerate(j['jobs']):
+                    self._row_refs.append((i,child));entries.append((k,True))
+        self.table.setRowCount(len(entries))
+        for row,(j,child) in enumerate(entries):
+            label=('    ↳ ' if child else '▾ ' if is_group(j) else '')+j['name']
+            values=(label,j['repeat'],j['on_failure'],f"{len(j['jobs'])} workflows" if is_group(j) else j['filename'])
+            for k,v in enumerate(values):
+                cell=QtWidgets.QTableWidgetItem(str(v))
+                if is_group(j):
+                    font=cell.font();font.setBold(True);cell.setFont(font)
+                if child and k==2:cell.setToolTip('그룹 안에서는 그룹의 실패 정책이 적용됩니다.')
+                self.table.setItem(row,k,cell)
+        if select is not None:
+            ref=select if isinstance(select,tuple) else (select,None)
+            if ref in self._row_refs:self.table.selectRow(self._row_refs.index(ref))
+
+    def selected(self):
+        row=self.table.currentRow()
+        if not 0<=row<len(self._row_refs):return None
+        top,child=self._row_refs[row]
+        return (self.jobs,top,(top,None)) if child is None else (self.jobs[top]['jobs'],child,(top,child))
+
+    def group_selected(self):
+        if self.still_running():return
+        refs=[self._row_refs[index.row()] for index in self.table.selectionModel().selectedRows()]
+        indices=sorted(top for top,child in refs if child is None)
+        if (not refs or len(indices)!=len(refs) or indices!=list(range(indices[0],indices[-1]+1))
+                or any(is_group(self.jobs[i]) for i in indices)):
+            self.status.setText('연속된 최상위 workflow만 선택해 주세요. 중첩 그룹은 지원하지 않습니다.');return
+        group=make_group([self.jobs[i] for i in indices])
+        self.jobs[indices[0]:indices[-1]+1]=[group];self.dirty=True;self.refresh(indices[0]);self.edit_job()
+
+    def ungroup(self):
+        selected=self.selected()
+        if self.still_running() or selected is None:return
+        items,i,ref=selected
+        if not is_group(items[i]):return
+        items[i:i+1]=items[i]['jobs'];self.dirty=True;self.refresh(ref[0])
+
+    @staticmethod
+    def copy_item(item):
+        item=deepcopy(item);item['id']=uuid4().hex
+        if is_group(item):
+            for child in item['jobs']:child['id']=uuid4().hex
+        return item
+
+    @staticmethod
+    def apply_angle(group,basis,phase):
+        targets=[j for j in group['jobs'] if Path(j['filename']).name=='queue_entanglement.py'
+                 and isinstance(j['parameters'].get('settings'),dict)]
+        if not targets:raise ValueError('그룹 안에 Entanglement 탭에서 추가한 얽힘 workflow가 필요합니다.')
+        from labremote.entanglement.config import validate
+        for job in targets:
+            settings=deepcopy(job['parameters']['settings'])
+            settings.update(basis=basis,phase_magnitude_deg=phase)
+            validate(settings)
+            job['parameters']['settings']=settings
+
+    def angle_groups(self):
+        selected=self.selected()
+        if self.still_running() or selected is None:return
+        items,i,ref=selected
+        if not is_group(items[i]):self.status.setText('복제할 Repeat Group을 선택해 주세요.');return
+        dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('각도별 그룹 생성');form=QtWidgets.QFormLayout(dialog)
+        angles=QtWidgets.QLineEdit('0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330')
+        form.addRow('MW detuned 각도 목록 (deg)',angles)
+        form.addRow(QtWidgets.QLabel('선택한 그룹 다음에 각도별 복사본을 추가합니다. 원본 그룹은 유지합니다.'))
+        buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);form.addRow(buttons)
+        if dialog.exec_()!=QtWidgets.QDialog.Accepted:return
+        try:
+            import math
+            values=[float(v.strip()) for v in angles.text().split(',')]
+            if not values or len(values)>1000 or any(not math.isfinite(v) or not 0<=v<=360 for v in values):raise ValueError('각도는 0..360 범위여야 합니다 (최대 1000개).')
+            groups=[]
+            for phase in values:
+                group=self.copy_item(items[i]);group['name']=f'MW detuned {phase:g}°'
+                self.apply_angle(group,'mw_detuned',phase);groups.append(group)
+            candidate=self.jobs[:ref[0]+1]+groups+self.jobs[ref[0]+1:]
+            validate_plan(dict(schema_version=2,repeat=self.repeat.value(),jobs=candidate))
+            self.jobs=candidate;self.dirty=True;self.refresh(ref[0]+1)
+        except Exception as exc:self.status.setText('설정 오류: '+str(exc))
+
+    def edit_group(self,items,i,ref):
+        group=deepcopy(items[i]);dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('Repeat Group');form=QtWidgets.QFormLayout(dialog)
+        name=QtWidgets.QLineEdit(group['name']);repeat=QtWidgets.QSpinBox();repeat.setRange(1,10000);repeat.setValue(group['repeat'])
+        policy=QtWidgets.QComboBox();policy.addItem('Queue 중단','stop');policy.addItem('현재 반복 건너뛰기','skip_iteration');policy.setCurrentIndex(max(0,policy.findData(group['on_failure'])))
+        basis=QtWidgets.QComboBox();basis.addItem('기존 설정 유지',None);basis.addItem('ZZ','zz');basis.addItem('MW detuned','mw_detuned')
+        phase=QtWidgets.QDoubleSpinBox();phase.setRange(0,360);phase.setDecimals(3);phase.setSingleStep(30)
+        form.addRow('그룹 이름',name);form.addRow('묶음 반복 N',repeat);form.addRow('실패 시 (자식 정책보다 우선)',policy)
+        form.addRow('얽힘 basis 적용',basis);form.addRow('얽힘 phase magnitude (deg)',phase)
+        form.addRow(QtWidgets.QLabel('이온 loss·통신 오류 등 계속 진행 불가 결과는 항상 Queue를 중단합니다.'))
+        buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel);buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);form.addRow(buttons)
+        if dialog.exec_()!=QtWidgets.QDialog.Accepted:return
+        try:
+            group.update(name=name.text().strip(),repeat=repeat.value(),on_failure=policy.currentData())
+            if basis.currentData() is not None:self.apply_angle(group,basis.currentData(),phase.value())
+            candidate=deepcopy(self.jobs);candidate[ref[0]]=group
+            validate_plan(dict(schema_version=2,repeat=self.repeat.value(),jobs=candidate))
+            items[i]=group;self.dirty=True;self.refresh(ref)
+        except Exception as exc:self.status.setText('설정 오류: '+str(exc))
+    def add_file(self,checked=False,*,top_level=False):
         if self.still_running():return
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Add workflow',str(Path(__file__).resolve().parents[1]/'workflow'),'Python (*.py)')
         if path:
-            try:self.jobs.append(freeze_job(path));self.dirty=True;self.refresh(len(self.jobs)-1);self.edit_job()
+            try:
+                job=freeze_job(path);selected=self.selected()
+                top=selected[2][0] if selected else None
+                if not top_level and top is not None and is_group(self.jobs[top]):
+                    self.jobs[top]['jobs'].append(job);ref=(top,len(self.jobs[top]['jobs'])-1)
+                else:self.jobs.append(job);ref=(len(self.jobs)-1,None)
+                self.dirty=True;self.refresh(ref);self.edit_job()
             except Exception as exc:self.status.setText(str(exc))
     def edit_job(self):
-        i=self.table.currentRow()
-        if self.still_running() or not 0<=i<len(self.jobs):return
-        job=deepcopy(self.jobs[i]);dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('Workflow 조건');form=QtWidgets.QFormLayout(dialog)
+        selected=self.selected()
+        if self.still_running() or selected is None:return
+        items,i,ref=selected
+        if is_group(items[i]):return self.edit_group(items,i,ref)
+        job=deepcopy(items[i]);dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('Workflow 조건');form=QtWidgets.QFormLayout(dialog)
         name=QtWidgets.QLineEdit(job['name']);repeat=QtWidgets.QSpinBox();repeat.setRange(1,10000);repeat.setValue(job['repeat']);policy=QtWidgets.QComboBox();policy.addItems(['stop','skip']);policy.setCurrentText(job['on_failure'])
         params=QtWidgets.QPlainTextEdit(json.dumps(job['parameters'],ensure_ascii=False,indent=2));params.setMinimumSize(500,240)
         reload=QtWidgets.QCheckBox('Python 소스를 현재 파일에서 다시 가져오기');form.addRow('이름',name);form.addRow('반복',repeat);form.addRow('실패 시',policy);form.addRow('devices.parameters (JSON)',params);form.addRow(reload)
@@ -57,19 +171,27 @@ class QueueTab(QtWidgets.QWidget):
                 if reload.isChecked():
                     new=freeze_job(job['filename']);job.update(source=new['source'],sha256=new['sha256'])
                 job.update(name=name.text().strip(),repeat=repeat.value(),on_failure=policy.currentText(),parameters=json.loads(params.toPlainText()))
-                validate_plan(dict(schema_version=1,repeat=1,jobs=[job]));self.jobs[i]=job;self.dirty=True;self.refresh(i)
+                validate_plan(dict(schema_version=1,repeat=1,jobs=[job]));items[i]=job;self.dirty=True;self.refresh(ref)
             except Exception as exc:self.status.setText('설정 오류: '+str(exc))
     def duplicate(self):
-        i=self.table.currentRow()
-        if not self.still_running() and 0<=i<len(self.jobs):
-            j=deepcopy(self.jobs[i]);j['id']=uuid4().hex;self.jobs.insert(i+1,j);self.dirty=True;self.refresh(i+1)
+        selected=self.selected()
+        if not self.still_running() and selected is not None:
+            items,i,ref=selected;items.insert(i+1,self.copy_item(items[i]));self.dirty=True
+            self.refresh((ref[0],i+1) if ref[1] is not None else i+1)
     def remove(self):
-        i=self.table.currentRow()
-        if not self.still_running() and 0<=i<len(self.jobs):self.jobs.pop(i);self.dirty=True;self.refresh()
+        selected=self.selected()
+        if not self.still_running() and selected is not None:
+            items,i,ref=selected;items.pop(i)
+            if ref[1] is not None and not items:self.jobs.pop(ref[0])
+            self.dirty=True;self.refresh()
     def move(self,offset):
-        i=self.table.currentRow();other=i+offset
-        if not self.still_running() and 0<=i<len(self.jobs) and 0<=other<len(self.jobs):self.jobs[i],self.jobs[other]=self.jobs[other],self.jobs[i];self.dirty=True;self.refresh(other)
-    def plan(self):return validate_plan(dict(schema_version=1,repeat=self.repeat.value(),jobs=self.jobs))
+        selected=self.selected()
+        if self.still_running() or selected is None:return
+        items,i,ref=selected;other=i+offset
+        if 0<=other<len(items):
+            items[i],items[other]=items[other],items[i];self.dirty=True
+            self.refresh((ref[0],other) if ref[1] is not None else other)
+    def plan(self):return validate_plan(dict(schema_version=2 if any(is_group(j) for j in self.jobs) else 1,repeat=self.repeat.value(),jobs=self.jobs))
     def save_plan(self):
         path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save Queue','queue.local.json','JSON (*.json)')
         if not path:return False
@@ -95,8 +217,8 @@ class QueueTab(QtWidgets.QWidget):
             self.thread=QueueThread(self.bindings_provider(),self.plan(),self.directory.text(),self);self.thread.changed.connect(self.progress);self.thread.failed.connect(self.status.setText);self.thread.finished.connect(self.controls);self.thread.start();self.status.setText('Starting Queue');self.controls()
         except Exception as exc:self.status.setText(str(exc))
     def progress(self,state):
-        current=next((p['name'] for p in state['steps'] if p['status']=='running'),'')
-        done=sum(p['status'] in ('completed','failed','cancelled') for p in state['steps'])
+        current=next(((f"{p['group_name']} [{p['group_iteration']}/{p['group_repeat']}] / " if 'group_id' in p else '')+p['name'] for p in state['steps'] if p['status']=='running'),'')
+        done=sum(p['status'] in ('completed','failed','cancelled','skipped') for p in state['steps'])
         self.status.setText(f"{state['status']} · {done}/{len(state['steps'])} · {current} · {state['folder']}");self.state_changed.emit(state)
     def pause(self):
         if self.still_running():self.thread.runner.pause_after_current();self.status.setText('현재 workflow 종료 후 일시정지합니다.')

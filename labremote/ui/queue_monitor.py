@@ -29,7 +29,7 @@ class QueueMonitor(QtWidgets.QWidget):
             button=QtWidgets.QPushButton(title);button.clicked.connect(fn);row.addWidget(button)
         row.addStretch();self.metric=QtWidgets.QComboBox();self.metric.addItem('실행 시간 (s)','elapsed_s');row.addWidget(self.metric);self.metric.currentIndexChanged.connect(self.draw)
         self.status=QtWidgets.QLabel('Queue 실행 결과를 기다립니다.');self.status.setWordWrap(True);layout.addWidget(self.status)
-        self.table=QtWidgets.QTableWidget(0,7);self.table.setHorizontalHeaderLabels(['Step','Workflow','전체 반복','작업 반복','상태','시간(s)','실패 원인'])
+        self.table=QtWidgets.QTableWidget(0,9);self.table.setHorizontalHeaderLabels(['Step','Workflow','전체 반복','작업 반복','상태','시간(s)','실패 원인','그룹','그룹 반복'])
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,2)
         self.table.itemSelectionChanged.connect(self.selection)
         from matplotlib.figure import Figure
@@ -43,11 +43,11 @@ class QueueMonitor(QtWidgets.QWidget):
         self.follow=True
         if self.latest:self.show_manifest(self.latest)
     def show_manifest(self,state):
-        self.current=state;steps=state['steps'];counts={s:sum(p['status']==s for p in steps) for s in ('completed','failed','cancelled','running','pending')}
-        self.status.setText(f"{state['status']} · 성공 {counts['completed']} / 실패 {counts['failed']} / 취소 {counts['cancelled']} / 실행 {counts['running']} / 대기 {counts['pending']} · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
+        self.current=state;steps=state['steps'];counts={s:sum(p['status']==s for p in steps) for s in ('completed','failed','cancelled','running','pending','skipped')}
+        self.status.setText(f"{state['status']} · 성공 {counts['completed']} / 실패 {counts['failed']} / 취소 {counts['cancelled']} / 건너뜀 {counts['skipped']} / 실행 {counts['running']} / 대기 {counts['pending']} · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
         selected=self.table.currentRow();self.table.setRowCount(len(steps))
         for i,p in enumerate(steps):
-            values=[p['step_id'],p['name'],p['iteration'],p['job_repeat'],p['status'],f"{p['elapsed_s']:.3f}" if 'elapsed_s' in p else '',p.get('result',{}).get('reason',p.get('reason',''))]
+            values=[p['step_id'],p['name'],p['iteration'],p['job_repeat'],p['status'],f"{p['elapsed_s']:.3f}" if 'elapsed_s' in p else '',p.get('result',{}).get('reason',p.get('reason','')),p.get('group_name',''),f"{p['group_iteration']}/{p['group_repeat']}" if 'group_iteration' in p else '']
             for j,v in enumerate(values):self.table.setItem(i,j,QtWidgets.QTableWidgetItem(str(v)))
         keys=sorted({k for p in steps for k,v in p.get('result',{}).get('metrics',{}).items() if isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v)})
         choice=self.metric.currentData()

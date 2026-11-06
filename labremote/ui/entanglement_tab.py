@@ -45,7 +45,7 @@ class EntanglementTab(QtWidgets.QWidget):
         self.metrics=QtWidgets.QLabel(); self.metrics.setWordWrap(True); self.metrics.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse); layout.addWidget(self.metrics)
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-        self.figure=Figure(figsize=(12,10)); self.canvas=FigureCanvasQTAgg(self.figure); self.canvas.setMinimumSize(750,760)
+        self.figure=Figure(figsize=(12,14)); self.canvas=FigureCanvasQTAgg(self.figure); self.canvas.setMinimumSize(750,1080)
         plot_scroll=QtWidgets.QScrollArea(); plot_scroll.setWidgetResizable(True); plot_scroll.setWidget(self.canvas); layout.addWidget(plot_scroll,1); split.setSizes([390,1050])
         try:c=config.load()
         except Exception as exc:c=config.defaults(); self.status.setText(str(exc))

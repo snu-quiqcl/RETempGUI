@@ -1,3 +1,5 @@
+"""Client-side electrode mapping and sequence execution for DAC API v2."""
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -8,82 +10,153 @@ from labremote.runtime.jobs import CURRENT_JOB
 from labremote.runtime.errors import OperationCancelled
 from labremote.runtime.network import configure_client_timeout
 from labremote.api.devices import DeviceAPI
-from trap_dac.configuration import DeviceConfig
-from trap_dac.model import atomic_json, load_preset
-from trap_dac.sequence import load_sequence, save_sequence
+from trap_dac.configuration import DeviceConfig, load_config
+from trap_dac.model import atomic_json, load_preset, VoltageSet, step_set
+from trap_dac.sequence import load_sequence, save_sequence, VoltageSequence
+from trap_dac.timing import ManualTiming, SequenceOptions
 
 
 class DACWorker(DeviceWorker):
     family='dac'
+
     def __init__(self):
         super().__init__()
-        self.owner=uuid4().hex;self.description=None;self.ui_alive=time.monotonic()
+        self.description=None
+        self.ui_alive=time.monotonic()
+        self.config_path=None
+        self.config=None
+        self.configuration_id=None
 
     def make_monitor(self):return ParameterMonitor(self,())
 
-    def identify(self):
-        info=self.raw_device.describe_dac()
-        if info.get('protocol')!=1:raise ValueError('Unsupported DAC API')
-        configure_client_timeout(self.cli,2)
-        self.description=info
-        # Connecting explicitly opens USB, never initializes or sets voltage.
-        self.run_remote('connect',{})
-        return self.description
+    def load_configuration(self,path=None):
+        if path is None:
+            path=self.config_path
+        if path is None:
+            chamber='EA' if 'ea' in self.name.lower() else 'EC'
+            path=Path(__file__).resolve().parents[3]/'trap_dac/configs'/(chamber+'.local.json')
+        config=load_config(path)
+        self.config_path=Path(path)
+        self.config=config
+        self.configuration_id=None
+        return config
 
-    def refresh(self):
-        self.description=self.raw_device.describe_dac()
+    def _description(self,status,adopt=False):
+        offsets=[list(row) for row in self.config.offsets]
+        digest=hashlib.sha256(json.dumps(offsets,separators=(',', ':')).encode()).hexdigest()
+        compatible=status.get('calibration_hash')==digest
+        if adopt:
+            self.configuration_id=status.get('configuration_id') if compatible else None
+        ready=bool(status.get('ready') and compatible and self.configuration_id
+                   and self.configuration_id==status.get('configuration_id'))
+        matrix=status.get('last_requested_voltages')
+        values={e.id:matrix[e.chip][e.channel] for e in self.config.electrodes} if matrix is not None and ready else None
+        self.description=dict(status,device=self.config.device,configuration=self.config.as_dict(),
+                              ready=ready,last_sent=values,active_job=None)
         self.publish_snapshot(self.description,'DAC_STATE')
         return self.description
 
+    def identify(self):
+        if self.config is None:self.load_configuration()
+        status=self.raw_device.get_status()
+        if status.get('protocol')!=2:raise ValueError('DAC API v2 driver required; update server package')
+        configure_client_timeout(self.cli,120)
+        if status.get('faulted'):self.raw_device.disconnect()
+        return self._description(self.raw_device.connect(),adopt=True)
+
+    def refresh(self):
+        return self._description(self.raw_device.get_status())
+
+    def _check_cancelled(self,handle):
+        if handle:handle.check_cancelled()
+        if self._closing:raise OperationCancelled('DAC client is closing')
+        if time.monotonic()-self.ui_alive>=2.5:
+            raise OperationCancelled('DAC UI heartbeat stopped; no next row sent')
+
+    def _updates(self,state):
+        return [[e.chip,e.channel,state.by_id[e.id]] for e in self.config.electrodes]
+
+    def _apply(self,state,use_ldac,timing,reuse=False):
+        status=self.raw_device.set_voltages(self._updates(state),self.configuration_id,
+            use_ldac=use_ldac,command_gap_ms=timing.command_gap_ms,
+            pre_ldac_ms=timing.pre_ldac_ms,cooldown_ms=timing.cooldown_ms,
+            reuse_spi_config=reuse)
+        self._description(status)
+        return status
+
     def run_remote(self,action,payload):
-        from labremote.data_paths import DATA_ROOT, tab_data_directory
+        from labremote.data_paths import tab_data_directory
         handle=CURRENT_JOB.get()
         request_id=handle.request_id if handle else uuid4().hex
-        if action in ('initialize','apply','step','sequence'):
-            if not self.description:raise RuntimeError('Connect DAC first')
-            payload={**payload,'fingerprint':self.description['fingerprint']}
-        # Immutable JSON snapshot; UI edits cannot mutate an in-flight operation.
         payload=json.loads(json.dumps(payload,allow_nan=False))
-        chamber=self.description['device']
-        folder=tab_data_directory(None,'dac',chamber)/'runs'/request_id
-        atomic_json(folder/'request.json',dict(action=action,payload=payload,configuration=self.description['configuration']))
-        state=None;stop_sent=False;last_heartbeat=time.monotonic();last_row=-1
+        if self.config is None:self.load_configuration()
+        if action=='connect':return self._description(self.raw_device.connect(),adopt=True)
+        if action=='reload_config':
+            self.load_configuration(payload.get('path'))
+            return dict(result=self.refresh())
+        folder=tab_data_directory(None,'dac',self.config.device)/'runs'/request_id
+        atomic_json(folder/'request.json',dict(action=action,payload=payload,configuration=self.config.as_dict()))
+        result=dict(job_id=request_id,action=action,status='running',row=0,total=1)
         try:
-            state=self.raw_device.start_dac_job(self.owner,request_id,action,payload)
-            while state['status']=='running':
-                if handle and handle.cancelled() and not stop_sent:
-                    self.raw_device.stop_dac_job(self.owner,request_id);stop_sent=True
-                now=time.monotonic()
-                # A surviving worker must NOT keep a frozen/closed GUI's lease alive.
-                if now-last_heartbeat>=1 and now-self.ui_alive<2.5 and not self._closing and not stop_sent:
-                    state=self.raw_device.dac_heartbeat(self.owner,request_id);last_heartbeat=now
-                else:state=self.raw_device.dac_job_status(request_id)
-                self.task_progress.emit('DAC',state)
-                if state.get('row',0)!=last_row:
-                    last_row=state.get('row',0);atomic_json(folder/'progress.json',state)
-                if state['status']=='running':time.sleep(.5)
-            self.description=state.get('result') or self.raw_device.describe_dac()
-            self.description['active_job']=None
-            self.publish_snapshot(self.description,'DAC_STATE')
-            if state['status']=='failed':raise RuntimeError(state['error'])
-            if state['status']=='stopped':raise OperationCancelled('DAC stopped: '+(state.get('reason') or state.get('error') or 'user stop'))
-            return state
-        except Exception:
-            # Do not replay a start/write after an ambiguous timeout. Server lease
-            # expires even if a best-effort Stop cannot be delivered.
-            if state is None or state.get('status')=='running':
-                self.connection_error=True
+            self._check_cancelled(handle)
+            if action=='initialize':
+                values=payload.get('voltages')
+                if values is None:values={e.id:0.0 for e in self.config.electrodes}
+                state=VoltageSet.from_values(self.config,values)
+                # Every physical output is initialized. Unmapped channels target 0 V.
+                initial=[[0.0]*16 for _ in range(2)]
+                for e in self.config.electrodes:initial[e.chip][e.channel]=state.by_id[e.id]
+                status=self.raw_device.initialize([list(r) for r in self.config.offsets],initial,
+                                                  use_ldac=payload.get('use_ldac',True))
+                self._description(status,adopt=True)
+                result['row']=1
+            elif action in ('apply','step'):
+                state=VoltageSet.from_values(self.config,payload['voltages'])
+                if action=='step':state=step_set(state,payload['step'],payload['direction'],
+                    electrode_id=payload.get('electrode_id'),component=payload.get('component'))
+                timing=ManualTiming.from_dict(payload.get('manual_timing',{}))
+                self._apply(state,payload.get('use_ldac',True),timing)
+                result['row']=1
+            elif action=='sequence':
+                seq=VoltageSequence.from_dict(payload['sequence'],self.config)
+                options=SequenceOptions.from_dict(payload.get('sequence_options',{}))
+                result['total']=len(seq.rows)
+                for index,row in enumerate(seq.rows,1):
+                    self._check_cancelled(handle)
+                    self._apply(row.state,seq.use_ldac,ManualTiming(0,options.pre_ldac_ms,0),options.reuse_spi_config)
+                    applied=time.monotonic()
+                    result.update(row=index,last_sent=dict(self.description['last_sent']))
+                    self.task_progress.emit('DAC',dict(result))
+                    atomic_json(folder/'rows'/f'{index:05d}.json',dict(result,voltages=row.state.by_id))
+                    deadline=applied+row.hold_s
+                    while time.monotonic()<deadline:
+                        self._check_cancelled(handle)
+                        time.sleep(min(.05,max(0,deadline-time.monotonic())))
+            else:raise ValueError('Unknown DAC client action: '+action)
+            result.update(status='completed',result=self.description)
+            return result
+        except OperationCancelled as exc:
+            result.update(status='stopped',reason=str(exc),result=self.description)
+            raise
+        except Exception as exc:
+            # Never replay a write after an ambiguous RPC error. Require reconnect.
+            self.configuration_id=None
+            if self.description:
+                self.description=dict(self.description,ready=False,last_sent=None)
+                self.publish_snapshot(self.description,'DAC_STATE')
+            result.update(status='failed',error=str(exc))
+            self.connection_error=True
             raise
         finally:
-            atomic_json(folder/'client_result.json',state or dict(status='unknown',job_id=request_id,
-                reason='No reply; do not retry output. Reconnect to inspect server job.'))
+            self.task_progress.emit('DAC',dict(result))
+            atomic_json(folder/'client_result.json',result)
 
     def disconnect_device(self):
-        if self.raw_device is not None:self.run_remote('disconnect',{})
+        # Disconnect this client only; other clients may use the same server driver.
+        self.configuration_id=None
         super().disconnect_device()
 
     def enqueue(self,handle):
-        # Reject conflicting manual actions, rather than applying stale queued edits.
         if handle.action.startswith('DAC_') and self.has_requests():
             handle.finish(RuntimeError('DAC busy; request was not queued'))
             return handle
@@ -139,7 +212,7 @@ class DACAPI(DeviceAPI):
         return self._job('sequence',dict(sequence=sequence.as_dict() if hasattr(sequence,'as_dict') else sequence,
             sequence_options=sequence_options or {}))
 
-    def reload_configuration(self):return self._job('reload_config',{})
+    def reload_configuration(self,path=None):return self._job('reload_config',dict(path=str(path) if path else None))
 
     def cancel(self):self.worker.cancel_pending()
 

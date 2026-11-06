@@ -35,7 +35,7 @@ class EntanglementRunner(WorkflowTask):
         folder.mkdir(parents=True,exist_ok=False); source=folder/'source'; source.mkdir()
         files={p.name:p for p in Path(__file__).parent.glob('*.py')}
         files['entanglement_tab.py']=Path(__file__).resolve().parents[1]/'ui/entanglement_tab.py'
-        files['queue_entanglement.py']=Path(__file__).resolve().parents[1]/'workflow/queue_entanglement.py'
+        # Queue archives its own workflow.py; standalone must not require that wrapper.
         files['decay_fit_source.py']=Path(__file__).resolve().parents[1]/'decay/plotting.py'
         files['hardware_definition.py']=Path(config.hd.__file__)
         files['HardwareDefinition_v4_04.py']=Path(config.hd.__file__).with_name('HardwareDefinition_v4_04.py')
@@ -82,7 +82,9 @@ class EntanglementRunner(WorkflowTask):
                 def received(b):
                     acc.add(b);single=Accumulator(c);single.add(b)
                     summary=measurement(single.data(),c)
-                    batch_records[-1].update(measurement=b,decay_fit=summary['decay_fit'],histogram=summary['histogram'],decay_counts=summary['decay_counts'],probabilities=summary['metrics'])
+                    batch_records[-1].update(measurement=b,decay_fit=summary['decay_fit'],histogram=summary['histogram'],decay_counts=summary['decay_counts'],probabilities=summary['metrics'],
+                        actual_trials=summary['actual_trials'],decay_counts_per_actual_trial=summary['decay_counts_per_actual_trial'],
+                        decay_reference=summary['decay_reference'],state_readout_histograms=summary['state_readout_histograms'])
                     self.publish(phase='Measuring',live=acc.data(),completed_batches=len(acc.batches))
                 def batch_event(event):
                     event=dict(event,run_id=self.handle.request_id); kind=event.pop('event')
@@ -100,7 +102,7 @@ class EntanglementRunner(WorkflowTask):
         try:
             from matplotlib.figure import Figure
             from matplotlib.backends.backend_agg import FigureCanvasAgg
-            fig=Figure(figsize=(14,11)); FigureCanvasAgg(fig); plot=EntanglementPlot(fig,c); plot.update(data)
+            fig=Figure(figsize=(14,15)); FigureCanvasAgg(fig); plot=EntanglementPlot(fig,c); plot.update(data)
             fits=plot.fits; fig.savefig(folder/'entanglement.png',dpi=150)
         except Exception as exc:error=error or exc
         if self.handle.cancelled() and error is None:error=OperationCancelled('ENTANGLEMENT cancelled')

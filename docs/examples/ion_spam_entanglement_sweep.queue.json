@@ -1,0 +1,1644 @@
+{
+  "schema_version": 2,
+  "repeat": 1,
+  "jobs": [
+    {
+      "type": "repeat_group",
+      "id": "3a0fdc768a0744c2aa91025dceb6e1c2",
+      "name": "ZZ",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "95b6d2ab323f45d6a1b9f542a8e765a5",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "b929e9b08b704d29a28254be276bc217",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "27156917655f493582c8ee8ca374a7a4",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "zz",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 0,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "72d3fabf2bf9465c8c00e6b9a5a9607f",
+      "name": "MW detuned 0 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "99192bd23aea4360b9da49a2779ef6cf",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "2e9faa574d49466c9b1d4fcd087605a5",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "ccb45d7dd9bb450eb994204c7432d43d",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 0,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "9ac0e61e175e449892530e7fbc79425b",
+      "name": "MW detuned 30 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "4a39d09a0aba47e3b5c0ede629db899c",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "bf9fbb2dda0449348859af416eef4e74",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "0551212248c747dd97745e81cba8df6f",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 30,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "9bfcb2e39837439aa298091fc4065544",
+      "name": "MW detuned 60 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "ddbe0799f5114ce28e00ecac23de7f19",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "a38b11e66f124923b4547995ddc44ce9",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "2269db9eb91948d8ab1acfce2642d065",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 60,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "817ea1a973dc4855939a96ba9872bf6b",
+      "name": "MW detuned 90 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "d33a990b3d854f64894d9476e5e5dd84",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "4f36b0a580e34dc8bb478443cb917bf1",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "9954f9f45d734af48817b15b8310aef5",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 90,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "808e52a4838f42b48b8bcef8c03138f6",
+      "name": "MW detuned 120 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "374217c6d41b4e66b61c0bcf8285e43a",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "d55fb9998feb4a64a6496a38c7edd606",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "320fdd03d51b4c919cfdae1ea0deb5b4",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 120,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "5d582354da314817a906212f9c1e9923",
+      "name": "MW detuned 150 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "51648a45ebb84e12b93003f00928b871",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "a7394601019f4b7e8fc7d7e54a680d22",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "1b5b88532dc24694a1dfa4528daec4cb",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 150,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "aa552e699a844024b3e9174bcbc8ba6a",
+      "name": "MW detuned 180 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "1b7ac5e4763041f690c41f495fefb795",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "ea8281baf74d4d398301858b2995f3e0",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "fa9627d35e6e42c1b05c7e1bfa5436f2",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 180,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "5c2b7bf8c69d4fb98d61536ee6f27821",
+      "name": "MW detuned 210 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "eeaf4df8d9644b488a43e9ada953a03b",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "bc4eb9a1058641eda6f113d32a96f3d9",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "8f23e502bd1d4a3998093a9547d45b45",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 210,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "a3b35f1788834dfd82d1338947ba8e32",
+      "name": "MW detuned 240 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "ff7e33e3e886420ba4e2387dac80ea22",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "b16950cb87e645bea539ee40b7edee6e",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "494452b3722f4d9f90654d0efd4160eb",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 240,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "8b5b0cf65bcb472280372232761f52a9",
+      "name": "MW detuned 270 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "9e245a84f0a14eb3b9d0d0ccf993f2da",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "24d9aefd0ff648c5b860be0a679d889a",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "6f8d5807fe2b44b58885348e3b8a469c",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 270,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "f29b277dd4964841ad7e74cfbc432e1a",
+      "name": "MW detuned 300 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "eab152ce9ac946ec9af6a7a4621bc47d",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "705729dbcd9f4c5fb58d893531972d83",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "d4ed19f4ecc04640bfe9acf4b929242f",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 300,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "repeat_group",
+      "id": "7da78fe61c094511ac0a7e78e30dad92",
+      "name": "MW detuned 330 deg",
+      "repeat": 3,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "7e14585c9ed14e479255344c49206954",
+          "name": "Ion check",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_check_workflow.py",
+          "source": "\"\"\"Queue ion guard. max_attempts includes the initial measurement.\n\nRequired parameters: threshold_a, threshold_b, threshold_c (summed counts).\nOptional: fpga, sequence_path, exposure_us, settle_us, max_attempts,\ntimeout_s, retry_delay_s. DAC hooks below are deliberately not implemented.\n\"\"\"\nimport math\nfrom pathlib import Path\n\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\n\ndef swap_ea(devices):\n    \"\"\"Connect EA DAC here, wait for completion, then return True.\n\n    Example shape: devices.dac('dac_ea').run_sequence(sequence).wait()\n    Raise on failure. False means no recovery was performed.\n    \"\"\"\n    return False\n\n\ndef swap_ec(devices):\n    \"\"\"Connect EC DAC here, wait for completion, then return True.\"\"\"\n    return False\n\n\ndef classify(a, b, c):\n    if not b and a and c:\n        return 'normal'\n    if b:\n        if not a and not c:\n            return 'swap_ea_then_ec'\n        if not a:\n            return 'swap_ea'\n        if not c:\n            return 'swap_ec'\n        return 'recheck'\n    return 'ion_loss_suspected'\n\n\ndef main(devices):\n    try:\n        return _run(devices)\n    except OperationCancelled:\n        raise\n    except Exception as exc:\n        # An ion guard failure must stop the queue even with on_failure=skip.\n        return WorkflowResult(status='failed', continue_allowed=False,\n                              cleanup_status='unknown',\n                              reason=f'Ion check error: {type(exc).__name__}: {exc}')\n\n\ndef _run(devices):\n    p = devices.parameters\n    attempts = p.get('max_attempts', 3)\n    if type(attempts) is not int or not 1 <= attempts <= 10000:\n        raise ValueError('max_attempts must be an integer in 1..10000')\n    thresholds = []\n    for name in ('threshold_a', 'threshold_b', 'threshold_c'):\n        value = p[name]\n        if type(value) is not int or not 1 <= value <= 65535:\n            raise ValueError(f'{name} must be an integer in 1..65535')\n        thresholds.append(value)\n    delay = p.get('retry_delay_s', 0.1)\n    if (isinstance(delay, bool) or not isinstance(delay, (int, float))\n            or not math.isfinite(delay) or delay < 0):\n        raise ValueError('retry_delay_s must be finite and nonnegative')\n    sequence_path = p.get('sequence_path', str(\n        Path(__file__).resolve().parents[1] / 'sequences' / 'ion_check_sequence.py'))\n    history = []\n    fpga = devices.fpga(p.get('fpga', 'fpga_local'))\n\n    def finish(ok, reason):\n        return WorkflowResult(\n            status='completed' if ok else 'failed', reason=reason,\n            continue_allowed=ok,\n            metrics={'attempts_used': len(history), 'max_attempts': attempts,\n                     'decision': history[-1]['decision']},\n            value={'thresholds': dict(zip(('a', 'b', 'c'), thresholds)),\n                   'history': history})\n\n    for attempt in range(1, attempts + 1):\n        devices.wait(0)  # Honor cancellation before every acquisition.\n        result = fpga.run_sequence_file(\n            sequence_path,\n            parameters={'exposure_us': p.get('exposure_us', 1000),\n                        'settle_us': p.get('settle_us', 100)},\n            timeout_s=p.get('timeout_s', 5), max_rows=1).wait()\n        rows = result.get('rows')\n        if (result.get('stopped') is not True or not isinstance(rows, list)\n                or len(rows) != 1 or len(rows[0]) != 4 or rows[0][3] != 0x10):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid FIFO result',\n                                  value={'history': history, 'invalid_result': result})\n        counts = rows[0][:3]\n        if any(type(v) is not int or not 0 <= v <= 65535 for v in counts):\n            return WorkflowResult(status='failed', continue_allowed=False,\n                                  reason='Ion check: invalid counts',\n                                  value={'history': history, 'invalid_result': result})\n        bright = [v >= t for v, t in zip(counts, thresholds)]\n        decision = classify(*bright)\n        entry = {'attempt': attempt, 'counts': dict(zip(('a', 'b', 'c'), counts)),\n                 'bright': dict(zip(('a', 'b', 'c'), bright)),\n                 'decision': decision, 'swaps': [],\n                 'sequence_sha256': result.get('sha256')}\n        history.append(entry)\n        print(f'Ion check {attempt}/{attempts}: {entry}')\n        if decision == 'normal':\n            return finish(True, 'Ion check passed')\n        if attempt == attempts:\n            break  # Never perform a swap without a remaining verification attempt.\n        targets = {'swap_ea': [('EA', swap_ea)], 'swap_ec': [('EC', swap_ec)],\n                   'swap_ea_then_ec': [('EA', swap_ea), ('EC', swap_ec)]}.get(decision, [])\n        for chamber, hook in targets:\n            devices.wait(0)\n            performed = hook(devices)\n            if performed is not True and performed is not False:\n                return finish(False, f'{chamber} swap hook must return True or False')\n            entry['swaps'].append({'chamber': chamber, 'performed': performed})\n            if not performed:\n                print(f'{chamber} DAC swap is not connected; remeasurement only')\n                break  # In a dual swap, do not run EC before EA was performed.\n        devices.wait(delay)\n\n    return finish(False, f'Ion check did not reach normal state after {attempts} measurements: '\n                  + history[-1]['decision'])\n",
+          "sha256": "e4bab4ae631064536d7d2b53401af72b3b35d3e970b43d4a6138652a9ca0535e",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "max_attempts": 3,
+            "exposure_us": 1000,
+            "settle_us": 100,
+            "retry_delay_s": 0.1,
+            "timeout_s": 5,
+            "threshold_a": null,
+            "threshold_b": null,
+            "threshold_c": null,
+            "sequence_path": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\sequences\\ion_check_sequence.py"
+          }
+        },
+        {
+          "id": "fdb0bb1fc5b04563824c871d7d850955",
+          "name": "SPAM EA -> EC",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_spam.py",
+          "source": "\"\"\"Measure EA then EC SPAM using frozen settings and externally configured MW.\"\"\"\nfrom pathlib import Path\nfrom labremote.runtime.workflow_result import WorkflowResult\n\n\ndef main(devices):\n    p = devices.parameters\n    fpga = devices.fpga(p['fpga'])\n    reports = {}\n    paths = []\n    for chamber in ('EA', 'EC'):\n        devices.wait(0)\n        directory = (str(Path(devices.run_directory) / chamber)\n                     if devices.run_directory else p.get('directory'))\n        report = fpga.run_spam(\n            chamber, settings=p['settings'][chamber], directory=directory,\n            frequency_hz=p.get('frequency_hz', {}).get(chamber)).wait()\n        reports[chamber] = report\n        if isinstance(report, dict) and report.get('folder'):\n            paths.append(report['folder'])\n        if not isinstance(report, dict) or report.get('status') != 'completed':\n            return WorkflowResult(\n                status='cancelled' if isinstance(report, dict) and report.get('status') == 'cancelled' else 'failed',\n                reason=f'{chamber} SPAM did not complete', continue_allowed=False,\n                result_paths=paths, value=reports)\n    return WorkflowResult(result_paths=paths, value=reports)\n",
+          "sha256": "aaffec66c490f341b8c8f1c0ba9fbc6c752fa71720b76c8c763b971b1d1b79c5",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "70eb5a48e88a4294849c76f94d507d47",
+          "name": "Entanglement",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\queue_entanglement.py",
+          "source": "\"\"\"Use after an external MW setup workflow; this workflow controls only FPGA.\"\"\"\ndef main(devices):\n    p = devices.parameters\n    if not p.get('fpga') or 'settings' not in p:\n        raise ValueError('Entanglement requires parameters.fpga and frozen settings')\n    return devices.fpga(p['fpga']).run_entanglement(\n        settings=p['settings'], directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "354fa3979acef50057adee002da72dd62a66d34e61971063121d41dfc0b20e12",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "mw_detuned",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 330,
+              "timeout_s": 120.0
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

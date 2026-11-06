@@ -63,13 +63,15 @@ class DACPanel(W.QWidget):
         self.endpoint_provider=None;self.handle=None;self.last_sent=None;self._busy=False
         self.worker=DACWorker();self.worker.name=name;self.api=DACAPI(self.worker)
         self.config=load_config(Path(__file__).resolve().parents[3]/'trap_dac/configs'/('EA.example.json' if 'ea' in name.lower() else 'EC.example.json'))
+        try:self.config=self.worker.load_configuration()
+        except FileNotFoundError:pass
         self.folder=DATA_ROOT/'dac'/self.config.device/'presets';self.sequence_folder=DATA_ROOT/'dac'/self.config.device/'sequences'
         self.manual_timing=ManualTiming();self.options=SequenceOptions()
         root=W.QVBoxLayout(self);connection=W.QHBoxLayout();root.addLayout(connection)
         self.connection_label=W.QLabel(name+' · disconnected');connection.addWidget(self.connection_label,1)
         self.connect_button=self.button(connection,'Connect',self.connect_dac)
         self.disconnect_button=self.button(connection,'Disconnect',lambda:self.watch(self.api.disconnect()))
-        self.reload_button=self.button(connection,'Reload server mapping',lambda:self.watch(self.api.reload_configuration()))
+        self.reload_button=self.button(connection,'Load client mapping',self.load_client_mapping)
         init=W.QHBoxLayout();root.addLayout(init);init.addWidget(W.QLabel('Initial output'))
         self.initial_mode=W.QComboBox();self.initial_mode.addItems(['0 V','Current draft']);init.addWidget(self.initial_mode)
         self.initialize_button=self.button(init,'Initialize DAC',self.initialize);init.addStretch()
@@ -94,7 +96,7 @@ class DACPanel(W.QWidget):
         row=W.QHBoxLayout();right.addLayout(row);self.restore_button=self.button(row,'Restore last sent',self.restore_sent)
         self.sent_note=W.QLabel('Last sent is not measured voltage');row.addWidget(self.sent_note,1)
         self.apply_button=self.button(row,'Apply voltages',self.apply)
-        self.status=W.QLabel('Connect to obtain the authoritative server mapping.');self.status.setWordWrap(True);root.addWidget(self.status)
+        self.status=W.QLabel('Mapping and offsets are stored on this client. Initialize sends offsets to the driver.');self.status.setWordWrap(True);root.addWidget(self.status)
         self.sequence_tab=DACSequence(self)
         self.rebuild();self.refresh_presets()
         self.restore_local_settings()
@@ -163,7 +165,7 @@ class DACPanel(W.QWidget):
         ready=self.connected and bool((self.worker.description or {}).get('ready'))
         for w in (self.apply_button,self.quick_box):w.setEnabled(ready and not value)
         self.initialize_button.setEnabled(self.connected and not value)
-        self.reload_button.setEnabled(self.connected and not value)
+        self.reload_button.setEnabled(not value)
         self.connect_button.setEnabled(not value);self.disconnect_button.setEnabled(self.connected and not value)
         self.sequence_tab.start_button.setEnabled(ready and not value)
         self.sequence_tab.stop_button.setEnabled(value)
@@ -248,12 +250,20 @@ class DACPanel(W.QWidget):
         path,_=W.QFileDialog.getSaveFileName(self,'Save voltage set',str(self.folder/suggested_filename(self.config.device,state.name)),'JSON (*.json)')
         if path:atomic_json(path,state.as_dict());self.refresh_presets()
 
+    def load_client_mapping(self):
+        path,_=W.QFileDialog.getOpenFileName(self,'Client DAC mapping',str(self.worker.config_path or ''),'JSON (*.json)')
+        if not path:return
+        if self.connected:self.watch(self.api.reload_configuration(path))
+        else:
+            cfg=self.worker.load_configuration(path)
+            self.accept_state(dict(configuration=cfg.as_dict(),connected=False,ready=False,last_sent=None))
+
     def show_mapping(self):
-        dialog=W.QDialog(self);dialog.setWindowTitle('Server-authoritative electrode mapping');dialog.resize(600,550)
+        dialog=W.QDialog(self);dialog.setWindowTitle('Client electrode mapping and calibration');dialog.resize(600,550)
         layout=W.QVBoxLayout(dialog);text=W.QPlainTextEdit();text.setReadOnly(True)
         import json
         text.setPlainText(json.dumps(self.config.as_dict(),indent=2));layout.addWidget(text)
-        layout.addWidget(W.QLabel('Edit the server mapping file, then Reload server mapping. Reconnect and initialize afterwards.'))
+        layout.addWidget(W.QLabel('Load a client mapping JSON. Initialize applies its offsets to all 32 channels; unmapped channels start at 0 V.'))
         dialog.exec_()
 
     def edit_timing(self):
@@ -285,6 +295,9 @@ class DACPanel(W.QWidget):
         if not path.exists():return
         try:
             doc=json.loads(path.read_text(encoding='utf-8'))
+            if doc.get('configuration_path'):
+                cfg=self.worker.load_configuration(doc['configuration_path'])
+                self.accept_state(dict(configuration=cfg.as_dict(),connected=False,ready=False,last_sent=None))
             self.manual_timing=ManualTiming.from_dict(doc.get('manual_timing',{}))
             self.folder=Path(doc.get('preset_folder',str(self.folder)))
             self.sequence_folder=Path(doc.get('sequence_folder',str(self.sequence_folder)))
@@ -298,7 +311,7 @@ class DACPanel(W.QWidget):
         except Exception as exc:self.report('Local DAC settings not restored: '+str(exc))
 
     def save_local_settings(self):
-        doc=dict(manual_timing=self.manual_timing.as_dict(),preset_folder=str(self.folder),sequence_folder=str(self.sequence_folder),
+        doc=dict(configuration_path=str(self.worker.config_path) if self.worker.config_path else None,manual_timing=self.manual_timing.as_dict(),preset_folder=str(self.folder),sequence_folder=str(self.sequence_folder),
             sequence_options=dict(reuse_spi_config=self.sequence_tab.reuse.isChecked(),pre_ldac_ms=self.sequence_tab.pre_ldac.value()))
         if self.sequence_tab.table.rowCount():
             try:doc['sequence']=self.sequence_tab.sequence().as_dict()
@@ -330,7 +343,7 @@ class DACSequence(W.QWidget):
         self.start_button=owner.button(row,'Start sequence',self.start)
         self.stop_button=owner.button(row,'Stop',owner.api.cancel)
         self.progress=W.QLabel('Idle');row.addWidget(self.progress,1)
-        root.addWidget(W.QLabel('UI connection lost: stop after current row; retain last output. Hold is host-timed after transmission.'))
+        root.addWidget(W.QLabel('Client executes rows. Stop prevents the next row; an in-flight call may finish. Last output is retained.'))
         self.log=W.QPlainTextEdit();self.log.setReadOnly(True);self.log.setMaximumBlockCount(1000);self.log.setMaximumHeight(130);root.addWidget(self.log)
 
     def columns(self):

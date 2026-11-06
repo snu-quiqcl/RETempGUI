@@ -1,0 +1,11 @@
+{
+  "fpga": "fpga_local",
+  "max_attempts": 3,
+  "exposure_us": 1000,
+  "settle_us": 100,
+  "retry_delay_s": 0.1,
+  "timeout_s": 5,
+  "threshold_a": null,
+  "threshold_b": null,
+  "threshold_c": null
+}
