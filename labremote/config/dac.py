@@ -5,7 +5,7 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
-DEFAULT_CONFIG_DIR = Path(__file__).resolve().parent.parent / 'configs'
+DEFAULT_CONFIG_DIR = Path(__file__).resolve().parent / 'devices' / 'dac'
 
 
 def number(value, label):
@@ -172,5 +172,25 @@ def load_config(path, device=None):
         raise ValueError(f'Configuration {path}: {exc}') from exc
 
 
-def load_configs(folder=DEFAULT_CONFIG_DIR):
-    return {device: load_config(Path(folder) / f'{device}.json', device) for device in ('EA', 'EC')}
+def resolve_configuration_path(path):
+    """Resolve config-relative paths and migrate old built-in DAC map locations."""
+    candidate = Path(path)
+    parts = str(path).replace('\\', '/').split('/')
+    if (len(parts) >= 3 and parts[-3:-1] == ['trap_dac', 'configs']
+            and parts[-1] in ('EA.local.json', 'EC.local.json', 'EA.example.json', 'EC.example.json')):
+        return DEFAULT_CONFIG_DIR / parts[-1]
+    if not candidate.is_absolute():
+        from .paths import CONFIG_ROOT
+        return CONFIG_ROOT / candidate
+    return candidate
+
+
+def configuration_path_setting(path):
+    """Store built-in paths relative to config so settings survive PC transfers."""
+    if path is None:
+        return None
+    from .paths import CONFIG_ROOT
+    try:
+        return Path(path).resolve().relative_to(CONFIG_ROOT.resolve()).as_posix()
+    except ValueError:
+        return str(path)

@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "DAC API v2: physical 32-channel QCoDeS driver, client mapping and sequences, init-uploaded calibration",
+  "revision_note": "Standard DAC layout cleanup; deduplicated tests, removed unused legacy helpers, documents and previews under docs",
   "files": [
     {
       "path": ".gitattributes",
@@ -14,8 +14,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 18289,
-      "sha256": "9529995986842d9cf4a2efdd5af8fd7ae6cf32e28f6f3c3b64ad31e67b4473a7"
+      "bytes": 18552,
+      "sha256": "bd6c412a7fece81e95d15d83df1f0f019dcefe96919f9cd064488c43b102c0cb"
     },
     {
       "path": "constraints-tested.txt",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/DAC_SETUP_KO.md",
-      "bytes": 5773,
-      "sha256": "573774a9742017f8a81e60d5781d4406bd6f35c24c878d00d998a872a99f11ec"
+      "bytes": 6406,
+      "sha256": "d948971791fc3db1cd9725524d790bcda702b39e1ed4c1d1f5dc4e324cba3e77"
     },
     {
       "path": "docs/DAILY_CHARACTERIZATION_KO.md",
@@ -68,14 +68,24 @@
       "sha256": "50a35562ba19991067acd050493348b48479e851e7bab862ab94442654e00ef4"
     },
     {
+      "path": "docs/ENTANGLEMENT_README.txt",
+      "bytes": 4405,
+      "sha256": "6584f166be5891d81f29e5c4e1bc0eec701caaed4e4c424dac876321660faf78"
+    },
+    {
       "path": "docs/EXPERIMENT_ARCHIVE_KO.md",
       "bytes": 6886,
       "sha256": "25165965456e4c7ec6a29d47a1bb15e22df420b2de7f82296713a970773d528f"
     },
     {
+      "path": "docs/EXPERIMENT_DATA_FORMAT.txt",
+      "bytes": 3027,
+      "sha256": "adeb912dfd8232a87c71efa3c523bf997339696ba97616709b05a0e1cc55bc37"
+    },
+    {
       "path": "docs/EXPERIMENT_DATA_KO.md",
-      "bytes": 5102,
-      "sha256": "f0a902c24a3f282d343d1cdbcc3f462fb5620c99e7ae9142ec6773d92d0cbea0"
+      "bytes": 5144,
+      "sha256": "d89172274d6d5554d70d97aac606457b19afd096813ace32ae2412fcd3091229"
     },
     {
       "path": "docs/EXPERIMENT_UI_KO.md",
@@ -96,6 +106,11 @@
       "path": "docs/FLIP_WINDOWS_KO.md",
       "bytes": 3523,
       "sha256": "7762e59bee1b49262654be1de12766b5f315f94208d8300c9d5444a31c0a206e"
+    },
+    {
+      "path": "docs/HOM_README.txt",
+      "bytes": 8627,
+      "sha256": "b197c89c183c1d6a8d9a871512720a29a918f2468cd81553ff725402b4db58e5"
     },
     {
       "path": "docs/LOCAL_SETUP_KO.md",
@@ -176,6 +191,31 @@
       "path": "docs/examples/dac_workflow.py",
       "bytes": 995,
       "sha256": "06ef08c456d74e0f83e0dbf483a7c7e5f457110ac1d0e274dae42809e795735e"
+    },
+    {
+      "path": "docs/images/dual_shutter_preview.png",
+      "bytes": 49410,
+      "sha256": "23d472feef740f001c09cfe6c4d6cd3dafb98d6a8d2de289f344399c2fe07eee"
+    },
+    {
+      "path": "docs/images/flip_cards_preview.png",
+      "bytes": 50121,
+      "sha256": "d3abc69c1f98b6cb1d8ce0e13c8aeaee5e464917f20e42bcae7e8d3c7c9bb945"
+    },
+    {
+      "path": "docs/images/flip_display_preview.png",
+      "bytes": 44156,
+      "sha256": "3426a9aac5f25b57b36aff9dab09919d238bbe57dc3d4f7ccf3059a2da7f5c28"
+    },
+    {
+      "path": "docs/images/flip_names_preview.png",
+      "bytes": 29890,
+      "sha256": "52f72a93413db5178adb206ef4d1913a93b833edd71ca0c4857ff8ae95223475"
+    },
+    {
+      "path": "docs/images/flip_routes_preview.png",
+      "bytes": 20592,
+      "sha256": "1ffe3873dd97a59d277b45a9913eca4036cec17eeab28066531aeb41f26ab1ca"
     },
     {
       "path": "lab_remote_gui.py",
@@ -283,6 +323,11 @@
       "sha256": "8699729e40d7662ca386783d71a50ca83696b592157b6c42b4343630422a991b"
     },
     {
+      "path": "labremote/config/dac.py",
+      "bytes": 8800,
+      "sha256": "10648faad513fee5a00f2db13dedbdc4980c6bd74781d95a70e4bb9cc235269a"
+    },
+    {
       "path": "labremote/config/device_config.py",
       "bytes": 7541,
       "sha256": "de94f803aee41e9abfdd72a8b8723f7b4032e05160046b30c9fa2cd2a88d1568"
@@ -296,6 +341,16 @@
       "path": "labremote/config/devices/connections.json",
       "bytes": 4,
       "sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f"
+    },
+    {
+      "path": "labremote/config/devices/dac/EA.example.json",
+      "bytes": 4665,
+      "sha256": "669953dbeab1883ac8b10718498156f5f57557bd7467b384f960b7a4b7869558"
+    },
+    {
+      "path": "labremote/config/devices/dac/EC.example.json",
+      "bytes": 7818,
+      "sha256": "23e54b599b2bb8be48b9447f97a6b7e32e3870414af911180bd9edde79df158c"
     },
     {
       "path": "labremote/config/devices/dac/device_config.yml",
@@ -733,14 +788,24 @@
       "sha256": "511c15f2265df6316a4293ba34f0076b95850bb517283e63bdfd212edfa913c6"
     },
     {
+      "path": "labremote/devices/dac/model.py",
+      "bytes": 9546,
+      "sha256": "84ef8e923609c98e4e8ff02d603084add1563a71db2445809638fe21188e0543"
+    },
+    {
+      "path": "labremote/devices/dac/sequence.py",
+      "bytes": 10322,
+      "sha256": "ca9ba3bb4f8f5443519a8cc02693a1dc493db828ceaf77a67d9ce3dbb9c97da9"
+    },
+    {
       "path": "labremote/devices/dac/tab.py",
-      "bytes": 27313,
-      "sha256": "d129521d8b22446c0d5b4948f9fdc875829a0a837b39427b49f8b995eb706566"
+      "bytes": 27828,
+      "sha256": "041eea0b4963448a9a6b4a7569efbd7ab0c5aa35c7ced8d3e38072220863a8fc"
     },
     {
       "path": "labremote/devices/dac/worker.py",
-      "bytes": 11473,
-      "sha256": "96d2201a3c641c610e386b10605ec43f21bda9e90226ec8f8884408ee9615356"
+      "bytes": 7148,
+      "sha256": "eab8f24a3f2f80b4516758f361c33600a09c4370eb26c4205b2b352238df7aa0"
     },
     {
       "path": "labremote/devices/dds4/__init__.py",
@@ -1081,6 +1146,36 @@
       "path": "labremote/operation/anapico/set_reference_output.py",
       "bytes": 220,
       "sha256": "99d78f4cac4162ee19a375c74ae4515aa8e9f7dcb592f1692ffb2970d2ad27d9"
+    },
+    {
+      "path": "labremote/operation/dac/__init__.py",
+      "bytes": 66,
+      "sha256": "744e651b5fc3d06740661751a3426378251b13b02ca7bb9ea501ab0670413df4"
+    },
+    {
+      "path": "labremote/operation/dac/execute.py",
+      "bytes": 2818,
+      "sha256": "0fd10e794caa01fea03f64df25996e77d010e6e28ae23d22c9c3cbf72bdbfd88"
+    },
+    {
+      "path": "labremote/operation/dac/initialize.py",
+      "bytes": 670,
+      "sha256": "d03fa0c7d70d539161cb07f68ba0801617f09b9065fe25859d68cbb2ac0f9776"
+    },
+    {
+      "path": "labremote/operation/dac/run_sequence.py",
+      "bytes": 1152,
+      "sha256": "2b74c442b68e871c4869ed0a3dc510621d65c233fbea1600ca1d0d3a8d1c70d8"
+    },
+    {
+      "path": "labremote/operation/dac/set_voltages.py",
+      "bytes": 528,
+      "sha256": "5152eeb42002b083dba67224c53ae4778c54ce516c86c1c3715ca4920ab71e47"
+    },
+    {
+      "path": "labremote/operation/dac/timing.py",
+      "bytes": 2147,
+      "sha256": "24dda7ba8e9cb4ab61497af1af81857b06ee718f9dc0c237a6e0f3173678285f"
     },
     {
       "path": "labremote/operation/dds4/__init__.py",
@@ -1921,81 +2016,6 @@
       "path": "server_deploy_latest/DAC81416/trap_dac/qcodes_driver.py",
       "bytes": 11191,
       "sha256": "c50e224703416ed9888db120077db84cbfbd9046f8235af77ba50cac89d724b7"
-    },
-    {
-      "path": "trap_dac/ArtyS7.py",
-      "bytes": 23161,
-      "sha256": "230f498acfde821c86eb71cdcc2abb0f025e31134095f31bda217527ee58170b"
-    },
-    {
-      "path": "trap_dac/__init__.py",
-      "bytes": 66,
-      "sha256": "9fd2979483c5f23be6414892f950e3c8e4e6904389ee735fedfc870008992aea"
-    },
-    {
-      "path": "trap_dac/configs/EA.example.json",
-      "bytes": 4665,
-      "sha256": "669953dbeab1883ac8b10718498156f5f57557bd7467b384f960b7a4b7869558"
-    },
-    {
-      "path": "trap_dac/configs/EC.example.json",
-      "bytes": 7818,
-      "sha256": "23e54b599b2bb8be48b9447f97a6b7e32e3870414af911180bd9edde79df158c"
-    },
-    {
-      "path": "trap_dac/configuration.py",
-      "bytes": 8032,
-      "sha256": "1c05ede406f1e7d152787549492cfa1fc14314bf15ac522f230fc7a8d757d34c"
-    },
-    {
-      "path": "trap_dac/hardware.py",
-      "bytes": 16463,
-      "sha256": "6056c61a7fc6c34da3963653eb15f3e26bb28d5028b26c67319ffcf6f55c9032"
-    },
-    {
-      "path": "trap_dac/model.py",
-      "bytes": 9797,
-      "sha256": "12d8e2473a5f98f696074ecbf7c0493a9b086c00481e5778817be8d41ab2cdd3"
-    },
-    {
-      "path": "trap_dac/pyproject.toml",
-      "bytes": 437,
-      "sha256": "558fcf6f6b3d9f95938b297e4f192aabfae121920b9657297e3008baa0e048af"
-    },
-    {
-      "path": "trap_dac/qcodes_driver.py",
-      "bytes": 11191,
-      "sha256": "c50e224703416ed9888db120077db84cbfbd9046f8235af77ba50cac89d724b7"
-    },
-    {
-      "path": "trap_dac/sequence.py",
-      "bytes": 14557,
-      "sha256": "27a5a65eaf4b6383c3752a3d26d4f43d7fa4258ff5041564f2521584dc6984bd"
-    },
-    {
-      "path": "trap_dac/service.py",
-      "bytes": 12109,
-      "sha256": "1ccae2f407c671477a56972b9c733670d82c4e94df7b6c6d9ffd6167f93ac999"
-    },
-    {
-      "path": "trap_dac/timing.py",
-      "bytes": 2147,
-      "sha256": "24dda7ba8e9cb4ab61497af1af81857b06ee718f9dc0c237a6e0f3173678285f"
-    },
-    {
-      "path": "trap_dac/transport.py",
-      "bytes": 4770,
-      "sha256": "5d9d818e851c8bff67d1e456680db2a1520313d65ac0401ac23d51ea56e37ca6"
-    },
-    {
-      "path": "trap_dac/vendor/ArtyS7_v1_02.py",
-      "bytes": 18289,
-      "sha256": "159f584186ec9aa42cbfcaf54e8fe24ed0f6fdff1af1fc68427d6a1890b9c8e8"
-    },
-    {
-      "path": "trap_dac/vendor/__init__.py",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ]
 }

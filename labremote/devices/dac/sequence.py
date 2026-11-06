@@ -1,19 +1,15 @@
-"""Validated row sequences and cancellable, host-timed DAC execution."""
+"""Client sequence models and CSV/JSON serialization."""
 from __future__ import annotations
-
-from .timing import SequenceOptions
 
 import csv
 import io
 import json
 import re
-import tempfile
-import time
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from .configuration import DeviceConfig, number, read_json
+from labremote.config.dac import DeviceConfig, number, read_json
 from .model import VoltageSet, atomic_json, atomic_text
 
 MAX_ROWS = 10000
@@ -207,85 +203,3 @@ def parse_rows(text, config, default_hold=0.1):
     return tuple(rows)
 
 
-@dataclass(frozen=True)
-class RunResult:
-    status: str
-    completed: int
-    last_sent: VoltageSet | None
-    elapsed_s: float
-    error: str = ''
-
-
-def run_sequence(session, sequence, stop_event, on_applied=None, on_writing=None, clock=time.monotonic,
-                 *, options=None):
-    """Stop at row boundaries; a row already writing always finishes its trigger.
-
-    Hold starts when apply() returns. History/progress callback time counts
-    toward hold; the next row still needs its own serial transfer time.
-    """
-    sequence.validate()
-    options = (options or SequenceOptions()).validate()
-    if sequence.config != session.config or not session.ready or session.closed:
-        raise ValueError('Connect and initialize the matching device before running.')
-    started = clock()
-    completed, last_sent = 0, None
-    try:
-        for index, row in enumerate(sequence.rows, 1):
-            if stop_event.is_set():
-                return RunResult('stopped', completed, last_sent, clock() - started)
-            if on_writing:
-                on_writing(index)
-            session.apply(row.state, use_ldac=sequence.use_ldac, profile='sequence',
-                          sequence_options=options, force_full=(index == 1))
-            applied = clock()
-            completed, last_sent = index, row.state
-            if on_applied:
-                on_applied(index, row.state, applied - started)
-            if stop_event.wait(max(0.0, applied + row.hold_s - clock())):
-                return RunResult('stopped', completed, last_sent, clock() - started)
-        return RunResult('completed', completed, last_sent, clock() - started)
-    except Exception as exc:
-        if not session.ready:
-            last_sent = None
-        return RunResult('failed', completed, last_sent, clock() - started, str(exc))
-
-
-def execute_recorded_sequence(session, sequence, stop_event, preset_root, port,
-                              on_applied=None, on_writing=None, *, options=None):
-    """Persist the plan before sending, each applied target, and the run outcome."""
-    sequence.validate()
-    options = (options or SequenceOptions()).validate()
-    kind = 'simulation' if session.simulation else 'hardware'
-    device = sequence.config.device
-    run_id = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-    history = Path(preset_root) / 'history' / kind / device
-    report = Path(preset_root) / 'sequences' / 'history' / kind / device / f'{run_id}_{device}.json'
-    history.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryFile(dir=history):
-        pass
-    metadata = dict(record_type='sequence_run', mode=kind, port=port, run_id=run_id,
-                    readback_verified=False, sequence_options=options.as_dict(),
-                    timing='hold after checked UART transmit and LDAC command; no FPGA acknowledgement')
-    atomic_json(report, sequence.as_dict(**metadata, status='running', completed_rows=0))
-    records = []
-
-    def applied(index, state, elapsed):
-        written_ids = list(session.last_written_electrode_ids)
-        records.append(dict(row=index, elapsed_s=elapsed, sent_at=datetime.now().astimezone().isoformat(),
-                            written_electrode_ids=written_ids, transfer=dict(session.last_transfer)))
-        if on_applied:
-            on_applied(index, state, elapsed)
-        atomic_json(history / f'{run_id}_sequence_{index:05d}_{device}.json',
-                    state.as_dict(record_type='last_sent', mode=kind, port=port,
-                                  readback_verified=False, use_ldac=sequence.use_ldac,
-                                  transfer=dict(session.last_transfer), sequence_options=options.as_dict(),
-                                  written_electrode_ids=written_ids,
-                                  sequence_run_id=run_id, sequence_row=index))
-
-    result = run_sequence(session, sequence, stop_event, applied, on_writing, options=options)
-    try:
-        atomic_json(report, sequence.as_dict(**metadata, status=result.status, completed_rows=result.completed,
-                                            elapsed_s=result.elapsed_s, error=result.error, applied_rows=records))
-    except OSError as exc:
-        result = replace(result, status='failed', error=(result.error + '; ' if result.error else '') + f'Run report save failed: {exc}')
-    return result

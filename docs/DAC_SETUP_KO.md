@@ -6,8 +6,13 @@
 실제 구현은 `trap_dac/qcodes_driver.py`와 `trap_dac/ArtyS7.py` 두 파일입니다.
 `__init__.py`와 `pyproject.toml`은 패키지 설치용입니다.
 서버는 전극 이름, EA/EC 매핑, preset, sequence, 실험 파일을 처리하지 않습니다.
-기존 저장소 루트 trap_dac의 model/configuration/sequence/timing은 클라이언트와
-이전 버전 회귀 검증용이며 서버에 복사하지 않습니다.
+클라이언트는 기존 labremote 디렉터리 규칙을 따릅니다.
+- devices/dac: UI, worker, 전압/preset 모델, sequence 파일 처리
+- operation/dac: initialize, set_voltages, run_sequence, execute, timing
+- config/dac.py: 설정 스키마·검증·경로 처리
+- config/devices/dac: EA/EC 매핑·보정 JSON
+루트 trap_dac 폴더는 제거했습니다. 서버 패키지의 trap_dac는 독립 배포용이며
+클라이언트는 이를 import하지 않습니다.
 
 InstrumentServer 환경에서 `python -m pip install /ABSOLUTE/DAC81416` 실행 후
 `docs/examples/dac_server.example.yml`을 기존 instruments 설정에 합칩니다.
@@ -17,10 +22,12 @@ internal_reference는 실제 보드 배선에 맞춰 서버 생성 인자로 지
 
 ## 클라이언트 설정
 
-기존 `trap_dac/configs/EA.local.json`, `EC.local.json`은 클라이언트에 둡니다.
+기존 `labremote/config/devices/dac/EA.local.json`, `EC.local.json`은 클라이언트에 둡니다.
 실제 보정값은 공개 example 파일로 대체하지 않습니다.
 기본값은 장비 이름에 EA가 포함되면 EA.local.json, 그 외는 EC.local.json입니다.
 다른 매핑은 DAC 화면의 Load client mapping에서 선택합니다. 경로는 UI 설정에 저장됩니다.
+기존 UI 설정의 trap_dac/configs 경로는 새 config/devices/dac 위치로 해석됩니다.
+새로 저장하는 기본 매핑 경로는 config 기준 상대 경로이므로 다른 PC로 옮겨도 유지됩니다.
 매핑 파일 변경 후 다시 Load하고 Initialize해야 적용됩니다.
 매핑 변경은 드라이버 출력을 바꾸지 않으며, 클라이언트의 출력 사용 상태를 해제합니다.
 화면에 등록되지 않은 물리 채널도 초기화 시 보정된 목표 0 V로 활성화됩니다.

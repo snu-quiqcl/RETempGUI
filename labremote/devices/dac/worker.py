@@ -3,17 +3,14 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from uuid import uuid4
 from labremote.runtime.device_worker import DeviceWorker
 from labremote.runtime.monitor import ParameterMonitor
-from labremote.runtime.jobs import CURRENT_JOB
 from labremote.runtime.errors import OperationCancelled
 from labremote.runtime.network import configure_client_timeout
 from labremote.api.devices import DeviceAPI
-from trap_dac.configuration import DeviceConfig, load_config
-from trap_dac.model import atomic_json, load_preset, VoltageSet, step_set
-from trap_dac.sequence import load_sequence, save_sequence, VoltageSequence
-from trap_dac.timing import ManualTiming, SequenceOptions
+from labremote.config.dac import DeviceConfig, load_config, DEFAULT_CONFIG_DIR, resolve_configuration_path
+from labremote.devices.dac.model import load_preset
+from labremote.devices.dac.sequence import load_sequence, save_sequence
 
 
 class DACWorker(DeviceWorker):
@@ -34,7 +31,8 @@ class DACWorker(DeviceWorker):
             path=self.config_path
         if path is None:
             chamber='EA' if 'ea' in self.name.lower() else 'EC'
-            path=Path(__file__).resolve().parents[3]/'trap_dac/configs'/(chamber+'.local.json')
+            path=DEFAULT_CONFIG_DIR/(chamber+'.local.json')
+        path=resolve_configuration_path(path)
         config=load_config(path)
         self.config_path=Path(path)
         self.config=config
@@ -73,83 +71,13 @@ class DACWorker(DeviceWorker):
         if time.monotonic()-self.ui_alive>=2.5:
             raise OperationCancelled('DAC UI heartbeat stopped; no next row sent')
 
-    def _updates(self,state):
-        return [[e.chip,e.channel,state.by_id[e.id]] for e in self.config.electrodes]
-
     def _apply(self,state,use_ldac,timing,reuse=False):
-        status=self.raw_device.set_voltages(self._updates(state),self.configuration_id,
-            use_ldac=use_ldac,command_gap_ms=timing.command_gap_ms,
-            pre_ldac_ms=timing.pre_ldac_ms,cooldown_ms=timing.cooldown_ms,
-            reuse_spi_config=reuse)
-        self._description(status)
-        return status
+        from labremote.operation.dac.set_voltages import set_voltages
+        return set_voltages(self,state,use_ldac,timing,reuse)
 
     def run_remote(self,action,payload):
-        from labremote.data_paths import tab_data_directory
-        handle=CURRENT_JOB.get()
-        request_id=handle.request_id if handle else uuid4().hex
-        payload=json.loads(json.dumps(payload,allow_nan=False))
-        if self.config is None:self.load_configuration()
-        if action=='connect':return self._description(self.raw_device.connect(),adopt=True)
-        if action=='reload_config':
-            self.load_configuration(payload.get('path'))
-            return dict(result=self.refresh())
-        folder=tab_data_directory(None,'dac',self.config.device)/'runs'/request_id
-        atomic_json(folder/'request.json',dict(action=action,payload=payload,configuration=self.config.as_dict()))
-        result=dict(job_id=request_id,action=action,status='running',row=0,total=1)
-        try:
-            self._check_cancelled(handle)
-            if action=='initialize':
-                values=payload.get('voltages')
-                if values is None:values={e.id:0.0 for e in self.config.electrodes}
-                state=VoltageSet.from_values(self.config,values)
-                # Every physical output is initialized. Unmapped channels target 0 V.
-                initial=[[0.0]*16 for _ in range(2)]
-                for e in self.config.electrodes:initial[e.chip][e.channel]=state.by_id[e.id]
-                status=self.raw_device.initialize([list(r) for r in self.config.offsets],initial,
-                                                  use_ldac=payload.get('use_ldac',True))
-                self._description(status,adopt=True)
-                result['row']=1
-            elif action in ('apply','step'):
-                state=VoltageSet.from_values(self.config,payload['voltages'])
-                if action=='step':state=step_set(state,payload['step'],payload['direction'],
-                    electrode_id=payload.get('electrode_id'),component=payload.get('component'))
-                timing=ManualTiming.from_dict(payload.get('manual_timing',{}))
-                self._apply(state,payload.get('use_ldac',True),timing)
-                result['row']=1
-            elif action=='sequence':
-                seq=VoltageSequence.from_dict(payload['sequence'],self.config)
-                options=SequenceOptions.from_dict(payload.get('sequence_options',{}))
-                result['total']=len(seq.rows)
-                for index,row in enumerate(seq.rows,1):
-                    self._check_cancelled(handle)
-                    self._apply(row.state,seq.use_ldac,ManualTiming(0,options.pre_ldac_ms,0),options.reuse_spi_config)
-                    applied=time.monotonic()
-                    result.update(row=index,last_sent=dict(self.description['last_sent']))
-                    self.task_progress.emit('DAC',dict(result))
-                    atomic_json(folder/'rows'/f'{index:05d}.json',dict(result,voltages=row.state.by_id))
-                    deadline=applied+row.hold_s
-                    while time.monotonic()<deadline:
-                        self._check_cancelled(handle)
-                        time.sleep(min(.05,max(0,deadline-time.monotonic())))
-            else:raise ValueError('Unknown DAC client action: '+action)
-            result.update(status='completed',result=self.description)
-            return result
-        except OperationCancelled as exc:
-            result.update(status='stopped',reason=str(exc),result=self.description)
-            raise
-        except Exception as exc:
-            # Never replay a write after an ambiguous RPC error. Require reconnect.
-            self.configuration_id=None
-            if self.description:
-                self.description=dict(self.description,ready=False,last_sent=None)
-                self.publish_snapshot(self.description,'DAC_STATE')
-            result.update(status='failed',error=str(exc))
-            self.connection_error=True
-            raise
-        finally:
-            self.task_progress.emit('DAC',dict(result))
-            atomic_json(folder/'client_result.json',result)
+        from labremote.operation.dac.execute import execute
+        return execute(self,action,payload)
 
     def disconnect_device(self):
         # Disconnect this client only; other clients may use the same server driver.
@@ -192,7 +120,7 @@ class DACAPI(DeviceAPI):
     def load_preset(self,path):return load_preset(path,self.configuration())
 
     def save_preset(self,path,voltages,*,name='Preset',notes=''):
-        from trap_dac.model import VoltageSet
+        from labremote.devices.dac.model import VoltageSet
         state=VoltageSet.from_values(self.configuration(),voltages,name=name,notes=notes)
         atomic_json(path,state.as_dict())
         return state
@@ -200,8 +128,8 @@ class DACAPI(DeviceAPI):
     def load_sequence(self,path,*,use_ldac=True):return load_sequence(path,self.configuration(),use_ldac=use_ldac)
 
     def create_sequence(self,rows,*,name='Sequence',use_ldac=True):
-        from trap_dac.model import VoltageSet
-        from trap_dac.sequence import SequenceRow, VoltageSequence
+        from labremote.devices.dac.model import VoltageSet
+        from labremote.devices.dac.sequence import SequenceRow, VoltageSequence
         cfg=self.configuration()
         return VoltageSequence(cfg,tuple(SequenceRow(VoltageSet.from_values(cfg,row['voltages']),row['hold_s']) for row in rows),use_ldac,name).validate()
 

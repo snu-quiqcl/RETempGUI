@@ -3,10 +3,10 @@ from dataclasses import replace
 from pathlib import Path
 import time
 from PyQt5 import QtCore, QtGui, QtWidgets as W
-from trap_dac.configuration import load_config, DeviceConfig
-from trap_dac.model import VoltageSet, example, load_preset, atomic_json, suggested_filename
-from trap_dac.sequence import VoltageSequence, SequenceRow, load_sequence, save_sequence, parse_rows
-from trap_dac.timing import ManualTiming, SequenceOptions
+from labremote.config.dac import load_config, DeviceConfig, DEFAULT_CONFIG_DIR, configuration_path_setting
+from labremote.devices.dac.model import VoltageSet, example, load_preset, atomic_json, suggested_filename
+from labremote.devices.dac.sequence import VoltageSequence, SequenceRow, load_sequence, save_sequence, parse_rows
+from labremote.operation.dac.timing import ManualTiming, SequenceOptions
 from labremote.data_paths import DATA_ROOT
 from .worker import DACWorker, DACAPI
 
@@ -62,9 +62,13 @@ class DACPanel(W.QWidget):
         super().__init__(parent);self.name=name;self.host=host;self.port=port;self.connected=False
         self.endpoint_provider=None;self.handle=None;self.last_sent=None;self._busy=False
         self.worker=DACWorker();self.worker.name=name;self.api=DACAPI(self.worker)
-        self.config=load_config(Path(__file__).resolve().parents[3]/'trap_dac/configs'/('EA.example.json' if 'ea' in name.lower() else 'EC.example.json'))
+        self.config=load_config(DEFAULT_CONFIG_DIR/('EA.example.json' if 'ea' in name.lower() else 'EC.example.json'))
+        configuration_error=None
         try:self.config=self.worker.load_configuration()
-        except FileNotFoundError:pass
+        except (OSError, ValueError) as exc:
+            # load_config wraps missing/unreadable/invalid files in ValueError.
+            # Keep the example for display only; the worker remains unconfigured.
+            configuration_error=str(exc)
         self.folder=DATA_ROOT/'dac'/self.config.device/'presets';self.sequence_folder=DATA_ROOT/'dac'/self.config.device/'sequences'
         self.manual_timing=ManualTiming();self.options=SequenceOptions()
         root=W.QVBoxLayout(self);connection=W.QHBoxLayout();root.addLayout(connection)
@@ -100,6 +104,9 @@ class DACPanel(W.QWidget):
         self.sequence_tab=DACSequence(self)
         self.rebuild();self.refresh_presets()
         self.restore_local_settings()
+        if self.worker.config is None:
+            self.report('Load client mapping to select your actual calibration file. '
+                        'Example values are display-only. '+(configuration_error or ''))
         self.worker.connected.connect(self.on_connected);self.worker.disconnected.connect(self.on_disconnected)
         self.worker.snapshot.connect(lambda data,label:self.accept_state(data))
         self.worker.task_progress.connect(self.progress)
@@ -311,7 +318,7 @@ class DACPanel(W.QWidget):
         except Exception as exc:self.report('Local DAC settings not restored: '+str(exc))
 
     def save_local_settings(self):
-        doc=dict(configuration_path=str(self.worker.config_path) if self.worker.config_path else None,manual_timing=self.manual_timing.as_dict(),preset_folder=str(self.folder),sequence_folder=str(self.sequence_folder),
+        doc=dict(configuration_path=configuration_path_setting(self.worker.config_path),manual_timing=self.manual_timing.as_dict(),preset_folder=str(self.folder),sequence_folder=str(self.sequence_folder),
             sequence_options=dict(reuse_spi_config=self.sequence_tab.reuse.isChecked(),pre_ldac_ms=self.sequence_tab.pre_ldac.value()))
         if self.sequence_tab.table.rowCount():
             try:doc['sequence']=self.sequence_tab.sequence().as_dict()
@@ -364,7 +371,7 @@ class DACSequence(W.QWidget):
         return VoltageSequence(self.owner.config,tuple(self.get_row(r) for r in range(self.table.rowCount())),self.ldac.isChecked(),self.name.text()).validate()
 
     def append(self,rows):
-        from trap_dac.sequence import MAX_ROWS
+        from labremote.devices.dac.sequence import MAX_ROWS
         if self.table.rowCount()+len(rows)>MAX_ROWS:raise ValueError('Too many sequence rows')
         for row in rows:
             row.validate();r=self.table.rowCount();self.table.insertRow(r)

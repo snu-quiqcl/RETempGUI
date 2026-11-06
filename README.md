@@ -248,5 +248,13 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 
 Server-owned USB DAC81416 control is available from the DAC equipment window.
 See [DAC installation, initialization, workflow and storage](docs/DAC_SETUP_KO.md).
-DAC API v2: deploy only `server_deploy_latest/DAC81416` to the InstrumentServer PC. Keep `trap_dac/configs/EA.local.json` and `EC.local.json` on the client; Initialize sends offsets. Sequences execute on the client.
+DAC API v2: deploy only `server_deploy_latest/DAC81416` to the InstrumentServer PC. Keep `labremote/config/devices/dac/EA.local.json` and `EC.local.json` on the client; Initialize sends offsets. Sequences execute on the client.
 Connect never initializes outputs; UI lease loss stops an active sequence after the current row.
+
+
+## Additional reference documents
+
+- [Entanglement reference](docs/ENTANGLEMENT_README.txt)
+- [HOM reference](docs/HOM_README.txt)
+- [Experiment data format](docs/EXPERIMENT_DATA_FORMAT.txt)
+- UI preview images are stored in `docs/images/`.

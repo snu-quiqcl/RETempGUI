@@ -70,5 +70,5 @@ fit 결과를 확정하지 않으므로 Z–MFD 이미지에 유효한 fit 없�
 sweep의 point 폴더는 그대로 유지합니다. 이미 저장된 파일은 이동하지 않습니다.
 반복해서 불러오는 DAC 프리셋/sequence 원본은 라이브러리이므로 기존 위치를 유지합니다.
 설정 파일과 logs/operations의 진단 기록은 측정 데이터 경로 변경 대상이 아닙니다.
-서버 DAC 기록에도 적용하려면 trap_dac/service.py를 서버에 옮긴 뒤 해당 서버를 재시작합니다.
+DAC API v2 실행 기록은 클라이언트의 labremote/operation/dac에서 저장합니다. 서버에는 sequence 실행기나 기록 서비스가 없습니다.
 labremote/data와 모든 하위 날짜 폴더는 기존 Git ignore 규칙으로 제외됩니다.

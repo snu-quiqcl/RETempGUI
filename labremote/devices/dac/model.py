@@ -8,7 +8,7 @@ from dataclasses import dataclass, replace
 from decimal import Decimal
 from datetime import datetime
 from pathlib import Path
-from .configuration import DeviceConfig, number, read_json, voltage_code
+from labremote.config.dac import DeviceConfig, number, read_json, voltage_code
 
 
 def default_set_name(device, now=None):
@@ -24,15 +24,6 @@ def suggested_filename(device, name='', now=None):
         name = name[len(device) + 1:]
     safe = ''.join(c if c.isalnum() or c in '_- ' else '_' for c in name).strip()
     return f'{stamp}_{device}' + (f'_{safe}' if safe else '') + '.json'
-
-
-@dataclass(frozen=True)
-class Command:
-    electrode_id: str
-    chip: int
-    channel: int
-    voltage: float
-    code: int
 
 
 @dataclass(frozen=True)
@@ -58,12 +49,6 @@ class VoltageSet:
         for electrode, value in zip(self.config.electrodes, self.voltages):
             voltage_code(self.config, electrode.chip, electrode.channel, value)
         return self
-
-    def commands(self):
-        self.validate()
-        pairs = sorted(zip(self.config.electrodes, self.voltages), key=lambda item: (item[0].chip, item[0].channel))
-        return tuple(Command(e.id, e.chip, e.channel, float(value),
-                             voltage_code(self.config, e.chip, e.channel, value)) for e, value in pairs)
 
     def signature(self):
         return self.device, self.config.wiring(), tuple(sorted(self.by_id.items()))
