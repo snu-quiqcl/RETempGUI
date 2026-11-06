@@ -799,13 +799,13 @@
     },
     {
       "path": "labremote/devices/dac/tab.py",
-      "bytes": 28838,
-      "sha256": "58ce27f1da32977d8e05a6f7a700f9158ce02b77b9279c02c3b3c7b8a1f5c87e"
+      "bytes": 30011,
+      "sha256": "6e7275a4eb01b0cdd5310600ff05cdb738bb2838c1dc23e3a9dbfc8bd6eedd02"
     },
     {
       "path": "labremote/devices/dac/worker.py",
-      "bytes": 7148,
-      "sha256": "eab8f24a3f2f80b4516758f361c33600a09c4370eb26c4205b2b352238df7aa0"
+      "bytes": 7854,
+      "sha256": "ed3561af9441b89b38b789aba6145b629f515e17321f88bca2455f96a12f2c04"
     },
     {
       "path": "labremote/devices/dds4/__init__.py",
@@ -1154,23 +1154,23 @@
     },
     {
       "path": "labremote/operation/dac/execute.py",
-      "bytes": 2818,
-      "sha256": "0fd10e794caa01fea03f64df25996e77d010e6e28ae23d22c9c3cbf72bdbfd88"
+      "bytes": 3977,
+      "sha256": "3a5a9bbe19bbc0073616522556f02d2b803b8ca271d6a3b6728fb0a393696cb2"
     },
     {
       "path": "labremote/operation/dac/initialize.py",
-      "bytes": 670,
-      "sha256": "d03fa0c7d70d539161cb07f68ba0801617f09b9065fe25859d68cbb2ac0f9776"
+      "bytes": 836,
+      "sha256": "95395b335742b9c97396d07451d4eb4f3dc6bce75e3c2d49cb58dc7bb8650026"
     },
     {
       "path": "labremote/operation/dac/run_sequence.py",
-      "bytes": 1152,
-      "sha256": "2b74c442b68e871c4869ed0a3dc510621d65c233fbea1600ca1d0d3a8d1c70d8"
+      "bytes": 2091,
+      "sha256": "955a745724d7772bef4b96dba92a0e26e56c4d5785f118ed139b11ae20af87dc"
     },
     {
       "path": "labremote/operation/dac/set_voltages.py",
-      "bytes": 528,
-      "sha256": "5152eeb42002b083dba67224c53ae4778c54ce516c86c1c3715ca4920ab71e47"
+      "bytes": 1081,
+      "sha256": "4dac54092ccda20bf051b21be33c7921a9ef0e950e82c8461f960ffc7822126f"
     },
     {
       "path": "labremote/operation/dac/timing.py",
@@ -1989,8 +1989,8 @@
     },
     {
       "path": "server_deploy_latest/DAC81416/README.md",
-      "bytes": 767,
-      "sha256": "29df0eba976f0cbc9ed09a02351f734f62435e279ddad2fedc6d089c88982cc6"
+      "bytes": 3580,
+      "sha256": "4dedc18f469a985bdcea100bc6924b74b03ef8c49a00beb107740681a306192e"
     },
     {
       "path": "server_deploy_latest/DAC81416/pyproject.toml",
@@ -2014,8 +2014,28 @@
     },
     {
       "path": "server_deploy_latest/DAC81416/trap_dac/qcodes_driver.py",
-      "bytes": 11191,
-      "sha256": "c50e224703416ed9888db120077db84cbfbd9046f8235af77ba50cac89d724b7"
+      "bytes": 13768,
+      "sha256": "a73b0d19d45a56bf815ce00a5609e5c97522f7f05b3052c7b8c64c190b5b4f17"
+    },
+    {
+      "path": "tests/test_dac_blueprint.py",
+      "bytes": 1259,
+      "sha256": "49f3c791530f9f9cb27a3ce878c576c65cb6d65ef8682dfe16b160a58cb1d8c2"
+    },
+    {
+      "path": "tests/test_dac_shared.py",
+      "bytes": 5667,
+      "sha256": "aba26425e5e6654c5686d459db4570a157a7a9dba3fc02f38080ee40e5da3e3b"
+    },
+    {
+      "path": "tests/test_dac_ui.py",
+      "bytes": 3982,
+      "sha256": "38243639b84d425c05d80ce0447c609de1d4976fad66030e62be2341783b92f6"
+    },
+    {
+      "path": "tests/smoke_dac_rpc.py",
+      "bytes": 3965,
+      "sha256": "166c6a8609493b8b1654d70d2bc67440e94acaf09717077430999280bcd5da47"
     }
   ]
 }

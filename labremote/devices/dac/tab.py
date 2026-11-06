@@ -80,6 +80,8 @@ class DACPanel(W.QWidget):
         self.connect_button=self.button(connection,'Connect',self.connect_dac)
         self.disconnect_button=self.button(connection,'Disconnect',lambda:self.watch(self.api.disconnect()))
         self.reload_button=self.button(connection,'Load client mapping',self.load_client_mapping)
+        self.recover_button=self.button(connection,'Recover USB',lambda:self.watch(self.api.recover()))
+        self.recover_button.setToolTip('Explicit recovery resets server initialization state; initialize afterward.')
         init=W.QHBoxLayout();root.addLayout(init);init.addWidget(W.QLabel('Initial output'))
         self.initial_mode=W.QComboBox();self.initial_mode.addItems(['0 V','Current draft']);init.addWidget(self.initial_mode)
         self.initialize_button=self.button(init,'Initialize DAC',self.initialize);init.addStretch()
@@ -103,7 +105,7 @@ class DACPanel(W.QWidget):
         self.quick_box=W.QGroupBox('Quick controls');self.quick_layout=W.QHBoxLayout(self.quick_box);right.addWidget(self.quick_box)
         row=W.QHBoxLayout();right.addLayout(row);self.restore_button=self.button(row,'Restore last sent',self.restore_sent)
         self.sent_note=W.QLabel('Last sent is not measured voltage');row.addWidget(self.sent_note,1)
-        self.apply_button=self.button(row,'Apply voltages',self.apply)
+        self.apply_button=self.button(row,'Apply all voltages',self.apply)
         self.status=W.QLabel('Mapping and offsets are stored on this client. Initialize sends offsets to the driver.');self.status.setWordWrap(True);root.addWidget(self.status)
         self.sequence_tab=DACSequence(self)
         self.rebuild();self.refresh_presets()
@@ -137,10 +139,15 @@ class DACPanel(W.QWidget):
             handle=self.handle;self.handle=None
             if handle.error:self.report(str(handle.error))
             else:
-                result=handle.result or {};self.report(handle.action+' completed')
+                result=handle.result or {};self.report(handle.action+(' · transmission completed (not measured)' if handle.action in ('DAC_APPLY','DAC_STEP','DAC_INITIALIZE','DAC_SEQUENCE') else ' completed'))
                 if result.get('result'):self.accept_state(result['result'])
                 if handle.action=='DAC_STEP' and self.last_sent:self.set_draft(VoltageSet.from_values(self.config,self.last_sent))
             self.busy(self.worker.has_requests())
+
+        now=time.monotonic()
+        if self.connected and not self.worker.connection_error and not self.worker.has_requests() and now-getattr(self,'_last_poll',0)>=2:
+            self._last_poll=now
+            self.api.refresh()
 
     def connect_dac(self):
         host,port=self.endpoint_provider() if self.endpoint_provider else (self.host,self.port)
@@ -166,15 +173,18 @@ class DACPanel(W.QWidget):
             self.sequence_tab.columns();self.refresh_presets()
         self.last_sent=info.get('last_sent')
         for eid,label in self.sent_labels.items():label.setText('--' if self.last_sent is None else f'{self.last_sent[eid]:.5f}')
-        self.connection_label.setText(f'{self.name} / {new.device} · '+('Ready (TX only)' if info.get('ready') else 'USB connected · initialize required' if info.get('connected') else 'USB closed'))
+        self.connection_label.setText(f'{self.name} / {new.device} · '+(info.get('status_reason','Ready (TX only)' if info.get('ready') else 'Initialize required') if info.get('connected') else 'USB closed')+(' · Sequence control reserved' if info.get('control_busy') else ''))
         self.sent_note.setText('Last sent, not measured · LDAC '+str(info.get('last_ldac')))
         self.busy(self.worker.has_requests())
 
     def busy(self,value):
         self._busy=value
-        ready=self.connected and bool((self.worker.description or {}).get('ready'))
+        state=self.worker.description or {}
+        reserved=bool(state.get('control_busy'))
+        ready=self.connected and bool(state.get('ready')) and not reserved
         for w in (self.apply_button,self.quick_box):w.setEnabled(ready and not value)
-        self.initialize_button.setEnabled(self.connected and not value)
+        self.initialize_button.setEnabled(self.connected and not value and not reserved)
+        self.recover_button.setEnabled(self.connected and not value and not reserved and bool(state.get("faulted")))
         self.reload_button.setEnabled(not value)
         self.connect_button.setEnabled(not value);self.disconnect_button.setEnabled(self.connected and not value)
         self.sequence_tab.start_button.setEnabled(ready and not value)
@@ -223,7 +233,7 @@ class DACPanel(W.QWidget):
     def add_electrode(self,grid,e,row):
         label=W.QLabel(e.label if e.role=='outer' else e.id);label.setToolTip(f'{e.id}: chip {e.chip}, channel {e.channel}')
         field=spin(e.default_voltage);self.editors[e.id]=field
-        field.setObjectName('dac_voltage_'+e.id);field.lineEdit().returnPressed.connect(lambda:self.invoke(self.apply))
+        field.setObjectName('dac_voltage_'+e.id);field.lineEdit().returnPressed.connect(lambda eid=e.id:self.invoke(lambda:self.set_channel(eid)))
         sent=W.QLabel('--');self.sent_labels[e.id]=sent
         quick=W.QWidget();layout=W.QHBoxLayout(quick);layout.setContentsMargins(0,0,0,0)
         for d in (-1,1):self.button(layout,'−' if d<0 else '+',lambda eid=e.id,d=d:self.quick(d,electrode_id=eid)).setMaximumWidth(28)
@@ -248,6 +258,11 @@ class DACPanel(W.QWidget):
     def apply(self):
         if self._busy:raise RuntimeError('DAC busy')
         state=self.draft();self.watch(self.api.apply(state.by_id,use_ldac=self.ldac.isChecked(),manual_timing=self.manual_timing.as_dict(),name=state.name,notes=state.notes))
+
+    def set_channel(self,electrode):
+        if self._busy:raise RuntimeError('DAC busy')
+        field=self.editors[electrode];field.interpretText()
+        self.watch(self.api.set_voltage(electrode,field.value(),use_ldac=self.ldac.isChecked()))
 
     def quick(self,direction,**target):
         if self._busy:raise RuntimeError('DAC busy')

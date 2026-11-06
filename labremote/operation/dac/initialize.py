@@ -10,4 +10,7 @@ def initialize(worker,payload):
     for e in worker.config.electrodes:initial[e.chip][e.channel]=state.by_id[e.id]
     status=worker.raw_device.initialize([list(r) for r in worker.config.offsets],initial,
                                        use_ldac=payload.get('use_ldac',True))
-    return worker._description(status,adopt=True)
+    description=worker._description(status,adopt=True)
+    if not description['ready']:
+        raise ValueError('Initialization returned incompatible state: '+description['status_reason'])
+    return description

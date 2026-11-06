@@ -9,7 +9,7 @@ from labremote.runtime.errors import OperationCancelled
 from labremote.runtime.network import configure_client_timeout
 from labremote.api.devices import DeviceAPI
 from labremote.config.dac import DeviceConfig, load_config, DEFAULT_CONFIG_DIR, resolve_configuration_path
-from labremote.devices.dac.model import load_preset
+from labremote.devices.dac.model import load_preset, atomic_json
 from labremote.devices.dac.sequence import load_sequence, save_sequence
 
 
@@ -23,6 +23,7 @@ class DACWorker(DeviceWorker):
         self.config_path=None
         self.config=None
         self.configuration_id=None
+        self.control_token=None
 
     def make_monitor(self):return ParameterMonitor(self,())
 
@@ -40,17 +41,22 @@ class DACWorker(DeviceWorker):
         return config
 
     def _description(self,status,adopt=False):
-        offsets=[list(row) for row in self.config.offsets]
+        offsets=[[float(v) for v in row] for row in self.config.offsets]
         digest=hashlib.sha256(json.dumps(offsets,separators=(',', ':')).encode()).hexdigest()
-        compatible=status.get('calibration_hash')==digest
+        remote_offsets=status.get('calibration_offsets')
+        compatible=(remote_offsets==offsets if remote_offsets is not None else status.get('calibration_hash')==digest)
         if adopt:
             self.configuration_id=status.get('configuration_id') if compatible else None
         ready=bool(status.get('ready') and compatible and self.configuration_id
                    and self.configuration_id==status.get('configuration_id'))
         matrix=status.get('last_requested_voltages')
         values={e.id:matrix[e.chip][e.channel] for e in self.config.electrodes} if matrix is not None and ready else None
+        reason=('USB recovery required' if status.get('faulted') else
+                'Initialize required' if not status.get('ready') else
+                'Calibration mismatch: load matching client calibration or explicitly initialize' if not compatible else
+                'Ready (TX only)')
         self.description=dict(status,device=self.config.device,configuration=self.config.as_dict(),
-                              ready=ready,last_sent=values,active_job=None)
+                              ready=ready,last_sent=values,active_job=None,status_reason=reason)
         self.publish_snapshot(self.description,'DAC_STATE')
         return self.description
 
@@ -59,11 +65,16 @@ class DACWorker(DeviceWorker):
         status=self.raw_device.get_status()
         if status.get('protocol')!=2:raise ValueError('DAC API v2 driver required; update server package')
         configure_client_timeout(self.cli,120)
-        if status.get('faulted'):self.raw_device.disconnect()
         return self._description(self.raw_device.connect(),adopt=True)
 
     def refresh(self):
-        return self._description(self.raw_device.get_status())
+        return self._description(self.raw_device.get_status(),adopt=True)
+
+    def synchronize(self):
+        status=self.refresh()
+        if not status.get('ready'):
+            raise ValueError(status['status_reason'])
+        return status
 
     def _check_cancelled(self,handle):
         if handle:handle.check_cancelled()
@@ -107,7 +118,7 @@ class DACAPI(DeviceAPI):
         values=(self.worker.description or {}).get('last_sent')
         if values is None:raise RuntimeError('No complete sent state; initialize or apply a full set first')
         if electrode not in values:raise ValueError('Unknown electrode')
-        return self.apply({**values,electrode:voltage},use_ldac=use_ldac)
+        return self._job('set_channel',dict(electrode=electrode,voltage=voltage,use_ldac=use_ldac))
 
     def step(self,voltages,step,direction,*,electrode_id=None,component=None,use_ldac=True,manual_timing=None):
         return self._job('step',dict(voltages=voltages,step=step,direction=direction,electrode_id=electrode_id,
@@ -141,6 +152,8 @@ class DACAPI(DeviceAPI):
             sequence_options=sequence_options or {}))
 
     def reload_configuration(self,path=None):return self._job('reload_config',dict(path=str(path) if path else None))
+
+    def recover(self):return self._job('recover',{})
 
     def cancel(self):self.worker.cancel_pending()
 
