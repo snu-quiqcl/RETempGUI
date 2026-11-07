@@ -42,7 +42,7 @@ class MicromotionRunner(WorkflowTask):
         join_completed(participants)
         with _TASK_LOCK:
             for w in participants:
-                if w.has_requests() or any(t.running() for t in w._background_tasks) or (
+                if w.has_foreground_requests() or any(t.running() for t in w._background_tasks) or (
                     hasattr(w,'waveform_runner') and w.waveform_runner.running()):raise RuntimeError('Device busy: '+str(w.name))
             self.dac=dac if mode in ('scan','apply') else None
             self.session=None;self.result=None;self.cleanup_group=WorkflowGroup()

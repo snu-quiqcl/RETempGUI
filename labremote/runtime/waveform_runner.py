@@ -47,8 +47,19 @@ class WaveformRunner:
             try:channels=(channels,) if isinstance(channels,str) else tuple(channels)
             except TypeError:error=ValueError('Select supported acquisition channels')
             group=WorkflowGroup(stop=parent.stop if parent is not None else None)
+            if parent is not None:group.owner=parent.owner;group.owns_execution=False
+            elif group.owns_execution:
+                # Standalone monitoring retains ordinary FIFO behavior, including
+                # manual controls between reads. Exclusive workflows detect this
+                # repeat at the worker boundary when claiming the same device.
+                group.owner=None;group.owns_execution=False
             handle=WaveformHandle(self.label,None,group=group)
             if parent is not None:parent.add(handle)
+            if error is None:
+                try:
+                    if group.owner is not None:worker.reserve_execution(group.owner)
+                    elif worker.execution_reserved():raise worker._ownership_error(self.label)
+                except Exception as exc:error=exc
             if error is not None:
                 if parent is not None:parent.stop.set()
                 handle.finish(error)
@@ -103,6 +114,7 @@ class WaveformRunner:
             error=exc
             handle.group.stop.set()
         finally:
+            if handle.group.owns_execution:handle.group.owner.release()
             error=handle.finish(error)
             # Child errors already produce the common runner's one alarm.
             if error is not None and not child_failed:

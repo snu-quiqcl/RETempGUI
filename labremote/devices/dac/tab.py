@@ -147,7 +147,8 @@ class DACPanel(W.QWidget):
         now=time.monotonic()
         if self.connected and not self.worker.connection_error and not self.worker.has_requests() and now-getattr(self,'_last_poll',0)>=2:
             self._last_poll=now
-            self.api.refresh()
+            from labremote.runtime.auto_monitor import AUTO_MONITOR
+            AUTO_MONITOR.request(self.worker,('MONITOR DAC status',lambda w:w.refresh()))
 
     def connect_dac(self):
         host,port=self.endpoint_provider() if self.endpoint_provider else (self.host,self.port)

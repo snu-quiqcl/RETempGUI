@@ -3,9 +3,8 @@ from labremote.api.devices import Devices
 from types import SimpleNamespace
 
 def run_workflow(bindings, workflow, *, on_event=None, stop_event=None, parameters=None, run_directory=None, queue_context=None):
-    from labremote.runtime.auto_monitor import AUTO_MONITOR
     from .workflow_result import workflow_session
-    with workflow_session(), AUTO_MONITOR.workflow():
+    with workflow_session():
         return _run_workflow(bindings, workflow, on_event=on_event, stop_event=stop_event, parameters=parameters, run_directory=run_directory, queue_context=queue_context)
 
 
@@ -70,9 +69,12 @@ class WorkflowTask:
 
     def running(self):return self.thread is not None and self.thread.is_alive()
 
-    def launch(self,callback,participants,settings,parent=None):
+    def launch(self,callback,participants,settings,parent=None,*,owned_participants=None,shared_participants=()):
         with _TASK_LOCK:
             group=WorkflowGroup(stop=parent.stop if parent is not None else None)
+            if parent is not None:group.owner=parent.owner;group.owns_execution=False
+            group.shared_workers=set(shared_participants)
+            if group.owns_execution:group.owner.label=self.label
             handle=TaskHandle(self.label,None,group)
             if self.label=='MOTOR_SCAN':handle.arguments={'scan':settings['scan']}
             group.task_run_id=handle.request_id
@@ -84,11 +86,22 @@ class WorkflowTask:
             elif self.label=='MOTOR_SCAN' and conflicting_scan(participants):error=RuntimeError('A participating device already belongs to a scan')
             elif self.label=='MOTOR_SCAN' and self.worker.waveform_runner.running():error=RuntimeError('Stop FPGA repeat measurement before scanning')
             if parent is not None:parent.add(handle)
+            claimed=[]
+            if error is None:
+                try:
+                    for w in (participants if owned_participants is None else owned_participants):
+                        if w.reserve_execution(group.owner,shared=w in group.shared_workers):claimed.append(w)
+                except Exception as exc:
+                    error=exc
+                    for w in claimed:w.release_execution(group.owner)
             if error is not None:
                 if parent is not None:parent.stop.set()
                 handle.finish(error);self.worker.task_changed.emit(self.label,handle);self.worker.failure.emit(self.label,str(error));return handle
             for previous in self.participants:previous._background_tasks.discard(self)
             self.handle,self.group,self.participants=handle,group,tuple(participants)
+            for name in ('cleanup_group','fpga_cleanup_group'):
+                cleanup=getattr(self,name,None)
+                if cleanup is not None:cleanup.owner=group.owner;cleanup.owns_execution=False
             self.child_failed=False;self.settings=deepcopy(settings);self.state={'run_id':handle.request_id}
             if self.label=='MOTOR_SCAN':self.state['scan']=settings['scan']
             for w in participants:w._background_tasks.add(self)
@@ -97,9 +110,11 @@ class WorkflowTask:
             self.thread.start();return handle
 
     def _run(self,callback,handle):
-        from labremote.runtime.auto_monitor import AUTO_MONITOR
-        with AUTO_MONITOR.workflow():
-            self._run_owned(callback,handle)
+        from .execution_scope import execution_scope
+        try:
+            with execution_scope(self.group.owner):self._run_owned(callback,handle)
+        finally:
+            if self.group.owns_execution:self.group.owner.release()
 
     def _run_owned(self,callback,handle):
         error=None;value=None;record=None

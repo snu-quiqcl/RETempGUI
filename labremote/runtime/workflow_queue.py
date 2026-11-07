@@ -134,14 +134,10 @@ class QueueRunner:
     def commit(self):
         self.state['updated_at']=now();save(self.folder/'queue_manifest.json',self.state);self.publish(deepcopy(self.state))
     def run(self):
-        from .auto_monitor import AUTO_MONITOR
-        with workflow_session(),AUTO_MONITOR.workflow():return self._run()
+        with workflow_session(label='Queue'):return self._run()
     def _run(self):
-        workers={bridge.worker for _,bridge in self.bindings.values()}
-        # Automatic polling is already suspended by run(). Drain in-flight reads
-        # while reporting actual foreground work with device/task identities.
-        from .queue_start_guard import wait_until_ready
-        wait_until_ready(self.bindings,self.stop)
+        from .execution_scope import CURRENT_EXECUTION
+        owner=CURRENT_EXECUTION.get()
         self.folder=self.directory/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_queue_'+uuid4().hex);self.folder.mkdir(parents=True,exist_ok=False)
         steps=expand_steps(self.plan)
         self.state=dict(schema_version=1,queue_id=self.folder.name,folder=str(self.folder),status='running',started_at=now(),plan=self.plan,steps=steps,error='')
@@ -172,13 +168,12 @@ class QueueRunner:
                         result=run_workflow(self.bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context)
                 except Exception as exc:
                     error_details=traceback.format_exc()
-                    dangerous=isinstance(exc,(ConnectionError,TimeoutError)) or any(w.connection_error for w in workers) or 'timeout' in str(exc).lower() or 'timed out' in str(exc).lower() or 'cleanup' in str(exc).lower() or 'idle state' in str(exc).lower()
+                    with owner.lock:used_workers=tuple(owner.workers)
+                    dangerous=isinstance(exc,(ConnectionError,TimeoutError)) or any(w.connection_error for w in used_workers) or 'timeout' in str(exc).lower() or 'timed out' in str(exc).lower() or 'cleanup' in str(exc).lower() or 'idle state' in str(exc).lower()
                     result=WorkflowResult(status='cancelled' if isinstance(exc,OperationCancelled) else 'failed',reason=f'{type(exc).__name__}: {exc}',continue_allowed=not dangerous,cleanup_status='unknown' if dangerous else 'not_reported')
                 finally:
                     with self.lock:self.active=None
                 # Final background publication must finish before another workflow starts.
-                from .characterization_guard import join_completed
-                join_completed(workers)
                 payload=serializable(result.to_dict());payload['traceback']=error_details
                 save(folder/'workflow_result.json',payload)
                 summary={k:v for k,v in payload.items() if k not in ('value','traceback')}

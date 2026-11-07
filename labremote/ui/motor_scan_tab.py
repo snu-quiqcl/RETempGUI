@@ -144,7 +144,9 @@ class MotorScanTab(QtWidgets.QWidget):
             else:label.setText('Unavailable')
             # Reuse scan move readbacks; never inject polling into an active scan.
             if self.isVisible() and not self.reserved(api) and not api.worker.has_requests():
-                api.status()
+                  from labremote.runtime.auto_monitor import AUTO_MONITOR
+                  from labremote.runtime.io import acquire
+                  AUTO_MONITOR.request(api.worker,('MONITOR status',lambda w:acquire(w.ps.status)))
         if self.manual_move is not None and self.manual_move.done.is_set():
             self.status.setText(str(self.manual_move.error) if self.manual_move.error else self.manual_label)
             self.manual_move=None

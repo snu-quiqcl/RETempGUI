@@ -24,7 +24,6 @@ class AutoMonitor:
         self.next_at = {}
         self.blocked = set()
         self.failed_workers = weakref.WeakSet()
-        self.workflows = 0
         self.timer = None
 
     def register(self, worker):
@@ -48,10 +47,8 @@ class AutoMonitor:
 
     @contextmanager
     def workflow(self):
-        with self.lock: self.workflows += 1
-        try: yield
-        finally:
-            with self.lock: self.workflows -= 1
+        """Compatibility context; execution ownership is enforced per worker."""
+        yield
 
     def timed_out(self, worker):
         """Called for any operation timeout, before observers can dispatch another read."""
@@ -69,22 +66,21 @@ class AutoMonitor:
             self.failed_workers.discard(worker)
             self.next_at[key] = self.clock() + self.gap_s
 
-    def foreground_busy(self):
-        if self.workflows: return True
-        for worker in list(self.workers):
-            repeat = getattr(worker, 'waveform_runner', None)
-            if repeat is not None and repeat.running(): return True
-            if any(task.running() for task in tuple(worker._background_tasks)): return True
-            with worker._lock:
-                handles = [*worker._pending, worker._active]
-                if any(h is not None and not h.done.is_set() and not getattr(h, 'automatic_monitor', False) for h in handles):
-                    return True
-        return False
+    def foreground_busy(self,worker):
+        from .workflow_runner import _TASK_LOCK
+        with _TASK_LOCK:
+            if any(task.running() for task in tuple(worker._background_tasks)):return True
+        repeat=getattr(worker,'waveform_runner',None)
+        if repeat is not None and repeat.running():return True
+        with worker._lock:
+            if worker.execution_reserved():return True
+            handles=[*worker._pending,worker._active]
+            return any(h is not None and not h.done.is_set() and not getattr(h,'automatic_monitor',False) for h in handles)
 
     def permitted(self, worker):
         with self.lock:
             return (not worker._closing and not worker.connection_error and not getattr(worker, "io_fault", False) and worker.ps is not None
-                    and endpoint(worker) not in self.blocked and not self.foreground_busy())
+                    and endpoint(worker) not in self.blocked and not self.foreground_busy(worker))
 
     def tick(self):
         with self.lock:
@@ -99,14 +95,13 @@ class AutoMonitor:
                     else:
                         self.failed_workers.add(worker)
                         self.pending.pop(worker, None)
-            if self.foreground_busy(): return
             for worker in list(self.pending):
                 key = endpoint(worker)
                 if worker._closing or worker.connection_error or getattr(worker, "io_fault", False) or worker.ps is None or key in self.blocked:
                     self.pending.pop(worker, None)
                     continue
                 if key in self.active or self.clock() < self.next_at.get(key, 0): continue
-                if worker.has_requests(): continue
+                if self.foreground_busy(worker) or worker.has_requests(): continue
                 read = self.pending[worker]
                 try:
                     if read is None:

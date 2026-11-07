@@ -22,7 +22,7 @@ class FluorescenceRunner(WorkflowTask):
         request=prepare(chamber,settings,settings_file,mapping_file)
         request['directory']=str(characterization_directory(directory, chamber, 'fluorescence'))
         with _TASK_LOCK:
-            if self.running() or self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):
+            if self.running() or self.worker.has_foreground_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):
                 raise RuntimeError('FPGA is busy; stop measurements/scans or wait for the current operation')
             return self.launch(self._execute,(self.worker,),request,parent)
 

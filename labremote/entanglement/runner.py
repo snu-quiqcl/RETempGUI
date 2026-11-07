@@ -24,7 +24,7 @@ class EntanglementRunner(WorkflowTask):
         if settings is not None and settings_file is not None:raise ValueError('Choose settings or settings_file')
         c=config.load(settings_file) if settings is None else config.validate(settings)
         with _TASK_LOCK:
-            if self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):raise RuntimeError('FPGA busy')
+            if self.worker.has_foreground_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):raise RuntimeError('FPGA busy')
             return self.launch(self._execute,(self.worker,),dict(settings=c,directory=str(tab_data_directory(directory,'entanglement'))),parent)
 
     def _execute(self):

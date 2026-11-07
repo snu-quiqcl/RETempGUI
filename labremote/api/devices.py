@@ -496,7 +496,11 @@ class MDTAPI(DeviceAPI):
 
     def stop_pid(self):return self.worker.pid_runner.cancel()
 
-    def update_pid(self, **changes):return self._submit('UPDATE_PID',lambda w:w.pid_runner.update_settings(changes),arguments=changes)
+    def update_pid(self, **changes):
+        # UI gain/target edits are controls for the existing PID, not a second
+        # execution that should claim the device from that PID.
+        group=self.group or getattr(self.worker.pid_runner,'group',None)
+        return DeviceAPI(self.worker,group=group)._submit('UPDATE_PID',lambda w:w.pid_runner.update_settings(changes),arguments=changes)
 
     def pid_step(self, axis, voltage, *, expected, max_delta, minimum, maximum, guard):
         from labremote.operation.mdt.pid_step import pid_step

@@ -32,6 +32,7 @@ class OperationRunner:
             if getattr(handle, 'automatic_monitor', False):
                 from .auto_monitor import AUTO_MONITOR
                 if not AUTO_MONITOR.permitted(self): return
+            self.check_execution(handle)
             if handle.action not in ('CONNECT', 'DISCONNECT') and (self.connection_error or self.ps is None):
                 raise ConnectionError('Device connection unavailable; connect explicitly')
             with operation_config():

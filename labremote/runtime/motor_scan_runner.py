@@ -30,7 +30,9 @@ class MotorScanRunner(WorkflowTask):
             self.x_worker,self.y_worker=x_motor.worker,y_motor.worker
             self.z_worker=z_motor.worker if z_motor is not None else None
             return self.run_scan(config)
-        return self.launch(run,(self.worker,*(api.worker for api in motors)),config,parent)
+        # Each FPGA count is an atomic FIFO operation; independent scans may
+        # share it while reserving their own motors for the full scan.
+        return self.launch(run,(self.worker,*(api.worker for api in motors)),config,parent,shared_participants=(self.worker,))
 
     def position(self,state):
         if state.get('online') is False:raise RuntimeError('Motor USB is closed or offline; Open the motor first')
@@ -109,7 +111,10 @@ class MotorScanRunner(WorkflowTask):
             for worker in (self.x_worker,self.y_worker,*([self.z_worker] if self.z_worker is not None else [])):
                 if worker._closing or worker.ps is None or worker.connection_error:
                     stop_errors.append(worker.name+': STOP not confirmed (disconnected/closing)');continue
-                try:device_api(worker).stop().wait()
+                try:
+                    from .jobs import WorkflowGroup
+                    cleanup=WorkflowGroup();cleanup.owner=self.group.owner;cleanup.owns_execution=False
+                    device_api(worker,group=cleanup).stop().wait()
                 except Exception as stop_error:stop_errors.append(worker.name+': '+str(stop_error))
         finally:
             if file is not None:

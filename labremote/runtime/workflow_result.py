@@ -3,13 +3,10 @@ from dataclasses import dataclass,field,asdict
 from contextlib import contextmanager
 import threading
 
-_EXECUTION_LOCK=threading.RLock()
-
 @contextmanager
-def workflow_session():
-    if not _EXECUTION_LOCK.acquire(blocking=False):raise RuntimeError('Another workflow or Queue is active')
-    try:yield
-    finally:_EXECUTION_LOCK.release()
+def workflow_session(label='Workflow'):
+    from .execution_scope import execution_scope
+    with execution_scope(label=label) as owner:yield owner
 
 @dataclass
 class WorkflowResult:

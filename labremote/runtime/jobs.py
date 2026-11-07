@@ -99,6 +99,11 @@ class ExecutionHandle:
 
 class WorkflowGroup:
     def __init__(self, stop=None, on_event=None):
+        from .execution_scope import CURRENT_EXECUTION,ExecutionOwner
+        self.owner=CURRENT_EXECUTION.get()
+        self.owns_execution=self.owner is None
+        self.shared_workers=set()
+        if self.owner is None:self.owner=ExecutionOwner()
         self.stop = stop if stop is not None else CancellationToken()
         self.handles = []
         self.on_event = on_event
@@ -116,6 +121,11 @@ class WorkflowGroup:
             handle.subscribe(changed)
 
     def finish(self, failed=False):
+        try:return self._finish(failed)
+        finally:
+            if self.owns_execution:self.owner.release()
+
+    def _finish(self, failed=False):
         if failed: self.stop.set()
         with self.lock: handles = tuple(self.handles)
         first = None
