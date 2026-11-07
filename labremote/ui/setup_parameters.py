@@ -29,12 +29,19 @@ class SetupParameters(QtWidgets.QWidget):
 
     def refresh_devices(self):
         try:
-            names=set()
-            for family,bridge in self.bindings_provider().values():
-                w=bridge.worker
-                if w.ps is not None and not w.connection_error and not w._closing and w.name:names.add((family,w.name))
+            bindings=self.bindings_provider()
+            names=set();warnings=[]
+            for key,binding in bindings.items():
+                try:
+                    family,bridge=binding;w=bridge.worker
+                    connected=w.available if family=='ccd' else w.ps is not None
+                    if connected and not w.connection_error and not w._closing and w.name:names.add((family,w.name))
+                except Exception as exc:warnings.append(f'{key}: {exc}')
             self.available=sorted(names)
-            self.info.setText('장비 선택 → 파라미터 선택 → 값 설정. 연결 해제된 기존 선택은 유지됩니다.')
+            note='장비 선택 → 파라미터 선택 → 값 설정. 연결 해제된 기존 선택은 유지됩니다.'
+            if warnings:note+='\n일부 장비 목록 확인: '+'; '.join(warnings)
+            elif not names:note+='\n현재 GUI에 연결된 장비가 없습니다.'
+            self.info.setText(note)
         except Exception as exc:self.available=[];self.info.setText('연결 목록 확인: '+str(exc))
         self.render()
 
