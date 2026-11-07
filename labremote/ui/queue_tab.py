@@ -130,16 +130,12 @@ class QueueTab(QtWidgets.QWidget):
         group=deepcopy(items[i]);dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('Repeat Group');form=QtWidgets.QFormLayout(dialog)
         name=QtWidgets.QLineEdit(group['name']);repeat=QtWidgets.QSpinBox();repeat.setRange(1,10000);repeat.setValue(group['repeat'])
         policy=QtWidgets.QComboBox();policy.addItem('Queue 중단','stop');policy.addItem('현재 반복 건너뛰기','skip_iteration');policy.setCurrentIndex(max(0,policy.findData(group['on_failure'])))
-        basis=QtWidgets.QComboBox();basis.addItem('기존 설정 유지',None);basis.addItem('ZZ','zz');basis.addItem('MW detuned','mw_detuned')
-        phase=QtWidgets.QDoubleSpinBox();phase.setRange(0,360);phase.setDecimals(3);phase.setSingleStep(30)
         form.addRow('그룹 이름',name);form.addRow('묶음 반복 N',repeat);form.addRow('실패 시 (자식 정책보다 우선)',policy)
-        form.addRow('얽힘 basis 적용',basis);form.addRow('얽힘 phase magnitude (deg)',phase)
         form.addRow(QtWidgets.QLabel('이온 loss·통신 오류 등 계속 진행 불가 결과는 항상 Queue를 중단합니다.'))
         buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel);buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);form.addRow(buttons)
         if dialog.exec_()!=QtWidgets.QDialog.Accepted:return
         try:
             group.update(name=name.text().strip(),repeat=repeat.value(),on_failure=policy.currentData())
-            if basis.currentData() is not None:self.apply_angle(group,basis.currentData(),phase.value())
             candidate=deepcopy(self.jobs);candidate[ref[0]]=group
             validate_plan(dict(schema_version=2,repeat=self.repeat.value(),jobs=candidate))
             items[i]=group;self.dirty=True;self.refresh(ref)
@@ -161,18 +157,10 @@ class QueueTab(QtWidgets.QWidget):
         if self.still_running() or selected is None:return
         items,i,ref=selected
         if is_group(items[i]):return self.edit_group(items,i,ref)
-        job=deepcopy(items[i]);dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('Workflow 조건');form=QtWidgets.QFormLayout(dialog)
-        name=QtWidgets.QLineEdit(job['name']);repeat=QtWidgets.QSpinBox();repeat.setRange(1,10000);repeat.setValue(job['repeat']);policy=QtWidgets.QComboBox();policy.addItems(['stop','skip']);policy.setCurrentText(job['on_failure'])
-        params=QtWidgets.QPlainTextEdit(json.dumps(job['parameters'],ensure_ascii=False,indent=2));params.setMinimumSize(500,240)
-        reload=QtWidgets.QCheckBox('Python 소스를 현재 파일에서 다시 가져오기');form.addRow('이름',name);form.addRow('반복',repeat);form.addRow('실패 시',policy);form.addRow('devices.parameters (JSON)',params);form.addRow(reload)
-        buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel);buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);form.addRow(buttons)
+        from labremote.ui.workflow_parameters import WorkflowJobDialog
+        dialog=WorkflowJobDialog(items[i],self)
         if dialog.exec_()==QtWidgets.QDialog.Accepted:
-            try:
-                if reload.isChecked():
-                    new=freeze_job(job['filename']);job.update(source=new['source'],sha256=new['sha256'])
-                job.update(name=name.text().strip(),repeat=repeat.value(),on_failure=policy.currentText(),parameters=json.loads(params.toPlainText()))
-                validate_plan(dict(schema_version=1,repeat=1,jobs=[job]));items[i]=job;self.dirty=True;self.refresh(ref)
-            except Exception as exc:self.status.setText('설정 오류: '+str(exc))
+            items[i]=dialog.job;self.dirty=True;self.refresh(ref)
     def duplicate(self):
         selected=self.selected()
         if not self.still_running() and selected is not None:

@@ -80,7 +80,7 @@ class InputState(QtCore.QObject):
             for name,panel in panels.items():
                 key='device/'+family+'/'+name;roots[key]=panel
                 for attr in (('daily_tab','decay_tab','sequence_tab') if legacy else
-                             ('daily_tab','decay_tab','sequence_tab','hom_tab','entanglement_tab','micromotion_tab')):
+                             ('daily_tab','decay_tab','sequence_tab','hom_tab','entanglement_tab','ion_check_tab','micromotion_tab')):
                     if hasattr(panel,attr):roots[key+'/'+attr]=getattr(panel,attr)
         for attr in ('ccd_tab','flip_tab','workflow_tab','queue_tab','monitor_tab','queue_monitor','connection_settings_window'):
             if hasattr(self.owner,attr):roots[attr]=getattr(self.owner,attr)

@@ -8,6 +8,21 @@ from scipy.optimize import least_squares
 from .config import fit_indices
 
 
+def phase_statistics(fit):
+    """TRG-relative phase and local 1-SE error (radians), also for v1 archives."""
+    q=np.asarray(fit['q'],dtype=float);cov=np.asarray(fit['covariance'],dtype=float)
+    if q.shape!=(2,) or cov.shape!=(2,2) or not np.isfinite(q).all() or not np.isfinite(cov).all():
+        raise ValueError('Invalid quadrature covariance for phase')
+    norm2=float(q@q)
+    phi=float((np.arctan2(-q[1],q[0])+np.pi)%(2*np.pi)-np.pi)
+    if norm2<=1e-24:return dict(phase=phi,phase_se=None,phase_reliable=False)
+    gradient=np.array([q[1],-q[0]])/norm2
+    phase_se=float(np.sqrt(max(0.,float(gradient@cov@gradient))))
+    radial_se=float(np.sqrt(max(0.,q@cov@q/norm2)))
+    reliable=bool(np.sqrt(norm2)>3*radial_se and phase_se<np.pi/3)
+    return dict(phase=phi,phase_se=phase_se,phase_reliable=reliable)
+
+
 def fit_histogram(histogram, c):
     h = np.asarray(histogram, dtype=float)
     idx = fit_indices(c)
@@ -30,10 +45,12 @@ def fit_histogram(histogram, c):
     qc = jac @ cov @ jac.T
     visibility = float(np.linalg.norm(q))
     error = float(np.sqrt(q @ qc @ q)/visibility) if visibility > 1e-12 else float(np.sqrt(np.trace(qc)))
-    return dict(coefficients=beta.tolist(), q=q.tolist(), covariance=qc.tolist(),
+    result=dict(coefficients=beta.tolist(), q=q.tolist(), covariance=qc.tolist(),
                 visibility=visibility, visibility_se=error, phase=float(np.arctan2(-B,A)),
                 reduced_chi2=float(np.sum((h[idx]-X@beta)**2/variance)/max(1,len(idx)-3)),
                 fit_bins=idx.tolist(), phase_reliable=visibility > 3*error)
+    result.update(phase_statistics(result))
+    return result
 
 
 def fit_valley(points):

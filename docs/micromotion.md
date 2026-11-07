@@ -7,6 +7,13 @@ or changes external cooling/AOM/laser outputs.
 
 ## Measurements
 
+Micromotion contains three separate tabs: **Signal**, **RF–Photon Correlation**,
+and **2D Scan**. Each page has its own parameters, Run/Stop buttons, result figure
+and last-result state. Only one experiment can use the shared FPGA at a time.
+Changing pages does not erase results or stop an acquisition. Stop on any page
+stops the active Micromotion job. Apply verification is shown on the Correlation
+page while the completed scan and compensation line remain on the 2D Scan page.
+
 1. RF Input Check counts an externally supplied signal over repeated gates.
    Select a separately wired counter-capable input. `ja_2 / SYNC` has a stopwatch
    but no ordinary pulse counter in the current hardware definition. Matching
@@ -22,8 +29,12 @@ or changes external cooling/AOM/laser outputs.
    the selected LDAC policy, waits for settling, measures, fits and saves each
    completed point. The scan is always 2D. Unmeasured cells remain masked.
 
-Each chamber has separately saveable settings in
-`labremote/config/operations/micromotion/EA.local.json` or `EC.local.json`.
+Each chamber and page has separately saveable settings under
+`labremote/config/operations/micromotion/`, for example `EC.input.local.json`,
+`EC.correlation.local.json`, and `EC.scan.local.json` (likewise for EA).
+The former `EA.local.json` / `EC.local.json` remain fallbacks until page settings
+are saved. Changing one page's parameters does not overwrite another page's
+settings; check RF frequency and physical pin selections on each page.
 Initial ranges/frequency are examples from the supplied EC script, not detected
 hardware values. Configure the actual chamber, frequency, pins and scan range.
 
@@ -35,6 +46,27 @@ physical observation window are excluded from fitting but preserved in raw data.
 Poisson IRLS estimates the harmonic coefficients and propagates their covariance
 to `(A/C, B/C)`. Visibility is the length of this vector. Phase near the noise
 floor is marked unresolved.
+
+Visibility and TRG-relative phase heatmaps appear side by side in the 2D Scan
+tab. Both use L_IN/R_IN axes; clicking either selects the same histogram and
+visibility/phase readout. Phase uses a cyclic palette with fixed -180..180 deg
+or -pi..pi rad limits; units affect display only. The saved phase and its local
+standard error are always radians, with convention `phase = atan2(-B,A)` in
+`H(t) = C [1 + visibility*cos(omega*t + phase)]`.
+
+The phase error is propagated from the full quadrature covariance using gradient
+`(q_y, -q_x) / |q|^2`. An estimate is marked unresolved if visibility does not
+exceed three radial standard errors or phase standard error reaches 60 degrees.
+Unresolved measured cells are grey by default; unmeasured cells remain empty.
+Unchecking Mask unresolved phase reveals raw estimates, still labelled unreliable.
+Near zero amplitude, phase and its linearized uncertainty should not be interpreted
+as a resolved physical phase. The phase-across-valley graph uses circular error
+intervals split at +/-pi rather than connecting across the wrap boundary.
+
+Old results without phase-error fields remain readable: phase/error/reliability
+are derived from their saved quadratures and covariance. The line fit continues
+to use quadratures, not wrapped phase. New results include phase SE, reliability
+and the reference/unit convention in metadata.
 
 All measured quadratures and their 2x2 covariance matrices enter a weighted
 rank-one affine fit `q = q0 + u * (n dot (V-center))`, with unit normal n. Its

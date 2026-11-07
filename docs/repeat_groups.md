@@ -6,8 +6,8 @@
    Entanglement는 해당 탭의 Queue 추가 버튼으로 설정 사본과 함께 추가합니다.
 2. 세 workflow 행을 Shift/Ctrl로 선택하고 **선택 항목 묶기**를 누릅니다.
 3. 그룹 이름과 묶음 반복 N을 지정합니다. 자식 workflow 반복은 보통 1로 둡니다.
-4. 그룹 편집에서 **얽힘 basis 적용 → ZZ**를 선택하면 그룹 내 기본
-   `queue_entanglement.py` 항목의 저장된 설정을 ZZ로 변경합니다.
+4. 그룹 안의 `queue_entanglement.py` 항목을 편집하고 **얽힘 설정** 탭에서
+   Measurement basis를 ZZ로 지정합니다. 그룹 편집에는 얽힘 전용 변수가 없습니다.
 5. 그룹을 선택하고 **각도별 그룹 생성**에서 `0, 30, 60, ...`을 입력합니다.
    원본 그룹 바로 뒤에 MW detuned 각도별 복사본이 생성됩니다.
    그룹 반복 N, 이온 체크와 SPAM 설정은 복사되며 얽힘 설정의 basis와
@@ -68,3 +68,12 @@ set_phase 명령을 자동 호출하는 기능이 아닙니다. 주파수/출력
 workflow에서는 `devices.queue_context`의 group_id, group_name,
 group_iteration, group_repeat, iteration, job_repeat로 실행 위치를 확인할 수 있습니다.
 Queue Monitor에도 그룹 이름과 반복 번호가 표시됩니다.
+
+## Workflow 설정 탭
+
+`queue_entanglement.py`를 추가하거나 편집하면 이름·반복·실패 정책 아래에
+얽힘 설정 / JSON 탭이 표시됩니다. 새 항목은 저장된 실험 설정(없으면 기본값)을
+초기값으로 사용하고, 이미 저장된 Queue 항목은 해당 항목의 사본을 그대로 표시합니다.
+설정 파일 불러오기는 Entanglement 탭의 Save settings 형식과 동일합니다.
+폼과 JSON의 수정 내용은 탭 이동 시 동기화되며 적용 시 기존 실험 검증을 수행합니다.
+취소하면 원래 항목을 유지합니다. 다른 사용자 정의 workflow는 JSON 편집을 사용합니다.

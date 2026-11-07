@@ -165,6 +165,9 @@ class MicromotionRunner(WorkflowTask):
             metadata=dict(source_sha256=hashes,stopwatch_bin_ns=1.25,sequencer_clock_ns=10,outputs='Unchanged; no mode switching',
                 pins={k:config.PINS.get(c[k]) for k in ('trg_pin','pmt_pin','counter_pin')},
                 voltage_readback='DAC last-requested voltages, not physical readback',
+                phase_convention='H(t)=C[1+V*cos(omega*t+phase)]; phase=atan2(-B,A), wrapped to [-pi,pi), TRG-relative',
+                phase_units='radians; phase_se is local 1-SE from quadrature covariance',
+                phase_reliability='visibility > 3 radial SE and phase SE < pi/3; unresolved estimates preserved',
                 analysis='Poisson IRLS harmonic quadratures; weighted rank-one affine valley; local linearized CI'))
         self.result=report
         error=None

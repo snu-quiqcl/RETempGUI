@@ -525,6 +525,11 @@ class FPGAAPI(DeviceAPI):
 
     def stop_hom(self):return self.worker.hom_runner.cancel()
 
+    def run_ion_check(self,*,settings=None,mode='workflow',directory=None):
+        return self.worker.ion_check_runner.start(settings=settings,mode=mode,directory=directory,parent=self.group)
+
+    def stop_ion_check(self):return self.worker.ion_check_runner.cancel()
+
     def run_entanglement(self,*,settings=None,settings_file=None,directory=None):
         return self.worker.entanglement_runner.start(settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
 

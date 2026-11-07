@@ -294,6 +294,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             from .entanglement_tab import EntanglementTab
             panel.entanglement_tab=EntanglementTab(panel.worker,self)
             tabs.addTab(panel.entanglement_tab,'Entanglement' if len(panels)==1 else 'Entanglement · '+name)
+            from .ion_check_tab import IonCheckTab
+            panel.ion_check_tab=IonCheckTab(panel.worker,self)
+            tabs.addTab(panel.ion_check_tab,'Ion Check' if len(panels)==1 else 'Ion Check · '+name)
             from .micromotion_tab import MicromotionTab
             panel.micromotion_tab=MicromotionTab(panel.worker,self._bindings,self)
             tabs.addTab(panel.micromotion_tab,'Micromotion' if len(panels)==1 else 'Micromotion · '+name)
@@ -338,6 +341,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
                 if hasattr(panel,'daily_tab'):panel.daily_tab.shutdown()
                 if hasattr(panel,'hom_tab'):panel.hom_tab.shutdown()
                 if hasattr(panel,'entanglement_tab'):panel.entanglement_tab.shutdown()
+                if hasattr(panel,'ion_check_tab'):panel.ion_check_tab.shutdown()
                 if hasattr(panel,'micromotion_tab'):panel.micromotion_tab.shutdown()
             self.discovery_worker.shutdown()
             self.centralWidget().setEnabled(False)

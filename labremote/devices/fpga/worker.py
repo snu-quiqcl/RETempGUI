@@ -19,6 +19,8 @@ class FPGAWorker(AcquisitionWorker):
         self.decay_runner=DecayRunner(self)
         from labremote.hom.runner import HOMRunner
         self.hom_runner=HOMRunner(self)
+        from labremote.ion_check.runner import IonCheckRunner
+        self.ion_check_runner=IonCheckRunner(self)
         from labremote.entanglement.runner import EntanglementRunner
         self.entanglement_runner=EntanglementRunner(self)
         from labremote.micromotion.runner import MicromotionRunner
