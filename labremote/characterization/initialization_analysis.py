@@ -37,7 +37,7 @@ def draw(figure,data):
     hist,ax=figure.subplots(2,1)
     counts=np.asarray(data['last_counts'],dtype=np.int64)
     hist.bar(np.arange(41),np.bincount(np.minimum(counts,40),minlength=41))
-    hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Occurrences')
+    hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Counts')
     ax.errorbar(np.asarray(data['time_s'])*1e6,data['population'],yerr=data['population_error'],fmt='o-',label='Measured')
     if len(data['fit_time_us']):ax.plot(data['fit_time_us'],data['fit_population'],'--',label='Exponential fit')
     values=np.concatenate((np.asarray(data['population'],dtype=float),np.asarray(data['fit_population'],dtype=float)))

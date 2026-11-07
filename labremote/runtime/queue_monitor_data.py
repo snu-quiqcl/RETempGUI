@@ -107,7 +107,7 @@ class ResultStore:
             for path in directory.rglob('samples.json') if directory.exists() else []:
                 try:
                     cfg=self.read(path.parent/'configuration.json')
-                    if cfg.get('dac')=='not_connected':
+                    if cfg.get('dac') in ('not_connected','not_implemented'):
                         output.append(dict(kind='ion',settings=cfg['settings'],samples=self.read(path),status='running',path=str(path.parent/'result.json')))
                 except Exception as exc:warnings.append(f'{step["step_id"]}: {exc}')
         # Legacy frozen Ion Check workflow stores history in the workflow return value.
@@ -122,23 +122,31 @@ class ResultStore:
 
     def snapshot(self,state):
         jobs={j['id']:j for j in workflow_jobs(state.get('plan',{}).get('jobs',[]))}
-        job_kinds={jid:kinds(job) for jid,job in jobs.items()}
+        from .monitor_config import settings
+        monitors={jid:settings(job) for jid,job in jobs.items()}
+        job_kinds={jid:([m['kind']] if m['kind']!='none' else []) for jid,m in monitors.items()}
         groups={};warnings=[]
         for step in state['steps']:
             key=group_key(step)
             group=groups.setdefault(key,dict(key=key,name=step.get('group_name',step['name']),iteration=key[0],steps=[],slots={}))
             group['steps'].append(step)
             job=jobs.get(step.get('job_id'),dict(name=step['name'],id=step.get('job_id',step['step_id'])))
-            jid=job['id'];expected=job_kinds.get(jid,['generic'])
+            jid=job['id'];expected=job_kinds.get(jid,[])
+            monitor=monitors.get(jid,{})
+            if not expected:continue
             for kind in expected:
-                group['slots'].setdefault((jid,kind,''),dict(job_id=jid,name=job['name'],kind=kind,profile='',records=[]))
+                group['slots'].setdefault((jid,kind,''),dict(job_id=jid,name=monitor.get('title') or job['name'],monitor=monitor,kind=kind,profile='',records=[]))
             if step['status'] in ('pending','skipped'):continue
             records=self.records(state,step,warnings)
-            if not records and step['status']=='completed' and expected!=['generic']:
+            if not any(r['kind'] in expected for r in records) and step['status']=='completed':
                 warnings.append(f'{step["step_id"]} · 완료된 workflow의 측정 결과 파일을 찾지 못했습니다.')
             for record in records:
-                kind=record['kind'];profile=settings_key(record['settings'])
-                slot=group['slots'].setdefault((jid,kind,profile),dict(job_id=jid,name=job['name'],kind=kind,profile=profile,records=[]))
+                kind=record['kind']
+                if kind not in expected:
+                    warnings.append(f'{step["step_id"]} · Monitor 종류와 결과 종류가 다릅니다: {expected[0]} / {kind}')
+                    continue
+                profile=settings_key(record['settings'])
+                slot=group['slots'].setdefault((jid,kind,profile),dict(job_id=jid,name=monitor.get('title') or job['name'],monitor=monitor,kind=kind,profile=profile,records=[]))
                 record=dict(record,step_id=step['step_id'],cycle=step.get('group_iteration',step['job_repeat']),
                             job_repeat=step['job_repeat'],step_status=step['status'])
                 slot['records'].append(record)
@@ -156,7 +164,8 @@ class ResultStore:
                     dest=spam.setdefault(slot['job_id'],dict(slot,profile='',records=[]))
                     dest['records'].extend(slot['records']);del slots[key]
             for jid,slot in spam.items():slots[jid,'spam','']=slot
-            group['slots']=list(slots.values())
+            order={jid:i for i,jid in enumerate(jobs)}
+            group['slots']=sorted(slots.values(),key=lambda s:order.get(s['job_id'],len(order)))
             for slot in group['slots']:
                 slot['variant']=sum(s['job_id']==slot['job_id'] and s['kind']==slot['kind'] for s in group['slots'])>1
         return dict(state=state,groups=list(groups.values()),warnings=warnings)

@@ -47,7 +47,7 @@ def draw(figure,data):
     axes[1].bar(data['histogram_x'],data['histogram'],label='Measured',color='skyblue')
     axes[1].plot(data['histogram_x'],data['poisson'],'r.-',label=f"Poisson (lambda={data['summary']['mean_count']:.2f})")
     axes[1].axvline(data['summary']['mean_count'],linestyle=':',color='r')
-    axes[1].set(xlabel='PMT Counts',ylabel='Occurrences');axes[1].legend()
+    axes[1].set(xlabel='PMT Counts',ylabel='Counts');axes[1].legend()
     axes[2].plot(data['frequency_hz'],data['power']);axes[2].set(xlabel='Frequency (Hz)',ylabel='Normalized Power')
     for ax in axes:ax.grid(alpha=.3)
     figure.tight_layout()

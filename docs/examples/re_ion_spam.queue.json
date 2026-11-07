@@ -1,0 +1,173 @@
+{
+  "schema_version": 2,
+  "repeat": 1,
+  "jobs": [
+    {
+      "type": "repeat_group",
+      "id": "334fc84e619a4694ba48d93eae0bf861",
+      "name": "RE → SPAM · ZZ",
+      "repeat": 1,
+      "on_failure": "stop",
+      "jobs": [
+        {
+          "id": "d47c6091562d425a9f5b31fc259fff92",
+          "name": "re_setup",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\re_setup.py",
+          "source": "\"\"\"Collection path: CCD_EC OFF / CCD_EA ON, then four named flippers.\"\"\"\nimport math\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\ndef main(devices):\n    p=devices.parameters\n    delay=p.get('settle_s',1.0)\n    names=dict(EC_MIRA='EC_MIRA',EA_MIRA='EA_MIRA',ec_pmt='ec_pmt',ea_pmt='ea_pmt')\n    names.update(p.get('flippers',{}))\n    if set(names)!={'EC_MIRA','EA_MIRA','ec_pmt','ea_pmt'} or any(not isinstance(v,str) or not v.strip() for v in names.values()) or len(set(names.values()))!=4:\n        raise ValueError('Configure four distinct flipper instrument names')\n    if type(delay) not in (float,int) or not math.isfinite(delay) or not 0<=delay<=60:raise ValueError('settle_s must be 0..60')\n    # Resolve every device before changing any output.\n    fpga=devices.fpga(p.get('fpga','fpga_local'))\n    targets=[(names[k],devices.flip(names[k]),position) for k,position in [('EC_MIRA',1),('EA_MIRA',1),('ec_pmt',1),('ea_pmt',2)]]\n    try:\n        devices.wait(0)\n        fpga.set_output('CCD_EC',False).wait()\n        fpga.set_output('CCD_EA',True).wait()\n        observed={}\n        for name,flipper,position in targets:\n            devices.wait(0);flipper.move(position).wait()\n            actual=flipper.position().wait()\n            if actual!=position:raise RuntimeError(f'{name}: requested position {position}, observed {actual}')\n            observed[name]=actual\n        devices.wait(delay)\n        return WorkflowResult(reason='RE optical path configured',cleanup_status='not_required',\n            value=dict(fpga_outputs={'CCD_EC':False,'CCD_EA':True},flippers=observed,settle_s=delay))\n    except OperationCancelled:raise\n    except Exception as exc:\n        return WorkflowResult(status='failed',reason='RE setup failed: '+str(exc),continue_allowed=False,cleanup_status='unknown')\n",
+          "sha256": "b177fe41607d5fb202c2eafa9c52912e3f1c9a19bc06d3303cabe6b643e98fe9",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settle_s": 1.0,
+            "flippers": {
+              "EC_MIRA": "EC_MIRA",
+              "EA_MIRA": "EA_MIRA",
+              "ec_pmt": "ec_pmt",
+              "ea_pmt": "ea_pmt"
+            }
+          }
+        },
+        {
+          "id": "2775bf29543d40c2b4396f5068afe355",
+          "name": "ion_checks",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\ion_checks.py",
+          "source": "\"\"\"Ion guard. Use the Ion Check settings snapshot; no DAC swap commands.\"\"\"\nfrom labremote.ion_check import config\n\ndef main(devices):\n    p=devices.parameters\n    c=config.validate(p['settings'],require_thresholds=True)\n    return devices.fpga(p.get('fpga','fpga_local')).run_ion_check(\n        settings=c,mode='workflow',directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "829930a7fff926472cf3fa349ebba8a508b510cbecd15748b5998050fd2f11c8",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 2,
+              "mapping": {
+                "pmt_1": "PMTA",
+                "pmt_2": "PMTC",
+                "laser_a": "AOMA",
+                "laser_b": "AOMB",
+                "laser_c": "AOMC"
+              },
+              "exposure_us": 1000,
+              "settle_us": 100,
+              "threshold_a": null,
+              "threshold_b": null,
+              "threshold_c": null,
+              "max_attempts": 3,
+              "retry_delay_s": 0.1,
+              "timeout_s": 5.0
+            }
+          }
+        },
+        {
+          "id": "dc8434525a9949d0a928adcaed13b9eb",
+          "name": "re",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\re.py",
+          "source": "\"\"\"Remote entanglement using a frozen settings snapshot; MW source is external.\"\"\"\nfrom labremote.entanglement import config\n\ndef main(devices):\n    p=devices.parameters;c=config.validate(p['settings'])\n    return devices.fpga(p.get('fpga','fpga_local')).run_entanglement(\n        settings=c,directory=devices.run_directory or p.get('directory')).wait()\n",
+          "sha256": "6d82a04d4019bcd7c9ff03dec8b5bd9cabfb9ae3f5fd147b60c173f2c1de0fb9",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "schema_version": 1,
+              "basis": "zz",
+              "batches": 100,
+              "groups_per_loop": 50000,
+              "inner_trials": 10,
+              "fpga_loops": 10,
+              "cooling_us": 5.0,
+              "initialization_us": 1.0,
+              "aom_off_us": 0.3,
+              "stopwatch_wait_us": 0.21,
+              "decay_lower_a": 86,
+              "decay_lower_c": 86,
+              "coincidence_half_window_bins": 10,
+              "mirror_wait_ms": 600.0,
+              "detection_us": 100.0,
+              "threshold_ea": 2,
+              "threshold_ec": 2,
+              "pi_ea_us": 81.1,
+              "pi_ec_us": 70.58,
+              "detuning_hz": -2000.0,
+              "phase_magnitude_deg": 0,
+              "timeout_s": 120.0
+            }
+          }
+        },
+        {
+          "id": "04e594139235431c9d1650132d5efd74",
+          "name": "spam_setup",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\spam_setup.py",
+          "source": "\"\"\"SPAM detection path: CCD_EC ON / CCD_EA OFF. No flipper or MW changes.\"\"\"\nimport math\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\ndef main(devices):\n    p=devices.parameters;delay=p.get('settle_s',1.0)\n    if type(delay) not in (int,float) or not math.isfinite(delay) or not 0<=delay<=60:raise ValueError('settle_s must be 0..60')\n    fpga=devices.fpga(p.get('fpga','fpga_local'))\n    try:\n        devices.wait(0)\n        fpga.set_output('CCD_EA',False).wait()\n        fpga.set_output('CCD_EC',True).wait()\n        devices.wait(delay)\n        return WorkflowResult(reason='SPAM optical path configured',cleanup_status='not_required',\n            value=dict(fpga_outputs={'CCD_EC':True,'CCD_EA':False},settle_s=delay))\n    except OperationCancelled:raise\n    except Exception as exc:\n        return WorkflowResult(status='failed',reason='SPAM setup failed: '+str(exc),continue_allowed=False,cleanup_status='unknown')\n",
+          "sha256": "746f1874fbbb7d5da68fc183d54130ee531b489ee1955c4b4d87ceba062f93b1",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settle_s": 1.0
+          }
+        },
+        {
+          "id": "736c71981afc41ce9dbe7ca0151d4fde",
+          "name": "spam",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\spam.py",
+          "source": "\"\"\"EA then EC SPAM; uses both chamber settings snapshots and external MW sources.\"\"\"\nfrom pathlib import Path\nfrom labremote.characterization import pulse_experiment\nfrom labremote.runtime.workflow_result import WorkflowResult\n\ndef main(devices):\n    p=devices.parameters\n    settings={ch:pulse_experiment.validate('spam',p['settings'][ch]) for ch in ('EA','EC')}\n    if any(settings[ch]['chamber']!=ch for ch in settings):raise ValueError('SPAM chamber/settings mismatch')\n    fpga=devices.fpga(p.get('fpga','fpga_local'));reports={};paths=[]\n    for ch in ('EA','EC'):\n        devices.wait(0)\n        folder=str(Path(devices.run_directory)/ch) if devices.run_directory else p.get('directory')\n        report=fpga.run_spam(ch,settings=settings[ch],directory=folder,frequency_hz=p.get('frequency_hz',{}).get(ch)).wait()\n        reports[ch]=report\n        if isinstance(report,dict) and report.get('folder'):paths.append(report['folder'])\n        if not isinstance(report,dict) or report.get('status')!='completed':\n            return WorkflowResult(status='cancelled' if isinstance(report,dict) and report.get('status')=='cancelled' else 'failed',\n                reason=ch+' SPAM did not complete',continue_allowed=False,result_paths=paths,value=reports)\n    return WorkflowResult(result_paths=paths,value=reports)\n",
+          "sha256": "5dd08d65a28af10e6d8ed95a48382d954ef1181cac4d0f6bae1725b79881ca45",
+          "repeat": 1,
+          "on_failure": "stop",
+          "parameters": {
+            "fpga": "fpga_local",
+            "settings": {
+              "EA": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EA",
+                "roles": {
+                  "PMT": "PMTFA",
+                  "AOM": "AOMA",
+                  "MW": "MW_A",
+                  "EOM_7G_1": "EOM_7GA1",
+                  "EOM_7G_2": "EOM_7GA2",
+                  "EOM_2G": "EOM_2GA"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 7677,
+                "N_repeat": 10
+              },
+              "EC": {
+                "schema_version": 1,
+                "experiment": "spam",
+                "chamber": "EC",
+                "roles": {
+                  "PMT": "PMTFC",
+                  "AOM": "AOMC",
+                  "MW": "MW_C",
+                  "EOM_7G_1": "EOM_7GC1",
+                  "EOM_7G_2": "EOM_7GC2",
+                  "EOM_2G": "EOM_2GC"
+                },
+                "T_cool": 50000,
+                "T_cool_repeat": 2,
+                "T_init": 150,
+                "T_det": 8000,
+                "N_average": 500,
+                "N_threshold": 2,
+                "timeout_s": 30.0,
+                "WAIT_AOM": 50,
+                "T_PI": 5996,
+                "N_repeat": 10
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

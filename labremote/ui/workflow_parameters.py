@@ -87,10 +87,42 @@ class EntanglementParameters(QtWidgets.QWidget):
         except Exception as exc:self.summary.setText('설정 확인: '+str(exc))
 
 
+class MonitorSettings(QtWidgets.QWidget):
+    def __init__(self,job):
+        super().__init__()
+        from labremote.runtime.monitor_config import settings,CHARTS
+        value=settings(job);form=QtWidgets.QFormLayout(self)
+        self.kind=QtWidgets.QComboBox()
+        for label,key in [('없음','none'),('Ion Check','ion'),('SPAM','spam'),('RE','ent')]:self.kind.addItem(label,key)
+        self.kind.setCurrentIndex(self.kind.findData(value['kind']))
+        self.title=QtWidgets.QLineEdit(value['title']);self.title.setPlaceholderText('비워 두면 Workflow 이름 사용')
+        self.view=QtWidgets.QComboBox();self.view.addItem('그룹 누적','cumulative');self.view.addItem('최신 회차','latest')
+        self.view.setCurrentIndex(self.view.findData(value['view']))
+        form.addRow('모니터 종류',self.kind);form.addRow('탭 이름',self.title);form.addRow('기본 표시',self.view)
+        self.charts={};self.box=QtWidgets.QGroupBox('RE 표시 그래프');grid=QtWidgets.QVBoxLayout(self.box)
+        for key,label in zip(CHARTS,('누적 decay · log Y','최신 batch decay · log Y','Coincidence','Batch별 decay / trial','Herald trial 분포 · log bins','Population · 1σ 오차','EA readout','EC readout')):
+            check=QtWidgets.QCheckBox(label);check.setChecked(key in value['charts']);grid.addWidget(check);self.charts[key]=check
+        form.addRow(self.box)
+        note=QtWidgets.QLabel('Queue 항목별로 독립된 탭을 만듭니다. 선택한 그룹 안에서 누적하며, 서로 다른 RE 설정은 분리합니다. 모니터 설정은 실험 실행 조건을 바꾸지 않습니다.')
+        note.setWordWrap(True);form.addRow(note)
+        self.kind.currentIndexChanged.connect(lambda _:self.box.setEnabled(self.kind.currentData()=='ent'))
+        self.box.setEnabled(self.kind.currentData()=='ent')
+
+    def value(self):
+        from labremote.runtime.monitor_config import validate
+        return validate(dict(kind=self.kind.currentData(),title=self.title.text().strip(),view=self.view.currentData(),charts=[k for k,v in self.charts.items() if v.isChecked()]))
+
+
 class WorkflowJobDialog(QtWidgets.QDialog):
     def __init__(self,job,parent=None):
         super().__init__(parent)
         self.job=deepcopy(job);self.base=deepcopy(job['parameters']);self.previous_tab=0
+        profile_error=''
+        if not self.base:
+            try:
+                from labremote.workflow.queue_profiles import parameters
+                self.base=parameters(job['filename'])
+            except Exception as exc:profile_error=str(exc)
         self.setWindowTitle('Workflow 설정');self.resize(1000,860)
         layout=QtWidgets.QVBoxLayout(self);form=QtWidgets.QFormLayout();layout.addLayout(form)
         self.name=QtWidgets.QLineEdit(job['name']);self.repeat=QtWidgets.QSpinBox();self.repeat.setRange(1,10000);self.repeat.setValue(job['repeat'])
@@ -99,13 +131,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         filename=QtWidgets.QLabel(job['filename']);filename.setWordWrap(True);form.addRow('Workflow',filename)
         self.tabs=QtWidgets.QTabWidget();layout.addWidget(self.tabs,1)
         self.editor=None
-        if Path(job['filename']).name=='queue_entanglement.py':
+        if Path(job['filename']).name in ('queue_entanglement.py','re.py'):
             self.editor=EntanglementParameters();self.tabs.addTab(self.editor,'얽힘 설정 · devices.parameters')
             load_bar=QtWidgets.QHBoxLayout()
             load_bar.addWidget(self.editor.load_button);load_bar.addWidget(self.editor.saved_button);load_bar.addStretch()
             layout.insertLayout(1,load_bar)
         self.json=QtWidgets.QPlainTextEdit();self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
         self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집')
+        self.monitor=MonitorSettings(job);self.monitor_index=self.tabs.addTab(self.monitor,'Monitor')
         self.reload=QtWidgets.QCheckBox('Python 소스를 현재 파일에서 다시 가져오기');layout.addWidget(self.reload)
         self.error=QtWidgets.QLabel();self.error.setWordWrap(True);self.error.setStyleSheet('color: #b42318');layout.addWidget(self.error)
         buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
@@ -123,6 +156,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             self.editor.load_button.clicked.connect(self.load_file)
             self.editor.saved_button.clicked.connect(lambda:self.load_settings(None))
         self.tabs.currentChanged.connect(self.switch_tab)
+        if profile_error:self.error.setText('저장된 측정 설정을 확인하세요: '+profile_error)
 
     def read_json(self):
         value=json.loads(self.json.toPlainText())
@@ -133,10 +167,10 @@ class WorkflowJobDialog(QtWidgets.QDialog):
     def switch_tab(self,index):
         if self.editor is None:return
         try:
-            if index==self.json_index:
+            if self.previous_tab==0 and index!=0:
                 self.base=self.editor.parameters(self.base,validate=False)
                 self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
-            else:
+            elif self.previous_tab==self.json_index:
                 value=self.read_json();self.editor.populate(value);self.base=value
             self.previous_tab=index;self.error.clear()
         except Exception as exc:
@@ -161,13 +195,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
 
     def accept(self):
         try:
-            parameters=self.read_json() if self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
+            parameters=self.read_json() if self.editor is None or self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
             if self.editor is not None:
                 config.validate(parameters['settings'])
                 if not isinstance(parameters.get('fpga'),str) or not parameters['fpga'].strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
             job=deepcopy(self.job)
             if self.reload.isChecked():
                 fresh=freeze_job(job['filename']);job.update(source=fresh['source'],sha256=fresh['sha256'])
+            job['monitor']=self.monitor.value()
             job.update(name=self.name.text().strip(),repeat=self.repeat.value(),on_failure=self.policy.currentText(),parameters=parameters)
             validate_plan(dict(schema_version=1,repeat=1,jobs=[job]));self.job=job
         except Exception as exc:self.error.setText(str(exc));return

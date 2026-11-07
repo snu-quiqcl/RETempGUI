@@ -318,6 +318,12 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
                 for family,panels in self.family_tabs.items() for name,p in panels.items() if p.connected}
         if self.ccd_tab.connected:
             bindings['ccd:ccd_local'] = ('ccd', self.ccd_tab.worker.operation_bridge)
+        for name,worker in self.flip_tab.workers.items():
+            if worker.ps is None or worker.connection_error or getattr(worker,'_closing',False):continue
+            identity=getattr(worker,'_execution_device',None)
+            if identity and identity[:2]!=self._endpoint():
+                raise RuntimeError('Flipper '+name+' is connected to a different server; reconnect first')
+            bindings['flip:'+name]=('flip',worker.operation_bridge)
         return bindings
 
     def closeEvent(self, event):

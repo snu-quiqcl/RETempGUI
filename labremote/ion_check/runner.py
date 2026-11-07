@@ -24,7 +24,7 @@ class IonCheckRunner(WorkflowTask):
 
     def _execute(self):
         from labremote.devices.fpga.adapter import Cancellation
-        from .acquisition import run,LEVELS
+        from .acquisition import run
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];mode=self.settings['mode']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_ion_check_'+self.handle.request_id[:8])
@@ -34,7 +34,7 @@ class IonCheckRunner(WorkflowTask):
         for path in [*Path(__file__).parent.glob('*.py'),Path(hd.__file__)]:
             raw=path.read_bytes();(source/path.name).write_bytes(raw);hashes[path.name]=hashlib.sha256(raw).hexdigest()
         config.save(folder/'configuration.json',dict(settings=c,mode=mode,fpga=self.worker.name,
-                    dac='not_connected',cleanup_outputs=LEVELS,source_sha256=hashes))
+                    dac='not_implemented',cleanup_outputs=config.output_levels(c),source_sha256=hashes))
         samples=[];error=None;decision='unmeasured';cleanup_status='unknown'
         self.publish(phase='measuring',mode=mode,total=1 if mode=='once' else c['max_attempts'],settings=c,folder=str(folder),sample=None,result=None)
         def sample(value):
@@ -54,7 +54,7 @@ class IonCheckRunner(WorkflowTask):
         report=dict(status=status,reason=reason,mode=mode,folder=str(folder),result_paths=[str(folder)],
                     continue_allowed=status=='completed' and decision=='normal' and cleanup_status=='completed',
                     cleanup_status=cleanup_status,metrics=dict(attempts_used=len(samples),decision=decision),
-                    settings=c,samples=samples,measurement_status='failed' if error else 'completed',dac='not_connected')
+                    settings=c,samples=samples,measurement_status='failed' if error else 'completed',dac='not_implemented')
         config.save(folder/'result.json',report);self.result=report
         self.publish(phase=status,result=report)
         if error is not None:raise error

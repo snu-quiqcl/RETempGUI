@@ -1,14 +1,18 @@
 """One B/A/C acquisition; FIFO = [A count, B count, C count, 0x10].
 
-Counts are PMTA + PMTC after the NPBS. Keep their sum below 65536.
+Counts are the sum of selected PMT inputs. Keep their sum below 65536.
 Normal completion leaves A/C and both 7G pairs on, B/2G/MW off.
 Cancellation/error output recovery belongs to the caller, not this builder.
 """
 from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
 from labremote.devices.fpga.vendor import HardwareDefinition_remote_ent_test_ec as hd
+from labremote.devices.fpga.controller import OUTPUTS
+from labremote.ion_check.config import default_mapping,validate_mapping,pmt_names,output_levels
 
 
 def build_program(parameters):
+    c={'mapping':validate_mapping(parameters.get('mapping',default_mapping()))}
+    inputs=pmt_names(c)
     exposure_us = parameters.get('exposure_us', 1000)
     settle_us = parameters.get('settle_us', 100)
     for name, value in (('exposure_us', exposure_us), ('settle_us', settle_us)):
@@ -27,29 +31,27 @@ def build_program(parameters):
             remaining -= chunk
 
     def counters(enabled):
-        s.set_output_port(hd.counter_control_port, [
-            (hd.PMTA_counter_enable, enabled), (hd.PMTC_counter_enable, enabled)])
+        s.set_output_port(hd.counter_control_port,[(getattr(hd,name+'_counter_enable'),enabled) for name in inputs])
 
     def lasers(a=0, b=0, c=0):
-        s.set_output_port(hd.external_slow_port, [(hd.AOMB_out, 0)])
-        s.set_output_port(hd.external_control_port, [
-            (hd.AOMA_out, a), (hd.AOMC_out, c),
-            (hd.EOM_7GA1_out, a), (hd.EOM_7GA2_out, a),
-            (hd.EOM_7GC1_out, c), (hd.EOM_7GC2_out, c),
-            (hd.EOM_2GA_out, 0), (hd.EOM_2GC_out, 0),
-            (hd.MW_A_out, 0), (hd.MW_C_out, 0)])
-        if b:
-            s.set_output_port(hd.external_slow_port, [(hd.AOMB_out, 1)])
+        mapping=validate_mapping(parameters.get('mapping',default_mapping()))
+        # Break before make, including when a role is assigned to the slow port.
+        for levels in ({mapping['laser_'+key]:0 for key in 'abc'},output_levels({'mapping':mapping},a,b,c)):
+            ports={}
+            for name,value in levels.items():
+                _,port,bit=OUTPUTS[name];ports.setdefault(port,[]).append((bit,value))
+            for port,values in sorted(ports.items()):s.set_output_port(port,values)
 
     def measure(a, b, c, destination):
         lasers(a, b, c)
         wait_us(settle_us)
-        s.trigger_out([hd.PMTA_counter_reset, hd.PMTC_counter_reset])
+        s.trigger_out([getattr(hd,name+'_counter_reset') for name in inputs])
         counters(1)
         wait_us(exposure_us)
         counters(0)
-        s.read_counter(pmt_a, hd.PMTA_counter_result)
-        s.read_counter(pmt_c, hd.PMTC_counter_result)
+        s.read_counter(pmt_a,getattr(hd,inputs[0]+'_counter_result'))
+        if len(inputs)==2:s.read_counter(pmt_c,getattr(hd,inputs[1]+'_counter_result'))
+        else:s.load_immediate(pmt_c,0)
         s.add(destination, pmt_a, pmt_c)
         label = 'overflow_' + destination
         done = 'sum_done_' + destination

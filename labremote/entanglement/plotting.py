@@ -147,9 +147,10 @@ class EntanglementPlot:
         ax.set(title='Attempts to herald · logarithmic bins',xlabel='Attempt N (log)',ylabel='Probability / log bin'); ax.legend(fontsize=7)
         ax.text(.98,.96,f"Exhausted: {d['metrics']['exhausted_batches']}",ha='right',va='top',transform=ax.transAxes,fontsize=8)
         ax=self.axes[5]; values=np.array(d['states'])/max(1,d['heralds'])
-        ax.bar(['00','01','10','11'],values,color=['#9aaabd',COLORS[0],COLORS[2],'#9aaabd'])
-        for i,(n,p) in enumerate(zip(d['states'],values)):ax.text(i,p+.025,f'{n} ({p:.1%})',ha='center',fontsize=8)
-        ax.set_ylim(0,1.15); ax.set(title='State readout · '+self.config['basis'],xlabel='EA, EC (bright = 1)',ylabel='Probability / heralded batch')
+        errors=np.sqrt(values*(1-values)/max(1,d['heralds']))
+        ax.bar(['00','01','10','11'],values,yerr=errors if d['heralds'] else None,capsize=4,color=['#9aaabd',COLORS[0],COLORS[2],'#9aaabd'])
+        for i,(n,p) in enumerate(zip(d['states'],values)):ax.text(i,p+errors[i]+.025,f'{n} ({p:.1%})',ha='center',fontsize=8)
+        ax.set_ylim(0,1.15); ax.set(title='Population · '+self.config['basis']+' (±1σ binomial)' ,xlabel='EA, EC (bright = 1)',ylabel='Probability / heralded batch')
         from matplotlib.ticker import MaxNLocator
         for ax,ion in zip(self.axes[6:],('ea','ec')):
             hist=d['state_readout_histograms'][ion]

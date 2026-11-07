@@ -51,7 +51,7 @@ class LivePlot:
             hist.grid(True,which='both',alpha=.2)
         else:
             hist,ax=figure.subplots(2,1);self.hist=hist;self.bars=hist.bar(range(41),[0]*41)
-            hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Occurrences',ylim=(0,1))
+            hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Counts',ylim=(0,1))
             self.line,=ax.plot([],[],'o-');self.axis=ax
             ax.set(xlabel='Nominal free precession time (ms)' if kind=='ramsey' else 'Nominal initialization time (us)',ylabel='Bright population',ylim=(-.05,1.05));ax.grid(True,alpha=.3)
         figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)

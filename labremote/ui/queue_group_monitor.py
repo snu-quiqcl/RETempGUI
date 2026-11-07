@@ -29,19 +29,17 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         self.setTitle(slot['name']);self.layout_=QtWidgets.QVBoxLayout(self)
         self.summary=QtWidgets.QLabel();self.summary.setWordWrap(True);self.layout_.addWidget(self.summary)
         self.mode=QtWidgets.QComboBox();self.cycle=QtWidgets.QComboBox()
-        if self.kind=='ent':
-            row=QtWidgets.QHBoxLayout();self.layout_.addLayout(row)
-            self.mode.addItems(['그룹 누적','최신 회차','회차 선택']);row.addWidget(self.mode);row.addWidget(self.cycle)
-            full=QtWidgets.QPushButton('기존 탭 전체 그래프');full.clicked.connect(self.open_full);row.addWidget(full);row.addStretch()
-            self.mode.currentIndexChanged.connect(self.draw);self.cycle.currentIndexChanged.connect(self.draw)
-            self.figure,self.canvas=chart(self.layout_,320)
-            self.note=QtWidgets.QLabel('로그 기하분포의 x축은 시간(초)이 아닌 herald까지의 시도 횟수입니다.');self.note.setWordWrap(True);self.layout_.addWidget(self.note)
-        elif self.kind in ('ion','spam'):self.figure,self.canvas=chart(self.layout_,230)
-        else:
-            self.summary.setText('전용 그래프가 없는 workflow입니다. 아래 회차별 결과와 실행 목록에서 상태·metrics를 확인하세요.')
+        row=QtWidgets.QHBoxLayout();self.layout_.addLayout(row)
+        self.mode.addItems(['그룹 누적','최신 회차','회차 선택']);row.addWidget(self.mode);row.addWidget(self.cycle);row.addStretch()
+        self.mode.setCurrentIndex(1 if slot.get('monitor',{}).get('view')=='latest' else 0)
+        self.mode.currentIndexChanged.connect(self.draw);self.cycle.currentIndexChanged.connect(self.draw)
+        self.figure,self.canvas=chart(self.layout_,1150 if self.kind=='ent' else 400)
+        if self.kind=='ent':self.canvas.setMinimumWidth(950)
         self.update_slot(slot)
 
     def update_slot(self,slot):
+        if slot.get('monitor',{}).get('view')!=self.slot.get('monitor',{}).get('view'):
+            with QtCore.QSignalBlocker(self.mode):self.mode.setCurrentIndex(1 if slot.get('monitor',{}).get('view')=='latest' else 0)
         self.slot=slot
         self.setTitle(slot['name']+(' · 설정 '+slot['profile'][:6] if slot.get('variant') else ''))
         self.setToolTip(json.dumps(slot['records'][0]['settings'],ensure_ascii=False,indent=2) if slot['records'] else '')
@@ -49,7 +47,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         signature=json.dumps(slot,sort_keys=True,ensure_ascii=False)
         if signature==self.signature:return
         self.signature=signature
-        if self.kind=='ent':
+        if self.kind in ('ent','ion','spam'):
             selected=self.cycle.currentData()
             with QtCore.QSignalBlocker(self.cycle):
                 self.cycle.clear()
@@ -57,26 +55,33 @@ class WorkflowPanel(QtWidgets.QGroupBox):
                 self.cycle.setCurrentIndex(max(0,self.cycle.findData(selected)))
         self.draw()
 
-    def ent_data(self):
+    def selected_records(self):
         records=self.slot['records'];mode=self.mode.currentIndex()
         if mode and records:
             cycle=max(r['cycle'] for r in records) if mode==1 else self.cycle.currentData()
             records=[r for r in records if r['cycle']==cycle]
-        return pool_ent(records)
+        return records
+
+    def ent_data(self):
+        return pool_ent(self.selected_records())
 
     def draw(self):
         if self.kind=='generic':return
         try:
+            self.cycle.setEnabled(self.mode.currentIndex()==2)
             self.figure.clear()
             if self.kind=='ion':self.draw_ion()
             elif self.kind=='spam':self.draw_spam()
             else:self.draw_ent()
-            self.figure.tight_layout(pad=1.5);self.canvas.draw_idle()
+            if self.kind!='ent':self.figure.tight_layout(pad=1.5)
+            self.canvas.draw_idle()
         except Exception as exc:self.summary.setText('결과 표시 오류: '+str(exc))
 
     def draw_ion(self):
-        from labremote.ion_check.config import LABELS
-        ax=self.figure.subplots();records=self.slot['records']
+        from labremote.ion_check.config import LABELS,pmt_names,default_mapping
+        ax=self.figure.subplots();records=self.selected_records()
+        settings=records[0]['settings'] if records else {}
+        mapping=settings.get('mapping',default_mapping())
         for key,color in zip('abc',('#176eb5','#e68a2e','#8762ba')):
             # All retries remain visible; each cycle's final measurement forms its trend.
             x=[];y=[]
@@ -84,10 +89,10 @@ class WorkflowPanel(QtWidgets.QGroupBox):
                 if not r['samples']:continue
                 x.append(r['cycle']);y.append(r['samples'][-1]['counts'][key])
                 ax.scatter([r['cycle']]*len(r['samples']),[s['counts'][key] for s in r['samples']],color=color,alpha=.28,s=15)
-            ax.plot(x,y,'o-',color=color,label='369'+key.upper(),ms=4)
+            ax.plot(x,y,'o-',color=color,label=key.upper()+': '+mapping['laser_'+key],ms=4)
             threshold=records[0]['settings'].get('threshold_'+key) if records else None
             if threshold is not None:ax.axhline(threshold,ls='--',lw=.8,color=color,alpha=.5)
-        ax.set(xlabel='Group cycle (faint dots: retries)',ylabel='PMTA + PMTC counts');ax.grid(alpha=.2);ax.legend(fontsize=8)
+        ax.set(xlabel='Group cycle (faint dots: retries)',ylabel=' + '.join(pmt_names(settings))+' counts');ax.grid(alpha=.2);ax.legend(fontsize=8)
         samples=[s for r in records for s in r['samples']]
         normal=sum(bool(r['samples']) and r['samples'][-1]['decision']=='normal' for r in records)
         last=LABELS.get(samples[-1]['decision'],samples[-1]['decision']) if samples else '대기'
@@ -95,7 +100,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
 
     def draw_spam(self):
         ax=self.figure.subplots();profiles={}
-        for r in self.slot['records']:
+        for r in self.selected_records():
             # Completed chamber runs only; interrupted SPAM is explicitly excluded.
             profiles.setdefault((r['chamber'],settings_key(r['settings'])),[]).append(r)
         summaries=[]
@@ -105,46 +110,26 @@ class WorkflowPanel(QtWidgets.QGroupBox):
             ax.plot([r['cycle'] for r in valid],[100*r['analysis']['spam_fidelity'] if r['analysis'].get('spam_fidelity') is not None else np.nan for r in valid],'o-',label=label,ms=4)
             pooled=pool_spam([r['analysis'] for r in valid]);f=pooled['spam_fidelity']
             summaries.append(label+' '+(f'{f:.2%}' if f is not None else '—'))
-        excluded=sum(r['status']!='completed' for r in self.slot['records'])
+        excluded=sum(r['status']!='completed' for r in self.selected_records())
         self.summary.setText('누적 fidelity: '+(' / '.join(summaries) or '대기')+f'\n상태별 오류/수신 수 합산 후 두 상태 동일 가중 · 미완료 실행 제외 {excluded}')
         ax.set(xlabel='Group cycle',ylabel='SPAM fidelity (%)');ax.grid(alpha=.2)
         if profiles:ax.legend(fontsize=8)
 
     def draw_ent(self):
-        from labremote.entanglement.plotting import decay_fits,geometric_bins,decay_reference,COLORS
-        from labremote.entanglement.config import nominal_trials
-        self.cycle.setEnabled(self.mode.currentIndex()==2)
-        c,d=self.ent_data();axes=self.figure.subplots(1,3)
+        from labremote.entanglement.plotting import EntanglementPlot,Accumulator
+        from labremote.entanglement.config import defaults
+        from labremote.runtime.monitor_config import CHARTS
+        c,d=self.ent_data()
         if d is None:
+            c=defaults();d=Accumulator(c).data()
             self.summary.setText('얽힘 결과 대기 · 완료된 FPGA batch만 누적')
-            for ax,title in zip(axes,('Decay counts','Coincidence','Attempts to herald · log bins')):ax.set_title(title,fontsize=10)
-            return
-        batches=len(d['batches']);elapsed=sum(b['elapsed_s'] for b in d['batches'])
-        basis='ZZ' if c['basis']=='zz' else f"MW detuned · phase {c['phase_magnitude_deg']:g}°"
-        self.summary.setText(f"{basis} · 완료 FPGA batch {batches} · 실제 시도 {d['attempts']:,} · herald {d['heralds']:,} · batch wall time {elapsed:.2f} s\n완료된 batch만 포함 (실패·중단 실행 안의 유효 완료 batch도 포함); 그룹 간 합산 없음")
-        fits=decay_fits(d,c);ax=axes[0]
-        for values,name,color in zip((d['a'],d['c'],np.asarray(d['a'])+d['c']),('PMTA','PMTC','Total'),COLORS):
-            values=np.asarray(values);fit=fits[name];label=name
-            if fit['status']=='completed':label+=f" τ={fit['tau_ns']:.2f} ns"
-            ax.step(np.arange(120)*1.25,np.where(values>0,values,np.nan),where='mid',color=color,label=label)
-            if fit['status']=='completed':
-                x=np.linspace(fit['t0_ns'],148.75,160);ax.plot(x,fit['amplitude']*np.exp(-(x-fit['t0_ns'])/fit['tau_ns'])+fit['background'],'--',color=color)
-        lower=max(0,min(c['decay_lower_a'],c['decay_lower_c'])-5)
-        for cutoff in sorted({c['decay_lower_a'],c['decay_lower_c']}):ax.axvline(cutoff*1.25,color='gray',ls=':',lw=.8)
-        ax.set_yscale('log');ax.set_ylim(.8,max(10,float(max(np.asarray(d['a'])+d['c']))*1.5));ax.set_xlim(lower*1.25,148.75)
-        ax.set(title='Decay counts',xlabel='PMT - SYNC (ns)',ylabel='Counts / bin (log)');ax.legend(fontsize=7)
-        ax=axes[1];w=c['coincidence_half_window_bins']*1.25
-        ax.step((np.arange(240)-120)*1.25,d['coincidence'],where='mid',color='#7565b8')
-        ax.axvspan(-w,w,color='#319270',alpha=.14);ax.set(title='Coincidence',xlabel='PMTC - PMTA (ns)',ylabel='Counts / bin',ylim=(0,max(1,max(d['coincidence'])*1.15)))
-        ax=axes[2];edges,observed,expected=geometric_bins(d,nominal_trials(c))
-        ax.bar(edges[:-1],observed,width=np.diff(edges),align='edge',alpha=.45,label='Observed / completed batches')
-        ax.plot(np.sqrt(edges[:-1].astype(float))*np.sqrt(edges[1:].astype(float)),expected,'.-',color=COLORS[1],label='Geometric model')
-        mean=decay_reference(d,c)['mean_trials']
-        if mean:ax.axvline(mean,color='#cf4747',ls='--',label=f'Decay reference: {mean:.3g}')
-        ax.set_xscale('log');ax.set_xlim(1,max(float(edges[-1]),mean*1.15 if mean else 1));ax.set_ylim(bottom=0)
-        ax.set(title='Attempts to herald · log bins',xlabel='Attempt N (log; not seconds)',ylabel='Probability / log bin');ax.legend(fontsize=7)
-        ax.text(.97,.96,f"Exhausted: {d['metrics']['exhausted_batches']}",transform=ax.transAxes,ha='right',va='top',fontsize=8)
-        for ax in axes:ax.grid(alpha=.18);ax.title.set_fontsize(10)
+        else:
+            basis='ZZ' if c['basis']=='zz' else f"MW detuned · phase {c['phase_magnitude_deg']:g}°"
+            self.summary.setText(f"{basis} · 완료 FPGA batch {len(d['batches'])} · 실제 trial {d['attempts']:,} · herald {d['heralds']:,}\n선택 그룹/회차의 완료 batch 누적 · population 오차: ±1σ binomial standard error")
+        self.plot=EntanglementPlot(self.figure,c);self.plot.update(d)
+        visible=self.slot.get('monitor',{}).get('charts',CHARTS)
+        for key,ax in zip(CHARTS,self.plot.axes):ax.set_visible(key in visible)
+        self.plot.probability_axis.set_visible('batch_rates' in visible)
 
     def open_full(self):
         from labremote.entanglement.plotting import EntanglementPlot
@@ -168,10 +153,11 @@ class GroupDashboard(QtWidgets.QWidget):
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);split.addWidget(scroll);body=QtWidgets.QWidget();scroll.setWidget(body);self.body=QtWidgets.QVBoxLayout(body)
         self.group_title=QtWidgets.QLabel();self.group_title.setWordWrap(True);self.body.addWidget(self.group_title)
         self.progress=QtWidgets.QProgressBar();self.body.addWidget(self.progress)
-        self.panel_widget=QtWidgets.QWidget();self.panel_grid=QtWidgets.QGridLayout(self.panel_widget);self.body.addWidget(self.panel_widget)
+        self.monitor_tabs=QtWidgets.QTabWidget();self.body.addWidget(self.monitor_tabs,1)
         self.table=QtWidgets.QTableWidget(0,6);self.table.setHorizontalHeaderLabels(['회차','Workflow','작업 반복','상태','측정 요약','시간(s)'])
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);self.table.setMinimumHeight(190);self.body.addWidget(self.table)
         self.details=QtWidgets.QPlainTextEdit();self.details.setReadOnly(True);self.details.setMaximumHeight(120);self.body.addWidget(self.details);self.table.itemSelectionChanged.connect(self.show_details)
+        self.table.setMaximumHeight(210);self.details.setMaximumHeight(85)
         self.warning=QtWidgets.QLabel();self.warning.setWordWrap(True);root.addWidget(self.warning)
         self.timer=QtCore.QTimer(self);self.timer.setInterval(1200);self.timer.timeout.connect(self.poll);self.timer.start()
 
@@ -228,28 +214,31 @@ class GroupDashboard(QtWidgets.QWidget):
     def render_group(self):
         group=next((g for g in self.snapshot['groups'] if g['key']==self.selected),None) if self.snapshot else None
         if group is None:
-            while self.panel_grid.count():
-                widget=self.panel_grid.takeAt(0).widget()
-                if widget:widget.hide();widget.deleteLater()
+            self.clear_panels()
             self.panels={};self.group_title.clear();self.table.setRowCount(0);self.details.clear();self.progress.setValue(0);return
         identity=(self.generation,self.selected)
         slots=group['slots'];keys=[(s['job_id'],s['kind'],s['profile']) for s in slots]
         if self.rendered_group!=identity or set(keys)!=set(self.panels):
-            while self.panel_grid.count():
-                item=self.panel_grid.takeAt(0)
-                if item.widget():item.widget().hide();item.widget().deleteLater()
-            self.panels={};row=0;column=0
-            for slot in sorted(slots,key=lambda s:s['kind']=='ent'):
+            previous=self.monitor_tabs.currentIndex()
+            preferences={k:(v.mode.currentIndex(),v.cycle.currentData()) for k,v in self.panels.items()}
+            self.clear_panels();self.panels={}
+            for slot in slots:
                 key=slot['job_id'],slot['kind'],slot['profile'];panel=WorkflowPanel(slot);self.panels[key]=panel
-                if slot['kind']=='ent':
-                    if column:row+=1;column=0
-                    self.panel_grid.addWidget(panel,row,0,1,2);row+=1
-                else:
-                    self.panel_grid.addWidget(panel,row,column);column+=1
-                    if column==2:row+=1;column=0
+                if key in preferences:
+                    mode,cycle=preferences[key];panel.mode.setCurrentIndex(mode)
+                    panel.cycle.setCurrentIndex(max(0,panel.cycle.findData(cycle)))
+                page=QtWidgets.QScrollArea();page.setWidgetResizable(True);page.setWidget(panel)
+                label=panel.title()
+                self.monitor_tabs.addTab(page,label)
+                self.monitor_tabs.setTabToolTip(self.monitor_tabs.count()-1,'Queue item: '+slot['job_id'])
+            self.monitor_tabs.setCurrentIndex(max(0,min(previous,self.monitor_tabs.count()-1)))
             self.rendered_group=identity
         else:
             for slot,key in zip(slots,keys):self.panels[key].update_slot(slot)
+        for i,panel in enumerate(self.panels.values()):
+            label=panel.title()
+            if sum(p.title()==label for p in self.panels.values())>1:label+=' · '+panel.slot['job_id'][:6]
+            self.monitor_tabs.setTabText(i,label)
         self.group_title.setText(f"{group['name']} · 전체 반복 {group['iteration']}\n그룹/Queue 항목별 누적 · 설정이 달라진 결과는 별도로 표시합니다.")
         cycles={s.get('group_iteration',s['job_repeat']) for s in group['steps']}
         done=sum(all(s['status']=='completed' for s in group['steps'] if s.get('group_iteration',s['job_repeat'])==c) for c in cycles)
@@ -268,6 +257,10 @@ class GroupDashboard(QtWidgets.QWidget):
             for col,v in enumerate(values):self.table.setItem(i,col,QtWidgets.QTableWidgetItem(str(v)))
         if 0<=selected<self.table.rowCount():self.table.selectRow(selected)
         self.show_details()
+
+    def clear_panels(self):
+        while self.monitor_tabs.count():
+            widget=self.monitor_tabs.widget(0);self.monitor_tabs.removeTab(0);widget.deleteLater()
 
     def show_details(self):
         i=self.table.currentRow()

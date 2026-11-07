@@ -24,7 +24,7 @@ class QueueTab(QtWidgets.QWidget):
         row=QtWidgets.QHBoxLayout();layout.addLayout(row);self.edit_buttons=[]
         for label,fn in [('Workflow 추가',self.add_file),('편집',self.edit_job),('복제',self.duplicate),('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('Queue 불러오기',self.load_plan),('Queue 저장',self.save_plan)]:
             b=QtWidgets.QPushButton(label);b.clicked.connect(fn);row.addWidget(b);self.edit_buttons.append(b)
-        self.table=QtWidgets.QTableWidget(0,4);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일'])
+        self.table=QtWidgets.QTableWidget(0,5);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일','Monitor'])
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('각도별 그룹 생성',self.angle_groups),('그룹 밖에 추가',lambda:self.add_file(top_level=True))]:
@@ -54,6 +54,9 @@ class QueueTab(QtWidgets.QWidget):
         for row,(j,child) in enumerate(entries):
             label=('    ↳ ' if child else '▾ ' if is_group(j) else '')+j['name']
             values=(label,j['repeat'],j['on_failure'],f"{len(j['jobs'])} workflows" if is_group(j) else j['filename'])
+            from labremote.runtime.monitor_config import settings
+            m=settings(j) if not is_group(j) else None
+            values+=('—' if m is None else {'none':'없음','ion':'Ion Check','spam':'SPAM','ent':'RE'}[m['kind']]+(' · '+m['title'] if m['title'] else ''),)
             for k,v in enumerate(values):
                 cell=QtWidgets.QTableWidgetItem(str(v))
                 if is_group(j):
@@ -97,7 +100,7 @@ class QueueTab(QtWidgets.QWidget):
 
     @staticmethod
     def apply_angle(group,basis,phase):
-        targets=[j for j in group['jobs'] if Path(j['filename']).name=='queue_entanglement.py'
+        targets=[j for j in group['jobs'] if Path(j['filename']).name in ('queue_entanglement.py','re.py')
                  and isinstance(j['parameters'].get('settings'),dict)]
         if not targets:raise ValueError('그룹 안에 Entanglement 탭에서 추가한 얽힘 workflow가 필요합니다.')
         from labremote.entanglement.config import validate

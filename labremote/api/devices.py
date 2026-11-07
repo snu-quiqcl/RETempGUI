@@ -6,7 +6,7 @@ from labremote.config.ramp import PowerConfig
 from labremote.operation.windfreak.set_power import set_power
 from labremote.config.device_config import load_rf_device_config
 
-SUPPORTED_FAMILIES = frozenset({'windfreak', 'sg384', 'anapico', 'dds4', 'ds1052e', 'mso7054', 'thermotek', 'keithley', 'osa', 'mdt', 'fpga', 'motors', 'ccd', 'dac'})
+SUPPORTED_FAMILIES = frozenset({'windfreak', 'sg384', 'anapico', 'dds4', 'ds1052e', 'mso7054', 'thermotek', 'keithley', 'osa', 'mdt', 'fpga', 'motors', 'ccd', 'dac','flip'})
 
 class DeviceAPI:
     def __init__(self, worker, channel=None, group=None):
@@ -180,6 +180,9 @@ class Devices:
     def motor(self, name):
         return MotorAPI(self._workers['motors',name],group=self.group)
 
+    def flip(self,name):
+        return FlipAPI(self._workers['flip',name],group=self.group)
+
     def dds4(self, name, *, channel):
         return self.dds(name, channel=channel)
 
@@ -192,6 +195,7 @@ class Devices:
 
 def device_api(worker, family=None, *, channel=None, group=None):
     family = family or worker.family
+    if family=='flip':return FlipAPI(worker,channel,group)
     if family == 'dac':
         from labremote.devices.dac.worker import DACAPI
         return DACAPI(worker,channel,group)
@@ -616,6 +620,14 @@ class FPGAAPI(DeviceAPI):
     def cancel(self):
         self.worker.waveform_runner.cancel()
         return super().cancel()
+
+
+class FlipAPI(DeviceAPI):
+    def move(self,position):
+        from labremote.operation.flip.control import move
+        return self._submit('FLIP_MOVE',lambda w:move(w.ps,position),arguments={'position':position})
+
+    def position(self):return self.acquire('position')
 
 
 class MotorAPI(DeviceAPI):

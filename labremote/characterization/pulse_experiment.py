@@ -105,7 +105,7 @@ def draw(figure,data):
         draw(figure,data);return
     if data['experiment']=='ramsey':
         hist,ax=figure.subplots(2,1);counts=data['last_counts']
-        bins=np.bincount(np.minimum(np.asarray(counts,dtype=np.int64),40),minlength=41);hist.bar(np.arange(41),bins);hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Occurrences')
+        bins=np.bincount(np.minimum(np.asarray(counts,dtype=np.int64),40),minlength=41);hist.bar(np.arange(41),bins);hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Counts')
         ax.errorbar(np.array(data['time_s'])*1000,data['population'],yerr=data['population_error'],fmt='o-',label='Measured')
         if data['fit_time_s']:ax.plot(np.array(data['fit_time_s'])*1000,data['fit_population'],'--',label='Fit')
         ax.set(xlabel='Nominal free precession time (ms)',ylabel='Bright population',ylim=(-.05,1.05));ax.legend();ax.grid(True,alpha=.3)

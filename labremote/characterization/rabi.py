@@ -96,7 +96,7 @@ def draw(figure,data):
     counts=data.get('last_counts',[])
     if counts:
         values,bins=np.unique(counts,return_counts=True);hist.bar(values,bins)
-    hist.axvline(data['threshold'],color='r',linestyle='--');hist.set(xlabel='Photon counts',ylabel='Occurrences')
+    hist.axvline(data['threshold'],color='r',linestyle='--');hist.set(xlabel='Photon counts',ylabel='Counts')
     for curve in data['curves']:
         x=np.asarray(curve['time_us']);osc.errorbar(x,curve['population'],yerr=curve['population_sem'],fmt='o-',label=(f"{curve['frequency_hz']/1e9:.9f} GHz (metadata)" if curve.get('frequency_hz') is not None else "External microwave"))
         f=curve['fit']

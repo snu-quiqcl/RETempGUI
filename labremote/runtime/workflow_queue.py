@@ -36,9 +36,12 @@ def save(path,value):
 
 def read(path):return json.loads(Path(path).read_text(encoding='utf-8-sig'))
 
-def freeze_job(filename,*,name=None,repeat=1,on_failure='stop',parameters=None):
+def freeze_job(filename,*,name=None,repeat=1,on_failure='stop',parameters=None,monitor=None):
     path=Path(filename).resolve();source=path.read_text(encoding='utf-8-sig');validate_workflow(source,str(path))
-    return dict(id=uuid4().hex,name=name or path.stem,filename=str(path),source=source,sha256=hashlib.sha256(source.encode()).hexdigest(),repeat=repeat,on_failure=on_failure,parameters=deepcopy(parameters or {}))
+    job = dict(id=uuid4().hex,name=name or path.stem,filename=str(path),source=source,sha256=hashlib.sha256(source.encode()).hexdigest(),repeat=repeat,on_failure=on_failure,parameters=deepcopy(parameters or {}))
+    from .monitor_config import suggested,validate
+    job['monitor']=deepcopy(validate(monitor) if monitor is not None else suggested(job))
+    return job
 
 def is_group(job):
     return isinstance(job,dict) and job.get('type')=='repeat_group'
@@ -79,12 +82,17 @@ def validate_plan(plan):
             validate_job(j,ids)
             total+=j['repeat']*multiplier
         if total*plan['repeat']>10000:raise ValueError('Maximum 10000 expanded steps')
-    return deepcopy(plan)
+    normalized=deepcopy(plan)
+    from .monitor_config import settings
+    for job in workflow_jobs(normalized['jobs']):job['monitor']=deepcopy(settings(job))
+    return normalized
 
 
 def validate_job(j,ids):
-        if not isinstance(j,dict) or set(j)!={'id','name','filename','source','sha256','repeat','on_failure','parameters'}:raise ValueError('Invalid Queue job fields')
+        if not isinstance(j,dict) or set(j)-{'monitor'}!={'id','name','filename','source','sha256','repeat','on_failure','parameters'}:raise ValueError('Invalid Queue job fields')
         if not all(isinstance(j[k],str) and j[k] for k in ('id','name','filename','source','sha256')):raise ValueError('Invalid workflow identity/source')
+        from .monitor_config import settings
+        settings(j)
         if j['id'] in ids:raise ValueError('Duplicate job ID')
         ids.add(j['id'])
         if j['on_failure'] not in ('stop','skip') or type(j['repeat']) is not int or not 1<=j['repeat']<=10000:raise ValueError('Invalid repeat/failure policy')
