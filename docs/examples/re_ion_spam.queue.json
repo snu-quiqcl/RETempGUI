@@ -12,20 +12,52 @@
         {
           "id": "d47c6091562d425a9f5b31fc259fff92",
           "name": "re_setup",
-          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\re_setup.py",
-          "source": "\"\"\"Collection path: CCD_EC OFF / CCD_EA ON, then four named flippers.\"\"\"\nimport math\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\ndef main(devices):\n    p=devices.parameters\n    delay=p.get('settle_s',1.0)\n    names=dict(EC_MIRA='EC_MIRA',EA_MIRA='EA_MIRA',ec_pmt='ec_pmt',ea_pmt='ea_pmt')\n    names.update(p.get('flippers',{}))\n    if set(names)!={'EC_MIRA','EA_MIRA','ec_pmt','ea_pmt'} or any(not isinstance(v,str) or not v.strip() for v in names.values()) or len(set(names.values()))!=4:\n        raise ValueError('Configure four distinct flipper instrument names')\n    if type(delay) not in (float,int) or not math.isfinite(delay) or not 0<=delay<=60:raise ValueError('settle_s must be 0..60')\n    # Resolve every device before changing any output.\n    fpga=devices.fpga(p.get('fpga','fpga_local'))\n    targets=[(names[k],devices.flip(names[k]),position) for k,position in [('EC_MIRA',1),('EA_MIRA',1),('ec_pmt',1),('ea_pmt',2)]]\n    try:\n        devices.wait(0)\n        fpga.set_output('CCD_EC',False).wait()\n        fpga.set_output('CCD_EA',True).wait()\n        observed={}\n        for name,flipper,position in targets:\n            devices.wait(0);flipper.move(position).wait()\n            actual=flipper.position().wait()\n            if actual!=position:raise RuntimeError(f'{name}: requested position {position}, observed {actual}')\n            observed[name]=actual\n        devices.wait(delay)\n        return WorkflowResult(reason='RE optical path configured',cleanup_status='not_required',\n            value=dict(fpga_outputs={'CCD_EC':False,'CCD_EA':True},flippers=observed,settle_s=delay))\n    except OperationCancelled:raise\n    except Exception as exc:\n        return WorkflowResult(status='failed',reason='RE setup failed: '+str(exc),continue_allowed=False,cleanup_status='unknown')\n",
-          "sha256": "b177fe41607d5fb202c2eafa9c52912e3f1c9a19bc06d3303cabe6b643e98fe9",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\setup.py",
+          "source": "\"\"\"General setup: ordered device/parameter/value rows saved on this Queue item.\"\"\"\nWORKFLOW_UI = {'editor': 'setup'}\n\n\ndef main(devices):\n    from labremote.runtime.setup_workflow import execute\n    return execute(devices)\n",
+          "sha256": "a37709ea97593befc6b9cc7b15f5829c3adf4a8ace0bc5015d0138d8bbe50dce",
           "repeat": 1,
           "on_failure": "stop",
           "parameters": {
-            "fpga": "fpga_local",
-            "settle_s": 1.0,
-            "flippers": {
-              "EC_MIRA": "EC_MIRA",
-              "EA_MIRA": "EA_MIRA",
-              "ec_pmt": "ec_pmt",
-              "ea_pmt": "ea_pmt"
-            }
+            "schema_version": 1,
+            "steps": [
+              {
+                "family": "fpga",
+                "device": "fpga_local",
+                "parameter": "outputs.CCD_EC",
+                "value": false
+              },
+              {
+                "family": "fpga",
+                "device": "fpga_local",
+                "parameter": "outputs.CCD_EA",
+                "value": true
+              },
+              {
+                "family": "flip",
+                "device": "EC_MIRA",
+                "parameter": "position",
+                "value": 1
+              },
+              {
+                "family": "flip",
+                "device": "EA_MIRA",
+                "parameter": "position",
+                "value": 1
+              },
+              {
+                "family": "flip",
+                "device": "EC_PMT",
+                "parameter": "position",
+                "value": 1
+              },
+              {
+                "family": "flip",
+                "device": "EA_PMT",
+                "parameter": "position",
+                "value": 2
+              }
+            ],
+            "settle_s": 1.0
           }
         },
         {
@@ -97,13 +129,27 @@
         {
           "id": "04e594139235431c9d1650132d5efd74",
           "name": "spam_setup",
-          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\spam_setup.py",
-          "source": "\"\"\"SPAM detection path: CCD_EC ON / CCD_EA OFF. No flipper or MW changes.\"\"\"\nimport math\nfrom labremote.runtime.workflow_result import WorkflowResult\nfrom labremote.runtime.errors import OperationCancelled\n\ndef main(devices):\n    p=devices.parameters;delay=p.get('settle_s',1.0)\n    if type(delay) not in (int,float) or not math.isfinite(delay) or not 0<=delay<=60:raise ValueError('settle_s must be 0..60')\n    fpga=devices.fpga(p.get('fpga','fpga_local'))\n    try:\n        devices.wait(0)\n        fpga.set_output('CCD_EA',False).wait()\n        fpga.set_output('CCD_EC',True).wait()\n        devices.wait(delay)\n        return WorkflowResult(reason='SPAM optical path configured',cleanup_status='not_required',\n            value=dict(fpga_outputs={'CCD_EC':True,'CCD_EA':False},settle_s=delay))\n    except OperationCancelled:raise\n    except Exception as exc:\n        return WorkflowResult(status='failed',reason='SPAM setup failed: '+str(exc),continue_allowed=False,cleanup_status='unknown')\n",
-          "sha256": "746f1874fbbb7d5da68fc183d54130ee531b489ee1955c4b4d87ceba062f93b1",
+          "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\setup.py",
+          "source": "\"\"\"General setup: ordered device/parameter/value rows saved on this Queue item.\"\"\"\nWORKFLOW_UI = {'editor': 'setup'}\n\n\ndef main(devices):\n    from labremote.runtime.setup_workflow import execute\n    return execute(devices)\n",
+          "sha256": "a37709ea97593befc6b9cc7b15f5829c3adf4a8ace0bc5015d0138d8bbe50dce",
           "repeat": 1,
           "on_failure": "stop",
           "parameters": {
-            "fpga": "fpga_local",
+            "schema_version": 1,
+            "steps": [
+              {
+                "family": "fpga",
+                "device": "fpga_local",
+                "parameter": "outputs.CCD_EA",
+                "value": false
+              },
+              {
+                "family": "fpga",
+                "device": "fpga_local",
+                "parameter": "outputs.CCD_EC",
+                "value": true
+              }
+            ],
             "settle_s": 1.0
           }
         },

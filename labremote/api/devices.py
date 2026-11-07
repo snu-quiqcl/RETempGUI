@@ -136,6 +136,15 @@ class Devices:
 
     def names(self): return tuple(name for family,name in self._workers)
 
+    def _resolve_worker(self, family, name):
+        """Use a connected name; tolerate case-only legacy workflow names."""
+        if (family,name) in self._workers:return self._workers[family,name]
+        available=sorted(n for f,n in self._workers if f==family)
+        matches=[n for n in available if isinstance(name,str) and n.casefold()==name.casefold()]
+        if len(matches)==1:return self._workers[family,matches[0]]
+        reason='ambiguous name' if matches else 'not connected or name does not match'
+        raise ValueError(f'{family} device {name!r}: {reason}. Connected {family} devices: '+(', '.join(available) or '(none)'))
+
     def windfreak(self, name, *, channel):
         return WindfreakAPI(self._workers['windfreak',name], channel, self.group)
 
@@ -167,7 +176,7 @@ class Devices:
         return MDTAPI(self._workers['mdt',name],group=self.group)
 
     def fpga(self, name='fpga_local'):
-        return FPGAAPI(self._workers['fpga',name],group=self.group)
+        return FPGAAPI(self._resolve_worker('fpga',name),group=self.group)
 
     def ccd(self, name='ccd_local'):
         from labremote.devices.ccd.worker import CCDAPI
@@ -181,7 +190,7 @@ class Devices:
         return MotorAPI(self._workers['motors',name],group=self.group)
 
     def flip(self,name):
-        return FlipAPI(self._workers['flip',name],group=self.group)
+        return FlipAPI(self._resolve_worker('flip',name),group=self.group)
 
     def dds4(self, name, *, channel):
         return self.dds(name, channel=channel)

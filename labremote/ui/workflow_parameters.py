@@ -87,6 +87,52 @@ class EntanglementParameters(QtWidgets.QWidget):
         except Exception as exc:self.summary.setText('설정 확인: '+str(exc))
 
 
+class IonCheckParameters(QtWidgets.QWidget):
+    """Queue settings using the same channel choices and validation as IonCheckTab."""
+    def __init__(self):
+        super().__init__()
+        from labremote.ion_check import config as ion
+        self.fields={};self.mapping_fields={}
+        layout=QtWidgets.QVBoxLayout(self);bar=QtWidgets.QHBoxLayout();layout.addLayout(bar)
+        self.load_button=QtWidgets.QPushButton('설정 파일 불러오기…');self.saved_button=QtWidgets.QPushButton('저장된 Ion Check 설정 불러오기')
+        bar.addWidget(self.load_button);bar.addWidget(self.saved_button);bar.addStretch()
+        self.info=QtWidgets.QLabel('이 Queue 항목에 설정 사본을 저장합니다. Ion Check 탭의 저장 설정은 변경하지 않습니다.');self.info.setWordWrap(True);layout.addWidget(self.info)
+        scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);layout.addWidget(scroll)
+        body=QtWidgets.QWidget();scroll.setWidget(body);form=QtWidgets.QFormLayout(body)
+        self.fpga=QtWidgets.QLineEdit('fpga_local');form.addRow('FPGA 장비',self.fpga)
+        for key,label in [('pmt_1','PMT 입력 1'),('pmt_2','PMT 입력 2'),('laser_a','Laser A (EA)'),('laser_b','Laser B (170)'),('laser_c','Laser C (EC)')]:
+            box=QtWidgets.QComboBox()
+            if key=='pmt_2':box.addItem('사용 안 함 · 입력 1만 측정',None)
+            for name in (ion.PMT_CHOICES if key.startswith('pmt') else ion.LASER_CHOICES):box.addItem(name,name)
+            self.mapping_fields[key]=box;form.addRow(label,box)
+        for key,label,lo,hi in [('exposure_us','노출 시간 (µs)',1,10000),('settle_us','안정화 대기 (µs)',1,10000),('threshold_a','Laser A threshold',0,65535),('threshold_b','Laser B threshold',0,65535),('threshold_c','Laser C threshold',0,65535),('max_attempts','최대 측정 횟수 N (최초 포함)',1,10000),('retry_delay_s','재측정 간격 (s)',0,3600),('timeout_s','측정 timeout (s)',.1,600)]:
+            box=QtWidgets.QDoubleSpinBox() if key.endswith('_s') else QtWidgets.QSpinBox();box.setRange(lo,hi);box.setKeyboardTracking(False)
+            if key.endswith('_s'):box.setDecimals(2);box.setSingleStep(.1)
+            if key.startswith('threshold'):box.setSpecialValueText('미설정')
+            self.fields[key]=box;form.addRow(label,box)
+        note=QtWidgets.QLabel('두 PMT 선택 시 count를 합산합니다. 밝음: count ≥ threshold.\n정상 확인 시 즉시 종료합니다. DAC swap 없이 재측정만 수행합니다.\n종료 상태: 선택한 A/C 및 7GA/7GC ON, B OFF.');note.setWordWrap(True);form.addRow(note)
+        self.populate({'settings':ion.defaults()})
+
+    def populate(self,parameters):
+        from labremote.ion_check import config as ion
+        c=ion.validate(parameters['settings']);name=parameters.get('fpga','fpga_local')
+        if not isinstance(name,str) or not name.strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
+        self.fpga.setText(name)
+        for key,box in self.fields.items():box.setValue(c[key] if c[key] is not None else 0)
+        for key,box in self.mapping_fields.items():box.setCurrentIndex(box.findData(c['mapping'][key]))
+
+    def parameters(self,base,validate=True):
+        from labremote.ion_check import config as ion
+        value=deepcopy(base);value['fpga']=self.fpga.text().strip()
+        c=dict(schema_version=2,mapping={k:b.currentData() for k,b in self.mapping_fields.items()},**{k:b.value() for k,b in self.fields.items()})
+        for k in ('threshold_a','threshold_b','threshold_c'):
+            if c[k]==0:c[k]=None
+        if validate:
+            if not value['fpga']:raise ValueError('FPGA 장비 이름을 입력하세요.')
+            c=ion.validate(c,require_thresholds=True)
+        value['settings']=c;return value
+
+
 class MonitorSettings(QtWidgets.QWidget):
     def __init__(self,job):
         super().__init__()
@@ -108,15 +154,23 @@ class MonitorSettings(QtWidgets.QWidget):
 
 
 class WorkflowJobDialog(QtWidgets.QDialog):
-    def __init__(self,job,parent=None):
+    def __init__(self,job,parent=None,*,bindings_provider=None):
         super().__init__(parent)
         self.job=deepcopy(job);self.base=deepcopy(job['parameters']);self.previous_tab=0
+        migration_note=''
+        if Path(job['filename']).name in ('re_setup.py','spam_setup.py'):
+            from labremote.runtime.setup_workflow import migrate_legacy
+            self.base=migrate_legacy(Path(job['filename']).name,self.base)
+            replacement=freeze_job(Path(__file__).resolve().parents[1]/'workflow/setup.py')
+            self.job.update(filename=replacement['filename'],source=replacement['source'],sha256=replacement['sha256'])
+            job=self.job
+            migration_note='기존 설정을 범용 setup으로 변환했습니다. 적용하면 같은 이름의 Queue 항목에 저장합니다. 취소하면 변경하지 않습니다.'
+        from labremote.runtime.workflow_ui import editor_kind
+        kind=editor_kind(job['source'])
+        # Compatibility for frozen Queue sources created before declarations existed.
+        if kind is None:
+            kind={'queue_entanglement.py':'entanglement','re.py':'entanglement','ion_checks.py':'ion','ion_check.py':'ion','spam.py':'spam'}.get(Path(job['filename']).name)
         profile_error=''
-        if not self.base:
-            try:
-                from labremote.workflow.queue_profiles import parameters
-                self.base=parameters(job['filename'])
-            except Exception as exc:profile_error=str(exc)
         self.setWindowTitle('Workflow 설정');self.resize(1000,860)
         layout=QtWidgets.QVBoxLayout(self);form=QtWidgets.QFormLayout();layout.addLayout(form)
         self.name=QtWidgets.QLineEdit(job['name']);self.repeat=QtWidgets.QSpinBox();self.repeat.setRange(1,10000);self.repeat.setValue(job['repeat'])
@@ -124,14 +178,32 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         form.addRow('이름',self.name);form.addRow('반복',self.repeat);form.addRow('실패 시',self.policy)
         filename=QtWidgets.QLabel(job['filename']);filename.setWordWrap(True);form.addRow('Workflow',filename)
         self.tabs=QtWidgets.QTabWidget();layout.addWidget(self.tabs,1)
-        self.editor=None
-        if Path(job['filename']).name in ('queue_entanglement.py','re.py'):
+        if migration_note:
+            notice=QtWidgets.QLabel(migration_note);notice.setWordWrap(True);layout.insertWidget(1,notice)
+        self.editor=None;self.settings_config=config;self.settings_filename='entanglement.local.json'
+        if kind=='setup':
+            from .setup_parameters import SetupParameters
+            self.editor=SetupParameters(bindings_provider);self.tabs.addTab(self.editor,'장비 · 파라미터 설정')
+            if not self.base:self.base=self.editor.defaults()
+        elif kind=='entanglement':
             self.editor=EntanglementParameters();self.tabs.addTab(self.editor,'얽힘 설정 · devices.parameters')
             load_bar=QtWidgets.QHBoxLayout()
             load_bar.addWidget(self.editor.load_button);load_bar.addWidget(self.editor.saved_button);load_bar.addStretch()
             layout.insertLayout(1,load_bar)
+        elif kind=='ion':
+            from labremote.ion_check import config as ion
+            self.settings_config=ion;self.settings_filename='ion_check.local.json'
+            self.editor=IonCheckParameters();self.tabs.addTab(self.editor,'Ion Check 설정 · devices.parameters')
+        if not self.base:
+            try:
+                if kind in ('entanglement','ion'):self.base={'fpga':'fpga_local','settings':self.settings_config.load()}
+                elif kind=='spam':
+                    from labremote.characterization.pulse_experiment import load
+                    self.base={'fpga':'fpga_local','settings':{ch:load('spam',ch) for ch in ('EA','EC')}}
+            except Exception as exc:profile_error=str(exc)
         self.json=QtWidgets.QPlainTextEdit();self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
-        self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집')
+        self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집') if kind!='setup' else -1
+        if kind=='setup':self.json.setParent(self);self.json.hide()
         self.monitor=MonitorSettings(job);self.monitor_index=self.tabs.addTab(self.monitor,'Monitor')
         self.reload=QtWidgets.QCheckBox('Python 소스를 현재 파일에서 다시 가져오기');layout.addWidget(self.reload)
         self.error=QtWidgets.QLabel();self.error.setWordWrap(True);self.error.setStyleSheet('color: #b42318');layout.addWidget(self.error)
@@ -141,14 +213,15 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         if self.editor is not None:
             try:
                 if not self.base:
-                    self.base={'fpga':'fpga_local','settings':config.load()}
+                    self.base={'fpga':'fpga_local','settings':self.settings_config.load()}
                     self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
                 self.editor.populate(self.base)
             except Exception as exc:
                 self.tabs.setCurrentIndex(self.json_index);self.previous_tab=self.json_index
                 self.error.setText('기존 설정을 확인하거나 설정 파일을 불러오세요: '+str(exc))
-            self.editor.load_button.clicked.connect(self.load_file)
-            self.editor.saved_button.clicked.connect(lambda:self.load_settings(None))
+            if hasattr(self.editor,'load_button'):
+                self.editor.load_button.clicked.connect(self.load_file)
+                self.editor.saved_button.clicked.connect(lambda:self.load_settings(None))
         self.tabs.currentChanged.connect(self.switch_tab)
         if profile_error:self.error.setText('저장된 측정 설정을 확인하세요: '+profile_error)
 
@@ -172,17 +245,17 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             self.error.setText(str(exc))
 
     def load_file(self):
-        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'얽힘 설정 불러오기',str(config.ROOT),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'실험 설정 불러오기',str(self.settings_config.ROOT),'JSON (*.json)')
         if path:self.load_settings(path)
 
     def load_settings(self,path):
         try:
-            settings=config.load(path)
+            settings=self.settings_config.load(path)
             base=self.read_json() if self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base,validate=False)
             base['settings']=settings;base.setdefault('fpga','fpga_local')
             self.editor.populate(base);self.base=base
             self.json.setPlainText(json.dumps(base,ensure_ascii=False,indent=2))
-            origin=path or config.ROOT/'entanglement.local.json'
+            origin=path or self.settings_config.ROOT/self.settings_filename
             self.editor.info.setText('불러온 설정: '+str(origin) if Path(origin).exists() else '프로젝트 기본 설정을 불러왔습니다. 저장된 실험 설정 파일은 없습니다.')
             self.error.clear()
         except Exception as exc:self.error.setText(str(exc))
@@ -191,8 +264,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         try:
             parameters=self.read_json() if self.editor is None or self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
             if self.editor is not None:
-                config.validate(parameters['settings'])
-                if not isinstance(parameters.get('fpga'),str) or not parameters['fpga'].strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
+                from .setup_parameters import SetupParameters
+                if isinstance(self.editor,SetupParameters):
+                    from labremote.runtime.setup_workflow import validate
+                    validate(parameters)
+                else:
+                    if isinstance(self.editor,IonCheckParameters):self.settings_config.validate(parameters['settings'],require_thresholds=True)
+                    else:self.settings_config.validate(parameters['settings'])
+                    if not isinstance(parameters.get('fpga'),str) or not parameters['fpga'].strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
             job=deepcopy(self.job)
             if self.reload.isChecked():
                 fresh=freeze_job(job['filename']);job.update(source=fresh['source'],sha256=fresh['sha256'])

@@ -27,9 +27,9 @@ class QueueTab(QtWidgets.QWidget):
         self.table=QtWidgets.QTableWidget(0,5);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일','Monitor'])
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
-        for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('각도별 그룹 생성',self.angle_groups),('그룹 밖에 추가',lambda:self.add_file(top_level=True))]:
+        for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('각도별 그룹 생성',self.angle_groups),('선택 그룹 안에 추가',lambda:self.add_file(top_level=False))]:
             button=QtWidgets.QPushButton(label);button.clicked.connect(fn);row.addWidget(button);self.edit_buttons.append(button)
-        row.addWidget(QtWidgets.QLabel('연속된 workflow를 선택해 묶습니다. 그룹 선택 후 추가하면 그룹 안에 들어갑니다.'))
+        row.addWidget(QtWidgets.QLabel('Workflow 추가는 그룹 밖에 추가합니다. 그룹 안에 넣으려면 그룹을 선택하고 ‘선택 그룹 안에 추가’를 누르세요.'))
         self._row_refs=[]
         self.table.cellDoubleClicked.connect(lambda *_:self.edit_job())
         row=QtWidgets.QHBoxLayout();layout.addLayout(row);row.addWidget(QtWidgets.QLabel('전체 목록 반복'));self.repeat=QtWidgets.QSpinBox();self.repeat.setRange(1,10000);row.addWidget(self.repeat);self.repeat.valueChanged.connect(lambda *_:setattr(self,'dirty',True))
@@ -149,8 +149,12 @@ class QueueTab(QtWidgets.QWidget):
             validate_plan(dict(schema_version=2,repeat=self.repeat.value(),jobs=candidate))
             items[i]=group;self.dirty=True;self.refresh(ref)
         except Exception as exc:self.status.setText('설정 오류: '+str(exc))
-    def add_file(self,checked=False,*,top_level=False):
+    def add_file(self,checked=False,*,top_level=True):
         if self.still_running():return
+        selected=self.selected()
+        top=selected[2][0] if selected else None
+        if not top_level and (top is None or not is_group(self.jobs[top])):
+            self.status.setText('Workflow를 추가할 Repeat Group을 선택해 주세요.');return
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Add workflow',str(Path(__file__).resolve().parents[1]/'workflow'),'Python (*.py)')
         if path:
             try:
@@ -167,7 +171,7 @@ class QueueTab(QtWidgets.QWidget):
         items,i,ref=selected
         if is_group(items[i]):return self.edit_group(items,i,ref)
         from labremote.ui.workflow_parameters import WorkflowJobDialog
-        dialog=WorkflowJobDialog(items[i],self)
+        dialog=WorkflowJobDialog(items[i],self,bindings_provider=self.bindings_provider)
         if dialog.exec_()==QtWidgets.QDialog.Accepted:
             items[i]=dialog.job;self.dirty=True;self.refresh(ref)
     def duplicate(self):

@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "repeat": 1,
+  "jobs": [
+    {
+      "id": "fbb38b1a476f40968cc3e9c7fa0f440f",
+      "name": "re_setup",
+      "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\setup.py",
+      "source": "\"\"\"General setup: ordered device/parameter/value rows saved on this Queue item.\"\"\"\nWORKFLOW_UI = {'editor': 'setup'}\n\n\ndef main(devices):\n    from labremote.runtime.setup_workflow import execute\n    return execute(devices)\n",
+      "sha256": "a37709ea97593befc6b9cc7b15f5829c3adf4a8ace0bc5015d0138d8bbe50dce",
+      "repeat": 1,
+      "on_failure": "stop",
+      "parameters": {
+        "schema_version": 1,
+        "steps": [
+          {
+            "family": "fpga",
+            "device": "fpga_local",
+            "parameter": "outputs.CCD_EC",
+            "value": false
+          },
+          {
+            "family": "fpga",
+            "device": "fpga_local",
+            "parameter": "outputs.CCD_EA",
+            "value": true
+          },
+          {
+            "family": "flip",
+            "device": "EC_MIRA",
+            "parameter": "position",
+            "value": 1
+          },
+          {
+            "family": "flip",
+            "device": "EA_MIRA",
+            "parameter": "position",
+            "value": 1
+          },
+          {
+            "family": "flip",
+            "device": "EC_PMT",
+            "parameter": "position",
+            "value": 1
+          },
+          {
+            "family": "flip",
+            "device": "EA_PMT",
+            "parameter": "position",
+            "value": 2
+          }
+        ],
+        "settle_s": 1.0
+      },
+      "monitor": {
+        "kind": "none",
+        "title": "",
+        "view": "cumulative"
+      }
+    },
+    {
+      "id": "d628aa1f0fbe4f568193ac72067ee765",
+      "name": "spam_setup",
+      "filename": "D:\\coding\\QCODES\\RETempGUI\\RETempGUI\\RETempGUI\\labremote\\workflow\\setup.py",
+      "source": "\"\"\"General setup: ordered device/parameter/value rows saved on this Queue item.\"\"\"\nWORKFLOW_UI = {'editor': 'setup'}\n\n\ndef main(devices):\n    from labremote.runtime.setup_workflow import execute\n    return execute(devices)\n",
+      "sha256": "a37709ea97593befc6b9cc7b15f5829c3adf4a8ace0bc5015d0138d8bbe50dce",
+      "repeat": 1,
+      "on_failure": "stop",
+      "parameters": {
+        "schema_version": 1,
+        "steps": [
+          {
+            "family": "fpga",
+            "device": "fpga_local",
+            "parameter": "outputs.CCD_EA",
+            "value": false
+          },
+          {
+            "family": "fpga",
+            "device": "fpga_local",
+            "parameter": "outputs.CCD_EC",
+            "value": true
+          }
+        ],
+        "settle_s": 1.0
+      },
+      "monitor": {
+        "kind": "none",
+        "title": "",
+        "view": "cumulative"
+      }
+    }
+  ]
+}
