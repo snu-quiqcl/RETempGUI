@@ -118,7 +118,6 @@ class WorkflowPanel(QtWidgets.QGroupBox):
     def draw_ent(self):
         from labremote.entanglement.plotting import EntanglementPlot,Accumulator
         from labremote.entanglement.config import defaults
-        from labremote.runtime.monitor_config import CHARTS
         c,d=self.ent_data()
         if d is None:
             c=defaults();d=Accumulator(c).data()
@@ -127,9 +126,6 @@ class WorkflowPanel(QtWidgets.QGroupBox):
             basis='ZZ' if c['basis']=='zz' else f"MW detuned · phase {c['phase_magnitude_deg']:g}°"
             self.summary.setText(f"{basis} · 완료 FPGA batch {len(d['batches'])} · 실제 trial {d['attempts']:,} · herald {d['heralds']:,}\n선택 그룹/회차의 완료 batch 누적 · population 오차: ±1σ binomial standard error")
         self.plot=EntanglementPlot(self.figure,c);self.plot.update(d)
-        visible=self.slot.get('monitor',{}).get('charts',CHARTS)
-        for key,ax in zip(CHARTS,self.plot.axes):ax.set_visible(key in visible)
-        self.plot.probability_axis.set_visible('batch_rates' in visible)
 
     def open_full(self):
         from labremote.entanglement.plotting import EntanglementPlot

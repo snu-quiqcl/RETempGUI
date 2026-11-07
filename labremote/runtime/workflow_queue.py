@@ -138,9 +138,10 @@ class QueueRunner:
         with workflow_session(),AUTO_MONITOR.workflow():return self._run()
     def _run(self):
         workers={bridge.worker for _,bridge in self.bindings.values()}
-        # Do not begin a queue in the middle of an independently started task.
-        for w in workers:
-            if (w.has_requests() if hasattr(w,'has_requests') else bool(getattr(w,'_handles',{}))) or any(t.running() for t in w._background_tasks) or (getattr(w,'waveform_runner',None) is not None and w.waveform_runner.running()):raise RuntimeError('Finish active device tasks before starting Queue')
+        # Automatic polling is already suspended by run(). Drain in-flight reads
+        # while reporting actual foreground work with device/task identities.
+        from .queue_start_guard import wait_until_ready
+        wait_until_ready(self.bindings,self.stop)
         self.folder=self.directory/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_queue_'+uuid4().hex);self.folder.mkdir(parents=True,exist_ok=False)
         steps=expand_steps(self.plan)
         self.state=dict(schema_version=1,queue_id=self.folder.name,folder=str(self.folder),status='running',started_at=now(),plan=self.plan,steps=steps,error='')

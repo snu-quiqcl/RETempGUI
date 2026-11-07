@@ -90,7 +90,7 @@ class EntanglementParameters(QtWidgets.QWidget):
 class MonitorSettings(QtWidgets.QWidget):
     def __init__(self,job):
         super().__init__()
-        from labremote.runtime.monitor_config import settings,CHARTS
+        from labremote.runtime.monitor_config import settings
         value=settings(job);form=QtWidgets.QFormLayout(self)
         self.kind=QtWidgets.QComboBox()
         for label,key in [('없음','none'),('Ion Check','ion'),('SPAM','spam'),('RE','ent')]:self.kind.addItem(label,key)
@@ -99,18 +99,12 @@ class MonitorSettings(QtWidgets.QWidget):
         self.view=QtWidgets.QComboBox();self.view.addItem('그룹 누적','cumulative');self.view.addItem('최신 회차','latest')
         self.view.setCurrentIndex(self.view.findData(value['view']))
         form.addRow('모니터 종류',self.kind);form.addRow('탭 이름',self.title);form.addRow('기본 표시',self.view)
-        self.charts={};self.box=QtWidgets.QGroupBox('RE 표시 그래프');grid=QtWidgets.QVBoxLayout(self.box)
-        for key,label in zip(CHARTS,('누적 decay · log Y','최신 batch decay · log Y','Coincidence','Batch별 decay / trial','Herald trial 분포 · log bins','Population · 1σ 오차','EA readout','EC readout')):
-            check=QtWidgets.QCheckBox(label);check.setChecked(key in value['charts']);grid.addWidget(check);self.charts[key]=check
-        form.addRow(self.box)
         note=QtWidgets.QLabel('Queue 항목별로 독립된 탭을 만듭니다. 선택한 그룹 안에서 누적하며, 서로 다른 RE 설정은 분리합니다. 모니터 설정은 실험 실행 조건을 바꾸지 않습니다.')
         note.setWordWrap(True);form.addRow(note)
-        self.kind.currentIndexChanged.connect(lambda _:self.box.setEnabled(self.kind.currentData()=='ent'))
-        self.box.setEnabled(self.kind.currentData()=='ent')
 
     def value(self):
         from labremote.runtime.monitor_config import validate
-        return validate(dict(kind=self.kind.currentData(),title=self.title.text().strip(),view=self.view.currentData(),charts=[k for k,v in self.charts.items() if v.isChecked()]))
+        return validate(dict(kind=self.kind.currentData(),title=self.title.text().strip(),view=self.view.currentData()))
 
 
 class WorkflowJobDialog(QtWidgets.QDialog):

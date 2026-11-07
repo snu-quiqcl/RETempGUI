@@ -1,7 +1,7 @@
 # Queue workflow monitors
 
 Workflow 편집 창의 **Monitor** 탭에서 종류(없음, Ion Check, SPAM, RE), 탭 이름,
-기본 표시(그룹 누적/최신 회차)를 설정합니다. RE는 표시할 그래프도 선택합니다.
+기본 표시(그룹 누적/최신 회차)를 설정합니다. RE는 기존 RE 탭의 모든 그래프를 항상 표시합니다.
 Queue 목록의 Monitor 열에서 연결 상태를 확인할 수 있습니다.
 
 Monitor 화면에서 그룹을 선택하면 그 그룹에 설정된 Workflow별 탭이 나타납니다.
@@ -17,8 +17,7 @@ Queue JSON의 각 workflow job에 `monitor` 객체를 저장합니다. 실험 `p
 {
   "kind": "ent",
   "title": "RE",
-  "view": "cumulative",
-  "charts": ["decay", "latest_decay", "coincidence", "batch_rates", "trials", "population", "ea_readout", "ec_readout"]
+  "view": "cumulative"
 }
 ```
 
@@ -27,6 +26,7 @@ Queue JSON의 각 workflow job에 `monitor` 객체를 저장합니다. 실험 `p
 설정별로 독립 누적하며 미완료 SPAM은 합산하지 않습니다. RE는 완료 FPGA batch만
 합산합니다. 실패/중단 workflow 안에 저장된 유효 완료 batch는 포함합니다.
 
+기존 Queue 파일의 `charts` 선택값은 무시하고, 다시 저장하면 제거합니다.
 RE는 기존 EntanglementPlot을 재사용합니다. 두 decay 그래프는 로그 Y축,
 herald 분포는 로그 간격 trial bin별 확률과 동일 구간 기하분포입니다.
 Population은 00/01/10/11 빈도를 herald 수로 정규화하고
