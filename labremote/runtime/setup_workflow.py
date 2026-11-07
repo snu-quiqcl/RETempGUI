@@ -40,7 +40,7 @@ def catalogue(family):
             for path,method in [('frequency_hz','set_frequency'),('phase_deg','set_phase'),('vva_level','set_vva'),('output_enabled','on_off')]:add(f'ch{ch}.'+path,method,ch)
     elif family=='thermotek':add('temperature_setpoint','set_target')
     elif family=='mdt':
-        for axis in ('x','y','z'):add(axis+'.voltage','set_voltage',prefix=(axis,))
+        for axis in ('x','y','z'):add(axis+'.voltage','set_voltage',prefix=(axis.upper(),))
         add('master_scan_enabled','set_master_scan')
     elif family=='keithley':
         for ch in range(1,4):

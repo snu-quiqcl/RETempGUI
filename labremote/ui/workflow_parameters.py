@@ -194,12 +194,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             from labremote.ion_check import config as ion
             self.settings_config=ion;self.settings_filename='ion_check.local.json'
             self.editor=IonCheckParameters();self.tabs.addTab(self.editor,'Ion Check 설정 · devices.parameters')
+        elif kind=='spam':
+            from .spam_parameters import SpamParameters
+            self.editor=SpamParameters();self.tabs.addTab(self.editor,'SPAM 설정 · devices.parameters')
         if not self.base:
             try:
                 if kind in ('entanglement','ion'):self.base={'fpga':'fpga_local','settings':self.settings_config.load()}
                 elif kind=='spam':
-                    from labremote.characterization.pulse_experiment import load
-                    self.base={'fpga':'fpga_local','settings':{ch:load('spam',ch) for ch in ('EA','EC')}}
+                    self.base=self.editor.defaults()
             except Exception as exc:profile_error=str(exc)
         self.json=QtWidgets.QPlainTextEdit();self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
         self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집') if kind!='setup' else -1
@@ -213,7 +215,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         if self.editor is not None:
             try:
                 if not self.base:
-                    self.base={'fpga':'fpga_local','settings':self.settings_config.load()}
+                    self.base=self.editor.defaults() if kind=='spam' else {'fpga':'fpga_local','settings':self.settings_config.load()}
                     self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
                 self.editor.populate(self.base)
             except Exception as exc:
@@ -265,9 +267,11 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             parameters=self.read_json() if self.editor is None or self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
             if self.editor is not None:
                 from .setup_parameters import SetupParameters
+                from .spam_parameters import SpamParameters
                 if isinstance(self.editor,SetupParameters):
                     from labremote.runtime.setup_workflow import validate
                     validate(parameters)
+                elif isinstance(self.editor,SpamParameters):self.editor.validate_parameters(parameters)
                 else:
                     if isinstance(self.editor,IonCheckParameters):self.settings_config.validate(parameters['settings'],require_thresholds=True)
                     else:self.settings_config.validate(parameters['settings'])
