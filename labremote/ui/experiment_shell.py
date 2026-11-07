@@ -62,6 +62,7 @@ class ExperimentShellMixin:
         self.queue_tab=QueueTab(self._bindings,self)
         self.queue_monitor=QueueMonitor(self)
         self.queue_tab.state_changed.connect(self.queue_monitor.accept_live)
+        self.queue_tab.plan_changed.connect(self.queue_monitor.accept_plan)
         self.device_tabs.addTab(self.queue_tab,'Queue')
         self.device_tabs.addTab(self.queue_monitor,'Queue Monitor')
         self.monitor_tab=MonitorDashboard(lambda:self.family_tabs,self)
@@ -310,6 +311,7 @@ class ExperimentShellMixin:
         self.cancel_tasks_button.setEnabled(active or busy)
 
     def close_equipment_windows(self):
+        self.queue_monitor.shutdown()
         self.equipment_timer.stop()
         for window in [*self.detail_windows.values(),self.connection_settings_window]:
             window.allow_close=True;window.close()

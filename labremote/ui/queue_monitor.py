@@ -24,7 +24,13 @@ class ManifestReader(QtCore.QThread):
 class QueueMonitor(QtWidgets.QWidget):
     def __init__(self,parent=None):
         super().__init__(parent);self.latest=None;self.current=None;self.follow=True;self.reader=None
-        layout=QtWidgets.QVBoxLayout(self);row=QtWidgets.QHBoxLayout();layout.addLayout(row)
+        root=QtWidgets.QVBoxLayout(self)
+        self.views=QtWidgets.QTabWidget();root.addWidget(self.views)
+        from .queue_group_monitor import GroupDashboard
+        self.dashboard=GroupDashboard(self);self.views.addTab(self.dashboard,'그룹별 모니터')
+        overview=QtWidgets.QWidget();self.views.addTab(overview,'전체 실행 목록')
+        toolbar=QtWidgets.QHBoxLayout();root.insertLayout(0,toolbar)
+        layout=QtWidgets.QVBoxLayout(overview);row=toolbar
         for title,fn in [('현재 Queue 보기',self.show_current),('저장된 Queue 열기',self.open_manifest),('결과 폴더 열기',self.open_folder)]:
             button=QtWidgets.QPushButton(title);button.clicked.connect(fn);row.addWidget(button)
         row.addStretch();self.metric=QtWidgets.QComboBox();self.metric.addItem('실행 시간 (s)','elapsed_s');row.addWidget(self.metric);self.metric.currentIndexChanged.connect(self.draw)
@@ -37,12 +43,19 @@ class QueueMonitor(QtWidgets.QWidget):
         self.figure=Figure(figsize=(8,2));self.axis=self.figure.subplots();self.canvas=FigureCanvasQTAgg(self.figure);layout.addWidget(self.canvas,1)
         self.details=QtWidgets.QPlainTextEdit();self.details.setReadOnly(True);self.details.setMaximumHeight(170);layout.addWidget(self.details)
     def accept_live(self,state):
+        if getattr(self.parent(),'_closing',False):self.shutdown();return
         self.latest=state
         if self.follow:self.show_manifest(state)
+    def accept_plan(self,plan):
+        if not self.follow or (self.latest and self.latest.get('status') in ('running','paused')):return
+        from labremote.runtime.queue_monitor_data import preview
+        try:self.show_manifest(preview(plan))
+        except Exception as exc:self.dashboard.heading.setText('Queue 구성 확인: '+str(exc))
     def show_current(self):
         self.follow=True
         if self.latest:self.show_manifest(self.latest)
     def show_manifest(self,state):
+        self.dashboard.accept(state)
         self.current=state;steps=state['steps'];counts={s:sum(p['status']==s for p in steps) for s in ('completed','failed','cancelled','running','pending','skipped')}
         self.status.setText(f"{state['status']} · 성공 {counts['completed']} / 실패 {counts['failed']} / 취소 {counts['cancelled']} / 건너뜀 {counts['skipped']} / 실행 {counts['running']} / 대기 {counts['pending']} · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
         selected=self.table.currentRow();self.table.setRowCount(len(steps))
@@ -68,13 +81,24 @@ class QueueMonitor(QtWidgets.QWidget):
         i=self.table.currentRow()
         if self.current and 0<=i<len(self.current['steps']):self.details.setPlainText(json.dumps(self.current['steps'][i],ensure_ascii=False,indent=2)[:50000])
     def open_manifest(self):
-        if self.still_running():return
+        if self.reader is not None and self.reader.isRunning():return
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Open Queue manifest','','Queue (queue_manifest.json)')
         if path:
             self.follow=False;self.reader=ManifestReader(path,self);self.reader.loaded.connect(self.show_manifest);self.reader.failed.connect(self.status.setText);self.reader.start()
     def open_folder(self):
         if not self.current:return
+        if not self.current.get('folder'):return
+        if self.views.currentIndex()==0:
+            dashboard=self.dashboard;i=dashboard.table.currentRow();path=Path(self.current['folder'])
+            if hasattr(dashboard,'group') and 0<=i<len(dashboard.group['steps']):path=path/dashboard.group['steps'][i].get('directory','')
+            QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(str(path)));return
         i=self.table.currentRow();path=Path(self.current.get('folder',''))
         if 0<=i<len(self.current['steps']):path=path/self.current['steps'][i].get('directory','')
         QtGui.QDesktopServices.openUrl(QtCore.QUrl.fromLocalFile(str(path)))
-    def still_running(self):return self.reader is not None and self.reader.isRunning()
+    def still_running(self):return (self.reader is not None and self.reader.isRunning()) or self.dashboard.still_running()
+    def shutdown(self):self.dashboard.shutdown()
+    def closeEvent(self,event):
+        self.shutdown()
+        if self.dashboard.reader:self.dashboard.reader.wait()
+        if self.reader:self.reader.wait()
+        super().closeEvent(event)

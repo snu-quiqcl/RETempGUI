@@ -17,6 +17,7 @@ class QueueThread(QtCore.QThread):
 
 class QueueTab(QtWidgets.QWidget):
     state_changed=QtCore.pyqtSignal(object)
+    plan_changed=QtCore.pyqtSignal(object)
     def __init__(self,bindings_provider,parent=None):
         super().__init__(parent);self.bindings_provider=bindings_provider;self.jobs=[];self.thread=None;self.dirty=False
         layout=QtWidgets.QVBoxLayout(self);layout.addWidget(QtWidgets.QLabel('각 작업은 독립된 main(devices) workflow입니다. 추가한 Python 소스와 JSON 변수를 사본으로 보관합니다.'))
@@ -38,6 +39,10 @@ class QueueTab(QtWidgets.QWidget):
         for b in (self.run_button,self.pause_button,self.resume_button,self.stop_button):row.addWidget(b)
         self.run_button.clicked.connect(self.start);self.pause_button.clicked.connect(self.pause);self.resume_button.clicked.connect(self.resume);self.stop_button.clicked.connect(self.shutdown)
         self.status=QtWidgets.QLabel('대기 중');self.status.setWordWrap(True);layout.addWidget(self.status);self.controls()
+        self.repeat.valueChanged.connect(self.publish_plan)
+    def publish_plan(self,*_):
+        if not self.still_running():
+            self.plan_changed.emit(deepcopy(dict(schema_version=2 if any(is_group(j) for j in self.jobs) else 1,repeat=self.repeat.value(),jobs=self.jobs)))
     def refresh(self,select=None):
         self._row_refs=[];entries=[]
         for i,j in enumerate(self.jobs):
@@ -58,6 +63,7 @@ class QueueTab(QtWidgets.QWidget):
         if select is not None:
             ref=select if isinstance(select,tuple) else (select,None)
             if ref in self._row_refs:self.table.selectRow(self._row_refs.index(ref))
+        self.publish_plan()
 
     def selected(self):
         row=self.table.currentRow()

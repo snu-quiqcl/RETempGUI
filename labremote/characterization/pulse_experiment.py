@@ -94,7 +94,7 @@ def analyze(kind,records,c):
         states.append(dict(condition=condition,counts=counts,N_attempts=attempts,N_success=success,N_received=n,N_bright=bright,N_error=errors,
             received_rows=sum(r['received_rows'] for r in rows),complete_batches=sum(r['complete'] for r in rows),
             success_probability=success/attempts if attempts else None,population=bright/n if n else None,spam_error=rate,conditional_fidelity=1-rate if rate is not None else None,
-            histogram=np.bincount(np.minimum(np.asarray(counts,dtype=np.int64),39),minlength=40),batch_history=[{k:v for k,v in r.items() if k!='counts'} for r in rows]))
+            histogram=np.bincount(np.asarray(counts,dtype=np.int64),minlength=40),batch_history=[{k:v for k,v in r.items() if k!='counts'} for r in rows]))
     error=(states[0]['spam_error']+states[1]['spam_error'])/2 if all(s['spam_error'] is not None for s in states) else None
     return clean(dict(experiment=kind,states=states,threshold=c['N_threshold'],average_spam_error=error,spam_fidelity=1-error if error is not None else None))
 
@@ -112,7 +112,7 @@ def draw(figure,data):
     else:
         from .live_pulse import LivePlot
         plot=LivePlot(figure,'spam')
-        plot.update(dict(states=data['states'],errors=[s['spam_error'] for s in data['states']]+[data['average_spam_error']]))
+        plot.update(dict(states=data['states'],threshold=data['threshold'],errors=[s['spam_error'] for s in data['states']]+[data['average_spam_error']]))
     # Stable margins also work when workflow results arrive in a hidden tab.
     figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)
 
