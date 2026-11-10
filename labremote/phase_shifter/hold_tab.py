@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
 from . import config, hold
-from .calibration import CalibrationSelector
+from .calibration import CalibrationSelector, estimate_note
 
 
 class PhaseHoldTab(QtWidgets.QWidget):
@@ -54,6 +54,7 @@ class PhaseHoldTab(QtWidgets.QWidget):
         self.angle.valueChanged.connect(self.controls)
         right.addWidget(self.angle)
         self.converted = QtWidgets.QLabel()
+        self.converted.setWordWrap(True)
         right.addWidget(self.converted)
         note = QtWidgets.QLabel('선형: 명목 각도 / 보정표: 조건부 추정 각도 · 실제 RF 위상 측정값은 아닙니다.')
         note.setWordWrap(True)
@@ -132,7 +133,7 @@ class PhaseHoldTab(QtWidgets.QWidget):
         error = ''
         try:
             point = hold.request(self.angle.value(), self.names(), calibration=self.calibration.active())
-            self.converted.setText(f'변환 코드: {point["code"]}    명목/추정 각도: {point["applied_angle_deg"]:.6f}°')
+            self.converted.setText(f'변환 코드: {point["code"]}    명목/추정 각도: {point["applied_angle_deg"]:.6f}°' + estimate_note(point))
         except ValueError as exc:
             error = str(exc)
             self.converted.setText(error)

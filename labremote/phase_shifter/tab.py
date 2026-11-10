@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
 from labremote.data_paths import tab_data_directory
 from . import config
-from .calibration import CalibrationSelector
+from .calibration import CalibrationSelector, estimate_note
 from .selectors import PhaseShifterEtcTab
 
 
@@ -219,7 +219,9 @@ class PhaseShifterTab(QtWidgets.QWidget):
         try:
             target = config.resolve(self.fields['phase_angle_deg'].value(), self.calibration.active())
             self.angle_summary.setText(f'단일 측정: 요청 {target["requested_angle_deg"]:g}° → '
-                f'명목/추정 {target["applied_angle_deg"]:.6f}° (코드 {target["code"]})')
+                f'명목/추정 {target["applied_angle_deg"]:.6f}° (코드 {target["code"]})' + estimate_note(target))
+            if self.calibration.active() and self.calibration.active().get('kind') == 'ramsey_data_interpolation':
+                self.scan_summary.setText(self.scan_summary.text() + '\n데이터 보간: 저감도·평탄 구간도 포함 (조건부 추정)')
         except (ValueError, KeyError) as exc:
             single_error = str(exc)
             self.angle_summary.setText(single_error)

@@ -1,0 +1,2972 @@
+{
+  "schema_version": 2,
+  "settings": {
+    "scan_start_deg": 0.0,
+    "scan_stop_deg": 360.0,
+    "scan_step_deg": 2.0,
+    "phase_angle_deg": 90.0,
+    "N_average": 500,
+    "threshold": 2,
+    "half_pi_time": 15000,
+    "phase_zero_settle_clocks": 1000,
+    "phase_settle_clocks": 1000,
+    "timeout_s": 30.0,
+    "T_cool": 50000,
+    "T_init": 1000,
+    "T_det": 7000,
+    "T_wait_for_aom_off": 100,
+    "T_cool_repeat": 1,
+    "T_det_repeat": 1,
+    "outputs": {
+      "aom": "AOMA",
+      "eom_7g_1": "EOM_7GA1",
+      "eom_7g_2": "EOM_7GA2",
+      "eom_2g": "EOM_2GA",
+      "microwave": "MW_A"
+    },
+    "phase_outputs": [
+      "PS_0",
+      "PS_1",
+      "PS_2",
+      "PS_3",
+      "PS_4",
+      "PS_5",
+      "PS_6",
+      "PS_7",
+      "PS_8",
+      "PS_9",
+      "PS_10",
+      "PS_11"
+    ],
+    "detector_nickname": "PMTA",
+    "schema_version": 2,
+    "phase_code": 1024
+  },
+  "codes": [
+    0,
+    23,
+    46,
+    68,
+    91,
+    114,
+    137,
+    159,
+    182,
+    205,
+    228,
+    250,
+    273,
+    296,
+    319,
+    341,
+    364,
+    387,
+    410,
+    432,
+    455,
+    478,
+    501,
+    523,
+    546,
+    569,
+    592,
+    614,
+    637,
+    660,
+    683,
+    705,
+    728,
+    751,
+    774,
+    796,
+    819,
+    842,
+    865,
+    887,
+    910,
+    933,
+    956,
+    978,
+    1001,
+    1024,
+    1047,
+    1070,
+    1092,
+    1115,
+    1138,
+    1161,
+    1183,
+    1206,
+    1229,
+    1252,
+    1274,
+    1297,
+    1320,
+    1343,
+    1365,
+    1388,
+    1411,
+    1434,
+    1456,
+    1479,
+    1502,
+    1525,
+    1547,
+    1570,
+    1593,
+    1616,
+    1638,
+    1661,
+    1684,
+    1707,
+    1729,
+    1752,
+    1775,
+    1798,
+    1820,
+    1843,
+    1866,
+    1889,
+    1911,
+    1934,
+    1957,
+    1980,
+    2002,
+    2025,
+    2048,
+    2071,
+    2094,
+    2116,
+    2139,
+    2162,
+    2185,
+    2207,
+    2230,
+    2253,
+    2276,
+    2298,
+    2321,
+    2344,
+    2367,
+    2389,
+    2412,
+    2435,
+    2458,
+    2480,
+    2503,
+    2526,
+    2549,
+    2571,
+    2594,
+    2617,
+    2640,
+    2662,
+    2685,
+    2708,
+    2731,
+    2753,
+    2776,
+    2799,
+    2822,
+    2844,
+    2867,
+    2890,
+    2913,
+    2935,
+    2958,
+    2981,
+    3004,
+    3026,
+    3049,
+    3072,
+    3095,
+    3118,
+    3140,
+    3163,
+    3186,
+    3209,
+    3231,
+    3254,
+    3277,
+    3300,
+    3322,
+    3345,
+    3368,
+    3391,
+    3413,
+    3436,
+    3459,
+    3482,
+    3504,
+    3527,
+    3550,
+    3573,
+    3595,
+    3618,
+    3641,
+    3664,
+    3686,
+    3709,
+    3732,
+    3755,
+    3777,
+    3800,
+    3823,
+    3846,
+    3868,
+    3891,
+    3914,
+    3937,
+    3959,
+    3982,
+    4005,
+    4028,
+    4050,
+    4073,
+    0
+  ],
+  "scan_points": [
+    {
+      "requested_angle_deg": 0.0,
+      "code": 0,
+      "applied_angle_deg": 0.0
+    },
+    {
+      "requested_angle_deg": 2.0,
+      "code": 23,
+      "applied_angle_deg": 2.021484375
+    },
+    {
+      "requested_angle_deg": 4.0,
+      "code": 46,
+      "applied_angle_deg": 4.04296875
+    },
+    {
+      "requested_angle_deg": 6.0,
+      "code": 68,
+      "applied_angle_deg": 5.9765625
+    },
+    {
+      "requested_angle_deg": 8.0,
+      "code": 91,
+      "applied_angle_deg": 7.998046875
+    },
+    {
+      "requested_angle_deg": 10.0,
+      "code": 114,
+      "applied_angle_deg": 10.01953125
+    },
+    {
+      "requested_angle_deg": 12.0,
+      "code": 137,
+      "applied_angle_deg": 12.041015625
+    },
+    {
+      "requested_angle_deg": 14.0,
+      "code": 159,
+      "applied_angle_deg": 13.974609375
+    },
+    {
+      "requested_angle_deg": 16.0,
+      "code": 182,
+      "applied_angle_deg": 15.99609375
+    },
+    {
+      "requested_angle_deg": 18.0,
+      "code": 205,
+      "applied_angle_deg": 18.017578125
+    },
+    {
+      "requested_angle_deg": 20.0,
+      "code": 228,
+      "applied_angle_deg": 20.0390625
+    },
+    {
+      "requested_angle_deg": 22.0,
+      "code": 250,
+      "applied_angle_deg": 21.97265625
+    },
+    {
+      "requested_angle_deg": 24.0,
+      "code": 273,
+      "applied_angle_deg": 23.994140625
+    },
+    {
+      "requested_angle_deg": 26.0,
+      "code": 296,
+      "applied_angle_deg": 26.015625
+    },
+    {
+      "requested_angle_deg": 28.0,
+      "code": 319,
+      "applied_angle_deg": 28.037109375
+    },
+    {
+      "requested_angle_deg": 30.0,
+      "code": 341,
+      "applied_angle_deg": 29.970703125
+    },
+    {
+      "requested_angle_deg": 32.0,
+      "code": 364,
+      "applied_angle_deg": 31.9921875
+    },
+    {
+      "requested_angle_deg": 34.0,
+      "code": 387,
+      "applied_angle_deg": 34.013671875
+    },
+    {
+      "requested_angle_deg": 36.0,
+      "code": 410,
+      "applied_angle_deg": 36.03515625
+    },
+    {
+      "requested_angle_deg": 38.0,
+      "code": 432,
+      "applied_angle_deg": 37.96875
+    },
+    {
+      "requested_angle_deg": 40.0,
+      "code": 455,
+      "applied_angle_deg": 39.990234375
+    },
+    {
+      "requested_angle_deg": 42.0,
+      "code": 478,
+      "applied_angle_deg": 42.01171875
+    },
+    {
+      "requested_angle_deg": 44.0,
+      "code": 501,
+      "applied_angle_deg": 44.033203125
+    },
+    {
+      "requested_angle_deg": 46.0,
+      "code": 523,
+      "applied_angle_deg": 45.966796875
+    },
+    {
+      "requested_angle_deg": 48.0,
+      "code": 546,
+      "applied_angle_deg": 47.98828125
+    },
+    {
+      "requested_angle_deg": 50.0,
+      "code": 569,
+      "applied_angle_deg": 50.009765625
+    },
+    {
+      "requested_angle_deg": 52.0,
+      "code": 592,
+      "applied_angle_deg": 52.03125
+    },
+    {
+      "requested_angle_deg": 54.0,
+      "code": 614,
+      "applied_angle_deg": 53.96484375
+    },
+    {
+      "requested_angle_deg": 56.0,
+      "code": 637,
+      "applied_angle_deg": 55.986328125
+    },
+    {
+      "requested_angle_deg": 58.0,
+      "code": 660,
+      "applied_angle_deg": 58.0078125
+    },
+    {
+      "requested_angle_deg": 60.0,
+      "code": 683,
+      "applied_angle_deg": 60.029296875
+    },
+    {
+      "requested_angle_deg": 62.0,
+      "code": 705,
+      "applied_angle_deg": 61.962890625
+    },
+    {
+      "requested_angle_deg": 64.0,
+      "code": 728,
+      "applied_angle_deg": 63.984375
+    },
+    {
+      "requested_angle_deg": 66.0,
+      "code": 751,
+      "applied_angle_deg": 66.005859375
+    },
+    {
+      "requested_angle_deg": 68.0,
+      "code": 774,
+      "applied_angle_deg": 68.02734375
+    },
+    {
+      "requested_angle_deg": 70.0,
+      "code": 796,
+      "applied_angle_deg": 69.9609375
+    },
+    {
+      "requested_angle_deg": 72.0,
+      "code": 819,
+      "applied_angle_deg": 71.982421875
+    },
+    {
+      "requested_angle_deg": 74.0,
+      "code": 842,
+      "applied_angle_deg": 74.00390625
+    },
+    {
+      "requested_angle_deg": 76.0,
+      "code": 865,
+      "applied_angle_deg": 76.025390625
+    },
+    {
+      "requested_angle_deg": 78.0,
+      "code": 887,
+      "applied_angle_deg": 77.958984375
+    },
+    {
+      "requested_angle_deg": 80.0,
+      "code": 910,
+      "applied_angle_deg": 79.98046875
+    },
+    {
+      "requested_angle_deg": 82.0,
+      "code": 933,
+      "applied_angle_deg": 82.001953125
+    },
+    {
+      "requested_angle_deg": 84.0,
+      "code": 956,
+      "applied_angle_deg": 84.0234375
+    },
+    {
+      "requested_angle_deg": 86.0,
+      "code": 978,
+      "applied_angle_deg": 85.95703125
+    },
+    {
+      "requested_angle_deg": 88.0,
+      "code": 1001,
+      "applied_angle_deg": 87.978515625
+    },
+    {
+      "requested_angle_deg": 90.0,
+      "code": 1024,
+      "applied_angle_deg": 90.0
+    },
+    {
+      "requested_angle_deg": 92.0,
+      "code": 1047,
+      "applied_angle_deg": 92.021484375
+    },
+    {
+      "requested_angle_deg": 94.0,
+      "code": 1070,
+      "applied_angle_deg": 94.04296875
+    },
+    {
+      "requested_angle_deg": 96.0,
+      "code": 1092,
+      "applied_angle_deg": 95.9765625
+    },
+    {
+      "requested_angle_deg": 98.0,
+      "code": 1115,
+      "applied_angle_deg": 97.998046875
+    },
+    {
+      "requested_angle_deg": 100.0,
+      "code": 1138,
+      "applied_angle_deg": 100.01953125
+    },
+    {
+      "requested_angle_deg": 102.0,
+      "code": 1161,
+      "applied_angle_deg": 102.041015625
+    },
+    {
+      "requested_angle_deg": 104.0,
+      "code": 1183,
+      "applied_angle_deg": 103.974609375
+    },
+    {
+      "requested_angle_deg": 106.0,
+      "code": 1206,
+      "applied_angle_deg": 105.99609375
+    },
+    {
+      "requested_angle_deg": 108.0,
+      "code": 1229,
+      "applied_angle_deg": 108.017578125
+    },
+    {
+      "requested_angle_deg": 110.0,
+      "code": 1252,
+      "applied_angle_deg": 110.0390625
+    },
+    {
+      "requested_angle_deg": 112.0,
+      "code": 1274,
+      "applied_angle_deg": 111.97265625
+    },
+    {
+      "requested_angle_deg": 114.0,
+      "code": 1297,
+      "applied_angle_deg": 113.994140625
+    },
+    {
+      "requested_angle_deg": 116.0,
+      "code": 1320,
+      "applied_angle_deg": 116.015625
+    },
+    {
+      "requested_angle_deg": 118.0,
+      "code": 1343,
+      "applied_angle_deg": 118.037109375
+    },
+    {
+      "requested_angle_deg": 120.0,
+      "code": 1365,
+      "applied_angle_deg": 119.970703125
+    },
+    {
+      "requested_angle_deg": 122.0,
+      "code": 1388,
+      "applied_angle_deg": 121.9921875
+    },
+    {
+      "requested_angle_deg": 124.0,
+      "code": 1411,
+      "applied_angle_deg": 124.013671875
+    },
+    {
+      "requested_angle_deg": 126.0,
+      "code": 1434,
+      "applied_angle_deg": 126.03515625
+    },
+    {
+      "requested_angle_deg": 128.0,
+      "code": 1456,
+      "applied_angle_deg": 127.96875
+    },
+    {
+      "requested_angle_deg": 130.0,
+      "code": 1479,
+      "applied_angle_deg": 129.990234375
+    },
+    {
+      "requested_angle_deg": 132.0,
+      "code": 1502,
+      "applied_angle_deg": 132.01171875
+    },
+    {
+      "requested_angle_deg": 134.0,
+      "code": 1525,
+      "applied_angle_deg": 134.033203125
+    },
+    {
+      "requested_angle_deg": 136.0,
+      "code": 1547,
+      "applied_angle_deg": 135.966796875
+    },
+    {
+      "requested_angle_deg": 138.0,
+      "code": 1570,
+      "applied_angle_deg": 137.98828125
+    },
+    {
+      "requested_angle_deg": 140.0,
+      "code": 1593,
+      "applied_angle_deg": 140.009765625
+    },
+    {
+      "requested_angle_deg": 142.0,
+      "code": 1616,
+      "applied_angle_deg": 142.03125
+    },
+    {
+      "requested_angle_deg": 144.0,
+      "code": 1638,
+      "applied_angle_deg": 143.96484375
+    },
+    {
+      "requested_angle_deg": 146.0,
+      "code": 1661,
+      "applied_angle_deg": 145.986328125
+    },
+    {
+      "requested_angle_deg": 148.0,
+      "code": 1684,
+      "applied_angle_deg": 148.0078125
+    },
+    {
+      "requested_angle_deg": 150.0,
+      "code": 1707,
+      "applied_angle_deg": 150.029296875
+    },
+    {
+      "requested_angle_deg": 152.0,
+      "code": 1729,
+      "applied_angle_deg": 151.962890625
+    },
+    {
+      "requested_angle_deg": 154.0,
+      "code": 1752,
+      "applied_angle_deg": 153.984375
+    },
+    {
+      "requested_angle_deg": 156.0,
+      "code": 1775,
+      "applied_angle_deg": 156.005859375
+    },
+    {
+      "requested_angle_deg": 158.0,
+      "code": 1798,
+      "applied_angle_deg": 158.02734375
+    },
+    {
+      "requested_angle_deg": 160.0,
+      "code": 1820,
+      "applied_angle_deg": 159.9609375
+    },
+    {
+      "requested_angle_deg": 162.0,
+      "code": 1843,
+      "applied_angle_deg": 161.982421875
+    },
+    {
+      "requested_angle_deg": 164.0,
+      "code": 1866,
+      "applied_angle_deg": 164.00390625
+    },
+    {
+      "requested_angle_deg": 166.0,
+      "code": 1889,
+      "applied_angle_deg": 166.025390625
+    },
+    {
+      "requested_angle_deg": 168.0,
+      "code": 1911,
+      "applied_angle_deg": 167.958984375
+    },
+    {
+      "requested_angle_deg": 170.0,
+      "code": 1934,
+      "applied_angle_deg": 169.98046875
+    },
+    {
+      "requested_angle_deg": 172.0,
+      "code": 1957,
+      "applied_angle_deg": 172.001953125
+    },
+    {
+      "requested_angle_deg": 174.0,
+      "code": 1980,
+      "applied_angle_deg": 174.0234375
+    },
+    {
+      "requested_angle_deg": 176.0,
+      "code": 2002,
+      "applied_angle_deg": 175.95703125
+    },
+    {
+      "requested_angle_deg": 178.0,
+      "code": 2025,
+      "applied_angle_deg": 177.978515625
+    },
+    {
+      "requested_angle_deg": 180.0,
+      "code": 2048,
+      "applied_angle_deg": 180.0
+    },
+    {
+      "requested_angle_deg": 182.0,
+      "code": 2071,
+      "applied_angle_deg": 182.021484375
+    },
+    {
+      "requested_angle_deg": 184.0,
+      "code": 2094,
+      "applied_angle_deg": 184.04296875
+    },
+    {
+      "requested_angle_deg": 186.0,
+      "code": 2116,
+      "applied_angle_deg": 185.9765625
+    },
+    {
+      "requested_angle_deg": 188.0,
+      "code": 2139,
+      "applied_angle_deg": 187.998046875
+    },
+    {
+      "requested_angle_deg": 190.0,
+      "code": 2162,
+      "applied_angle_deg": 190.01953125
+    },
+    {
+      "requested_angle_deg": 192.0,
+      "code": 2185,
+      "applied_angle_deg": 192.041015625
+    },
+    {
+      "requested_angle_deg": 194.0,
+      "code": 2207,
+      "applied_angle_deg": 193.974609375
+    },
+    {
+      "requested_angle_deg": 196.0,
+      "code": 2230,
+      "applied_angle_deg": 195.99609375
+    },
+    {
+      "requested_angle_deg": 198.0,
+      "code": 2253,
+      "applied_angle_deg": 198.017578125
+    },
+    {
+      "requested_angle_deg": 200.0,
+      "code": 2276,
+      "applied_angle_deg": 200.0390625
+    },
+    {
+      "requested_angle_deg": 202.0,
+      "code": 2298,
+      "applied_angle_deg": 201.97265625
+    },
+    {
+      "requested_angle_deg": 204.0,
+      "code": 2321,
+      "applied_angle_deg": 203.994140625
+    },
+    {
+      "requested_angle_deg": 206.0,
+      "code": 2344,
+      "applied_angle_deg": 206.015625
+    },
+    {
+      "requested_angle_deg": 208.0,
+      "code": 2367,
+      "applied_angle_deg": 208.037109375
+    },
+    {
+      "requested_angle_deg": 210.0,
+      "code": 2389,
+      "applied_angle_deg": 209.970703125
+    },
+    {
+      "requested_angle_deg": 212.0,
+      "code": 2412,
+      "applied_angle_deg": 211.9921875
+    },
+    {
+      "requested_angle_deg": 214.0,
+      "code": 2435,
+      "applied_angle_deg": 214.013671875
+    },
+    {
+      "requested_angle_deg": 216.0,
+      "code": 2458,
+      "applied_angle_deg": 216.03515625
+    },
+    {
+      "requested_angle_deg": 218.0,
+      "code": 2480,
+      "applied_angle_deg": 217.96875
+    },
+    {
+      "requested_angle_deg": 220.0,
+      "code": 2503,
+      "applied_angle_deg": 219.990234375
+    },
+    {
+      "requested_angle_deg": 222.0,
+      "code": 2526,
+      "applied_angle_deg": 222.01171875
+    },
+    {
+      "requested_angle_deg": 224.0,
+      "code": 2549,
+      "applied_angle_deg": 224.033203125
+    },
+    {
+      "requested_angle_deg": 226.0,
+      "code": 2571,
+      "applied_angle_deg": 225.966796875
+    },
+    {
+      "requested_angle_deg": 228.0,
+      "code": 2594,
+      "applied_angle_deg": 227.98828125
+    },
+    {
+      "requested_angle_deg": 230.0,
+      "code": 2617,
+      "applied_angle_deg": 230.009765625
+    },
+    {
+      "requested_angle_deg": 232.0,
+      "code": 2640,
+      "applied_angle_deg": 232.03125
+    },
+    {
+      "requested_angle_deg": 234.0,
+      "code": 2662,
+      "applied_angle_deg": 233.96484375
+    },
+    {
+      "requested_angle_deg": 236.0,
+      "code": 2685,
+      "applied_angle_deg": 235.986328125
+    },
+    {
+      "requested_angle_deg": 238.0,
+      "code": 2708,
+      "applied_angle_deg": 238.0078125
+    },
+    {
+      "requested_angle_deg": 240.0,
+      "code": 2731,
+      "applied_angle_deg": 240.029296875
+    },
+    {
+      "requested_angle_deg": 242.0,
+      "code": 2753,
+      "applied_angle_deg": 241.962890625
+    },
+    {
+      "requested_angle_deg": 244.0,
+      "code": 2776,
+      "applied_angle_deg": 243.984375
+    },
+    {
+      "requested_angle_deg": 246.0,
+      "code": 2799,
+      "applied_angle_deg": 246.005859375
+    },
+    {
+      "requested_angle_deg": 248.0,
+      "code": 2822,
+      "applied_angle_deg": 248.02734375
+    },
+    {
+      "requested_angle_deg": 250.0,
+      "code": 2844,
+      "applied_angle_deg": 249.9609375
+    },
+    {
+      "requested_angle_deg": 252.0,
+      "code": 2867,
+      "applied_angle_deg": 251.982421875
+    },
+    {
+      "requested_angle_deg": 254.0,
+      "code": 2890,
+      "applied_angle_deg": 254.00390625
+    },
+    {
+      "requested_angle_deg": 256.0,
+      "code": 2913,
+      "applied_angle_deg": 256.025390625
+    },
+    {
+      "requested_angle_deg": 258.0,
+      "code": 2935,
+      "applied_angle_deg": 257.958984375
+    },
+    {
+      "requested_angle_deg": 260.0,
+      "code": 2958,
+      "applied_angle_deg": 259.98046875
+    },
+    {
+      "requested_angle_deg": 262.0,
+      "code": 2981,
+      "applied_angle_deg": 262.001953125
+    },
+    {
+      "requested_angle_deg": 264.0,
+      "code": 3004,
+      "applied_angle_deg": 264.0234375
+    },
+    {
+      "requested_angle_deg": 266.0,
+      "code": 3026,
+      "applied_angle_deg": 265.95703125
+    },
+    {
+      "requested_angle_deg": 268.0,
+      "code": 3049,
+      "applied_angle_deg": 267.978515625
+    },
+    {
+      "requested_angle_deg": 270.0,
+      "code": 3072,
+      "applied_angle_deg": 270.0
+    },
+    {
+      "requested_angle_deg": 272.0,
+      "code": 3095,
+      "applied_angle_deg": 272.021484375
+    },
+    {
+      "requested_angle_deg": 274.0,
+      "code": 3118,
+      "applied_angle_deg": 274.04296875
+    },
+    {
+      "requested_angle_deg": 276.0,
+      "code": 3140,
+      "applied_angle_deg": 275.9765625
+    },
+    {
+      "requested_angle_deg": 278.0,
+      "code": 3163,
+      "applied_angle_deg": 277.998046875
+    },
+    {
+      "requested_angle_deg": 280.0,
+      "code": 3186,
+      "applied_angle_deg": 280.01953125
+    },
+    {
+      "requested_angle_deg": 282.0,
+      "code": 3209,
+      "applied_angle_deg": 282.041015625
+    },
+    {
+      "requested_angle_deg": 284.0,
+      "code": 3231,
+      "applied_angle_deg": 283.974609375
+    },
+    {
+      "requested_angle_deg": 286.0,
+      "code": 3254,
+      "applied_angle_deg": 285.99609375
+    },
+    {
+      "requested_angle_deg": 288.0,
+      "code": 3277,
+      "applied_angle_deg": 288.017578125
+    },
+    {
+      "requested_angle_deg": 290.0,
+      "code": 3300,
+      "applied_angle_deg": 290.0390625
+    },
+    {
+      "requested_angle_deg": 292.0,
+      "code": 3322,
+      "applied_angle_deg": 291.97265625
+    },
+    {
+      "requested_angle_deg": 294.0,
+      "code": 3345,
+      "applied_angle_deg": 293.994140625
+    },
+    {
+      "requested_angle_deg": 296.0,
+      "code": 3368,
+      "applied_angle_deg": 296.015625
+    },
+    {
+      "requested_angle_deg": 298.0,
+      "code": 3391,
+      "applied_angle_deg": 298.037109375
+    },
+    {
+      "requested_angle_deg": 300.0,
+      "code": 3413,
+      "applied_angle_deg": 299.970703125
+    },
+    {
+      "requested_angle_deg": 302.0,
+      "code": 3436,
+      "applied_angle_deg": 301.9921875
+    },
+    {
+      "requested_angle_deg": 304.0,
+      "code": 3459,
+      "applied_angle_deg": 304.013671875
+    },
+    {
+      "requested_angle_deg": 306.0,
+      "code": 3482,
+      "applied_angle_deg": 306.03515625
+    },
+    {
+      "requested_angle_deg": 308.0,
+      "code": 3504,
+      "applied_angle_deg": 307.96875
+    },
+    {
+      "requested_angle_deg": 310.0,
+      "code": 3527,
+      "applied_angle_deg": 309.990234375
+    },
+    {
+      "requested_angle_deg": 312.0,
+      "code": 3550,
+      "applied_angle_deg": 312.01171875
+    },
+    {
+      "requested_angle_deg": 314.0,
+      "code": 3573,
+      "applied_angle_deg": 314.033203125
+    },
+    {
+      "requested_angle_deg": 316.0,
+      "code": 3595,
+      "applied_angle_deg": 315.966796875
+    },
+    {
+      "requested_angle_deg": 318.0,
+      "code": 3618,
+      "applied_angle_deg": 317.98828125
+    },
+    {
+      "requested_angle_deg": 320.0,
+      "code": 3641,
+      "applied_angle_deg": 320.009765625
+    },
+    {
+      "requested_angle_deg": 322.0,
+      "code": 3664,
+      "applied_angle_deg": 322.03125
+    },
+    {
+      "requested_angle_deg": 324.0,
+      "code": 3686,
+      "applied_angle_deg": 323.96484375
+    },
+    {
+      "requested_angle_deg": 326.0,
+      "code": 3709,
+      "applied_angle_deg": 325.986328125
+    },
+    {
+      "requested_angle_deg": 328.0,
+      "code": 3732,
+      "applied_angle_deg": 328.0078125
+    },
+    {
+      "requested_angle_deg": 330.0,
+      "code": 3755,
+      "applied_angle_deg": 330.029296875
+    },
+    {
+      "requested_angle_deg": 332.0,
+      "code": 3777,
+      "applied_angle_deg": 331.962890625
+    },
+    {
+      "requested_angle_deg": 334.0,
+      "code": 3800,
+      "applied_angle_deg": 333.984375
+    },
+    {
+      "requested_angle_deg": 336.0,
+      "code": 3823,
+      "applied_angle_deg": 336.005859375
+    },
+    {
+      "requested_angle_deg": 338.0,
+      "code": 3846,
+      "applied_angle_deg": 338.02734375
+    },
+    {
+      "requested_angle_deg": 340.0,
+      "code": 3868,
+      "applied_angle_deg": 339.9609375
+    },
+    {
+      "requested_angle_deg": 342.0,
+      "code": 3891,
+      "applied_angle_deg": 341.982421875
+    },
+    {
+      "requested_angle_deg": 344.0,
+      "code": 3914,
+      "applied_angle_deg": 344.00390625
+    },
+    {
+      "requested_angle_deg": 346.0,
+      "code": 3937,
+      "applied_angle_deg": 346.025390625
+    },
+    {
+      "requested_angle_deg": 348.0,
+      "code": 3959,
+      "applied_angle_deg": 347.958984375
+    },
+    {
+      "requested_angle_deg": 350.0,
+      "code": 3982,
+      "applied_angle_deg": 349.98046875
+    },
+    {
+      "requested_angle_deg": 352.0,
+      "code": 4005,
+      "applied_angle_deg": 352.001953125
+    },
+    {
+      "requested_angle_deg": 354.0,
+      "code": 4028,
+      "applied_angle_deg": 354.0234375
+    },
+    {
+      "requested_angle_deg": 356.0,
+      "code": 4050,
+      "applied_angle_deg": 355.95703125
+    },
+    {
+      "requested_angle_deg": 358.0,
+      "code": 4073,
+      "applied_angle_deg": 357.978515625
+    },
+    {
+      "requested_angle_deg": 360.0,
+      "code": 0,
+      "applied_angle_deg": 0.0
+    }
+  ],
+  "points": [
+    {
+      "code": 0,
+      "shots": 500,
+      "bright": 486,
+      "probability": 0.972,
+      "mean_count": 9.792,
+      "requested_angle_deg": 0.0,
+      "applied_angle_deg": 0.0,
+      "point_index": 0
+    },
+    {
+      "code": 23,
+      "shots": 500,
+      "bright": 487,
+      "probability": 0.974,
+      "mean_count": 9.018,
+      "requested_angle_deg": 2.0,
+      "applied_angle_deg": 2.021484375,
+      "point_index": 1
+    },
+    {
+      "code": 46,
+      "shots": 500,
+      "bright": 476,
+      "probability": 0.952,
+      "mean_count": 8.486,
+      "requested_angle_deg": 4.0,
+      "applied_angle_deg": 4.04296875,
+      "point_index": 2
+    },
+    {
+      "code": 68,
+      "shots": 500,
+      "bright": 457,
+      "probability": 0.914,
+      "mean_count": 8.71,
+      "requested_angle_deg": 6.0,
+      "applied_angle_deg": 5.9765625,
+      "point_index": 3
+    },
+    {
+      "code": 91,
+      "shots": 500,
+      "bright": 446,
+      "probability": 0.892,
+      "mean_count": 8.586,
+      "requested_angle_deg": 8.0,
+      "applied_angle_deg": 7.998046875,
+      "point_index": 4
+    },
+    {
+      "code": 114,
+      "shots": 500,
+      "bright": 442,
+      "probability": 0.884,
+      "mean_count": 8.654,
+      "requested_angle_deg": 10.0,
+      "applied_angle_deg": 10.01953125,
+      "point_index": 5
+    },
+    {
+      "code": 137,
+      "shots": 500,
+      "bright": 426,
+      "probability": 0.852,
+      "mean_count": 7.958,
+      "requested_angle_deg": 12.0,
+      "applied_angle_deg": 12.041015625,
+      "point_index": 6
+    },
+    {
+      "code": 159,
+      "shots": 500,
+      "bright": 390,
+      "probability": 0.78,
+      "mean_count": 6.732,
+      "requested_angle_deg": 14.0,
+      "applied_angle_deg": 13.974609375,
+      "point_index": 7
+    },
+    {
+      "code": 182,
+      "shots": 500,
+      "bright": 394,
+      "probability": 0.788,
+      "mean_count": 7.164,
+      "requested_angle_deg": 16.0,
+      "applied_angle_deg": 15.99609375,
+      "point_index": 8
+    },
+    {
+      "code": 205,
+      "shots": 500,
+      "bright": 378,
+      "probability": 0.756,
+      "mean_count": 6.598,
+      "requested_angle_deg": 18.0,
+      "applied_angle_deg": 18.017578125,
+      "point_index": 9
+    },
+    {
+      "code": 228,
+      "shots": 500,
+      "bright": 359,
+      "probability": 0.718,
+      "mean_count": 6.864,
+      "requested_angle_deg": 20.0,
+      "applied_angle_deg": 20.0390625,
+      "point_index": 10
+    },
+    {
+      "code": 250,
+      "shots": 500,
+      "bright": 344,
+      "probability": 0.688,
+      "mean_count": 6.864,
+      "requested_angle_deg": 22.0,
+      "applied_angle_deg": 21.97265625,
+      "point_index": 11
+    },
+    {
+      "code": 273,
+      "shots": 500,
+      "bright": 348,
+      "probability": 0.696,
+      "mean_count": 6.902,
+      "requested_angle_deg": 24.0,
+      "applied_angle_deg": 23.994140625,
+      "point_index": 12
+    },
+    {
+      "code": 296,
+      "shots": 500,
+      "bright": 351,
+      "probability": 0.702,
+      "mean_count": 6.308,
+      "requested_angle_deg": 26.0,
+      "applied_angle_deg": 26.015625,
+      "point_index": 13
+    },
+    {
+      "code": 319,
+      "shots": 500,
+      "bright": 344,
+      "probability": 0.688,
+      "mean_count": 6.568,
+      "requested_angle_deg": 28.0,
+      "applied_angle_deg": 28.037109375,
+      "point_index": 14
+    },
+    {
+      "code": 341,
+      "shots": 500,
+      "bright": 318,
+      "probability": 0.636,
+      "mean_count": 5.922,
+      "requested_angle_deg": 30.0,
+      "applied_angle_deg": 29.970703125,
+      "point_index": 15
+    },
+    {
+      "code": 364,
+      "shots": 500,
+      "bright": 319,
+      "probability": 0.638,
+      "mean_count": 6.27,
+      "requested_angle_deg": 32.0,
+      "applied_angle_deg": 31.9921875,
+      "point_index": 16
+    },
+    {
+      "code": 387,
+      "shots": 500,
+      "bright": 334,
+      "probability": 0.668,
+      "mean_count": 6.29,
+      "requested_angle_deg": 34.0,
+      "applied_angle_deg": 34.013671875,
+      "point_index": 17
+    },
+    {
+      "code": 410,
+      "shots": 500,
+      "bright": 321,
+      "probability": 0.642,
+      "mean_count": 6.256,
+      "requested_angle_deg": 36.0,
+      "applied_angle_deg": 36.03515625,
+      "point_index": 18
+    },
+    {
+      "code": 432,
+      "shots": 500,
+      "bright": 324,
+      "probability": 0.648,
+      "mean_count": 5.924,
+      "requested_angle_deg": 38.0,
+      "applied_angle_deg": 37.96875,
+      "point_index": 19
+    },
+    {
+      "code": 455,
+      "shots": 500,
+      "bright": 303,
+      "probability": 0.606,
+      "mean_count": 5.826,
+      "requested_angle_deg": 40.0,
+      "applied_angle_deg": 39.990234375,
+      "point_index": 20
+    },
+    {
+      "code": 478,
+      "shots": 500,
+      "bright": 313,
+      "probability": 0.626,
+      "mean_count": 6.182,
+      "requested_angle_deg": 42.0,
+      "applied_angle_deg": 42.01171875,
+      "point_index": 21
+    },
+    {
+      "code": 501,
+      "shots": 500,
+      "bright": 326,
+      "probability": 0.652,
+      "mean_count": 6.736,
+      "requested_angle_deg": 44.0,
+      "applied_angle_deg": 44.033203125,
+      "point_index": 22
+    },
+    {
+      "code": 523,
+      "shots": 500,
+      "bright": 306,
+      "probability": 0.612,
+      "mean_count": 6.068,
+      "requested_angle_deg": 46.0,
+      "applied_angle_deg": 45.966796875,
+      "point_index": 23
+    },
+    {
+      "code": 546,
+      "shots": 500,
+      "bright": 303,
+      "probability": 0.606,
+      "mean_count": 5.216,
+      "requested_angle_deg": 48.0,
+      "applied_angle_deg": 47.98828125,
+      "point_index": 24
+    },
+    {
+      "code": 569,
+      "shots": 500,
+      "bright": 301,
+      "probability": 0.602,
+      "mean_count": 5.534,
+      "requested_angle_deg": 50.0,
+      "applied_angle_deg": 50.009765625,
+      "point_index": 25
+    },
+    {
+      "code": 592,
+      "shots": 500,
+      "bright": 323,
+      "probability": 0.646,
+      "mean_count": 6.062,
+      "requested_angle_deg": 52.0,
+      "applied_angle_deg": 52.03125,
+      "point_index": 26
+    },
+    {
+      "code": 614,
+      "shots": 500,
+      "bright": 281,
+      "probability": 0.562,
+      "mean_count": 5.162,
+      "requested_angle_deg": 54.0,
+      "applied_angle_deg": 53.96484375,
+      "point_index": 27
+    },
+    {
+      "code": 637,
+      "shots": 500,
+      "bright": 290,
+      "probability": 0.58,
+      "mean_count": 5.218,
+      "requested_angle_deg": 56.0,
+      "applied_angle_deg": 55.986328125,
+      "point_index": 28
+    },
+    {
+      "code": 660,
+      "shots": 500,
+      "bright": 287,
+      "probability": 0.574,
+      "mean_count": 5.816,
+      "requested_angle_deg": 58.0,
+      "applied_angle_deg": 58.0078125,
+      "point_index": 29
+    },
+    {
+      "code": 683,
+      "shots": 500,
+      "bright": 276,
+      "probability": 0.552,
+      "mean_count": 5.094,
+      "requested_angle_deg": 60.0,
+      "applied_angle_deg": 60.029296875,
+      "point_index": 30
+    },
+    {
+      "code": 705,
+      "shots": 500,
+      "bright": 289,
+      "probability": 0.578,
+      "mean_count": 4.424,
+      "requested_angle_deg": 62.0,
+      "applied_angle_deg": 61.962890625,
+      "point_index": 31
+    },
+    {
+      "code": 728,
+      "shots": 500,
+      "bright": 264,
+      "probability": 0.528,
+      "mean_count": 4.294,
+      "requested_angle_deg": 64.0,
+      "applied_angle_deg": 63.984375,
+      "point_index": 32
+    },
+    {
+      "code": 751,
+      "shots": 500,
+      "bright": 277,
+      "probability": 0.554,
+      "mean_count": 5.784,
+      "requested_angle_deg": 66.0,
+      "applied_angle_deg": 66.005859375,
+      "point_index": 33
+    },
+    {
+      "code": 774,
+      "shots": 500,
+      "bright": 271,
+      "probability": 0.542,
+      "mean_count": 6.552,
+      "requested_angle_deg": 68.0,
+      "applied_angle_deg": 68.02734375,
+      "point_index": 34
+    },
+    {
+      "code": 796,
+      "shots": 500,
+      "bright": 245,
+      "probability": 0.49,
+      "mean_count": 5.22,
+      "requested_angle_deg": 70.0,
+      "applied_angle_deg": 69.9609375,
+      "point_index": 35
+    },
+    {
+      "code": 819,
+      "shots": 500,
+      "bright": 270,
+      "probability": 0.54,
+      "mean_count": 6.05,
+      "requested_angle_deg": 72.0,
+      "applied_angle_deg": 71.982421875,
+      "point_index": 36
+    },
+    {
+      "code": 842,
+      "shots": 500,
+      "bright": 257,
+      "probability": 0.514,
+      "mean_count": 5.218,
+      "requested_angle_deg": 74.0,
+      "applied_angle_deg": 74.00390625,
+      "point_index": 37
+    },
+    {
+      "code": 865,
+      "shots": 500,
+      "bright": 272,
+      "probability": 0.544,
+      "mean_count": 5.112,
+      "requested_angle_deg": 76.0,
+      "applied_angle_deg": 76.025390625,
+      "point_index": 38
+    },
+    {
+      "code": 887,
+      "shots": 500,
+      "bright": 262,
+      "probability": 0.524,
+      "mean_count": 5.056,
+      "requested_angle_deg": 78.0,
+      "applied_angle_deg": 77.958984375,
+      "point_index": 39
+    },
+    {
+      "code": 910,
+      "shots": 500,
+      "bright": 260,
+      "probability": 0.52,
+      "mean_count": 4.872,
+      "requested_angle_deg": 80.0,
+      "applied_angle_deg": 79.98046875,
+      "point_index": 40
+    },
+    {
+      "code": 933,
+      "shots": 500,
+      "bright": 248,
+      "probability": 0.496,
+      "mean_count": 4.866,
+      "requested_angle_deg": 82.0,
+      "applied_angle_deg": 82.001953125,
+      "point_index": 41
+    },
+    {
+      "code": 956,
+      "shots": 500,
+      "bright": 280,
+      "probability": 0.56,
+      "mean_count": 5.308,
+      "requested_angle_deg": 84.0,
+      "applied_angle_deg": 84.0234375,
+      "point_index": 42
+    },
+    {
+      "code": 978,
+      "shots": 500,
+      "bright": 235,
+      "probability": 0.47,
+      "mean_count": 4.498,
+      "requested_angle_deg": 86.0,
+      "applied_angle_deg": 85.95703125,
+      "point_index": 43
+    },
+    {
+      "code": 1001,
+      "shots": 500,
+      "bright": 251,
+      "probability": 0.502,
+      "mean_count": 4.62,
+      "requested_angle_deg": 88.0,
+      "applied_angle_deg": 87.978515625,
+      "point_index": 44
+    },
+    {
+      "code": 1024,
+      "shots": 500,
+      "bright": 249,
+      "probability": 0.498,
+      "mean_count": 4.694,
+      "requested_angle_deg": 90.0,
+      "applied_angle_deg": 90.0,
+      "point_index": 45
+    },
+    {
+      "code": 1047,
+      "shots": 500,
+      "bright": 272,
+      "probability": 0.544,
+      "mean_count": 4.998,
+      "requested_angle_deg": 92.0,
+      "applied_angle_deg": 92.021484375,
+      "point_index": 46
+    },
+    {
+      "code": 1070,
+      "shots": 500,
+      "bright": 239,
+      "probability": 0.478,
+      "mean_count": 4.356,
+      "requested_angle_deg": 94.0,
+      "applied_angle_deg": 94.04296875,
+      "point_index": 47
+    },
+    {
+      "code": 1092,
+      "shots": 500,
+      "bright": 258,
+      "probability": 0.516,
+      "mean_count": 4.852,
+      "requested_angle_deg": 96.0,
+      "applied_angle_deg": 95.9765625,
+      "point_index": 48
+    },
+    {
+      "code": 1115,
+      "shots": 500,
+      "bright": 234,
+      "probability": 0.468,
+      "mean_count": 4.16,
+      "requested_angle_deg": 98.0,
+      "applied_angle_deg": 97.998046875,
+      "point_index": 49
+    },
+    {
+      "code": 1138,
+      "shots": 500,
+      "bright": 227,
+      "probability": 0.454,
+      "mean_count": 4.222,
+      "requested_angle_deg": 100.0,
+      "applied_angle_deg": 100.01953125,
+      "point_index": 50
+    },
+    {
+      "code": 1161,
+      "shots": 500,
+      "bright": 236,
+      "probability": 0.472,
+      "mean_count": 4.344,
+      "requested_angle_deg": 102.0,
+      "applied_angle_deg": 102.041015625,
+      "point_index": 51
+    },
+    {
+      "code": 1183,
+      "shots": 500,
+      "bright": 221,
+      "probability": 0.442,
+      "mean_count": 4.736,
+      "requested_angle_deg": 104.0,
+      "applied_angle_deg": 103.974609375,
+      "point_index": 52
+    },
+    {
+      "code": 1206,
+      "shots": 500,
+      "bright": 225,
+      "probability": 0.45,
+      "mean_count": 4.718,
+      "requested_angle_deg": 106.0,
+      "applied_angle_deg": 105.99609375,
+      "point_index": 53
+    },
+    {
+      "code": 1229,
+      "shots": 500,
+      "bright": 230,
+      "probability": 0.46,
+      "mean_count": 4.804,
+      "requested_angle_deg": 108.0,
+      "applied_angle_deg": 108.017578125,
+      "point_index": 54
+    },
+    {
+      "code": 1252,
+      "shots": 500,
+      "bright": 202,
+      "probability": 0.404,
+      "mean_count": 4.008,
+      "requested_angle_deg": 110.0,
+      "applied_angle_deg": 110.0390625,
+      "point_index": 55
+    },
+    {
+      "code": 1274,
+      "shots": 500,
+      "bright": 185,
+      "probability": 0.37,
+      "mean_count": 3.392,
+      "requested_angle_deg": 112.0,
+      "applied_angle_deg": 111.97265625,
+      "point_index": 56
+    },
+    {
+      "code": 1297,
+      "shots": 500,
+      "bright": 207,
+      "probability": 0.414,
+      "mean_count": 3.922,
+      "requested_angle_deg": 114.0,
+      "applied_angle_deg": 113.994140625,
+      "point_index": 57
+    },
+    {
+      "code": 1320,
+      "shots": 500,
+      "bright": 197,
+      "probability": 0.394,
+      "mean_count": 3.504,
+      "requested_angle_deg": 116.0,
+      "applied_angle_deg": 116.015625,
+      "point_index": 58
+    },
+    {
+      "code": 1343,
+      "shots": 500,
+      "bright": 174,
+      "probability": 0.348,
+      "mean_count": 2.858,
+      "requested_angle_deg": 118.0,
+      "applied_angle_deg": 118.037109375,
+      "point_index": 59
+    },
+    {
+      "code": 1365,
+      "shots": 500,
+      "bright": 192,
+      "probability": 0.384,
+      "mean_count": 3.594,
+      "requested_angle_deg": 120.0,
+      "applied_angle_deg": 119.970703125,
+      "point_index": 60
+    },
+    {
+      "code": 1388,
+      "shots": 500,
+      "bright": 188,
+      "probability": 0.376,
+      "mean_count": 3.554,
+      "requested_angle_deg": 122.0,
+      "applied_angle_deg": 121.9921875,
+      "point_index": 61
+    },
+    {
+      "code": 1411,
+      "shots": 500,
+      "bright": 192,
+      "probability": 0.384,
+      "mean_count": 4.008,
+      "requested_angle_deg": 124.0,
+      "applied_angle_deg": 124.013671875,
+      "point_index": 62
+    },
+    {
+      "code": 1434,
+      "shots": 500,
+      "bright": 160,
+      "probability": 0.32,
+      "mean_count": 3.434,
+      "requested_angle_deg": 126.0,
+      "applied_angle_deg": 126.03515625,
+      "point_index": 63
+    },
+    {
+      "code": 1456,
+      "shots": 500,
+      "bright": 158,
+      "probability": 0.316,
+      "mean_count": 3.166,
+      "requested_angle_deg": 128.0,
+      "applied_angle_deg": 127.96875,
+      "point_index": 64
+    },
+    {
+      "code": 1479,
+      "shots": 500,
+      "bright": 138,
+      "probability": 0.276,
+      "mean_count": 2.896,
+      "requested_angle_deg": 130.0,
+      "applied_angle_deg": 129.990234375,
+      "point_index": 65
+    },
+    {
+      "code": 1502,
+      "shots": 500,
+      "bright": 151,
+      "probability": 0.302,
+      "mean_count": 2.942,
+      "requested_angle_deg": 132.0,
+      "applied_angle_deg": 132.01171875,
+      "point_index": 66
+    },
+    {
+      "code": 1525,
+      "shots": 500,
+      "bright": 147,
+      "probability": 0.294,
+      "mean_count": 3.352,
+      "requested_angle_deg": 134.0,
+      "applied_angle_deg": 134.033203125,
+      "point_index": 67
+    },
+    {
+      "code": 1547,
+      "shots": 500,
+      "bright": 146,
+      "probability": 0.292,
+      "mean_count": 3.19,
+      "requested_angle_deg": 136.0,
+      "applied_angle_deg": 135.966796875,
+      "point_index": 68
+    },
+    {
+      "code": 1570,
+      "shots": 500,
+      "bright": 130,
+      "probability": 0.26,
+      "mean_count": 2.728,
+      "requested_angle_deg": 138.0,
+      "applied_angle_deg": 137.98828125,
+      "point_index": 69
+    },
+    {
+      "code": 1593,
+      "shots": 500,
+      "bright": 90,
+      "probability": 0.18,
+      "mean_count": 1.886,
+      "requested_angle_deg": 140.0,
+      "applied_angle_deg": 140.009765625,
+      "point_index": 70
+    },
+    {
+      "code": 1616,
+      "shots": 500,
+      "bright": 92,
+      "probability": 0.184,
+      "mean_count": 1.754,
+      "requested_angle_deg": 142.0,
+      "applied_angle_deg": 142.03125,
+      "point_index": 71
+    },
+    {
+      "code": 1638,
+      "shots": 500,
+      "bright": 70,
+      "probability": 0.14,
+      "mean_count": 1.338,
+      "requested_angle_deg": 144.0,
+      "applied_angle_deg": 143.96484375,
+      "point_index": 72
+    },
+    {
+      "code": 1661,
+      "shots": 500,
+      "bright": 49,
+      "probability": 0.098,
+      "mean_count": 0.858,
+      "requested_angle_deg": 146.0,
+      "applied_angle_deg": 145.986328125,
+      "point_index": 73
+    },
+    {
+      "code": 1684,
+      "shots": 500,
+      "bright": 46,
+      "probability": 0.092,
+      "mean_count": 0.87,
+      "requested_angle_deg": 148.0,
+      "applied_angle_deg": 148.0078125,
+      "point_index": 74
+    },
+    {
+      "code": 1707,
+      "shots": 500,
+      "bright": 29,
+      "probability": 0.058,
+      "mean_count": 0.562,
+      "requested_angle_deg": 150.0,
+      "applied_angle_deg": 150.029296875,
+      "point_index": 75
+    },
+    {
+      "code": 1729,
+      "shots": 500,
+      "bright": 16,
+      "probability": 0.032,
+      "mean_count": 0.312,
+      "requested_angle_deg": 152.0,
+      "applied_angle_deg": 151.962890625,
+      "point_index": 76
+    },
+    {
+      "code": 1752,
+      "shots": 500,
+      "bright": 15,
+      "probability": 0.03,
+      "mean_count": 0.266,
+      "requested_angle_deg": 154.0,
+      "applied_angle_deg": 153.984375,
+      "point_index": 77
+    },
+    {
+      "code": 1775,
+      "shots": 500,
+      "bright": 10,
+      "probability": 0.02,
+      "mean_count": 0.212,
+      "requested_angle_deg": 156.0,
+      "applied_angle_deg": 156.005859375,
+      "point_index": 78
+    },
+    {
+      "code": 1798,
+      "shots": 500,
+      "bright": 13,
+      "probability": 0.026,
+      "mean_count": 0.29,
+      "requested_angle_deg": 158.0,
+      "applied_angle_deg": 158.02734375,
+      "point_index": 79
+    },
+    {
+      "code": 1820,
+      "shots": 500,
+      "bright": 10,
+      "probability": 0.02,
+      "mean_count": 0.192,
+      "requested_angle_deg": 160.0,
+      "applied_angle_deg": 159.9609375,
+      "point_index": 80
+    },
+    {
+      "code": 1843,
+      "shots": 500,
+      "bright": 17,
+      "probability": 0.034,
+      "mean_count": 0.29,
+      "requested_angle_deg": 162.0,
+      "applied_angle_deg": 161.982421875,
+      "point_index": 81
+    },
+    {
+      "code": 1866,
+      "shots": 500,
+      "bright": 6,
+      "probability": 0.012,
+      "mean_count": 0.152,
+      "requested_angle_deg": 164.0,
+      "applied_angle_deg": 164.00390625,
+      "point_index": 82
+    },
+    {
+      "code": 1889,
+      "shots": 500,
+      "bright": 13,
+      "probability": 0.026,
+      "mean_count": 0.2,
+      "requested_angle_deg": 166.0,
+      "applied_angle_deg": 166.025390625,
+      "point_index": 83
+    },
+    {
+      "code": 1911,
+      "shots": 500,
+      "bright": 3,
+      "probability": 0.006,
+      "mean_count": 0.07,
+      "requested_angle_deg": 168.0,
+      "applied_angle_deg": 167.958984375,
+      "point_index": 84
+    },
+    {
+      "code": 1934,
+      "shots": 500,
+      "bright": 16,
+      "probability": 0.032,
+      "mean_count": 0.266,
+      "requested_angle_deg": 170.0,
+      "applied_angle_deg": 169.98046875,
+      "point_index": 85
+    },
+    {
+      "code": 1957,
+      "shots": 500,
+      "bright": 7,
+      "probability": 0.014,
+      "mean_count": 0.166,
+      "requested_angle_deg": 172.0,
+      "applied_angle_deg": 172.001953125,
+      "point_index": 86
+    },
+    {
+      "code": 1980,
+      "shots": 500,
+      "bright": 6,
+      "probability": 0.012,
+      "mean_count": 0.136,
+      "requested_angle_deg": 174.0,
+      "applied_angle_deg": 174.0234375,
+      "point_index": 87
+    },
+    {
+      "code": 2002,
+      "shots": 500,
+      "bright": 12,
+      "probability": 0.024,
+      "mean_count": 0.262,
+      "requested_angle_deg": 176.0,
+      "applied_angle_deg": 175.95703125,
+      "point_index": 88
+    },
+    {
+      "code": 2025,
+      "shots": 500,
+      "bright": 8,
+      "probability": 0.016,
+      "mean_count": 0.152,
+      "requested_angle_deg": 178.0,
+      "applied_angle_deg": 177.978515625,
+      "point_index": 89
+    },
+    {
+      "code": 2048,
+      "shots": 500,
+      "bright": 13,
+      "probability": 0.026,
+      "mean_count": 0.216,
+      "requested_angle_deg": 180.0,
+      "applied_angle_deg": 180.0,
+      "point_index": 90
+    },
+    {
+      "code": 2071,
+      "shots": 500,
+      "bright": 6,
+      "probability": 0.012,
+      "mean_count": 0.132,
+      "requested_angle_deg": 182.0,
+      "applied_angle_deg": 182.021484375,
+      "point_index": 91
+    },
+    {
+      "code": 2094,
+      "shots": 500,
+      "bright": 3,
+      "probability": 0.006,
+      "mean_count": 0.062,
+      "requested_angle_deg": 184.0,
+      "applied_angle_deg": 184.04296875,
+      "point_index": 92
+    },
+    {
+      "code": 2116,
+      "shots": 500,
+      "bright": 9,
+      "probability": 0.018,
+      "mean_count": 0.162,
+      "requested_angle_deg": 186.0,
+      "applied_angle_deg": 185.9765625,
+      "point_index": 93
+    },
+    {
+      "code": 2139,
+      "shots": 500,
+      "bright": 13,
+      "probability": 0.026,
+      "mean_count": 0.238,
+      "requested_angle_deg": 188.0,
+      "applied_angle_deg": 187.998046875,
+      "point_index": 94
+    },
+    {
+      "code": 2162,
+      "shots": 500,
+      "bright": 8,
+      "probability": 0.016,
+      "mean_count": 0.21,
+      "requested_angle_deg": 190.0,
+      "applied_angle_deg": 190.01953125,
+      "point_index": 95
+    },
+    {
+      "code": 2185,
+      "shots": 500,
+      "bright": 5,
+      "probability": 0.01,
+      "mean_count": 0.108,
+      "requested_angle_deg": 192.0,
+      "applied_angle_deg": 192.041015625,
+      "point_index": 96
+    },
+    {
+      "code": 2207,
+      "shots": 500,
+      "bright": 4,
+      "probability": 0.008,
+      "mean_count": 0.092,
+      "requested_angle_deg": 194.0,
+      "applied_angle_deg": 193.974609375,
+      "point_index": 97
+    },
+    {
+      "code": 2230,
+      "shots": 500,
+      "bright": 3,
+      "probability": 0.006,
+      "mean_count": 0.068,
+      "requested_angle_deg": 196.0,
+      "applied_angle_deg": 195.99609375,
+      "point_index": 98
+    },
+    {
+      "code": 2253,
+      "shots": 500,
+      "bright": 20,
+      "probability": 0.04,
+      "mean_count": 0.312,
+      "requested_angle_deg": 198.0,
+      "applied_angle_deg": 198.017578125,
+      "point_index": 99
+    },
+    {
+      "code": 2276,
+      "shots": 500,
+      "bright": 38,
+      "probability": 0.076,
+      "mean_count": 0.702,
+      "requested_angle_deg": 200.0,
+      "applied_angle_deg": 200.0390625,
+      "point_index": 100
+    },
+    {
+      "code": 2298,
+      "shots": 500,
+      "bright": 69,
+      "probability": 0.138,
+      "mean_count": 1.28,
+      "requested_angle_deg": 202.0,
+      "applied_angle_deg": 201.97265625,
+      "point_index": 101
+    },
+    {
+      "code": 2321,
+      "shots": 500,
+      "bright": 81,
+      "probability": 0.162,
+      "mean_count": 1.636,
+      "requested_angle_deg": 204.0,
+      "applied_angle_deg": 203.994140625,
+      "point_index": 102
+    },
+    {
+      "code": 2344,
+      "shots": 500,
+      "bright": 79,
+      "probability": 0.158,
+      "mean_count": 1.536,
+      "requested_angle_deg": 206.0,
+      "applied_angle_deg": 206.015625,
+      "point_index": 103
+    },
+    {
+      "code": 2367,
+      "shots": 500,
+      "bright": 103,
+      "probability": 0.206,
+      "mean_count": 1.736,
+      "requested_angle_deg": 208.0,
+      "applied_angle_deg": 208.037109375,
+      "point_index": 104
+    },
+    {
+      "code": 2389,
+      "shots": 500,
+      "bright": 87,
+      "probability": 0.174,
+      "mean_count": 1.732,
+      "requested_angle_deg": 210.0,
+      "applied_angle_deg": 209.970703125,
+      "point_index": 105
+    },
+    {
+      "code": 2412,
+      "shots": 500,
+      "bright": 108,
+      "probability": 0.216,
+      "mean_count": 2.564,
+      "requested_angle_deg": 212.0,
+      "applied_angle_deg": 211.9921875,
+      "point_index": 106
+    },
+    {
+      "code": 2435,
+      "shots": 500,
+      "bright": 113,
+      "probability": 0.226,
+      "mean_count": 2.1,
+      "requested_angle_deg": 214.0,
+      "applied_angle_deg": 214.013671875,
+      "point_index": 107
+    },
+    {
+      "code": 2458,
+      "shots": 500,
+      "bright": 140,
+      "probability": 0.28,
+      "mean_count": 2.81,
+      "requested_angle_deg": 216.0,
+      "applied_angle_deg": 216.03515625,
+      "point_index": 108
+    },
+    {
+      "code": 2480,
+      "shots": 500,
+      "bright": 126,
+      "probability": 0.252,
+      "mean_count": 2.39,
+      "requested_angle_deg": 218.0,
+      "applied_angle_deg": 217.96875,
+      "point_index": 109
+    },
+    {
+      "code": 2503,
+      "shots": 500,
+      "bright": 125,
+      "probability": 0.25,
+      "mean_count": 2.458,
+      "requested_angle_deg": 220.0,
+      "applied_angle_deg": 219.990234375,
+      "point_index": 110
+    },
+    {
+      "code": 2526,
+      "shots": 500,
+      "bright": 127,
+      "probability": 0.254,
+      "mean_count": 2.544,
+      "requested_angle_deg": 222.0,
+      "applied_angle_deg": 222.01171875,
+      "point_index": 111
+    },
+    {
+      "code": 2549,
+      "shots": 500,
+      "bright": 150,
+      "probability": 0.3,
+      "mean_count": 2.75,
+      "requested_angle_deg": 224.0,
+      "applied_angle_deg": 224.033203125,
+      "point_index": 112
+    },
+    {
+      "code": 2571,
+      "shots": 500,
+      "bright": 146,
+      "probability": 0.292,
+      "mean_count": 2.634,
+      "requested_angle_deg": 226.0,
+      "applied_angle_deg": 225.966796875,
+      "point_index": 113
+    },
+    {
+      "code": 2594,
+      "shots": 500,
+      "bright": 142,
+      "probability": 0.284,
+      "mean_count": 2.404,
+      "requested_angle_deg": 228.0,
+      "applied_angle_deg": 227.98828125,
+      "point_index": 114
+    },
+    {
+      "code": 2617,
+      "shots": 500,
+      "bright": 151,
+      "probability": 0.302,
+      "mean_count": 2.882,
+      "requested_angle_deg": 230.0,
+      "applied_angle_deg": 230.009765625,
+      "point_index": 115
+    },
+    {
+      "code": 2640,
+      "shots": 500,
+      "bright": 149,
+      "probability": 0.298,
+      "mean_count": 2.834,
+      "requested_angle_deg": 232.0,
+      "applied_angle_deg": 232.03125,
+      "point_index": 116
+    },
+    {
+      "code": 2662,
+      "shots": 500,
+      "bright": 159,
+      "probability": 0.318,
+      "mean_count": 3.294,
+      "requested_angle_deg": 234.0,
+      "applied_angle_deg": 233.96484375,
+      "point_index": 117
+    },
+    {
+      "code": 2685,
+      "shots": 500,
+      "bright": 163,
+      "probability": 0.326,
+      "mean_count": 3.316,
+      "requested_angle_deg": 236.0,
+      "applied_angle_deg": 235.986328125,
+      "point_index": 118
+    },
+    {
+      "code": 2708,
+      "shots": 500,
+      "bright": 168,
+      "probability": 0.336,
+      "mean_count": 3.5,
+      "requested_angle_deg": 238.0,
+      "applied_angle_deg": 238.0078125,
+      "point_index": 119
+    },
+    {
+      "code": 2731,
+      "shots": 500,
+      "bright": 160,
+      "probability": 0.32,
+      "mean_count": 3.078,
+      "requested_angle_deg": 240.0,
+      "applied_angle_deg": 240.029296875,
+      "point_index": 120
+    },
+    {
+      "code": 2753,
+      "shots": 500,
+      "bright": 190,
+      "probability": 0.38,
+      "mean_count": 3.824,
+      "requested_angle_deg": 242.0,
+      "applied_angle_deg": 241.962890625,
+      "point_index": 121
+    },
+    {
+      "code": 2776,
+      "shots": 500,
+      "bright": 177,
+      "probability": 0.354,
+      "mean_count": 3.168,
+      "requested_angle_deg": 244.0,
+      "applied_angle_deg": 243.984375,
+      "point_index": 122
+    },
+    {
+      "code": 2799,
+      "shots": 500,
+      "bright": 180,
+      "probability": 0.36,
+      "mean_count": 3.252,
+      "requested_angle_deg": 246.0,
+      "applied_angle_deg": 246.005859375,
+      "point_index": 123
+    },
+    {
+      "code": 2822,
+      "shots": 500,
+      "bright": 174,
+      "probability": 0.348,
+      "mean_count": 3.286,
+      "requested_angle_deg": 248.0,
+      "applied_angle_deg": 248.02734375,
+      "point_index": 124
+    },
+    {
+      "code": 2844,
+      "shots": 500,
+      "bright": 181,
+      "probability": 0.362,
+      "mean_count": 3.042,
+      "requested_angle_deg": 250.0,
+      "applied_angle_deg": 249.9609375,
+      "point_index": 125
+    },
+    {
+      "code": 2867,
+      "shots": 500,
+      "bright": 190,
+      "probability": 0.38,
+      "mean_count": 3.568,
+      "requested_angle_deg": 252.0,
+      "applied_angle_deg": 251.982421875,
+      "point_index": 126
+    },
+    {
+      "code": 2890,
+      "shots": 500,
+      "bright": 182,
+      "probability": 0.364,
+      "mean_count": 4.22,
+      "requested_angle_deg": 254.0,
+      "applied_angle_deg": 254.00390625,
+      "point_index": 127
+    },
+    {
+      "code": 2913,
+      "shots": 500,
+      "bright": 185,
+      "probability": 0.37,
+      "mean_count": 3.928,
+      "requested_angle_deg": 256.0,
+      "applied_angle_deg": 256.025390625,
+      "point_index": 128
+    },
+    {
+      "code": 2935,
+      "shots": 500,
+      "bright": 180,
+      "probability": 0.36,
+      "mean_count": 3.562,
+      "requested_angle_deg": 258.0,
+      "applied_angle_deg": 257.958984375,
+      "point_index": 129
+    },
+    {
+      "code": 2958,
+      "shots": 500,
+      "bright": 191,
+      "probability": 0.382,
+      "mean_count": 3.596,
+      "requested_angle_deg": 260.0,
+      "applied_angle_deg": 259.98046875,
+      "point_index": 130
+    },
+    {
+      "code": 2981,
+      "shots": 500,
+      "bright": 203,
+      "probability": 0.406,
+      "mean_count": 3.594,
+      "requested_angle_deg": 262.0,
+      "applied_angle_deg": 262.001953125,
+      "point_index": 131
+    },
+    {
+      "code": 3004,
+      "shots": 500,
+      "bright": 198,
+      "probability": 0.396,
+      "mean_count": 3.586,
+      "requested_angle_deg": 264.0,
+      "applied_angle_deg": 264.0234375,
+      "point_index": 132
+    },
+    {
+      "code": 3026,
+      "shots": 500,
+      "bright": 194,
+      "probability": 0.388,
+      "mean_count": 3.494,
+      "requested_angle_deg": 266.0,
+      "applied_angle_deg": 265.95703125,
+      "point_index": 133
+    },
+    {
+      "code": 3049,
+      "shots": 500,
+      "bright": 211,
+      "probability": 0.422,
+      "mean_count": 3.732,
+      "requested_angle_deg": 268.0,
+      "applied_angle_deg": 267.978515625,
+      "point_index": 134
+    },
+    {
+      "code": 3072,
+      "shots": 500,
+      "bright": 202,
+      "probability": 0.404,
+      "mean_count": 3.732,
+      "requested_angle_deg": 270.0,
+      "applied_angle_deg": 270.0,
+      "point_index": 135
+    },
+    {
+      "code": 3095,
+      "shots": 500,
+      "bright": 197,
+      "probability": 0.394,
+      "mean_count": 3.748,
+      "requested_angle_deg": 272.0,
+      "applied_angle_deg": 272.021484375,
+      "point_index": 136
+    },
+    {
+      "code": 3118,
+      "shots": 500,
+      "bright": 200,
+      "probability": 0.4,
+      "mean_count": 3.814,
+      "requested_angle_deg": 274.0,
+      "applied_angle_deg": 274.04296875,
+      "point_index": 137
+    },
+    {
+      "code": 3140,
+      "shots": 500,
+      "bright": 216,
+      "probability": 0.432,
+      "mean_count": 4.002,
+      "requested_angle_deg": 276.0,
+      "applied_angle_deg": 275.9765625,
+      "point_index": 138
+    },
+    {
+      "code": 3163,
+      "shots": 500,
+      "bright": 243,
+      "probability": 0.486,
+      "mean_count": 4.758,
+      "requested_angle_deg": 278.0,
+      "applied_angle_deg": 277.998046875,
+      "point_index": 139
+    },
+    {
+      "code": 3186,
+      "shots": 500,
+      "bright": 213,
+      "probability": 0.426,
+      "mean_count": 4.018,
+      "requested_angle_deg": 280.0,
+      "applied_angle_deg": 280.01953125,
+      "point_index": 140
+    },
+    {
+      "code": 3209,
+      "shots": 500,
+      "bright": 237,
+      "probability": 0.474,
+      "mean_count": 4.05,
+      "requested_angle_deg": 282.0,
+      "applied_angle_deg": 282.041015625,
+      "point_index": 141
+    },
+    {
+      "code": 3231,
+      "shots": 500,
+      "bright": 242,
+      "probability": 0.484,
+      "mean_count": 4.516,
+      "requested_angle_deg": 284.0,
+      "applied_angle_deg": 283.974609375,
+      "point_index": 142
+    },
+    {
+      "code": 3254,
+      "shots": 500,
+      "bright": 250,
+      "probability": 0.5,
+      "mean_count": 4.852,
+      "requested_angle_deg": 286.0,
+      "applied_angle_deg": 285.99609375,
+      "point_index": 143
+    },
+    {
+      "code": 3277,
+      "shots": 500,
+      "bright": 262,
+      "probability": 0.524,
+      "mean_count": 4.254,
+      "requested_angle_deg": 288.0,
+      "applied_angle_deg": 288.017578125,
+      "point_index": 144
+    },
+    {
+      "code": 3300,
+      "shots": 500,
+      "bright": 254,
+      "probability": 0.508,
+      "mean_count": 5.174,
+      "requested_angle_deg": 290.0,
+      "applied_angle_deg": 290.0390625,
+      "point_index": 145
+    },
+    {
+      "code": 3322,
+      "shots": 500,
+      "bright": 249,
+      "probability": 0.498,
+      "mean_count": 4.844,
+      "requested_angle_deg": 292.0,
+      "applied_angle_deg": 291.97265625,
+      "point_index": 146
+    },
+    {
+      "code": 3345,
+      "shots": 500,
+      "bright": 261,
+      "probability": 0.522,
+      "mean_count": 5.028,
+      "requested_angle_deg": 294.0,
+      "applied_angle_deg": 293.994140625,
+      "point_index": 147
+    },
+    {
+      "code": 3368,
+      "shots": 500,
+      "bright": 243,
+      "probability": 0.486,
+      "mean_count": 4.14,
+      "requested_angle_deg": 296.0,
+      "applied_angle_deg": 296.015625,
+      "point_index": 148
+    },
+    {
+      "code": 3391,
+      "shots": 500,
+      "bright": 253,
+      "probability": 0.506,
+      "mean_count": 4.698,
+      "requested_angle_deg": 298.0,
+      "applied_angle_deg": 298.037109375,
+      "point_index": 149
+    },
+    {
+      "code": 3413,
+      "shots": 500,
+      "bright": 278,
+      "probability": 0.556,
+      "mean_count": 5.736,
+      "requested_angle_deg": 300.0,
+      "applied_angle_deg": 299.970703125,
+      "point_index": 150
+    },
+    {
+      "code": 3436,
+      "shots": 500,
+      "bright": 274,
+      "probability": 0.548,
+      "mean_count": 5.922,
+      "requested_angle_deg": 302.0,
+      "applied_angle_deg": 301.9921875,
+      "point_index": 151
+    },
+    {
+      "code": 3459,
+      "shots": 500,
+      "bright": 296,
+      "probability": 0.592,
+      "mean_count": 5.784,
+      "requested_angle_deg": 304.0,
+      "applied_angle_deg": 304.013671875,
+      "point_index": 152
+    },
+    {
+      "code": 3482,
+      "shots": 500,
+      "bright": 270,
+      "probability": 0.54,
+      "mean_count": 5.148,
+      "requested_angle_deg": 306.0,
+      "applied_angle_deg": 306.03515625,
+      "point_index": 153
+    },
+    {
+      "code": 3504,
+      "shots": 500,
+      "bright": 294,
+      "probability": 0.588,
+      "mean_count": 5.36,
+      "requested_angle_deg": 308.0,
+      "applied_angle_deg": 307.96875,
+      "point_index": 154
+    },
+    {
+      "code": 3527,
+      "shots": 500,
+      "bright": 302,
+      "probability": 0.604,
+      "mean_count": 5.444,
+      "requested_angle_deg": 310.0,
+      "applied_angle_deg": 309.990234375,
+      "point_index": 155
+    },
+    {
+      "code": 3550,
+      "shots": 500,
+      "bright": 292,
+      "probability": 0.584,
+      "mean_count": 5.238,
+      "requested_angle_deg": 312.0,
+      "applied_angle_deg": 312.01171875,
+      "point_index": 156
+    },
+    {
+      "code": 3573,
+      "shots": 500,
+      "bright": 312,
+      "probability": 0.624,
+      "mean_count": 5.514,
+      "requested_angle_deg": 314.0,
+      "applied_angle_deg": 314.033203125,
+      "point_index": 157
+    },
+    {
+      "code": 3595,
+      "shots": 500,
+      "bright": 311,
+      "probability": 0.622,
+      "mean_count": 6.136,
+      "requested_angle_deg": 316.0,
+      "applied_angle_deg": 315.966796875,
+      "point_index": 158
+    },
+    {
+      "code": 3618,
+      "shots": 500,
+      "bright": 326,
+      "probability": 0.652,
+      "mean_count": 6.154,
+      "requested_angle_deg": 318.0,
+      "applied_angle_deg": 317.98828125,
+      "point_index": 159
+    },
+    {
+      "code": 3641,
+      "shots": 500,
+      "bright": 327,
+      "probability": 0.654,
+      "mean_count": 6.828,
+      "requested_angle_deg": 320.0,
+      "applied_angle_deg": 320.009765625,
+      "point_index": 160
+    },
+    {
+      "code": 3664,
+      "shots": 500,
+      "bright": 332,
+      "probability": 0.664,
+      "mean_count": 7.096,
+      "requested_angle_deg": 322.0,
+      "applied_angle_deg": 322.03125,
+      "point_index": 161
+    },
+    {
+      "code": 3686,
+      "shots": 500,
+      "bright": 319,
+      "probability": 0.638,
+      "mean_count": 6.162,
+      "requested_angle_deg": 324.0,
+      "applied_angle_deg": 323.96484375,
+      "point_index": 162
+    },
+    {
+      "code": 3709,
+      "shots": 500,
+      "bright": 344,
+      "probability": 0.688,
+      "mean_count": 6.286,
+      "requested_angle_deg": 326.0,
+      "applied_angle_deg": 325.986328125,
+      "point_index": 163
+    },
+    {
+      "code": 3732,
+      "shots": 500,
+      "bright": 336,
+      "probability": 0.672,
+      "mean_count": 6.482,
+      "requested_angle_deg": 328.0,
+      "applied_angle_deg": 328.0078125,
+      "point_index": 164
+    },
+    {
+      "code": 3755,
+      "shots": 500,
+      "bright": 343,
+      "probability": 0.686,
+      "mean_count": 6.82,
+      "requested_angle_deg": 330.0,
+      "applied_angle_deg": 330.029296875,
+      "point_index": 165
+    },
+    {
+      "code": 3777,
+      "shots": 500,
+      "bright": 360,
+      "probability": 0.72,
+      "mean_count": 7.446,
+      "requested_angle_deg": 332.0,
+      "applied_angle_deg": 331.962890625,
+      "point_index": 166
+    },
+    {
+      "code": 3800,
+      "shots": 500,
+      "bright": 365,
+      "probability": 0.73,
+      "mean_count": 7.172,
+      "requested_angle_deg": 334.0,
+      "applied_angle_deg": 333.984375,
+      "point_index": 167
+    },
+    {
+      "code": 3823,
+      "shots": 500,
+      "bright": 371,
+      "probability": 0.742,
+      "mean_count": 7.142,
+      "requested_angle_deg": 336.0,
+      "applied_angle_deg": 336.005859375,
+      "point_index": 168
+    },
+    {
+      "code": 3846,
+      "shots": 500,
+      "bright": 402,
+      "probability": 0.804,
+      "mean_count": 7.926,
+      "requested_angle_deg": 338.0,
+      "applied_angle_deg": 338.02734375,
+      "point_index": 169
+    },
+    {
+      "code": 3868,
+      "shots": 500,
+      "bright": 400,
+      "probability": 0.8,
+      "mean_count": 8.274,
+      "requested_angle_deg": 340.0,
+      "applied_angle_deg": 339.9609375,
+      "point_index": 170
+    },
+    {
+      "code": 3891,
+      "shots": 500,
+      "bright": 410,
+      "probability": 0.82,
+      "mean_count": 8.314,
+      "requested_angle_deg": 342.0,
+      "applied_angle_deg": 341.982421875,
+      "point_index": 171
+    },
+    {
+      "code": 3914,
+      "shots": 500,
+      "bright": 413,
+      "probability": 0.826,
+      "mean_count": 7.784,
+      "requested_angle_deg": 344.0,
+      "applied_angle_deg": 344.00390625,
+      "point_index": 172
+    },
+    {
+      "code": 3937,
+      "shots": 500,
+      "bright": 424,
+      "probability": 0.848,
+      "mean_count": 7.708,
+      "requested_angle_deg": 346.0,
+      "applied_angle_deg": 346.025390625,
+      "point_index": 173
+    },
+    {
+      "code": 3959,
+      "shots": 500,
+      "bright": 442,
+      "probability": 0.884,
+      "mean_count": 8.108,
+      "requested_angle_deg": 348.0,
+      "applied_angle_deg": 347.958984375,
+      "point_index": 174
+    },
+    {
+      "code": 3982,
+      "shots": 500,
+      "bright": 445,
+      "probability": 0.89,
+      "mean_count": 8.412,
+      "requested_angle_deg": 350.0,
+      "applied_angle_deg": 349.98046875,
+      "point_index": 175
+    },
+    {
+      "code": 4005,
+      "shots": 500,
+      "bright": 461,
+      "probability": 0.922,
+      "mean_count": 8.888,
+      "requested_angle_deg": 352.0,
+      "applied_angle_deg": 352.001953125,
+      "point_index": 176
+    },
+    {
+      "code": 4028,
+      "shots": 500,
+      "bright": 473,
+      "probability": 0.946,
+      "mean_count": 9.318,
+      "requested_angle_deg": 354.0,
+      "applied_angle_deg": 354.0234375,
+      "point_index": 177
+    },
+    {
+      "code": 4050,
+      "shots": 500,
+      "bright": 481,
+      "probability": 0.962,
+      "mean_count": 10.162,
+      "requested_angle_deg": 356.0,
+      "applied_angle_deg": 355.95703125,
+      "point_index": 178
+    },
+    {
+      "code": 4073,
+      "shots": 500,
+      "bright": 480,
+      "probability": 0.96,
+      "mean_count": 9.212,
+      "requested_angle_deg": 358.0,
+      "applied_angle_deg": 357.978515625,
+      "point_index": 179
+    },
+    {
+      "code": 0,
+      "shots": 500,
+      "bright": 488,
+      "probability": 0.976,
+      "mean_count": 8.786,
+      "requested_angle_deg": 360.0,
+      "applied_angle_deg": 0.0,
+      "point_index": 180
+    }
+  ],
+  "phase_conversion": "Nominal linear: 4096 codes per 360 degrees; nearest code; 360 wraps to 0",
+  "status": "completed",
+  "error": "",
+  "folder": "C:\\Users\\QC109\\Desktop\\QCODES_UI\\RETempGUI\\RETempGUI\\labremote\\data\\phase_shifter\\2026-11-10\\20261110_173741_phase_c20de27e",
+  "started_at": "2026-11-10T17:37:41.383874+09:00",
+  "outputs": {
+    "AOMA": "ja_7",
+    "EOM_7GA1": "ja_0",
+    "EOM_7GA2": "ja_1",
+    "EOM_2GA": "ja_6",
+    "MW_A": "ja_5",
+    "PS_0": "jc_0",
+    "PS_1": "jc_1",
+    "PS_2": "jc_2",
+    "PS_3": "jc_3",
+    "PS_4": "jc_4",
+    "PS_5": "jc_5",
+    "PS_6": "jc_6",
+    "PS_7": "jc_7",
+    "PS_8": "jd_0",
+    "PS_9": "jd_1",
+    "PS_10": "jd_2",
+    "PS_11": "jd_3"
+  },
+  "finished_at": "2026-11-10T17:41:36.042518+09:00"
+}

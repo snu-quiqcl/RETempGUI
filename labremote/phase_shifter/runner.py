@@ -53,7 +53,12 @@ class PhaseShifterRunner(WorkflowTask):
         report['skipped_angles'] = self.settings.get('skipped_angles', [])
         if c.get('calibration'):
             report['phase_conversion'] = 'Conditional empirical Ramsey inverse table; applied_angle_deg is model estimate, not measured RF phase'
-            (source/'calibration.csv').write_text(c['calibration']['csv'], encoding='utf-8')
+            is_data = c['calibration'].get('kind') == 'ramsey_data_interpolation'
+            if is_data:
+                report['phase_conversion'] = 'Ramsey data interpolation: weighted isotonic cosine inversion; piecewise linear inverse; plateau midpoint; conditional estimate, not measured RF phase'
+                from .calibration import rows
+                report['interpolation_model'] = rows(c['calibration'])
+            (source/('calibration_result.json' if is_data else 'calibration.csv')).write_text(c['calibration']['csv'], encoding='utf-8')
 
         def checkpoint():
             temporary = folder/'result.tmp'

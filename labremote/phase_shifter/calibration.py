@@ -3,14 +3,24 @@ import csv
 import io
 import hashlib
 import math
+import json
+from functools import lru_cache
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
+
+
+@lru_cache(maxsize=4)
+def data_model(raw):
+    from .interpolation import fit
+    return fit(json.loads(raw.lstrip('\ufeff')))
 
 
 def rows(snapshot):
     raw = snapshot['csv']
     if hashlib.sha256(raw.encode('utf-8')).hexdigest() != snapshot['sha256']:
         raise ValueError('보정표 내용과 SHA256이 일치하지 않습니다.')
+    if snapshot.get('kind') == 'ramsey_data_interpolation':
+        return data_model(raw)
     result = {}
     for row in csv.DictReader(io.StringIO(raw.lstrip('\ufeff'))):
         angle = float(row['target_deg'])
@@ -41,6 +51,8 @@ def rows(snapshot):
 def load(path):
     raw = Path(path).read_text(encoding='utf-8')
     snapshot = dict(path=str(path), csv=raw, sha256=hashlib.sha256(raw.encode('utf-8')).hexdigest())
+    if Path(path).suffix.lower() == '.json':
+        snapshot['kind'] = 'ramsey_data_interpolation'
     rows(snapshot)
     return snapshot
 
@@ -51,6 +63,9 @@ def resolve(angle, snapshot=None):
     if snapshot is None:
         return point
     table = rows(snapshot)
+    if snapshot.get('kind') == 'ramsey_data_interpolation':
+        from .interpolation import resolve as interpolate
+        return dict(interpolate(angle, table), calibration_sha256=snapshot['sha256'])
     if angle not in table:
         raise ValueError(f'{angle:g}°: 보정표에 없는 각도입니다. 표의 각도만 입력하세요.')
     code, phase, quality = table[angle]
@@ -58,6 +73,18 @@ def resolve(angle, snapshot=None):
         raise ValueError(f'{angle:g}°: 보정 적용 불가 ({quality})')
     return dict(requested_angle_deg=float(angle), code=code, applied_angle_deg=phase,
                 conversion_mode='empirical_conditional', calibration_sha256=snapshot['sha256'], quality=quality)
+
+
+def estimate_note(point):
+    quality = point.get('quality')
+    if quality == 'plateau_midpoint_assumption':
+        low, high = point['plateau_code_interval']
+        return f'\n평탄 구간: 코드 {low}~{high}의 중간값 선택 (위상 확정 불가)'
+    if quality == 'low_sensitivity_interpolated':
+        return '\n저감도 구간 보간값 · 실제 위상은 재측정 필요'
+    if quality == 'interpolated_conditional':
+        return '\n실험 데이터 보간 · 조건부 추정'
+    return ''
 
 
 class CalibrationSelector(QtWidgets.QGroupBox):
@@ -68,14 +95,14 @@ class CalibrationSelector(QtWidgets.QGroupBox):
         self.snapshot = None
         layout = QtWidgets.QVBoxLayout(self)
         self.mode = QtWidgets.QComboBox()
-        self.mode.addItems(['선형 변환 · 보정 없음', '실험 보정표 사용'])
+        self.mode.addItems(['선형 변환 · 보정 없음', '선택한 실험 데이터 / 보정표 사용'])
         layout.addWidget(self.mode)
-        self.choose = QtWidgets.QPushButton('보정표 CSV 선택…')
+        self.choose = QtWidgets.QPushButton('실험 데이터 JSON / 보정표 CSV 선택…')
         layout.addWidget(self.choose)
         self.info = QtWidgets.QLabel('보정표 미선택')
         self.info.setWordWrap(True)
         layout.addWidget(self.info)
-        note = QtWidgets.QLabel('보정값은 Ramsey 기반 조건부 추정입니다. 실제 RF 위상 측정값이 아닙니다.\n표에 없는 각도는 보간하지 않습니다.')
+        note = QtWidgets.QLabel('JSON: 실험 데이터 기반 선형 보간 · 소수 각도 및 저감도 구간 포함\n평탄 구간은 코드 범위의 중간값 사용 · 실제 위상은 추가 측정 필요\n기존 CSV: 표에 있는 유효 각도만 적용')
         note.setWordWrap(True)
         layout.addWidget(note)
         self.mode.currentIndexChanged.connect(self.changed)
@@ -85,7 +112,7 @@ class CalibrationSelector(QtWidgets.QGroupBox):
         if not self.mode.currentIndex():
             return None
         if self.snapshot is None:
-            raise ValueError('보정표 CSV를 먼저 선택하세요.')
+            raise ValueError('실험 데이터 JSON 또는 보정표 CSV를 먼저 선택하세요.')
         return self.snapshot
 
     def set_table(self, snapshot):
@@ -96,10 +123,12 @@ class CalibrationSelector(QtWidgets.QGroupBox):
         self.mode.setCurrentIndex(int(snapshot is not None))
         self.mode.blockSignals(False)
         self.info.setText(Path(snapshot['path']).name + '\nSHA256: ' + snapshot['sha256'][:16] if snapshot else '보정표 미선택')
+        if snapshot and snapshot.get('kind') == 'ramsey_data_interpolation':
+            self.info.setText(self.info.text() + '\n실험 데이터 보간 활성 · 0~360° 전체 범위 (조건부 추정)')
         self.changed.emit()
 
     def open(self):
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, '보정표 선택', str(Path(__file__).parent/'calibrations'), 'CSV (*.csv)')
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, '실험 데이터 / 보정표 선택', str(Path(__file__).parent/'calibrations'), 'Ramsey 실험 데이터 (*.json);;기존 보정표 (*.csv)')
         if path:
             try:
                 self.set_table(load(path))
