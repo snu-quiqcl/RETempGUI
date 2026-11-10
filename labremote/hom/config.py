@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import settings_path
 """Validated HOM profiles. Times are stored as sequencer clocks, not ns bins."""
 import math
 from copy import deepcopy
@@ -72,6 +73,8 @@ def validate(c):
     r=c['inputs']
     if not isinstance(r,dict) or set(r)!={'PMTA','PMTC','SYNC'} or any(v not in INPUTS for v in r.values()) or len(set(r.values()))!=3:
         raise ValueError('Choose three distinct stopwatch inputs')
+    if len({getattr(hd, name+'_stopwatch_result') for name in r.values()}) != 3:
+        raise ValueError('HOM input roles resolve to the same physical pin')
     out=c['outputs']
     if not isinstance(out,dict) or set(out)!={'AOMA','AOMC','TRIG','AOMB'}:raise ValueError('Invalid HOM output mapping')
     active=[]
@@ -84,7 +87,7 @@ def validate(c):
     return deepcopy(c)
 
 def load(path=None):
-    p=path or ROOT/'hom.local.json'
+    p=path or settings_path(ROOT/'hom.local.json')
     from pathlib import Path
     return validate(read(p)) if Path(p).exists() else (validate(defaults()) if path is None else read(p))
 

@@ -83,3 +83,7 @@ instrumentserver-remote_entanglement/
 
 # Central experiment output (including JSON, plots and copied sequences)
 /labremote/data/
+
+# Per-FPGA private presets and generated workflow editors
+/labremote/config/devices/fpga/settings.local/
+/labremote/config/devices/fpga/workflows.local/

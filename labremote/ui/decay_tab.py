@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
 from labremote.data_paths import decay_directory
 from PyQt5 import QtCore,QtWidgets
@@ -5,6 +7,7 @@ from labremote.api.devices import device_api
 from labremote.decay import config
 from labremote.decay.plotting import DecayPlot
 
+@bound_methods('decay', editor=True)
 class DecayExperimentTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,mode,parent=None):
         super().__init__(parent);self.worker=worker;self.api=device_api(worker);self.chamber=chamber;self.mode=mode;self.fields={};self.roles={};self.run_id=None;self.plot=None;self.revision=-1
@@ -64,10 +67,10 @@ class DecayExperimentTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
     def save(self):
         try:
-            path=config.ROOT/f'{self.chamber}_{self.mode}.local.json';config.save(path,self.value());self.status.setText(str(path))
+            path=settings_path(config.ROOT/f'{self.chamber}_{self.mode}.local.json');config.save(path,self.value());self.status.setText(str(path))
         except Exception as exc:self.status.setText(str(exc))
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save decay settings',str(config.ROOT/f'{self.chamber}_{self.mode}.local.json'),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save decay settings',str(settings_path(config.ROOT/f'{self.chamber}_{self.mode}.local.json')),'JSON (*.json)')
         if path:
             try:config.save(path,self.value());self.status.setText(path)
             except Exception as exc:self.status.setText(str(exc))
@@ -111,6 +114,7 @@ class DecayExperimentTab(QtWidgets.QWidget):
                 self.plot=DecayPlot(self.figure,c);self.plot.update(data);self.canvas.draw_idle();self.status.setText(report['status']+' · '+path)
             except Exception as exc:self.status.setText(str(exc))
 
+@bound_methods('decay', editor=False)
 class DecayTab(QtWidgets.QTabWidget):
     def __init__(self,worker,parent=None):
         super().__init__(parent);self.experiments={}

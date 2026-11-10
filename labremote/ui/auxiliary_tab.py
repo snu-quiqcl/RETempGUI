@@ -7,6 +7,10 @@ from labremote.config.device_config import load_device_config
 from labremote.runtime.parameters import LIBRARY
 
 
+from labremote.devices.fpga.mapping import bound_methods, scope, OUTPUTS, INPUTS
+from contextlib import nullcontext
+
+@bound_methods(None)
 class AuxiliaryTab(QtWidgets.QWidget):
     log_message=QtCore.pyqtSignal(str)
 
@@ -19,101 +23,137 @@ class AuxiliaryTab(QtWidgets.QWidget):
         self.family,self.name,self.endpoint=family,name,(host,port)
         self.connected=False;self._closing=False;self.labels={};self.editors={};self.buttons=[]
         self.samples=deque(maxlen=1000);self.config=load_device_config(family,name)
-        self.worker={'osa':OSAWorker,'mdt':MDTWorker,'fpga':FPGAWorker,'motors':MotorWorker}[family]()
-        self.api=device_api(self.worker)
-        root=QtWidgets.QVBoxLayout(self)
-        if family=='fpga':
-            line=QtWidgets.QHBoxLayout();root.addLayout(line)
-            self.serial=QtWidgets.QLineEdit(self.config['connection']['serial_port']);self.serial.setPlaceholderText('COM port, e.g. COM5')
-            from labremote.devices.fpga.ports import PortScanner, load_port
-            self._serial_ports = []; self._saved_port = {}; self._port_error = ''
-            try: self._saved_port = load_port(name)
-            except Exception as exc: self._port_error = str(exc)
-            if self._saved_port.get('device'): self.serial.setText(self._saved_port['device'])
-            line.addWidget(QtWidgets.QLabel('Local FPGA serial port'));line.addWidget(self.serial)
-            self.port_choices=QtWidgets.QComboBox();line.addWidget(self.port_choices,1)
-            self.scan_ports=QtWidgets.QPushButton('포트 검색');line.addWidget(self.scan_ports)
-            self.port_scanner=PortScanner(self)
-            self.port_scanner.found.connect(self._ports_found)
-            self.port_scanner.failed.connect(self._ports_failed)
-            self.port_scanner.finished.connect(lambda:self.scan_ports.setEnabled(not self.connected and not self._closing))
-            self.scan_ports.clicked.connect(self._search_ports)
-            self.port_choices.activated.connect(lambda _:self.serial.setText(self.port_choices.currentData() or self.serial.text()))
-        elif family=='motors':
-            form=QtWidgets.QFormLayout();root.addLayout(form);cfg=self.config['connection']
-            self.host=QtWidgets.QLineEdit(cfg['host']);self.port=QtWidgets.QSpinBox();self.port.setRange(1,65535);self.port.setValue(cfg['port'])
-            self.target=QtWidgets.QLineEdit(self.config.get('instrument',name))
-            for title,editor in [('Instrument Server',self.host),('Port',self.port),('Instrument',self.target)]:form.addRow(title,editor)
-        row=QtWidgets.QHBoxLayout();root.addLayout(row)
-        self.connect_btn=QtWidgets.QPushButton('Connect');self.disconnect_btn=QtWidgets.QPushButton('Disconnect')
-        row.addWidget(self.connect_btn);row.addWidget(self.disconnect_btn)
-        self.connect_btn.clicked.connect(self._connect);self.disconnect_btn.clicked.connect(self.api.disconnect)
-        self._button(row,'Read all',self.api.refresh);self._button(row,'Cancel operation / workflow',self.api.cancel)
-        self.status=QtWidgets.QLabel(name+' — Disconnected');root.addWidget(self.status)
-        self.message=QtWidgets.QLabel();self.message.setWordWrap(True);root.addWidget(self.message)
-        grid=QtWidgets.QGridLayout();root.addLayout(grid)
-        if family=='osa':
-            low=self._number(grid,'frequency_start_thz','Start (THz)',10,856.5,6,370)
-            high=self._number(grid,'frequency_stop_thz','Stop (THz)',10,856.5,6,380)
-            self._button(grid,'Apply range',lambda:self.api.set_range(low.value(),high.value()))
-            ref=self._number(grid,'reference_level_dbm','Reference (dBm)',-100,30,2,-30)
-            div=self._number(grid,'db_per_div','dB / div',.1,20,2,10)
-            self._button(grid,'Apply level',lambda:self.api.set_level(ref.value(),div.value()))
+        self.worker=FPGAWorker(name) if family=='fpga' else {'osa':OSAWorker,'mdt':MDTWorker,'motors':MotorWorker}[family]()
+        with scope(self.worker.profile) if family=='fpga' else nullcontext():
+            self.api=device_api(self.worker)
+            root=QtWidgets.QVBoxLayout(self)
+            if family=='fpga':
+                line=QtWidgets.QHBoxLayout();root.addLayout(line)
+                self.serial=QtWidgets.QLineEdit(self.config['connection']['serial_port']);self.serial.setPlaceholderText('COM port, e.g. COM5')
+                from labremote.devices.fpga.ports import PortScanner, load_port
+                self._serial_ports = []; self._saved_port = {}; self._port_error = ''
+                try: self._saved_port = load_port(name)
+                except Exception as exc: self._port_error = str(exc)
+                if self._saved_port.get('device'): self.serial.setText(self._saved_port['device'])
+                line.addWidget(QtWidgets.QLabel('Local FPGA serial port'));line.addWidget(self.serial)
+                self.alias=QtWidgets.QLineEdit(self.worker.profile.alias)
+                self.alias.setProperty('persistInput',False)
+                self.alias.setPlaceholderText('저장 데이터 별명');line.addWidget(self.alias)
+                mapping_button=QtWidgets.QPushButton('FPGA Configuration');line.addWidget(mapping_button)
+                mapping_button.clicked.connect(self.edit_mapping)
+                self.port_choices=QtWidgets.QComboBox();line.addWidget(self.port_choices,1)
+                self.scan_ports=QtWidgets.QPushButton('포트 검색');line.addWidget(self.scan_ports)
+                self.port_scanner=PortScanner(self)
+                self.port_scanner.found.connect(self._ports_found)
+                self.port_scanner.failed.connect(self._ports_failed)
+                self.port_scanner.finished.connect(lambda:self.scan_ports.setEnabled(not self.connected and not self._closing))
+                self.scan_ports.clicked.connect(self._search_ports)
+                self.port_choices.activated.connect(lambda _:self.serial.setText(self.port_choices.currentData() or self.serial.text()))
+            elif family=='motors':
+                form=QtWidgets.QFormLayout();root.addLayout(form);cfg=self.config['connection']
+                self.host=QtWidgets.QLineEdit(cfg['host']);self.port=QtWidgets.QSpinBox();self.port.setRange(1,65535);self.port.setValue(cfg['port'])
+                self.target=QtWidgets.QLineEdit(self.config.get('instrument',name))
+                for title,editor in [('Instrument Server',self.host),('Port',self.port),('Instrument',self.target)]:form.addRow(title,editor)
             row=QtWidgets.QHBoxLayout();root.addLayout(row)
-            self.trace=QtWidgets.QComboBox();self.trace.addItems(['TRA','TRB','TRC','TRD','TRE','TRF','TRG']);row.addWidget(self.trace)
-            self._button(row,'Apply trace',lambda:self.api.set_trace(self.trace.currentText()))
-            self._button(row,'Auto reference ON',lambda:self.api.set_auto_reference(True))
-            self._button(row,'Auto reference OFF',lambda:self.api.set_auto_reference(False))
-            self._button(row,'Zero',self.api.zero);self._button(row,'Abort',self.api.abort)
-            self._label(grid,'auto_reference','Auto reference');self._label(grid,'trace_name','Trace')
-            self._repeat_controls(root,self.api.read_spectrum,lambda:self.api.start_spectrum(interval_s=self.interval.value()),self.api.stop_spectrum)
-            self._plot(root)
-            row=QtWidgets.QHBoxLayout();root.addLayout(row)
-            self.spectrum_auto_y=QtWidgets.QCheckBox('Auto Y min/max');row.addWidget(self.spectrum_auto_y)
-            self.spectrum_y_min=QtWidgets.QDoubleSpinBox();self.spectrum_y_max=QtWidgets.QDoubleSpinBox()
-            for field,value,label in ((self.spectrum_y_min,-100,'Y min (dBm)'),(self.spectrum_y_max,0,'Y max (dBm)')):
-                field.setRange(-300,100);field.setDecimals(2);field.setValue(value)
-                row.addWidget(QtWidgets.QLabel(label));row.addWidget(field)
-            self.spectrum_limit_error=QtWidgets.QLabel();root.addWidget(self.spectrum_limit_error)
-            self.spectrum_auto_y.toggled.connect(self._spectrum_limits)
-            self.spectrum_axis=None
-            for field in (self.spectrum_y_min,self.spectrum_y_max):field.valueChanged.connect(self._spectrum_limits)
-            self._spectrum_limits()
-        elif family=='mdt':
-            limits=self.config['limits'];self.pid_manual_buttons={}
-            for axis in 'XYZ':
-                editor=self._number(grid,axis.lower()+'.voltage',axis+' (V)',limits['min_voltage'],limits['max_voltage'],3,0)
-                self.pid_manual_buttons[axis]=self._button(grid,'Apply '+axis,lambda a=axis,e=editor:self.api.set_voltage(a,e.value()))
-            for path,title in [('output_limit_v','Hardware limit (V)'),('software_minimum','Server minimum (V)'),('software_maximum','Server maximum (V)'),('master_scan_enabled','Master scan')]:self._label(grid,path,title)
-            self.pid_master_on=self._button(grid,'Master scan ON',lambda:self.api.set_master_scan(True))
-            self.pid_master_off=self._button(grid,'Master scan OFF',lambda:self.api.set_master_scan(False))
-        elif family=='fpga':
-            from labremote.devices.fpga.controller import OUTPUTS
-            self.output_buttons={};self.output_pending={}
-            for index,name in enumerate(OUTPUTS):
-                button=QtWidgets.QPushButton(name+'\nUnknown');button.setMinimumHeight(48)
-                button.clicked.connect(lambda _,n=name:self._toggle_output(n))
-                grid.addWidget(button,index//4,index%4);self.output_buttons[name]=button;self.buttons.append(button)
-            from labremote.ui.fpga_count_tab import FPGACountTab
-            self.input_tab=FPGACountTab(self.worker,self);self.input_tab.hide()
-        else:
-            limits=self.config['limits'];editor=self._number(grid,'position','Position (server units)',limits['min_position'],limits['max_position'],6,limits['min_position'])
-            self._label(grid,'status','Server status')
-            row=QtWidgets.QHBoxLayout();root.addLayout(row)
-            for text,action in [('Open',self.api.open),('Move',lambda:self.api.move(editor.value())),('Home',self.api.home),('Stop (queued)',self.api.stop),('Close',self.api.close)]:self._button(row,text,action)
-            root.addWidget(QtWidgets.QLabel('Each motor has its own FIFO. Cancel waits for an in-flight command to return; it does not undo motion.'))
-        root.addStretch()
-        self.worker.connected.connect(self._connected);self.worker.disconnected.connect(self._disconnected)
-        self.worker.snapshot.connect(self._snapshot);self.worker.failure.connect(self._failure)
-        self.worker.handle_changed.connect(self._result)
-        self.worker.task_changed.connect(lambda *_:self._buttons())
-        if hasattr(self.worker,'waveform_changed'):self.worker.waveform_changed.connect(self._repeat_changed)
-        self.timer=QtCore.QTimer(self);self.timer.setInterval(60000)
-        self.timer.timeout.connect(lambda:self.api.auto_monitor() if self.connected else None);self.timer.start()
-        self.worker.start();self._buttons()
-        if self.family=='fpga':
-            self.message.setText(self._port_error)
-            self._search_ports()
+            self.connect_btn=QtWidgets.QPushButton('Connect');self.disconnect_btn=QtWidgets.QPushButton('Disconnect')
+            row.addWidget(self.connect_btn);row.addWidget(self.disconnect_btn)
+            self.connect_btn.clicked.connect(self._connect);self.disconnect_btn.clicked.connect(self.api.disconnect)
+            self._button(row,'Read all',self.api.refresh);self._button(row,'Cancel operation / workflow',self.api.cancel)
+            self.status=QtWidgets.QLabel(name+' — Disconnected');root.addWidget(self.status)
+            self.message=QtWidgets.QLabel();self.message.setWordWrap(True);root.addWidget(self.message)
+            grid=QtWidgets.QGridLayout();root.addLayout(grid)
+            if family=='osa':
+                low=self._number(grid,'frequency_start_thz','Start (THz)',10,856.5,6,370)
+                high=self._number(grid,'frequency_stop_thz','Stop (THz)',10,856.5,6,380)
+                self._button(grid,'Apply range',lambda:self.api.set_range(low.value(),high.value()))
+                ref=self._number(grid,'reference_level_dbm','Reference (dBm)',-100,30,2,-30)
+                div=self._number(grid,'db_per_div','dB / div',.1,20,2,10)
+                self._button(grid,'Apply level',lambda:self.api.set_level(ref.value(),div.value()))
+                row=QtWidgets.QHBoxLayout();root.addLayout(row)
+                self.trace=QtWidgets.QComboBox();self.trace.addItems(['TRA','TRB','TRC','TRD','TRE','TRF','TRG']);row.addWidget(self.trace)
+                self._button(row,'Apply trace',lambda:self.api.set_trace(self.trace.currentText()))
+                self._button(row,'Auto reference ON',lambda:self.api.set_auto_reference(True))
+                self._button(row,'Auto reference OFF',lambda:self.api.set_auto_reference(False))
+                self._button(row,'Zero',self.api.zero);self._button(row,'Abort',self.api.abort)
+                self._label(grid,'auto_reference','Auto reference');self._label(grid,'trace_name','Trace')
+                self._repeat_controls(root,self.api.read_spectrum,lambda:self.api.start_spectrum(interval_s=self.interval.value()),self.api.stop_spectrum)
+                self._plot(root)
+                row=QtWidgets.QHBoxLayout();root.addLayout(row)
+                self.spectrum_auto_y=QtWidgets.QCheckBox('Auto Y min/max');row.addWidget(self.spectrum_auto_y)
+                self.spectrum_y_min=QtWidgets.QDoubleSpinBox();self.spectrum_y_max=QtWidgets.QDoubleSpinBox()
+                for field,value,label in ((self.spectrum_y_min,-100,'Y min (dBm)'),(self.spectrum_y_max,0,'Y max (dBm)')):
+                    field.setRange(-300,100);field.setDecimals(2);field.setValue(value)
+                    row.addWidget(QtWidgets.QLabel(label));row.addWidget(field)
+                self.spectrum_limit_error=QtWidgets.QLabel();root.addWidget(self.spectrum_limit_error)
+                self.spectrum_auto_y.toggled.connect(self._spectrum_limits)
+                self.spectrum_axis=None
+                for field in (self.spectrum_y_min,self.spectrum_y_max):field.valueChanged.connect(self._spectrum_limits)
+                self._spectrum_limits()
+            elif family=='mdt':
+                limits=self.config['limits'];self.pid_manual_buttons={}
+                for axis in 'XYZ':
+                    editor=self._number(grid,axis.lower()+'.voltage',axis+' (V)',limits['min_voltage'],limits['max_voltage'],3,0)
+                    self.pid_manual_buttons[axis]=self._button(grid,'Apply '+axis,lambda a=axis,e=editor:self.api.set_voltage(a,e.value()))
+                for path,title in [('output_limit_v','Hardware limit (V)'),('software_minimum','Server minimum (V)'),('software_maximum','Server maximum (V)'),('master_scan_enabled','Master scan')]:self._label(grid,path,title)
+                self.pid_master_on=self._button(grid,'Master scan ON',lambda:self.api.set_master_scan(True))
+                self.pid_master_off=self._button(grid,'Master scan OFF',lambda:self.api.set_master_scan(False))
+            elif family=='fpga':
+                from labremote.devices.fpga.controller import OUTPUTS
+                self.output_grid=grid
+                self.output_buttons={};self.output_pending={}
+                for index,name in enumerate(OUTPUTS):
+                    button=QtWidgets.QPushButton(name+'\nUnknown');button.setMinimumHeight(48)
+                    button.clicked.connect(lambda _,n=name:self._toggle_output(n))
+                    grid.addWidget(button,index//4,index%4);self.output_buttons[name]=button;self.buttons.append(button)
+                from labremote.ui.fpga_count_tab import FPGACountTab
+                self.input_tab=FPGACountTab(self.worker,self);self.input_tab.hide()
+            else:
+                limits=self.config['limits'];editor=self._number(grid,'position','Position (server units)',limits['min_position'],limits['max_position'],6,limits['min_position'])
+                self._label(grid,'status','Server status')
+                row=QtWidgets.QHBoxLayout();root.addLayout(row)
+                for text,action in [('Open',self.api.open),('Move',lambda:self.api.move(editor.value())),('Home',self.api.home),('Stop (queued)',self.api.stop),('Close',self.api.close)]:self._button(row,text,action)
+                root.addWidget(QtWidgets.QLabel('Each motor has its own FIFO. Cancel waits for an in-flight command to return; it does not undo motion.'))
+            root.addStretch()
+            self.worker.connected.connect(self._connected);self.worker.disconnected.connect(self._disconnected)
+            self.worker.snapshot.connect(self._snapshot);self.worker.failure.connect(self._failure)
+            self.worker.handle_changed.connect(self._result)
+            self.worker.task_changed.connect(lambda *_:self._buttons())
+            if hasattr(self.worker,'waveform_changed'):self.worker.waveform_changed.connect(self._repeat_changed)
+            self.timer=QtCore.QTimer(self);self.timer.setInterval(60000)
+            self.timer.timeout.connect(lambda:self.api.auto_monitor() if self.connected else None);self.timer.start()
+            self.worker.start();self._buttons()
+            if self.family=='fpga':
+                self.message.setText(self._port_error)
+                self._search_ports()
+
+    def edit_mapping(self):
+        from labremote.ui.fpga_mapping import BoardMapping
+        if self.connected:
+            self.message.setText('핀 이름 / 별명 변경 전 FPGA 연결을 해제하세요.');return
+        if BoardMapping(self.worker,self).exec_():
+            self.refresh_mapping()
+
+    def refresh_mapping(self):
+        self.alias.setText(self.worker.profile.alias)
+        if hasattr(self,'fpga_window'):self.fpga_window.setWindowTitle(self.worker.profile.alias+' · '+self.name)
+        for button in self.output_buttons.values():
+            self.output_grid.removeWidget(button)
+            if button in self.buttons:self.buttons.remove(button)
+            button.deleteLater()
+        self.output_buttons={};self.output_pending={}
+        for index,name in enumerate(OUTPUTS):
+            button=QtWidgets.QPushButton(name+'\nUnknown');button.setMinimumHeight(48)
+            button.clicked.connect(lambda _,n=name:self._toggle_output(n))
+            self.output_grid.addWidget(button,index//4,index%4)
+            self.output_buttons[name]=button;self.buttons.append(button)
+        for tab in [self.input_tab,*getattr(self,'scan_tabs',[])]:
+            combo=getattr(tab,'channel',None) or getattr(tab,'pmt',None)
+            if isinstance(combo,QtWidgets.QComboBox):
+                previous=combo.currentData();combo.clear()
+                for channel,(name,pin) in INPUTS.items():combo.addItem(name+' / '+pin,channel)
+                index=combo.findData(previous);combo.setCurrentIndex(max(0,index))
+        self.status.setText(self.worker.profile.alias+' · '+self.name+' — Disconnected')
+        self._buttons()
 
     def attach_automation(self,bindings):
         if self.family not in ('mdt','fpga'):return
@@ -177,7 +217,15 @@ class AuxiliaryTab(QtWidgets.QWidget):
         self.message.setText(f'{len(ports)}개 포트 검색됨. 목록에서 사용할 FPGA 포트를 선택하세요.'+(' 기억한 포트가 현재 목록에 없습니다.' if remembered and self.port_choices.findData(remembered)<0 else ''))
 
     def _connect(self):
-        if self.family=='fpga':return self.api.connect_serial(self.serial.text().strip(),self.name)
+        if self.family=='fpga':
+            try:
+                from labremote.devices.fpga.mapping import Profile
+                document=self.worker.profile.document();document['alias']=self.alias.text().strip()
+                self.worker.update_profile(Profile(document))
+                if hasattr(self,'fpga_window'):self.fpga_window.setWindowTitle(document['alias']+' · '+self.name)
+                return self.api.connect_serial(self.serial.text().strip(),self.name)
+            except Exception as exc:
+                self.message.setText(str(exc));return
         if self.family=='motors':return self.api.connect_motor(self.host.text().strip(),self.port.value(),self.target.text().strip())
         endpoint=self.endpoint_provider() if hasattr(self,'endpoint_provider') else self.endpoint
         return self.api.connect(*endpoint,self.name)
@@ -318,7 +366,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
             self.pid_master_on.setEnabled(self.connected and axis is None)
             self.pid_master_off.setEnabled(self.connected and axis is None)
         if self.family=='fpga':self._snapshot()
-        for name in ('serial','host','port','target'):
+        for name in ('serial','host','port','target','alias'):
             widget=getattr(self,name,None)
             if widget is not None:widget.setEnabled(not self.connected)
 

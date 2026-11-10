@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import settings_path
 """Editable experiment parameters; hardware names come only from vendor definitions."""
 import math
 from copy import deepcopy
@@ -51,6 +52,9 @@ def resolved_outputs(c=None):
             for name in CLEANUP_LEVELS}
 
 def validate(c):
+    for roles, suffix in [(('PMTA','PMTC','SYNC'),'_stopwatch_result'), (('PMTFA','PMTFC'),'_counter_result')]:
+        if len({getattr(hd, role+suffix) for role in roles}) != len(roles):
+            raise ValueError('Entanglement input roles must resolve to distinct physical inputs')
     if not isinstance(c, dict) or set(c) != set(defaults()) or type(c['schema_version']) is not int or c['schema_version'] != 1:
         raise ValueError('Invalid entanglement settings schema')
     if c['basis'] not in ('zz', 'mw_detuned'):
@@ -106,7 +110,7 @@ def save_settings(path, c):
 
 
 def load(path=None):
-    p = Path(path or ROOT/'entanglement.local.json')
+    p = Path(path or settings_path(ROOT/'entanglement.local.json'))
     if not p.exists() and path is None:
         return validate(defaults())
     document = read(p)

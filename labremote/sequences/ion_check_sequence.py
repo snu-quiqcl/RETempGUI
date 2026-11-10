@@ -5,7 +5,7 @@ Normal completion leaves A/C and both 7G pairs on, B/2G/MW off.
 Cancellation/error output recovery belongs to the caller, not this builder.
 """
 from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
-from labremote.devices.fpga.vendor import HardwareDefinition_remote_ent_test_ec as hd
+from labremote.devices.fpga.mapping import hd
 
 
 def build_program(parameters):

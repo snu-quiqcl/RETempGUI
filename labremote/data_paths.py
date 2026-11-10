@@ -54,13 +54,20 @@ def _dated_experiment_directory(directory, category, *parts):
     """
     base = resolve_data_directory(directory, category)
     tab = data_directory(category).joinpath(*parts)
+    from labremote.devices.fpga.mapping import CURRENT
+    state = CURRENT.get()
+    if state is not None and base.name == state[0].alias and base not in (data_directory(category), tab):
+        base = base.parent
     automatic = base in (data_directory(category), tab)
     if base.parent == tab:
         try:
             automatic = date.fromisoformat(base.name).isoformat() == base.name
         except ValueError:
             pass
-    return tab / date.today().isoformat() if automatic else base
+    result = tab / date.today().isoformat() if automatic else base
+    if state is not None:
+        result = result / state[0].alias
+    return result
 
 
 def characterization_directory(directory, chamber, experiment):

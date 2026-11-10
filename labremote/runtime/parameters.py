@@ -331,6 +331,11 @@ class ManagedParameter:
             key='max_current_a' if path.endswith('target_current') else 'max_voltage_v'
             cap=optional_number(config,'channels',path.split('.')[0].upper(),'limits',key)
             if cap is not None:self.spec=replace(self.spec,maximum=min(cap,self.spec.maximum))
+        if family == 'fpga' and path.startswith('outputs.'):
+            from labremote.devices.fpga.mapping import OUTPUTS
+            name = path.split('.', 1)[1]
+            if name in OUTPUTS:
+                self.spec = replace(self.spec, verification='none' if OUTPUTS[name][1] == 2 else 'readback')
         self.library = library
         self.thread_id = threading.get_ident()
         with _locks_guard:

@@ -15,6 +15,8 @@ class WorkflowThread(QtCore.QThread):
         super().__init__(parent)
         self.source, self.filename = source, filename
         self.bindings = dict(bindings)
+        from labremote.devices.fpga.mapping import profiles_from_bindings
+        self.fpga_profiles = profiles_from_bindings(self.bindings)
         from labremote.runtime.jobs import CancellationToken
         self.stop_event = CancellationToken()
 
@@ -23,7 +25,7 @@ class WorkflowThread(QtCore.QThread):
             if self.stop_event.is_set(): raise OperationCancelled('Stopped before loading workflow')
             from labremote.runtime.workflow_result import workflow_session
             with workflow_session(), load_workflow(self.source, self.filename) as workflow:
-                result = run_workflow(self.bindings, workflow, stop_event=self.stop_event)
+                result = run_workflow(self.bindings, workflow, stop_event=self.stop_event, fpga_profiles=self.fpga_profiles)
             self.result_ready.emit(result)
         except Exception as error:
             self.error_ready.emit(f'{type(error).__name__}: {error}', isinstance(error, OperationCancelled))

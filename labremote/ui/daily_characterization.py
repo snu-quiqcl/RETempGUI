@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
 """Daily experiment views share the existing FPGA worker and workflow API."""
 from pathlib import Path
 from labremote.data_paths import characterization_directory
@@ -8,6 +10,7 @@ from labremote.characterization import config
 from labremote.characterization.fluorescence import draw
 
 
+@bound_methods('fluorescence', editor=True)
 class FluorescenceTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,parent=None):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.api=device_api(worker);self.fields={};self.run_id=None;self.rendered_id=None
@@ -59,11 +62,11 @@ class FluorescenceTab(QtWidgets.QWidget):
 
     def save(self):
         try:
-            path=config.ROOT/f'fluorescence_{self.chamber}.local.json';config.save(path,self.value());self.config_valid=True;self.status.setText('저장됨: '+str(path))
+            path=settings_path(config.ROOT/f'fluorescence_{self.chamber}.local.json');config.save(path,self.value());self.config_valid=True;self.status.setText('저장됨: '+str(path))
         except Exception as exc:self.status.setText(str(exc))
 
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save fluorescence settings',str(config.ROOT/f'fluorescence_{self.chamber}.local.json'),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save fluorescence settings',str(settings_path(config.ROOT/f'fluorescence_{self.chamber}.local.json')),'JSON (*.json)')
         if path:
             try:config.save(path,self.value());self.status.setText('저장됨: '+path)
             except Exception as exc:self.status.setText(str(exc))
@@ -117,12 +120,22 @@ class FluorescenceTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
 
+@bound_methods(None, editor=False)
 class DailyCharacterization(QtWidgets.QTabWidget):
     def __init__(self,worker,bindings,parent=None):
         super().__init__(parent)
         from .workflow_tab import WorkflowTab
         self.workflow=WorkflowTab(bindings,self);self.addTab(self.workflow,'Workflow')
-        self.workflow.load_path(str(self.workflow.workflow_root/'daily_fluorescence.py'),check_unsaved=False)
+        template=self.workflow.workflow_root/'daily_fluorescence.py'
+        if worker.profile.device_id != 'fpga_local':
+            from labremote.devices.fpga.mapping import ROOT
+            destination=ROOT/'workflows.local'/worker.profile.device_id/'daily_fluorescence.py'
+            if not destination.exists():
+                destination.parent.mkdir(parents=True,exist_ok=True)
+                source=template.read_text(encoding='utf-8').replace("'fpga_local'",repr(worker.profile.device_id))
+                destination.write_text(source,encoding='utf-8')
+            template=destination
+        self.workflow.load_path(str(template),check_unsaved=False)
         self.experiments={c:FluorescenceTab(worker,c,self) for c in ('EA','EC')}
         for c,tab in self.experiments.items():self.addTab(tab,c+' Fluorescence')
         from .rabi_tab import RabiTab

@@ -526,6 +526,30 @@ class MDTAPI(DeviceAPI):
 
 
 class FPGAAPI(DeviceAPI):
+    def disconnect(self):
+        return self.worker.request_disconnect()
+
+    def pin_names(self):
+        """Names of the selected FPGA, not experiment role names."""
+        from labremote.devices.fpga.mapping import FROZEN
+        return FROZEN.get().get(self.worker.profile.device_id, self.worker.profile).document()['pins']
+
+    def pin_mapping(self, experiment, roles):
+        """Workflow scope: map experiment roles to this FPGA's configured names.
+
+        Example: with fpga.pin_mapping('hom', {'PMTA': 'Detector_Left'}): ...
+        Existing jobs retain their snapshots; this does not save configuration.
+        """
+        from labremote.devices.fpga.mapping import Profile, scope, FROZEN
+        document = FROZEN.get().get(self.worker.profile.device_id, self.worker.profile).document()
+        names = {name: pin for pin, name in document['pins'].items()}
+        if any(name not in names for name in roles.values()):
+            raise ValueError('Unknown configured FPGA pin name')
+        mapping = dict(document['experiments'].get(experiment, {}))
+        mapping.update({role: names[name] for role, name in roles.items()})
+        document['experiments'][experiment] = mapping
+        return scope(Profile(document), experiment)
+
     def run_micromotion(self, *, settings, mode='scan', dac=None, directory=None, candidate=None):
         return self.worker.micromotion_runner.start(settings=settings,mode=mode,
             dac=getattr(dac,'worker',dac),directory=directory,candidate=candidate,parent=self.group)
@@ -604,28 +628,41 @@ class FPGAAPI(DeviceAPI):
         if type(scan) is not int or scan not in self.worker.scan_runners:raise ValueError('Scan must be 1, 2, 3 or 4')
         return self.worker.scan_runners[scan].cancel()
 
-    def connect_serial(self, port, name='fpga_local'):
-        return self.connect(port,0,name)
+    def connect_serial(self, port, name=None):
+        return self.connect(port,0,name or self.worker.profile.device_id)
 
     def set_output(self, name, enabled):
         from labremote.operation.fpga.set_output import set_output
         return self._submit('SET_OUTPUT',lambda w:set_output(w.ps,name,enabled))
 
+    def _counter_channel(self, channel):
+        if isinstance(channel, str):
+            from labremote.devices.fpga.mapping import FROZEN
+            hardware = FROZEN.get().get(self.worker.profile.device_id, self.worker.profile).view()
+            if channel not in hardware.input_mapping.values() or not hasattr(hardware, channel + '_counter_result'):
+                raise ValueError('Choose a configured counter input name')
+            channel = getattr(hardware, channel + '_counter_result')
+        return channel
+
     def measure(self, channel=0, exposure_ms=100):
         from labremote.operation.fpga.measure import measure
+        channel = self._counter_channel(channel)
         return self._submit('MEASURE',lambda w:measure(w.ps,channel,exposure_ms))
 
     def measure_counts(self, channel=0, exposure_ms=100, average=1):
         from labremote.operation.fpga.measure_counts import measure_counts
+        channel = self._counter_channel(channel)
         return self._submit('MEASURE_COUNTS',lambda w:measure_counts(w.ps,channel,exposure_ms,average))
 
     def start_count_tracking(self, channel=0, exposure_ms=100, average=1, *, interval_s=.5):
+        channel = self._counter_channel(channel)
         return self.worker.waveform_runner.start((channel,exposure_ms,average),interval_s,self.group)
 
     def measure_repeated(self, selection):
         return self.measure_counts(*selection) if len(selection)==3 else self.measure(*selection)
 
     def start_measurement(self, channel=0, exposure_ms=100, *, interval_s=.5):
+        channel = self._counter_channel(channel)
         return self.worker.waveform_runner.start((channel,exposure_ms),interval_s,self.group)
 
     def stop_measurement(self):return self.worker.waveform_runner.cancel()

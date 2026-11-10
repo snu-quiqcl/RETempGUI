@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import bound_methods
 """Photon-count display; acquisition runs in the common FPGA worker/runner."""
 from collections import deque
 import csv
@@ -11,6 +12,7 @@ from labremote.api.devices import device_api
 from labremote.devices.fpga.controller import INPUTS
 
 
+@bound_methods(None, editor=False)
 class FPGACountTab(QtWidgets.QWidget):
     columns = ('time_utc', 'elapsed_s', 'channel', 'exposure_ms', 'average', 'mean_count', 'total_count')
 
@@ -131,6 +133,9 @@ class FPGACountTab(QtWidgets.QWidget):
                 with path.open('x', newline='', encoding='utf-8') as stream:
                     csv.writer(stream).writerow(self.columns)
                 self.log_path = path
+                from labremote.devices.fpga.mapping import snapshot
+                import json
+                path.with_suffix('.mapping.json').write_text(json.dumps(snapshot(), ensure_ascii=False, indent=2), encoding='utf-8')
         except OSError as exc:
             self.status.setText('Log file could not be created: '+str(exc)); return
         self.samples.clear(); self.seen_results.clear(); self.started = time.monotonic()

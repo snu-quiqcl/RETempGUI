@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import bound_methods
 """Four scan runners share the FPGA operation FIFO only while measuring."""
 from pathlib import Path
 from labremote.data_paths import scan_data_directory
@@ -17,6 +18,7 @@ SCAN_ROLES = scan_roles()
 SCAN_TABS = tuple((r['title'],tuple(r['axes'])) for r in SCAN_ROLES)
 
 
+@bound_methods(None, editor=False)
 class MotorScanTab(QtWidgets.QWidget):
     def __init__(self,worker,bindings,number,parent=None):
         super().__init__(parent);self.worker=worker;self.bindings=bindings;self.number=number;self.api=device_api(worker)

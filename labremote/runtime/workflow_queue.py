@@ -41,6 +41,10 @@ def freeze_job(filename,*,name=None,repeat=1,on_failure='stop',parameters=None,m
     job = dict(id=uuid4().hex,name=name or path.stem,filename=str(path),source=source,sha256=hashlib.sha256(source.encode()).hexdigest(),repeat=repeat,on_failure=on_failure,parameters=deepcopy(parameters or {}))
     from .monitor_config import suggested,validate
     job['monitor']=deepcopy(validate(monitor) if monitor is not None else suggested(job))
+    from labremote.devices.fpga.mapping import CURRENT
+    state = CURRENT.get()
+    if state is not None:
+        job['fpga_profiles'] = {state[0].device_id: state[0].document()}
     return job
 
 def is_group(job):
@@ -89,7 +93,9 @@ def validate_plan(plan):
 
 
 def validate_job(j,ids):
-        if not isinstance(j,dict) or set(j)-{'monitor'}!={'id','name','filename','source','sha256','repeat','on_failure','parameters'}:raise ValueError('Invalid Queue job fields')
+        if not isinstance(j,dict) or set(j)-{'monitor','fpga_profiles'}!={'id','name','filename','source','sha256','repeat','on_failure','parameters'}:raise ValueError('Invalid Queue job fields')
+        from labremote.devices.fpga.mapping import profiles_scope
+        with profiles_scope(j.get('fpga_profiles')):pass
         if not all(isinstance(j[k],str) and j[k] for k in ('id','name','filename','source','sha256')):raise ValueError('Invalid workflow identity/source')
         from .monitor_config import settings
         settings(j)
@@ -124,6 +130,11 @@ def expand_steps(plan):
 class QueueRunner:
     def __init__(self,bindings,plan,directory,publish=lambda state:None):
         self.bindings=dict(bindings);self.plan=validate_plan(plan);self.directory=tab_data_directory(directory, 'queues');self.publish=publish
+        from labremote.devices.fpga.mapping import profiles_from_bindings
+        profiles=profiles_from_bindings(self.bindings)
+        for job in workflow_jobs(self.plan['jobs']):
+            if profiles or job.get('fpga_profiles'):
+                job['fpga_profiles']={**deepcopy(profiles), **job.get('fpga_profiles',{})}
         self.stop=threading.Event();self.pause=threading.Event();self.lock=threading.Lock();self.active=None;self.state=None;self.folder=None
     def cancel(self):
         with self.lock:
@@ -165,7 +176,7 @@ class QueueRunner:
                         context={k:step[k] for k in ('step_id','iteration','job_repeat','group_id','group_name','group_iteration','group_repeat') if k in step}
                         context['queue_id']=self.state['queue_id']
                         save(folder/'queue_context.json',context)
-                        result=run_workflow(self.bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context)
+                        result=run_workflow(self.bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context,fpga_profiles=job.get('fpga_profiles'))
                 except Exception as exc:
                     error_details=traceback.format_exc()
                     with owner.lock:used_workers=tuple(owner.workers)

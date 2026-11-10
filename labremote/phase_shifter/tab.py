@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import bound_methods
 """FPGA / etc: phase-shifter Ramsey setup, execution and live results."""
 import json
 from pathlib import Path
@@ -8,6 +9,7 @@ from .calibration import CalibrationSelector, estimate_note
 from .selectors import PhaseShifterEtcTab
 
 
+@bound_methods(None)
 class PhaseShifterTab(QtWidgets.QWidget):
     def __init__(self, worker, parent=None):
         super().__init__(parent)

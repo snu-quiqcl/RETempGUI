@@ -7,7 +7,7 @@ six state words, then overflow/version metadata. No per-event arrival records.
 """
 import math
 from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
-from labremote.devices.fpga.vendor import HardwareDefinition_remote_ent_test_ec as hd
+from labremote.devices.fpga.mapping import hd
 
 
 def build_sequence(basis='mw_detuned', *, half_pi_ea_us=40.55, half_pi_ec_us=35.29,

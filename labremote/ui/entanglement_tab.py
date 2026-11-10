@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
 from labremote.api.devices import device_api
@@ -6,6 +8,7 @@ from labremote.entanglement import config
 from labremote.entanglement.plotting import EntanglementPlot, Accumulator
 
 
+@bound_methods('entanglement', editor=True)
 class EntanglementTab(QtWidgets.QWidget):
     def __init__(self,worker,parent=None):
         super().__init__(parent); self.worker=worker; self.host=parent; self.api=device_api(worker)
@@ -28,7 +31,7 @@ class EntanglementTab(QtWidgets.QWidget):
         self.phase_note=QtWidgets.QLabel(); self.phase_note.setWordWrap(True); form.addRow(self.phase_note)
         for box in self.fields.values():box.valueChanged.connect(self.update_trials)
         self.basis.currentIndexChanged.connect(self.update_trials)
-        mapping_note=QtWidgets.QLabel('Hardware: vendor/HardwareDefinition_remote_ent_test_ec.py (restart after editing).\nDecay: PMTA/PMTC + SYNC. State readout: PMTFA/PMTFC.\nBright = counts > threshold; 1=bright, 0=dark. Thresholds are saved with counts.\nStop: CCD EC=1/EA=0; MW OFF; AOMA/C/B/M ON; 7G ON; 2G OFF.')
+        mapping_note=QtWidgets.QLabel('Hardware: 이 FPGA의 실험 신호 매핑을 사용합니다.\nDecay: PMTA/PMTC + SYNC. State readout: PMTFA/PMTFC.\nBright = counts > threshold; 1=bright, 0=dark. Thresholds are saved with counts.\nStop: CCD EC=1/EA=0; MW OFF; AOMA/C/B/M ON; 7G ON; 2G OFF.')
         mapping_note.setWordWrap(True); form.addRow(mapping_note)
         for text,fn in [('Load settings',self.load),('Save settings',self.save),('Save settings as…',self.save_as)]:
             button=QtWidgets.QPushButton(text); button.clicked.connect(fn); form.addRow(button)
@@ -86,14 +89,14 @@ class EntanglementTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
     def save(self):
-        self.save_to(config.ROOT/'entanglement.local.json')
+        self.save_to(settings_path(config.ROOT/'entanglement.local.json'))
 
     def save_to(self,path):
         try:config.save_settings(path,self.value()); self.status.setText(str(path))
         except Exception as exc:self.status.setText(str(exc))
 
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save Entanglement settings',str(config.ROOT/'entanglement.local.json'),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save Entanglement settings',str(settings_path(config.ROOT/'entanglement.local.json')),'JSON (*.json)')
         if path:self.save_to(path)
 
     def choose_folder(self):

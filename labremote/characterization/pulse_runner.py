@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import write_snapshot
+from labremote.devices.fpga.mapping import bound_methods
 import csv
 import hashlib
 from copy import deepcopy
@@ -9,6 +11,7 @@ from labremote.runtime.workflow_runner import WorkflowTask,_TASK_LOCK
 from labremote.runtime.errors import OperationCancelled
 from . import config,rabi,pulse_experiment as model
 
+@bound_methods('pulse')
 class PulseRunner(WorkflowTask):
     def __init__(self,worker,kind):
         super().__init__(worker,kind.upper());self.kind=kind;self.exclusive_fpga=True;self.results={}
@@ -27,7 +30,7 @@ class PulseRunner(WorkflowTask):
         from labremote.devices.fpga.adapter import Cancellation
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];chamber=c['chamber'];kind=self.kind
-        folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+'_'+chamber+'_'+self.handle.request_id);folder.mkdir(parents=True,exist_ok=False)
+        folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+'_'+chamber+'_'+self.handle.request_id);folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
         names=['pulse_experiment.py',kind+'_sequence.py']+(['ramsey_fit.py'] if kind=='ramsey' else ['initialization_analysis.py'] if kind=='initialization' else [])
         config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={n:hashlib.sha256((Path(__file__).parent/n).read_bytes()).hexdigest() for n in names}))
         from .live_pulse import LiveSummary

@@ -1,13 +1,15 @@
+from labremote.devices.fpga.mapping import settings_path
 """Validated settings; physical input pins resolve through the installed bitstream map."""
 import math
 import json
 from pathlib import Path
 import numpy as np
-from labremote.devices.fpga.vendor import HardwareDefinition_remote_ent_test_ec as hd
+from labremote.devices.fpga.mapping import hd
 from labremote.devices.dac.model import atomic_json as save
 
 ROOT = Path(__file__).resolve().parents[1] / 'config/operations/micromotion'
-PINS = dict(hd.input_mapping)
+from labremote.devices.fpga.mapping import InputNames
+PINS = InputNames()
 STOPWATCH_PINS = tuple(p for p, name in PINS.items() if hasattr(hd, name + '_stopwatch_result'))
 COUNTER_PINS = tuple(p for p, name in PINS.items() if hasattr(hd, name + '_counter_result'))
 
@@ -34,6 +36,10 @@ def grid(spec):
 
 def validate(settings):
     c = dict(settings)
+    names = {name: pin for pin, name in PINS.items()}
+    for key in ('trg_pin', 'pmt_pin', 'counter_pin'):
+        if c.get(key) in names:
+            c[key] = names[c[key]]
     if c.get('schema_version') != 1 or c.get('chamber') not in ('EA', 'EC'):
         raise ValueError('Invalid micromotion schema/chamber')
     for key in ('trg_pin', 'pmt_pin'):
@@ -77,5 +83,5 @@ def fit_indices(c):
 
 
 def load(path=None, chamber='EC'):
-    path = Path(path or ROOT / (chamber+'.local.json'))
+    path = Path(path or settings_path(ROOT / (chamber+'.local.json')))
     return validate(json.loads(path.read_text(encoding='utf-8'))) if path.exists() else defaults(chamber)

@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import write_snapshot
+from labremote.devices.fpga.mapping import bound_methods
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -8,6 +10,7 @@ from labremote.runtime.errors import OperationCancelled
 from labremote.data_paths import tab_data_directory
 from . import config
 
+@bound_methods('ion_check')
 class IonCheckRunner(WorkflowTask):
     def __init__(self,worker):
         super().__init__(worker,'ION_CHECK');self.exclusive_fpga=True;self.result=None
@@ -27,7 +30,7 @@ class IonCheckRunner(WorkflowTask):
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];mode=self.settings['mode']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_ion_check_'+self.handle.request_id[:8])
-        folder.mkdir(parents=True,exist_ok=False)
+        folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
         source=folder/'source';source.mkdir()
         hashes={}
         for path in [*Path(__file__).parent.glob('*.py'),Path(hd.__file__)]:

@@ -2,9 +2,10 @@ from labremote.runtime.jobs import WorkflowGroup
 from labremote.api.devices import Devices
 from types import SimpleNamespace
 
-def run_workflow(bindings, workflow, *, on_event=None, stop_event=None, parameters=None, run_directory=None, queue_context=None):
+def run_workflow(bindings, workflow, *, on_event=None, stop_event=None, parameters=None, run_directory=None, queue_context=None, fpga_profiles=None):
     from .workflow_result import workflow_session
-    with workflow_session():
+    from labremote.devices.fpga.mapping import profiles_scope
+    with workflow_session(), profiles_scope(fpga_profiles):
         return _run_workflow(bindings, workflow, on_event=on_event, stop_event=stop_event, parameters=parameters, run_directory=run_directory, queue_context=queue_context)
 
 
@@ -95,7 +96,10 @@ class WorkflowTask:
             if self.label=='MOTOR_SCAN':self.state['scan']=settings['scan']
             for w in participants:w._background_tasks.add(self)
             handle.subscribe(lambda h:self.worker.task_changed.emit(self.label,h))
-            self.thread=threading.Thread(target=self._run,args=(callback,handle),name=self.label+'-'+str(self.worker.name))
+            from contextvars import copy_context
+            from labremote.devices.fpga.mapping import snapshot
+            self.fpga_snapshot = snapshot()
+            self.thread=threading.Thread(target=copy_context().run,args=(self._run,callback,handle),name=self.label+'-'+str(self.worker.name))
             self.thread.start();return handle
 
     def _run(self,callback,handle):

@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import settings_path
 """Independent Ramsey/SPAM profiles and analysis, with external microwave control."""
 import math
 from copy import deepcopy
@@ -60,7 +61,7 @@ def validate(kind,value):
     return deepcopy(value)
 
 def load(kind,chamber,path=None):
-    local=config.ROOT/f'{kind}_{chamber}.local.json'
+    local=settings_path(config.ROOT/f'{kind}_{chamber}.local.json')
     c=validate(kind,config.read(path or (local if local.exists() else config.ROOT/f'{kind}_{chamber}.json')))
     if c['chamber']!=chamber:raise ValueError('Settings chamber differs from tab')
     return c

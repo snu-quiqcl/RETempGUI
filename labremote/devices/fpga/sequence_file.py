@@ -26,7 +26,9 @@ def build(request):
     exec(compile(raw,str(path),'exec'),namespace)
     factory=namespace.get('build_program')
     if not callable(factory):raise ValueError('Sequence file must define build_program(parameters)')
-    program=factory(request['parameters'])
+    import inspect
+    from labremote.devices.fpga.mapping import hd
+    program=factory(request['parameters'], hd=hd) if 'hd' in inspect.signature(factory).parameters else factory(request['parameters'])
     if not isinstance(program,SequencerProgram):raise TypeError('build_program must return the bundled SequencerProgram')
     if not program.program_list or program.program_list[-1][1]!='stop':raise ValueError('Program must end with stop()')
     return program,hashlib.sha256(raw).hexdigest()

@@ -59,6 +59,10 @@ class RunRecord:
         self.sequence = 0
         self.configuration = {**configuration, 'run_id': self.run_id,
                               'detailed_logging': self.detailed}
+        from labremote.devices.fpga.mapping import snapshot
+        fpga_mapping = snapshot()
+        if fpga_mapping is not None:
+            self.configuration['fpga_mapping'] = fpga_mapping
         # These writes must succeed before any instrument I/O.
         write_json(self.path / 'configuration.json', self.configuration)
         self.result = {'run_id': self.run_id, 'operation': operation,

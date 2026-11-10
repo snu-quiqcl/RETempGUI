@@ -12,19 +12,8 @@ def timed_stage(timings, name):
         if timings is not None:
             timings[name] = (time.perf_counter() - start) * 1000
 
-from labremote.devices.fpga.vendor import HardwareDefinition_remote_ent_test_ec as hd
+from labremote.devices.fpga.mapping import hd, OUTPUTS, INPUTS
 from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
-
-OUTPUTS = {
-    name: (pin, hd.external_slow_port if pin.startswith(('jc_', 'jd_'))
-           else hd.external_control_port, getattr(hd, name + '_out'))
-    for name, pin in hd.output_mapping.items()
-}
-INPUTS = {
-    getattr(hd, name + '_counter_result'): (name, pin)
-    for pin, name in hd.input_mapping.items()
-    if hasattr(hd, name + '_counter_result')
-}
 
 
 def exposure_program(channel, milliseconds):

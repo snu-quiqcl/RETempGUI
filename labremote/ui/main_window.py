@@ -266,7 +266,11 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             self.others_tabs.setCurrentWidget(self.motor_tab)
             return
         if name in panels:
-            tabs.setCurrentWidget(panels[name]);return
+            if family=='fpga' and hasattr(panels[name],'fpga_window'):panels[name].fpga_window.open()
+            else:tabs.setCurrentWidget(panels[name])
+            return
+        if family=='fpga':
+            tabs=QtWidgets.QTabWidget()
         if family=='dac':
             from labremote.devices.dac.tab import DACPanel
             panel=DACPanel(name,*self._endpoint(),self)
@@ -303,6 +307,15 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             from labremote.phase_shifter.hold_tab import EtcTab
             panel.etc_tab=EtcTab(panel.worker,self)
             tabs.addTab(panel.etc_tab,'etc' if len(panels)==1 else 'etc · '+name)
+            from .detail_window import DetailWindow
+            panel.fpga_window=DetailWindow(panel.worker.profile.alias+' · '+name,tabs,self)
+            panel.fpga_tabs=tabs
+            launcher=QtWidgets.QWidget();line=QtWidgets.QVBoxLayout(launcher)
+            button=QtWidgets.QPushButton(panel.worker.profile.alias+' · 열기')
+            button.clicked.connect(panel.fpga_window.open);line.addWidget(button)
+            self.family_subtabs['fpga'].addTab(launcher,name)
+            if hasattr(self,'detail_windows'):self.detail_windows['FPGA · '+name]=panel.fpga_window
+
 
     def _panels(self):
         return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()

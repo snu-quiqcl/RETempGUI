@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
 """Micromotion UI; all hardware work goes through existing FPGA/DAC queues."""
 import json
 from pathlib import Path
@@ -9,6 +11,7 @@ from labremote.micromotion import config, analysis
 from labremote.micromotion.plotting import draw, phase_text
 
 
+@bound_methods(None)
 class MicromotionPage(W.QWidget):
     verification_requested=QtCore.pyqtSignal()
 
@@ -130,7 +133,7 @@ class MicromotionPage(W.QWidget):
         except Exception as exc:self.status.setText(str(exc))
 
     def saved_settings(self,chamber):
-        path=config.ROOT/(chamber+'.'+self.experiment_mode+'.local.json')
+        path=settings_path(config.ROOT/(chamber+'.'+self.experiment_mode+'.local.json'))
         return config.load(path,chamber=chamber) if path.exists() else config.load(chamber=chamber)
 
     def refresh_dacs(self,prefer=False):
@@ -263,7 +266,7 @@ class MicromotionPage(W.QWidget):
 
     def save_settings(self):
         try:
-            c=self.value();config.save(config.ROOT/(c['chamber']+'.'+self.experiment_mode+'.local.json'),c)
+            c=self.value();config.save(settings_path(config.ROOT/(c['chamber']+'.'+self.experiment_mode+'.local.json')),c)
             self.status.setText('Settings saved for '+c['chamber']+' / '+self.experiment_mode)
         except Exception as exc:self.status.setText(str(exc))
 
@@ -283,6 +286,7 @@ class MicromotionPage(W.QWidget):
         self.timer.stop();self.worker.micromotion_runner.cancel()
 
 
+@bound_methods(None)
 class MicromotionTab(W.QTabWidget):
     """Independent pages/results with one mutually exclusive hardware runner."""
     def __init__(self,worker,bindings,parent=None):

@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import write_snapshot
 """Absolute-coordinate XY/XYZ motor raster scan with queued FPGA measurements and partial saves."""
 import csv
 import json
@@ -14,6 +15,9 @@ from labremote.config.device_config import load_device_config,operation_config
 from labremote.devices.fpga.scan_model import axis_points,fit_profiles
 
 
+from labremote.devices.fpga.mapping import bound_methods
+
+@bound_methods(None)
 class MotorScanRunner(WorkflowTask):
     def __init__(self,worker,number):
         super().__init__(worker,'MOTOR_SCAN');self.number=number
@@ -59,7 +63,7 @@ class MotorScanRunner(WorkflowTask):
         tolerance=[min(.001,c['x_step_um']/scales[0]*.25),min(.001,c['y_step_um']/scales[1]*.25)]
         base=scan_data_directory(c['directory'], self.number)
         folder=base/(datetime.now().strftime('%Y%m%d_%H%M%S_%f')+'_'+uuid4().hex[:6])
-        folder.mkdir(parents=True,exist_ok=False)
+        folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
         counts=np.full((len(zs),len(ys),len(xs)) if zs is not None else (len(ys),len(xs)),np.nan)
         config={**c,'x_motor':self.x_worker.name,'y_motor':self.y_worker.name,'initial_position_native':origin,'coordinate_mode':'absolute','x_positions_um':xs.tolist(),'y_positions_um':ys.tolist(),'position_observation':'readback/status after each move; no pre/post exposure polling','scan_order':'Y outer loop; X ascending with flyback'}
         config.update(z_motor=self.z_worker.name if self.z_worker is not None else None,z_positions_um=zs.tolist() if zs is not None else [],scan_order='Z outer, Y middle, X ascending with flyback' if z is not None else config['scan_order'])

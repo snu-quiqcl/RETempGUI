@@ -1,9 +1,12 @@
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
 from labremote.data_paths import characterization_directory
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api
 from labremote.characterization import config,rabi
 
+@bound_methods('rabi', editor=True)
 class RabiTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,bindings,parent=None):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
@@ -64,11 +67,11 @@ class RabiTab(QtWidgets.QWidget):
 
     def save(self):
         try:
-            path=config.ROOT/f'rabi_{self.chamber}.local.json';config.save(path,self.value());self.config_valid=True;self.status.setText('저장됨: '+str(path))
+            path=settings_path(config.ROOT/f'rabi_{self.chamber}.local.json');config.save(path,self.value());self.config_valid=True;self.status.setText('저장됨: '+str(path))
         except Exception as exc:self.status.setText(str(exc))
 
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save Rabi settings',str(config.ROOT/f'rabi_{self.chamber}.local.json'),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save Rabi settings',str(settings_path(config.ROOT/f'rabi_{self.chamber}.local.json')),'JSON (*.json)')
         if path:
             try:config.save(path,self.value());self.status.setText('저장됨: '+path)
             except Exception as exc:self.status.setText(str(exc))

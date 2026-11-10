@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import bound_methods
 """Manual phase hold UI. All writes run on the existing FPGA worker."""
 import json
 from pathlib import Path
@@ -6,6 +7,7 @@ from . import config, hold
 from .calibration import CalibrationSelector, estimate_note
 
 
+@bound_methods(None)
 class PhaseHoldTab(QtWidgets.QWidget):
     def __init__(self, worker, parent=None):
         super().__init__(parent)
@@ -189,6 +191,7 @@ class PhaseHoldTab(QtWidgets.QWidget):
         # Closing this view must not issue a zero-phase command.
 
 
+@bound_methods(None)
 class EtcTab(QtWidgets.QTabWidget):
     def __init__(self, worker, parent=None):
         super().__init__(parent)

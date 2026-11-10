@@ -32,8 +32,11 @@ class ExperimentShellMixin:
             index=self.device_tabs.indexOf(widget)
             if index>=0:self.device_tabs.removeTab(index)
             window=DetailWindow(title,widget,self);self.detail_windows[title]=window;self.device_tabs.detail_windows[widget]=window
+        for name,panel in self.family_tabs['fpga'].items():
+            self.detail_windows['FPGA · '+name]=panel.fpga_window
         self.home=QtWidgets.QWidget();root=QtWidgets.QVBoxLayout(self.home);root.setSpacing(14)
         heading=QtWidgets.QHBoxLayout();heading.addWidget(QtWidgets.QLabel('실험 준비'),1)
+        fpga_button=QtWidgets.QPushButton('로컬 FPGA 검색 / 연결');fpga_button.clicked.connect(self.open_local_fpga);heading.addWidget(fpga_button)
         settings=QtWidgets.QPushButton('연결 설정 / 장비 목록');heading.addWidget(settings);root.addLayout(heading)
         self.connection_settings_window=DetailWindow('연결 설정',server_panel,self);settings.clicked.connect(self.connection_settings_window.open)
         box=QtWidgets.QGroupBox('Configuration');line=QtWidgets.QHBoxLayout(box)
@@ -78,6 +81,9 @@ class ExperimentShellMixin:
 
     def populate_device_menu(self):
         self.device_menu.clear()
+        action=self.device_menu.addAction('로컬 FPGA 검색 / 연결')
+        action.triggered.connect(self.open_local_fpga)
+        self.device_menu.addSeparator()
         for title,window in self.detail_windows.items():
             action=self.device_menu.addAction(title)
             description=self.tab_help.description(title)
@@ -85,8 +91,15 @@ class ExperimentShellMixin:
                 action.setToolTip(description)
             action.triggered.connect(window.open)
 
+    def open_local_fpga(self):
+        from .fpga_mapping import LocalFPGADialog
+        if not hasattr(self,'local_fpga_dialog'):self.local_fpga_dialog=LocalFPGADialog(self)
+        self.local_fpga_dialog.show();self.local_fpga_dialog.raise_()
+
     def open_device_control(self,family,name=None):
         if self._closing:return
+        if family=='fpga' and name in self.family_tabs['fpga']:
+            self.family_tabs['fpga'][name].fpga_window.open();return
         title='CCD' if family in ('oven_psu','oven_relay') else equipment.FAMILY_GROUP[family]
         window=self.detail_windows[title];window.open()
         if family=='flip':
@@ -108,6 +121,12 @@ class ExperimentShellMixin:
             document=deepcopy(self.equipment_profile)
             if any(e['family']==family and e['name']==name for e in document['devices']):raise ValueError('이미 등록된 장비입니다. Configuration에서 사용 여부를 변경하세요.')
             document['devices'].append(dict(family=family,name=name,group=equipment.FAMILY_GROUP[family],enabled=True))
+            if family == 'fpga':
+                document=equipment.validate(document)
+                self._add_family(family,name)
+                self.equipment_profile=document;self.profile_dirty=True
+                self.refresh_experiment_home()
+                return
             self.apply_equipment(document)
         except Exception as exc:self.shell_message.setText(str(exc))
 

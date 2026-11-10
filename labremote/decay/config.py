@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import settings_path
 import math
 from copy import deepcopy
 from types import SimpleNamespace
@@ -70,12 +71,14 @@ def validate(c):
     if not isinstance(r,dict) or set(r)!=set(CHOICES) or any(r[k] not in choices for k,choices in CHOICES.items()):raise ValueError('Invalid FPGA role mapping')
     inputs=[r['SYNC'],r['PMT1']]+([r['PMT2']] if c['mode'].endswith('dual') else [])
     if len(set(inputs))!=len(inputs):raise ValueError('PMT and SYNC inputs must be distinct')
+    if len({getattr(hd, name+'_stopwatch_result') for name in inputs}) != len(inputs):raise ValueError('Decay input roles resolve to duplicate physical pins')
     outputs=[r['AOM'],r['TRIG']]+([r[k] for k in ('EOM_7G1','EOM_7G2','EOM_2G')] if c['mode'].startswith('171') else [])+[r[k] for k in ('AUX1','AUX2') if r[k]]
     if len(set(outputs))!=len(outputs):raise ValueError('Active output roles must be distinct')
+    if len({OUTPUTS[name][1:] for name in outputs}) != len(outputs):raise ValueError('Decay output roles resolve to duplicate physical pins')
     return deepcopy(c)
 
 def load(chamber,mode,path=None):
-    local=ROOT/f'{chamber}_{mode}.local.json'
+    local=settings_path(ROOT/f'{chamber}_{mode}.local.json')
     c=validate(read(path or (local if local.exists() else ROOT/f'{chamber}_{mode}.json')))
     if (c['chamber'],c['mode'])!=(chamber,mode):raise ValueError('Profile differs from this tab')
     return c

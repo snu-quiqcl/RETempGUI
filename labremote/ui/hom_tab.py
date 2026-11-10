@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
 from labremote.api.devices import device_api
@@ -6,6 +8,7 @@ from labremote.hom import config
 from labremote.hom.plotting import HOMPlot, Accumulator
 
 
+@bound_methods('hom', editor=True)
 class HOMTab(QtWidgets.QWidget):
     def __init__(self,worker,parent=None):
         super().__init__(parent); self.worker=worker; self.host=parent; self.api=device_api(worker)
@@ -33,7 +36,7 @@ class HOMTab(QtWidgets.QWidget):
             box=QtWidgets.QComboBox()
             box.addItems([name for name,(_,port,_) in config.OUTPUTS.items() if role=='AOMB' or port==config.hd.external_control_port])
             self.outputs[role]=box; form.addRow(role+' output',box)
-        mapping_note=QtWidgets.QLabel('Pin definitions: vendor/HardwareDefinition_remote_ent_test_ec.py (restart after editing)')
+        mapping_note=QtWidgets.QLabel('상단 실험 신호 매핑에서 이 FPGA의 핀을 선택합니다.')
         mapping_note.setWordWrap(True); form.addRow(mapping_note)
         for text,fn in [('Load settings',self.load),('Save settings',self.save),('Save settings as…',self.save_as)]:
             button=QtWidgets.QPushButton(text); button.clicked.connect(fn); form.addRow(button)
@@ -81,14 +84,14 @@ class HOMTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
     def save(self):
-        self.save_to(config.ROOT/'hom.local.json')
+        self.save_to(settings_path(config.ROOT/'hom.local.json'))
 
     def save_to(self,path):
         try:config.save(path,self.value()); self.status.setText(str(path))
         except Exception as exc:self.status.setText(str(exc))
 
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save HOM settings',str(config.ROOT/'hom.local.json'),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save HOM settings',str(settings_path(config.ROOT/'hom.local.json')),'JSON (*.json)')
         if path:self.save_to(path)
 
     def choose_folder(self):

@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import settings_path
 from copy import deepcopy
 import math
 from labremote.config.paths import CONFIG_ROOT
@@ -15,8 +16,11 @@ def validate_mapping(value):
     if not isinstance(value,dict) or set(value)!=set(default_mapping()):raise ValueError('Invalid Ion Check channel mapping')
     if value['pmt_1'] not in PMT_CHOICES or value['pmt_2'] not in (None,*PMT_CHOICES):raise ValueError('Select supported PMT inputs')
     if value['pmt_1']==value['pmt_2']:raise ValueError('PMT 1과 PMT 2는 서로 다른 입력을 선택하세요.')
+    if value['pmt_2'] is not None and getattr(hd,value['pmt_1']+'_counter_result') == getattr(hd,value['pmt_2']+'_counter_result'):
+        raise ValueError('PMT roles resolve to the same physical input')
     lasers=[value['laser_'+k] for k in 'abc']
     if any(v not in LASER_CHOICES for v in lasers) or len(set(lasers))!=3:raise ValueError('Laser A/B/C는 서로 다른 AOM 출력을 선택하세요.')
+    if len({OUTPUTS[name][1:] for name in lasers}) != 3:raise ValueError('Laser roles resolve to duplicate physical outputs')
     return deepcopy(value)
 
 def pmt_names(c):return [c.get('mapping',default_mapping())[key] for key in ('pmt_1','pmt_2') if c.get('mapping',default_mapping())[key] is not None]
@@ -53,10 +57,10 @@ def validate(value,require_thresholds=False):
     return deepcopy(value)
 
 def load(path=None):
-    path=path or ROOT/'ion_check.local.json'
+    path=path or settings_path(ROOT/'ion_check.local.json')
     from pathlib import Path
     if not Path(path).exists():
-        if Path(path)==ROOT/'ion_check.local.json':return defaults()
+        if Path(path)==settings_path(ROOT/'ion_check.local.json'):return defaults()
         raise FileNotFoundError(path)
     return validate(read(path))
 

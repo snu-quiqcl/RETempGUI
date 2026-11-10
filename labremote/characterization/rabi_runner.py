@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import write_snapshot
+from labremote.devices.fpga.mapping import bound_methods
 import csv
 import hashlib
 from datetime import datetime
@@ -8,6 +10,7 @@ from labremote.runtime.workflow_runner import WorkflowTask,_TASK_LOCK
 from labremote.runtime.errors import OperationCancelled
 from . import config,rabi
 
+@bound_methods('rabi')
 class RabiRunner(WorkflowTask):
     def __init__(self,worker):
         super().__init__(worker,'RABI');self.exclusive_fpga=True;self.results={}
@@ -30,7 +33,7 @@ class RabiRunner(WorkflowTask):
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];chamber=c['chamber']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Rabi_'+chamber+'_'+self.handle.request_id)
-        folder.mkdir(parents=True,exist_ok=False)
+        folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
         config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={name:hashlib.sha256((Path(__file__).parent/name).read_bytes()).hexdigest() for name in ('rabi.py','rabi_sequence.py')}))
         points=[];error=None;cleanup_errors=[];frequency=self.settings['frequency_hz']
         self.publish(chamber=chamber,phase='Starting',folder=str(folder),points=0,total=c['N_qubit_control'])

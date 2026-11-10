@@ -1,3 +1,5 @@
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api
@@ -5,6 +7,7 @@ from labremote.data_paths import tab_data_directory
 from labremote.ion_check import config
 
 
+@bound_methods('ion_check', editor=True)
 class IonCheckTab(QtWidgets.QWidget):
     def __init__(self,worker,parent=None):
         super().__init__(parent);self.worker=worker;self.host=parent;self.api=device_api(worker)
@@ -98,7 +101,7 @@ class IonCheckTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
     def save(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Ion Check 설정 저장',str(config.ROOT/'ion_check.local.json'),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Ion Check 설정 저장',str(settings_path(config.ROOT/'ion_check.local.json')),'JSON (*.json)')
         if path:
             try:config.save(path,self.value());self.status.setText('설정 저장: '+path)
             except Exception as exc:self.status.setText(str(exc))
