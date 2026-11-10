@@ -4,6 +4,7 @@ import math
 from decimal import Decimal, ROUND_HALF_UP
 from labremote.devices.fpga.controller import hd
 from .sequence import build_program
+from .calibration import resolve
 
 DEFAULTS = dict(phase_angle_deg=90., N_average=100, half_pi_time=5000,
     phase_zero_settle_clocks=1000, phase_settle_clocks=1000,
@@ -36,7 +37,10 @@ def normalize(value):
     return c
 
 
-def scan_points(c):
+def scan_points(c, skipped=None):
+    if c.get('calibration') is not None:
+        from .calibration import rows
+        rows(c['calibration'])
     start, stop, step = (c[key] for key in ('scan_start_deg', 'scan_stop_deg', 'scan_step_deg'))
     phase_point(start)
     phase_point(stop)
@@ -52,16 +56,29 @@ def scan_points(c):
     angles = [float(a + i * delta) for i in range(count)]
     if append_end:
         angles.append(float(b))
-    return [phase_point(angle) for angle in angles]
+    plan = []
+    for angle in angles:
+        try:
+            plan.append(resolve(angle, c.get('calibration')))
+        except ValueError as exc:
+            if not c.get('calibration') or not c.get('skip_unreliable', False):
+                raise
+            if skipped is not None:
+                skipped.append(dict(angle_deg=angle, reason=str(exc)))
+    if not plan:
+        raise ValueError('보정 가능한 스캔 각도가 없습니다.')
+    return plan
 
 
 def codes(c):
     return [point['code'] for point in scan_points(c)]
 
 
-def validate(value):
+def validate(value, single=False):
     c = normalize(value)
-    scan_points(c)
+    plan = [resolve(c["phase_angle_deg"], c.get("calibration"))] if single else scan_points(c)
+    if c.get("calibration"):
+        c["phase_code"] = plan[0]["code"]
     for key, low, high in [('threshold', 0, 65535)]:
         if type(c[key]) is not int or not low <= c[key] <= high:
             raise ValueError(f'{key}: {low}..{high} 범위의 정수를 입력하세요.')

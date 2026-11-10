@@ -18,15 +18,16 @@ class PhaseShifterRunner(WorkflowTask):
 
     def start(self, settings, directory=None, single=False):
         join_completed((self.worker,))
-        c = config.validate(settings)
-        plan = [config.phase_point(c['phase_angle_deg'])] if single else config.scan_points(c)
+        c = config.validate(settings, single=single)
+        skipped = []
+        plan = [config.resolve(c['phase_angle_deg'], c.get('calibration'))] if single else config.scan_points(c, skipped)
         with _TASK_LOCK:
             if (self.worker.waveform_runner.running() or self.worker.has_requests() or
                     any(task.running() for task in self.worker._background_tasks)):
                 raise RuntimeError('다른 FPGA 작업이 끝난 뒤 실행하세요.')
             return self.launch(self._execute, (self.worker,),
                 dict(settings=c, directory=str(tab_data_directory(directory, 'phase_shifter')),
-                     scan_points=plan, codes=[point['code'] for point in plan]))
+                     scan_points=plan, skipped_angles=skipped, codes=[point['code'] for point in plan]))
 
     def _execute(self):
         from labremote.devices.fpga.adapter import Cancellation
@@ -48,6 +49,11 @@ class PhaseShifterRunner(WorkflowTask):
                       started_at=datetime.now().astimezone().isoformat(),
                       outputs={name: config.hd.output_mapping[name] for name in
                                [*c['outputs'].values(), *c['phase_outputs']]})
+
+        report['skipped_angles'] = self.settings.get('skipped_angles', [])
+        if c.get('calibration'):
+            report['phase_conversion'] = 'Conditional empirical Ramsey inverse table; applied_angle_deg is model estimate, not measured RF phase'
+            (source/'calibration.csv').write_text(c['calibration']['csv'], encoding='utf-8')
 
         def checkpoint():
             temporary = folder/'result.tmp'

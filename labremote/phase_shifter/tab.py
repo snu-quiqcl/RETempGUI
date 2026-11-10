@@ -4,6 +4,7 @@ from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
 from labremote.data_paths import tab_data_directory
 from . import config
+from .calibration import CalibrationSelector
 from .selectors import PhaseShifterEtcTab
 
 
@@ -47,6 +48,13 @@ class PhaseShifterTab(QtWidgets.QWidget):
         self.definition_label.setWordWrap(True)
         mapping_layout.addWidget(self.definition_label)
         mapping_layout.addStretch()
+        self.calibration = CalibrationSelector()
+        left.addWidget(self.calibration)
+        self.calibration.changed.connect(self.controls)
+        self.skip_unreliable = QtWidgets.QCheckBox('보정 불가 각도 제외 (아래에 제외 목록 표시)')
+        self.skip_unreliable.setChecked(True)
+        self.skip_unreliable.toggled.connect(self.controls)
+        left.addWidget(self.skip_unreliable)
         scan = self._group(left, '위상 스캔 · 각도 설정')
         for key, title, low, high in [('scan_start_deg', '시작 각도', 0, 360),
                 ('scan_stop_deg', '끝 각도 (포함)', 0, 360), ('scan_step_deg', '각도 간격', .000001, 360),
@@ -63,7 +71,7 @@ class PhaseShifterTab(QtWidgets.QWidget):
         scan.addRow(self.angle_summary)
         model_note = QtWidgets.QLabel('변환 기준: 360° / 4096단계 (약 0.087891°/단계)\n'
                                      '최근접 코드 적용 · 360°는 0°와 동일 출력\n'
-                                     '적용 각도는 선형 변환의 명목값이며 실측값이 아닙니다.')
+                                     '선형 모드에만 해당합니다. 보정 모드는 선택한 표의 추정값을 사용합니다.')
         model_note.setWordWrap(True)
         scan.addRow(model_note)
         timing = self._group(left, '펄스 및 위상 안정화')
@@ -143,7 +151,7 @@ class PhaseShifterTab(QtWidgets.QWidget):
         self.axis.grid(True, alpha=.2)
         self.curve, = self.axis.plot([], [], 'o-', color='#346dcb', markersize=4)
         self.table = QtWidgets.QTableWidget(0, 6)
-        self.table.setHorizontalHeaderLabels(['요청 (°)', '적용 (°)', 'Code', 'Shots', 'P(bright)', 'Mean counts'])
+        self.table.setHorizontalHeaderLabels(['요청 (°)', '명목/추정 (°)', 'Code', 'Shots', 'P(bright)', 'Mean counts'])
         self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table.setMaximumHeight(190)
@@ -184,6 +192,8 @@ class PhaseShifterTab(QtWidgets.QWidget):
         values = {key: (field.value() if key == 'timeout_s' or key.endswith('_deg') else
                         round(field.value()*field.property('scale')))
                   for key, field in self.fields.items()}
+        if self.calibration.active() is not None:
+            values.update(calibration=self.calibration.active(), skip_unreliable=self.skip_unreliable.isChecked())
         return self.mapping.apply_to(values)
 
     def controls(self, *_):
@@ -192,29 +202,39 @@ class PhaseShifterTab(QtWidgets.QWidget):
         active = self.runner.running()
         error = ''
         try:
-            plan = config.scan_points({key: self.fields[key].value()
-                                       for key in ('scan_start_deg', 'scan_stop_deg', 'scan_step_deg')})
+            skipped = []
+            plan = config.scan_points(dict({key: self.fields[key].value()
+                for key in ('scan_start_deg', 'scan_stop_deg', 'scan_step_deg')},
+                calibration=self.calibration.active(), skip_unreliable=self.skip_unreliable.isChecked()), skipped)
             n = len(plan)
             repeated = sum(a['code'] == b['code'] for a, b in zip(plan, plan[1:]))
             self.scan_summary.setText(f'{n}개 각도 · 총 {n*self.fields["N_average"].value():,} shots' +
                 (f'\n연속 {repeated}지점은 양자화로 동일한 코드가 적용됩니다.' if repeated else ''))
-            target = config.phase_point(self.fields['phase_angle_deg'].value())
-            self.angle_summary.setText(f'단일 측정: 요청 {target["requested_angle_deg"]:g}° → '
-                f'적용 {target["applied_angle_deg"]:.6f}° (코드 {target["code"]})')
+            if skipped:
+                self.scan_summary.setText(self.scan_summary.text() + '\n제외: ' + ', '.join(f'{p["angle_deg"]:g}°' for p in skipped))
         except (ValueError, KeyError) as exc:
             error = str(exc)
             self.scan_summary.setText(error)
+        single_error = ''
+        try:
+            target = config.resolve(self.fields['phase_angle_deg'].value(), self.calibration.active())
+            self.angle_summary.setText(f'단일 측정: 요청 {target["requested_angle_deg"]:g}° → '
+                f'명목/추정 {target["applied_angle_deg"]:.6f}° (코드 {target["code"]})')
+        except (ValueError, KeyError) as exc:
+            single_error = str(exc)
+            self.angle_summary.setText(single_error)
+        mapping_error = ''
         try:
             self.mapping.selection()
         except ValueError as exc:
-            error = error or str(exc)
+            mapping_error = str(exc)
         ready = self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing
         busy = (self.worker.has_requests() or self.worker.waveform_runner.running() or
                 any(task.running() for task in self.worker._background_tasks))
-        self.readiness.setText(error or ('FPGA 연결 필요' if not ready else
+        self.readiness.setText(mapping_error or error or ('FPGA 연결 필요' if not ready else
                                'FPGA 작업 중' if busy else '실행 준비 완료'))
-        for button in (self.single_button, self.start_button):
-            button.setEnabled(not error and ready and not busy and not active)
+        self.start_button.setEnabled(not (error or mapping_error) and ready and not busy and not active)
+        self.single_button.setEnabled(not (single_error or mapping_error) and ready and not busy and not active)
         self.stop_button.setEnabled(active)
         for widget in (self.settings_panel, self.load_button, self.save_button, self.validate_button,
                        self.directory, self.folder_button, self.open_result_button):
@@ -230,6 +250,8 @@ class PhaseShifterTab(QtWidgets.QWidget):
     def populate(self, value):
         # Validate before changing the current form; retain no stale nicknames.
         value = config.validate(value)
+        self.calibration.set_table(value.get('calibration'))
+        self.skip_unreliable.setChecked(value.get('skip_unreliable', True))
         for key, field in self.fields.items():
             field.setValue(value[key]/field.property('scale') if isinstance(field, QtWidgets.QDoubleSpinBox) else value[key])
         for role, combo in self.mapping.output_selectors.items():

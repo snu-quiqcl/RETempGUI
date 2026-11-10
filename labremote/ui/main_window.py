@@ -300,8 +300,8 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             from .micromotion_tab import MicromotionTab
             panel.micromotion_tab=MicromotionTab(panel.worker,self._bindings,self)
             tabs.addTab(panel.micromotion_tab,'Micromotion' if len(panels)==1 else 'Micromotion · '+name)
-            from labremote.phase_shifter.tab import PhaseShifterTab
-            panel.etc_tab=PhaseShifterTab(panel.worker,self)
+            from labremote.phase_shifter.hold_tab import EtcTab
+            panel.etc_tab=EtcTab(panel.worker,self)
             tabs.addTab(panel.etc_tab,'etc' if len(panels)==1 else 'etc · '+name)
 
     def _panels(self):
