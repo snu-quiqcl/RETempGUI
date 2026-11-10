@@ -78,6 +78,8 @@ def run(controller,c,cancelled,on_rows,on_chunk,on_batch=None):
                     programmed_trials=c['run_number']*c['outer_loop_in_fpga']*c['wo_cooling_number']))
     except Exception as original:
         try:cleanup(controller,c)
-        except Exception as exc:raise RuntimeError(f'Decay cleanup failed: {exc}; original: {original}') from exc
+        except Exception as exc:raise ConnectionError(f'Decay cleanup failed: {exc}; original: {original}') from exc
         raise
-    else:cleanup(controller,c)
+    else:
+        try:cleanup(controller,c)
+        except Exception as exc:raise ConnectionError(f"Decay cleanup failed: {exc}") from exc

@@ -69,11 +69,10 @@ class WorkflowTask:
 
     def running(self):return self.thread is not None and self.thread.is_alive()
 
-    def launch(self,callback,participants,settings,parent=None,*,owned_participants=None,shared_participants=()):
+    def launch(self,callback,participants,settings,parent=None):
         with _TASK_LOCK:
             group=WorkflowGroup(stop=parent.stop if parent is not None else None)
             if parent is not None:group.owner=parent.owner;group.owns_execution=False
-            group.shared_workers=set(shared_participants)
             if group.owns_execution:group.owner.label=self.label
             handle=TaskHandle(self.label,None,group)
             if self.label=='MOTOR_SCAN':handle.arguments={'scan':settings['scan']}
@@ -82,18 +81,8 @@ class WorkflowTask:
             error=None
             if self.running():error=RuntimeError(self.label+' is already running or stopping')
             elif any(w._closing or w.ps is None or w.connection_error for w in participants):error=ConnectionError('Connect all participating devices first')
-            elif any(getattr(t,'exclusive_fpga',False) and t.running() and not t.handle.done.is_set() for w in participants for t in w._background_tasks):error=RuntimeError('FPGA reserved by daily characterization')
             elif self.label=='MOTOR_SCAN' and conflicting_scan(participants):error=RuntimeError('A participating device already belongs to a scan')
-            elif self.label=='MOTOR_SCAN' and self.worker.waveform_runner.running():error=RuntimeError('Stop FPGA repeat measurement before scanning')
             if parent is not None:parent.add(handle)
-            claimed=[]
-            if error is None:
-                try:
-                    for w in (participants if owned_participants is None else owned_participants):
-                        if w.reserve_execution(group.owner,shared=w in group.shared_workers):claimed.append(w)
-                except Exception as exc:
-                    error=exc
-                    for w in claimed:w.release_execution(group.owner)
             if error is not None:
                 if parent is not None:parent.stop.set()
                 handle.finish(error);self.worker.task_changed.emit(self.label,handle);self.worker.failure.emit(self.label,str(error));return handle

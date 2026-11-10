@@ -394,6 +394,15 @@ class ManagedParameter:
         from labremote.runtime.jobs import CURRENT_JOB
         job=CURRENT_JOB.get()
         arguments=job.arguments if job is not None else {}
+        if self.family=='mdt':
+            session=CURRENT_OWNER.get()
+            worker=getattr(session,'worker',None)
+            pid=getattr(worker,'pid_runner',None)
+            if pid is not None and pid.running() and pid.handle is not None and not pid.handle.done.is_set():
+                axis=pid.settings['axis'].lower()+'.voltage'
+                controlled=self.path==axis or self.path=='master_scan_enabled'
+                if controlled and (job is None or job.group is not pid.group):
+                    raise ValueError(f'{self.path}: PID is active; stop PID before changing this setting')
         if self.family=='motors' and self.path=='position' and arguments.get('readback_tolerance') is not None:
             tolerance=arguments['readback_tolerance']
             ParameterSpec(kind='number',minimum=0).validate(tolerance,request=True)

@@ -28,11 +28,17 @@ class OwnershipManager:
         self._owners = {}
 
     def owner(self, device):
-        with self._lock: return self._owners.get(device)
+        with self._lock: return self._owners.get(self._key(device))
+
+    @staticmethod
+    def _key(device):
+        if device[0]=='serial':return tuple(device)
+        try:return device_id(*device)
+        except (TypeError,ValueError):return tuple(device)
 
     def acquire(self, devices):
         from labremote.runtime.errors import ResourceBusy
-        devices = frozenset(devices)
+        devices = frozenset(self._key(device) for device in devices)
         with self._lock:
             if any(device in self._owners for device in devices):
                 raise ResourceBusy('Device already has an operation owner')

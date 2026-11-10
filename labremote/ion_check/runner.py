@@ -18,7 +18,6 @@ class IonCheckRunner(WorkflowTask):
         if mode not in ('once','workflow'):raise ValueError('Unknown Ion Check mode')
         c=config.validate(config.load() if settings is None else settings,require_thresholds=mode=='workflow')
         with _TASK_LOCK:
-            if self.worker.has_foreground_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):raise RuntimeError('FPGA busy')
             return self.launch(self._execute,(self.worker,),dict(settings=c,mode=mode,
                 directory=str(tab_data_directory(directory,'ion_check'))),parent)
 

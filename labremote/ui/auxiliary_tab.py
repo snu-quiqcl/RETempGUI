@@ -80,13 +80,13 @@ class AuxiliaryTab(QtWidgets.QWidget):
             for field in (self.spectrum_y_min,self.spectrum_y_max):field.valueChanged.connect(self._spectrum_limits)
             self._spectrum_limits()
         elif family=='mdt':
-            limits=self.config['limits']
+            limits=self.config['limits'];self.pid_manual_buttons={}
             for axis in 'XYZ':
                 editor=self._number(grid,axis.lower()+'.voltage',axis+' (V)',limits['min_voltage'],limits['max_voltage'],3,0)
-                self._button(grid,'Apply '+axis,lambda a=axis,e=editor:self.api.set_voltage(a,e.value()))
+                self.pid_manual_buttons[axis]=self._button(grid,'Apply '+axis,lambda a=axis,e=editor:self.api.set_voltage(a,e.value()))
             for path,title in [('output_limit_v','Hardware limit (V)'),('software_minimum','Server minimum (V)'),('software_maximum','Server maximum (V)'),('master_scan_enabled','Master scan')]:self._label(grid,path,title)
-            self._button(grid,'Master scan ON',lambda:self.api.set_master_scan(True))
-            self._button(grid,'Master scan OFF',lambda:self.api.set_master_scan(False))
+            self.pid_master_on=self._button(grid,'Master scan ON',lambda:self.api.set_master_scan(True))
+            self.pid_master_off=self._button(grid,'Master scan OFF',lambda:self.api.set_master_scan(False))
         elif family=='fpga':
             from labremote.devices.fpga.controller import OUTPUTS
             self.output_buttons={};self.output_pending={}
@@ -106,6 +106,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
         self.worker.connected.connect(self._connected);self.worker.disconnected.connect(self._disconnected)
         self.worker.snapshot.connect(self._snapshot);self.worker.failure.connect(self._failure)
         self.worker.handle_changed.connect(self._result)
+        self.worker.task_changed.connect(lambda *_:self._buttons())
         if hasattr(self.worker,'waveform_changed'):self.worker.waveform_changed.connect(self._repeat_changed)
         self.timer=QtCore.QTimer(self);self.timer.setInterval(60000)
         self.timer.timeout.connect(lambda:self.api.auto_monitor() if self.connected else None);self.timer.start()
@@ -308,6 +309,14 @@ class AuxiliaryTab(QtWidgets.QWidget):
             self.port_choices.setEnabled(not self.connected)
         self.connect_btn.setEnabled(not self.connected and not self.worker.has_requests());self.disconnect_btn.setEnabled(self.connected)
         for button in self.buttons:button.setEnabled(self.connected)
+        if self.family=='mdt':
+            pid=self.worker.pid_runner
+            axis=pid.settings['axis'] if pid.running() and pid.handle is not None and not pid.handle.done.is_set() else None
+            for name,button in self.pid_manual_buttons.items():
+                allowed=self.connected and name!=axis
+                button.setEnabled(allowed);self.editors[name.lower()+'.voltage'].setEnabled(allowed)
+            self.pid_master_on.setEnabled(self.connected and axis is None)
+            self.pid_master_off.setEnabled(self.connected and axis is None)
         if self.family=='fpga':self._snapshot()
         for name in ('serial','host','port','target'):
             widget=getattr(self,name,None)

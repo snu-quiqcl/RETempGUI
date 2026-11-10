@@ -1,4 +1,4 @@
-"""Own FPGA and DAC queues for a complete scan, including restoration and leases."""
+"""Submit FPGA operations and maintain the DAC server restoration lease."""
 import json
 import hashlib
 import shutil
@@ -41,9 +41,7 @@ class MicromotionRunner(WorkflowTask):
                     raise ValueError('Candidate must be inside the measured voltage rectangle')
         join_completed(participants)
         with _TASK_LOCK:
-            for w in participants:
-                if w.has_foreground_requests() or any(t.running() for t in w._background_tasks) or (
-                    hasattr(w,'waveform_runner') and w.waveform_runner.running()):raise RuntimeError('Device busy: '+str(w.name))
+            if self.running():raise RuntimeError("MICROMOTION is already running or stopping")
             self.dac=dac if mode in ('scan','apply') else None
             self.session=None;self.result=None;self.cleanup_group=WorkflowGroup()
             return self.launch(self._execute,participants,dict(settings=c,mode=mode,candidate=candidate,

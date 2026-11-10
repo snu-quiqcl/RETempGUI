@@ -153,7 +153,7 @@ class PIDRunner(WorkflowTask):
             self.current_config=validate_settings(c)
             return self.run_pid()
         # OSA is a cached feedback dependency, not a device this PID commands.
-        return self.launch(run,(self.worker,osa.worker),c,parent,owned_participants=(self.worker,))
+        return self.launch(run,(self.worker,osa.worker),c,parent)
 
     def update_settings(self,changes):
         allowed={'target_thz','kp_v_per_ghz','ki_v_per_ghz_s','kd_v_s_per_ghz'}

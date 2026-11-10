@@ -1,4 +1,4 @@
-"""Reserve existing FPGA/microwave queues during a characterization run."""
+"""Retire completed publishers before sequential experiment starts."""
 from .workflow_runner import _TASK_LOCK
 
 def join_completed(workers):
@@ -9,5 +9,5 @@ def join_completed(workers):
         if getattr(task,'exclusive_fpga',False) and task.handle is not None and task.handle.done.is_set():task.join()
 
 def enqueue(worker,handle,submit):
-    # All device families now enforce execution ownership in DeviceWorker.
+    # All FPGA commands use the ordinary operation FIFO.
     return submit(handle)

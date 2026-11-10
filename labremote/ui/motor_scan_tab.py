@@ -157,7 +157,7 @@ class MotorScanTab(QtWidgets.QWidget):
         motors=[self.motor_api(a) for a in ('xyz' if self.z_enabled.isChecked() else 'xy')]
         moving=self.manual_move is not None and not self.manual_move.done.is_set()
         ready=all(self.available(api) and not self.reserved(api) for api in motors)
-        self.start_btn.setEnabled(not running and not moving and ready and not self.worker.waveform_runner.running() and self.worker.ps is not None)
+        self.start_btn.setEnabled(not running and not moving and ready and self.worker.ps is not None)
         self.stop_btn.setEnabled(running or moving)
         max_axes='xyz' if self.z_values else 'xy'
         max_apis=[self.motor_api(a) for a in max_axes]

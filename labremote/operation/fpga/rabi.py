@@ -58,8 +58,8 @@ def run(controller,c,cancelled,on_rows,on_point):
             on_point(index,counts)
     except Exception as original:
         try:cleanup(controller,c['roles'])
-        except Exception as exc:raise RuntimeError(f'Rabi FPGA cleanup failed: {exc}; original: {original}') from exc
+        except Exception as exc:raise ConnectionError(f'Rabi FPGA cleanup failed: {exc}; original: {original}') from exc
         raise
     else:
         try:cleanup(controller,c['roles'])
-        except Exception as exc:raise RuntimeError(f'Rabi FPGA cleanup failed: {exc}') from exc
+        except Exception as exc:raise ConnectionError(f'Rabi FPGA cleanup failed: {exc}') from exc

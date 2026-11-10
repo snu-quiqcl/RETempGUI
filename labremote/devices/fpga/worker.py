@@ -19,6 +19,8 @@ class FPGAWorker(AcquisitionWorker):
         self.decay_runner=DecayRunner(self)
         from labremote.hom.runner import HOMRunner
         self.hom_runner=HOMRunner(self)
+        from labremote.phase_shifter.runner import PhaseShifterRunner
+        self.phase_shifter_runner=PhaseShifterRunner(self)
         from labremote.ion_check.runner import IonCheckRunner
         self.ion_check_runner=IonCheckRunner(self)
         from labremote.entanglement.runner import EntanglementRunner
@@ -50,9 +52,3 @@ class FPGAWorker(AcquisitionWorker):
         self.monitor.register_parameters()
         self.connected.emit({'idn':'Local Arty FPGA','port':serial_port})
 
-    def execute(self, handle):
-        super().execute(handle)
-        if isinstance(handle.error,TimeoutError):
-            self.connection_error=True
-            self._disconnect()
-            self.disconnected.emit('FPGA serial timeout: reconnect explicitly; verify hardware state')

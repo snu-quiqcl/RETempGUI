@@ -65,8 +65,8 @@ def run(controller,kind,c,cancelled,on_rows,on_record):
                     collect(build_program(condition,c,h),c['N_average'],batch,condition,consume)
     except Exception as original:
         try:cleanup(controller,c['roles'])
-        except Exception as exc:raise RuntimeError(f'{kind} FPGA cleanup failed: {exc}; original: {original}') from exc
+        except Exception as exc:raise ConnectionError(f'{kind} FPGA cleanup failed: {exc}; original: {original}') from exc
         raise
     else:
         try:cleanup(controller,c['roles'])
-        except Exception as exc:raise RuntimeError(f'{kind} FPGA cleanup failed: {exc}') from exc
+        except Exception as exc:raise ConnectionError(f'{kind} FPGA cleanup failed: {exc}') from exc

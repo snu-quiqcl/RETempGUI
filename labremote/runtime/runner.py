@@ -32,7 +32,6 @@ class OperationRunner:
             if getattr(handle, 'automatic_monitor', False):
                 from .auto_monitor import AUTO_MONITOR
                 if not AUTO_MONITOR.permitted(self): return
-            self.check_execution(handle)
             if handle.action not in ('CONNECT', 'DISCONNECT') and (self.connection_error or self.ps is None):
                 raise ConnectionError('Device connection unavailable; connect explicitly')
             with operation_config():
@@ -43,6 +42,7 @@ class OperationRunner:
                     record_token = CURRENT_RECORD.set((record, lambda message: self.failure.emit('LOG', message)))
                 identity = self._execution_device or ('unconnected', id(self))
                 session = DEFAULT_MANAGER.acquire({identity})
+                session.worker = worker
                 runner_token = CURRENT_OWNER.set(session)
                 if self.raw_device is not None:
                     self.ps = DeviceProxy(self.raw_device, self._execution_device, self.family)
@@ -61,10 +61,10 @@ class OperationRunner:
                 AUTO_MONITOR.timed_out(self)
                 handle.auto_monitor_timeout_latched = True
                 # The client already rebuilt the socket, without retrying the request.
-                if getattr(self.cli, 'consecutive_timeouts', 2 if self._timed_out else 1) >= 2:
+                if self.family == 'fpga' or getattr(self.cli, 'consecutive_timeouts', 2 if self._timed_out else 1) >= 2:
                     self.connection_error = True
                     self._disconnect()
-                    self.disconnected.emit('Connection error: server did not respond after socket recreation')
+                    self.disconnected.emit('FPGA timeout: reconnect explicitly; verify hardware state' if self.family == 'fpga' else 'Connection error: server did not respond after socket recreation')
                 self._timed_out = True
             elif isinstance(exc, ConnectionError):
                 self.connection_error = True

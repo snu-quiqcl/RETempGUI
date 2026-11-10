@@ -102,7 +102,6 @@ class WorkflowGroup:
         from .execution_scope import CURRENT_EXECUTION,ExecutionOwner
         self.owner=CURRENT_EXECUTION.get()
         self.owns_execution=self.owner is None
-        self.shared_workers=set()
         if self.owner is None:self.owner=ExecutionOwner()
         self.stop = stop if stop is not None else CancellationToken()
         self.handles = []

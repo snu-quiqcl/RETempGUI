@@ -54,5 +54,5 @@ def acquire(controller,settings,route,cancelled,on_rows,on_batch):
             cleanup=SequencerProgram()
             cleanup.set_output_port(hd.counter_control_port,[(getattr(hd,route['PMT']+'_counter_enable'),0)])
             cleanup.stop();controller._run(cleanup,0,threading.Event())
-        except Exception as error:raise RuntimeError(f'Fluorescence cleanup not confirmed: {error}; original: {original}') from error
+        except Exception as error:raise ConnectionError(f'Fluorescence cleanup not confirmed: {error}; original: {original}') from error
         raise

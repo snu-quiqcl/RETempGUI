@@ -22,7 +22,6 @@ class DecayRunner(WorkflowTask):
         c=config.load(chamber,mode,settings_file) if settings is None else config.validate(settings)
         if (c['chamber'],c['mode'])!=(chamber,mode):raise ValueError('Decay chamber/mode mismatch')
         with _TASK_LOCK:
-            if self.worker.has_foreground_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):raise RuntimeError('FPGA busy')
             return self.launch(self._execute,(self.worker,),dict(settings=c,directory=str(decay_directory(directory, chamber, mode))),parent)
     def _execute(self):
         from labremote.devices.fpga.adapter import Cancellation

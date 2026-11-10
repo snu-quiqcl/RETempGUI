@@ -21,7 +21,6 @@ class PulseRunner(WorkflowTask):
         join_completed((self.worker,))
         request=dict(settings=c,frequency_hz=rabi.validate_frequency(frequency_hz),microwave_control='external',directory=str(characterization_directory(directory, chamber, self.kind)))
         with _TASK_LOCK:
-            if self.worker.has_foreground_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks):raise RuntimeError('FPGA is busy')
             return self.launch(self._execute,(self.worker,),request,parent)
     def _execute(self):
         from labremote.operation.fpga.pulse_experiment import run

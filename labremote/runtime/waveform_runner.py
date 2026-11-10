@@ -37,9 +37,7 @@ class WaveformRunner:
         from labremote.runtime.workflow_runner import _TASK_LOCK
         with _TASK_LOCK, worker._lock:
             error=None
-            if any(t.label=="MOTOR_SCAN" and t.running() for t in worker._background_tasks):error=RuntimeError("Stop motor scan before starting repeat measurement")
-            elif any(getattr(t,'exclusive_fpga',False) and t.running() and not t.handle.done.is_set() for t in worker._background_tasks):error=RuntimeError('FPGA reserved by daily characterization')
-            elif self.running():error=RuntimeError('Waveform capture is already running or stopping')
+            if self.running():error=RuntimeError('Waveform capture is already running or stopping')
             elif worker._closing or self.suspended or worker.connection_error or worker.ps is None:
                 error=ConnectionError('Connect the device before starting waveform capture')
             elif isinstance(interval_s,bool) or not isinstance(interval_s,(int,float)) or not math.isfinite(interval_s) or interval_s<0:
@@ -48,18 +46,8 @@ class WaveformRunner:
             except TypeError:error=ValueError('Select supported acquisition channels')
             group=WorkflowGroup(stop=parent.stop if parent is not None else None)
             if parent is not None:group.owner=parent.owner;group.owns_execution=False
-            elif group.owns_execution:
-                # Standalone monitoring retains ordinary FIFO behavior, including
-                # manual controls between reads. Exclusive workflows detect this
-                # repeat at the worker boundary when claiming the same device.
-                group.owner=None;group.owns_execution=False
             handle=WaveformHandle(self.label,None,group=group)
             if parent is not None:parent.add(handle)
-            if error is None:
-                try:
-                    if group.owner is not None:worker.reserve_execution(group.owner)
-                    elif worker.execution_reserved():raise worker._ownership_error(self.label)
-                except Exception as exc:error=exc
             if error is not None:
                 if parent is not None:parent.stop.set()
                 handle.finish(error)

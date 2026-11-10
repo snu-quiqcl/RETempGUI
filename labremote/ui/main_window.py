@@ -300,6 +300,9 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             from .micromotion_tab import MicromotionTab
             panel.micromotion_tab=MicromotionTab(panel.worker,self._bindings,self)
             tabs.addTab(panel.micromotion_tab,'Micromotion' if len(panels)==1 else 'Micromotion · '+name)
+            from labremote.phase_shifter.tab import PhaseShifterTab
+            panel.etc_tab=PhaseShifterTab(panel.worker,self)
+            tabs.addTab(panel.etc_tab,'etc' if len(panels)==1 else 'etc · '+name)
 
     def _panels(self):
         return [panel for panels in self.family_tabs.values() for panel in panels.values()] + [self.ccd_tab] + self.ccd_tab.oven_panel.lifecycle_panels() + self.flip_tab.lifecycle_panels()
@@ -349,6 +352,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
                 if hasattr(panel,'entanglement_tab'):panel.entanglement_tab.shutdown()
                 if hasattr(panel,'ion_check_tab'):panel.ion_check_tab.shutdown()
                 if hasattr(panel,'micromotion_tab'):panel.micromotion_tab.shutdown()
+                if hasattr(panel,'etc_tab'):panel.etc_tab.shutdown()
             self.discovery_worker.shutdown()
             self.centralWidget().setEnabled(False)
             for p in self._panels():p.worker.cancel_backgrounds()

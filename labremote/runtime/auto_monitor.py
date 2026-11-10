@@ -47,7 +47,7 @@ class AutoMonitor:
 
     @contextmanager
     def workflow(self):
-        """Compatibility context; execution ownership is enforced per worker."""
+        """Compatibility context; each read is dispatched to its worker FIFO."""
         yield
 
     def timed_out(self, worker):
@@ -67,20 +67,16 @@ class AutoMonitor:
             self.next_at[key] = self.clock() + self.gap_s
 
     def foreground_busy(self,worker):
-        from .workflow_runner import _TASK_LOCK
-        with _TASK_LOCK:
-            if any(task.running() for task in tuple(worker._background_tasks)):return True
-        repeat=getattr(worker,'waveform_runner',None)
-        if repeat is not None and repeat.running():return True
         with worker._lock:
-            if worker.execution_reserved():return True
-            handles=[*worker._pending,worker._active]
+            # One automatic read may wait behind the active operation. Waiting
+            # for an entirely idle worker starves reads during a fast PID loop.
+            handles=worker._pending
             return any(h is not None and not h.done.is_set() and not getattr(h,'automatic_monitor',False) for h in handles)
 
     def permitted(self, worker):
         with self.lock:
             return (not worker._closing and not worker.connection_error and not getattr(worker, "io_fault", False) and worker.ps is not None
-                    and endpoint(worker) not in self.blocked and not self.foreground_busy(worker))
+                    and endpoint(worker) not in self.blocked)
 
     def tick(self):
         with self.lock:
@@ -101,7 +97,7 @@ class AutoMonitor:
                     self.pending.pop(worker, None)
                     continue
                 if key in self.active or self.clock() < self.next_at.get(key, 0): continue
-                if self.foreground_busy(worker) or worker.has_requests(): continue
+                if self.foreground_busy(worker): continue
                 read = self.pending[worker]
                 try:
                     if read is None:

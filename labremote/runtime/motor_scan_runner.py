@@ -32,7 +32,7 @@ class MotorScanRunner(WorkflowTask):
             return self.run_scan(config)
         # Each FPGA count is an atomic FIFO operation; independent scans may
         # share it while reserving their own motors for the full scan.
-        return self.launch(run,(self.worker,*(api.worker for api in motors)),config,parent,shared_participants=(self.worker,))
+        return self.launch(run,(self.worker,*(api.worker for api in motors)),config,parent)
 
     def position(self,state):
         if state.get('online') is False:raise RuntimeError('Motor USB is closed or offline; Open the motor first')

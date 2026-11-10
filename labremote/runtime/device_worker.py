@@ -28,7 +28,6 @@ class DeviceWorker(QtCore.QThread):
         self._lock = threading.RLock()
         self._pending = []
         self._active = None
-        self._execution_owner = None
         self._closing = False
         self._background_tasks = set()
         self.ui_heartbeat = None
@@ -54,76 +53,13 @@ class DeviceWorker(QtCore.QThread):
             if self._closing:
                 handle.finish(OperationCancelled('Worker is shutting down'))
                 return handle
+            # Context is diagnostic only. The worker FIFO owns each operation.
             owner=getattr(handle.group,'owner',None)
-            automatic=getattr(handle,'automatic_monitor',False)
-            repeat_handle=getattr(getattr(self,'waveform_runner',None),'handle',None)
-            terminating=handle.action=='DISCONNECT' or (handle.action=='ABORT' and repeat_handle is not None and repeat_handle.cancelled())
-            try:
-                current=self.execution_owner()
-                if current is not None and current is not owner and not terminating:
-                    if automatic:
-                        self._monitor_pending.discard(handle.monitor_key)
-                        handle.finish();return handle
-                    raise self._ownership_error(handle.action)
-                if owner is not None and not terminating:self.reserve_execution(owner,shared=self in getattr(handle.group,'shared_workers',()))
-            except Exception as error:
-                self._monitor_pending.discard(handle.monitor_key)
-                handle.finish(error);self.handle_changed.emit(handle);return handle
+            if owner is not None:owner.remember(self)
             self._pending.append(handle)
             self._queue.put(handle)
         self.handle_changed.emit(handle)
         return handle
-
-    def _ownership_error(self,action):
-        from .errors import ResourceBusy
-        return ResourceBusy(f'{self.name or self.family}: {action} blocked; device reserved by {self.execution_owner()}')
-
-    def reserve_execution(self,owner,shared=False):
-        """Fail fast for another owner; automatic reads drain on this FIFO."""
-        with self._lock:
-            current=self.execution_owner()
-            if current is owner:return False
-            if current is not None:raise self._ownership_error('execution')
-            from .execution_scope import shared_owners
-            shared_users=shared_owners(self)
-            if shared and owner in shared_users:return False
-            if not shared and shared_users-{owner}:
-                from .errors import ResourceBusy
-                raise ResourceBusy(f'{self.name or self.family}: device busy with shared executions')
-            repeat=getattr(self,'waveform_runner',None)
-            if repeat is not None and repeat.running() and getattr(getattr(repeat,'handle',None),'group',None) is not None and repeat.handle.group.owner is not owner:
-                from .errors import ResourceBusy
-                raise ResourceBusy(f'{self.name or self.family}: device busy with {repeat.label} [{repeat.handle.status}]')
-            for h in [*self._pending,self._active]:
-                if h is not None and not h.done.is_set() and not getattr(h,'automatic_monitor',False) and getattr(h.group,'owner',None) is not owner and not (shared and self in getattr(h.group,'shared_workers',())):
-                    from .errors import ResourceBusy
-                    raise ResourceBusy(f'{self.name or self.family}: device busy with {h.action} [{h.status}], request={h.request_id}')
-            from .execution_scope import claim
-            claim(self,owner,shared=shared)
-            self._execution_owner=owner;owner.remember(self);return True
-
-    def release_execution(self,owner):
-        with self._lock:
-            from .execution_scope import release
-            release(self,owner)
-            if self._execution_owner is owner:self._execution_owner=None
-
-    def execution_owner(self):
-        from .execution_scope import owner_for
-        return owner_for(self)
-
-    def check_execution(self,handle):
-        """Also guard commands queued through another alias of this device."""
-        with self._lock:
-            owner=self.execution_owner()
-            repeat_handle=getattr(getattr(self,'waveform_runner',None),'handle',None)
-            terminating=handle.action=='DISCONNECT' or (handle.action=='ABORT' and repeat_handle is not None and repeat_handle.cancelled())
-            if owner is not None and owner is not getattr(handle.group,'owner',None) and not terminating:
-                raise self._ownership_error(handle.action)
-
-    def execution_reserved(self):
-        from .execution_scope import shared_owners
-        return self.execution_owner() is not None or bool(shared_owners(self))
 
     def has_foreground_requests(self):
         with self._lock:
