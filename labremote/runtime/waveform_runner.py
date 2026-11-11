@@ -47,8 +47,12 @@ class WaveformRunner:
             group=WorkflowGroup(stop=parent.stop if parent is not None else None)
             if parent is not None:group.owner=parent.owner;group.owns_execution=False
             handle=WaveformHandle(self.label,None,group=group)
+            if error is None and hasattr(worker,'reserve_fpga'):
+                try:worker.reserve_fpga(group.owner)
+                except Exception as exc:error=exc
             if parent is not None:parent.add(handle)
             if error is not None:
+                if group.owns_execution:group.owner.release()
                 if parent is not None:parent.stop.set()
                 handle.finish(error)
                 worker.failure.emit(self.label,str(error))
@@ -57,7 +61,8 @@ class WaveformRunner:
             group.waveform_run_id=handle.request_id
             self.handle=handle
             handle.subscribe(lambda h:worker.waveform_changed.emit(h))
-            self._thread=threading.Thread(target=self._run,args=(handle,channels,interval_s),name='waveform-'+str(worker.name))
+            from contextvars import copy_context
+            self._thread=threading.Thread(target=copy_context().run,args=(self._run,handle,channels,interval_s),name='waveform-'+str(worker.name))
             self._thread.start()
             return handle
 

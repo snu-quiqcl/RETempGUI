@@ -124,8 +124,10 @@ class WindfreakAPI(DeviceAPI):
         raise ValueError('Unknown operation: ' + action)
 
 class Devices:
-    def __init__(self, bindings, *, group=None):
+    def __init__(self, bindings, *, group=None, single_fpga=False, fpga_id=None):
         self.group = group
+        self._single_fpga=single_fpga
+        self._fpga_id=fpga_id
         self._workers = {}
         for family, bridge in bindings.values():
             if family not in SUPPORTED_FAMILIES: continue
@@ -175,8 +177,15 @@ class Devices:
     def mdt(self, name='mdt693b'):
         return MDTAPI(self._workers['mdt',name],group=self.group)
 
-    def fpga(self, name='fpga_local'):
-        return FPGAAPI(self._resolve_worker('fpga',name),group=self.group)
+    def fpga(self, name=None):
+        name=name or self._fpga_id or 'fpga_local'
+        worker=self._resolve_worker('fpga',name)
+        if self._single_fpga:
+            if self._fpga_id is not None and self._fpga_id != worker.name:
+                raise ValueError('A workflow can use only one FPGA: '+self._fpga_id)
+            self._fpga_id=worker.name
+            if hasattr(worker,'reserve_fpga'):worker.reserve_fpga(self.group.owner)
+        return FPGAAPI(worker,group=self.group)
 
     def ccd(self, name='ccd_local'):
         from labremote.devices.ccd.worker import CCDAPI
@@ -549,6 +558,17 @@ class FPGAAPI(DeviceAPI):
         mapping.update({role: names[name] for role, name in roles.items()})
         document['experiments'][experiment] = mapping
         return scope(Profile(document), experiment)
+
+    def run_phase_shifter(self, *, settings, directory=None):
+        return self.worker.phase_shifter_runner.start(settings,directory=directory,parent=self.group)
+
+    def hold_phase(self,phase_angle_deg,phase_outputs,calibration=None):
+        from labremote.phase_shifter import hold
+        from labremote.devices.fpga.adapter import Cancellation
+        from labremote.devices.fpga.mapping import scope,FROZEN
+        with scope(FROZEN.get().get(self.worker.name,self.worker.profile)):
+            value=hold.request(phase_angle_deg,phase_outputs,calibration=calibration)
+        return self._submit('PHASE_HOLD',lambda w:hold.apply(w.raw_device.controller,value,Cancellation()),arguments=value)
 
     def run_micromotion(self, *, settings, mode='scan', dac=None, directory=None, candidate=None):
         return self.worker.micromotion_runner.start(settings=settings,mode=mode,

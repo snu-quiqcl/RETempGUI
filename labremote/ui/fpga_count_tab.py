@@ -108,8 +108,9 @@ class FPGACountTab(QtWidgets.QWidget):
                        for r in self.worker.scan_runners.values())
         if settling and not self.settle_timer.isActive():self.settle_timer.start()
         elif not settling:self.settle_timer.stop()
-        self.start.setEnabled(self.connected and not busy)
-        self.once.setEnabled(self.connected and not busy)
+        occupied=getattr(self.worker,'_fpga_owner',None) is not None or any(t.running() for t in self.worker._background_tasks)
+        self.start.setEnabled(self.connected and not busy and not occupied)
+        self.once.setEnabled(self.connected and not busy and not occupied)
         self.stop.setEnabled(busy)
         for field in (self.channel, self.exposure, self.average, self.interval, self.logging, self.directory, self.browse):
             field.setEnabled(not busy)
@@ -122,7 +123,7 @@ class FPGACountTab(QtWidgets.QWidget):
         self.status.setText(message); self.controls()
 
     def begin(self, repeat):
-        if not self.connected or self.worker.waveform_runner.running(): return
+        if not self.connected or self.worker.waveform_runner.running() or getattr(self.worker,'_fpga_owner',None) is not None: return
         if self.once_handle is not None and not self.once_handle.done.is_set(): return
         self.log_path = None
         self.log_error = None

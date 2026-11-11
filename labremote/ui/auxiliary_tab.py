@@ -39,14 +39,14 @@ class AuxiliaryTab(QtWidgets.QWidget):
                 self.alias=QtWidgets.QLineEdit(self.worker.profile.alias)
                 self.alias.setProperty('persistInput',False)
                 self.alias.setPlaceholderText('저장 데이터 별명');line.addWidget(self.alias)
-                mapping_button=QtWidgets.QPushButton('FPGA Configuration');line.addWidget(mapping_button)
+                mapping_button=self.mapping_button=QtWidgets.QPushButton('FPGA Configuration');line.addWidget(mapping_button)
                 mapping_button.clicked.connect(self.edit_mapping)
                 self.port_choices=QtWidgets.QComboBox();line.addWidget(self.port_choices,1)
                 self.scan_ports=QtWidgets.QPushButton('포트 검색');line.addWidget(self.scan_ports)
                 self.port_scanner=PortScanner(self)
                 self.port_scanner.found.connect(self._ports_found)
                 self.port_scanner.failed.connect(self._ports_failed)
-                self.port_scanner.finished.connect(lambda:self.scan_ports.setEnabled(not self.connected and not self._closing))
+                self.port_scanner.finished.connect(self._ports_finished)
                 self.scan_ports.clicked.connect(self._search_ports)
                 self.port_choices.activated.connect(lambda _:self.serial.setText(self.port_choices.currentData() or self.serial.text()))
             elif family=='motors':
@@ -128,8 +128,6 @@ class AuxiliaryTab(QtWidgets.QWidget):
 
     def edit_mapping(self):
         from labremote.ui.fpga_mapping import BoardMapping
-        if self.connected:
-            self.message.setText('핀 이름 / 별명 변경 전 FPGA 연결을 해제하세요.');return
         if BoardMapping(self.worker,self).exec_():
             self.refresh_mapping()
 
@@ -154,6 +152,29 @@ class AuxiliaryTab(QtWidgets.QWidget):
                 index=combo.findData(previous);combo.setCurrentIndex(max(0,index))
         self.status.setText(self.worker.profile.alias+' · '+self.name+' — Disconnected')
         self._buttons()
+
+    def attach_fpga_controls(self):
+        if self.family!='fpga':return
+        manual=QtWidgets.QWidget();manual.setLayout(self.layout())
+        root=QtWidgets.QVBoxLayout(self)
+        header=QtWidgets.QHBoxLayout();root.addLayout(header)
+        first=manual.layout().takeAt(0).layout()
+        while first.count():
+            item=first.takeAt(0)
+            if item.widget() is not None:item.widget().hide()
+        header.addWidget(self.status,1);header.addWidget(self.mapping_button);header.addWidget(self.disconnect_btn)
+        self.mapping_button.show();self.disconnect_btn.show()
+        split=QtWidgets.QSplitter();root.addWidget(split)
+        scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setWidget(manual)
+        outputs=QtWidgets.QGroupBox('TRIGGER / 수동 출력');QtWidgets.QVBoxLayout(outputs).addWidget(scroll)
+        counts=QtWidgets.QGroupBox('Input counts');QtWidgets.QVBoxLayout(counts).addWidget(self.input_tab)
+        split.addWidget(outputs);split.addWidget(counts);self.input_tab.show()
+        split.setSizes([580,740])
+        self.connect_btn.hide();self.serial.setReadOnly(True);self.scan_ports.hide();self.port_choices.hide()
+        self.alias.setReadOnly(True)
+        self.mapping_button.setText('핀 이름 설정…')
+        self.instance_timer=QtCore.QTimer(self);self.instance_timer.setInterval(250)
+        self.instance_timer.timeout.connect(self._buttons);self.instance_timer.timeout.connect(self.input_tab.controls);self.instance_timer.start()
 
     def attach_automation(self,bindings):
         if self.family not in ('mdt','fpga'):return
@@ -198,6 +219,10 @@ class AuxiliaryTab(QtWidgets.QWidget):
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(9,3));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumHeight(240);root.addWidget(self.canvas)
 
+    @QtCore.pyqtSlot()
+    def _ports_finished(self):
+        if not self._closing:self.scan_ports.setEnabled(not self.connected)
+
     def _search_ports(self):
         if self.connected or self._closing or self.port_scanner.isRunning():return
         self.scan_ports.setEnabled(False);self.port_scanner.start()
@@ -237,7 +262,9 @@ class AuxiliaryTab(QtWidgets.QWidget):
                 save_port(self.name,info['port'],self._serial_ports);self._saved_port=load_port(self.name)
                 self.serial.setText(info['port'])
             except Exception as exc:self.log_message.emit('FPGA port memory: '+str(exc))
-        self.connected=True;self.status.setText(self.name+' — Connected');self._buttons();self.api.refresh()
+        self.connected=True
+        self.status.setText((self.worker.profile.alias+' · '+self.name+' · '+self.serial.text()+' — 연결됨') if self.family=='fpga' else self.name+' — Connected')
+        self._buttons();self.api.refresh()
 
     def _disconnected(self,message):
         if hasattr(self,'output_pending'):self.output_pending.clear()
@@ -277,12 +304,12 @@ class AuxiliaryTab(QtWidgets.QWidget):
                 if self.connected and value is None and not pending and not failed and OUTPUTS[name][1]!=0:text='읽기 미지원'
                 label.setText(name+'\n'+text+(' *' if commanded and value is not None else ''))
                 label.setProperty('outputValue',value)
-                color='#238636' if value is True else '#b42318' if value is False else '#616161'
+                color='#238636' if value is True else '#616161'
                 label.setStyleSheet('QPushButton { background-color: '+color+'; color: white; border-radius: 4px; padding: 6px; }')
                 label.setToolTip('Commanded state only; this output has no physical readback.' if commanded else 'Click to turn OFF' if value else 'Click to turn ON')
                 if self.connected and value is None and not pending and not failed and OUTPUTS[name][1]!=0:
                     label.setToolTip('Slow port: 상태 읽기 미지원. 클릭하면 ON 명령을 보냅니다. ON/OFF *는 실제 읽기값이 아닌 마지막 성공 명령입니다.')
-                label.setEnabled(self.connected and not pending)
+                label.setEnabled(self.connected and not pending and getattr(self.worker,'_fpga_owner',None) is None)
 
     def _toggle_output(self,name):
         value=not bool(self.output_buttons[name].property('outputValue'))
@@ -373,5 +400,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
     def shutdown(self):
         if hasattr(self,'daily_tab'):self.daily_tab.shutdown()
         if hasattr(self,'decay_tab'):self.decay_tab.shutdown()
-        self._closing=True;self.timer.stop();self.worker.shutdown()
+        self._closing=True;self.timer.stop()
+        if hasattr(self,'instance_timer'):self.instance_timer.stop()
+        self.worker.shutdown()
     def still_running(self):return (hasattr(self,'daily_tab') and self.daily_tab.still_running()) or (hasattr(self,'port_scanner') and self.port_scanner.isRunning()) or self.worker.isRunning() or (hasattr(self.worker,'waveform_runner') and self.worker.waveform_runner.running())

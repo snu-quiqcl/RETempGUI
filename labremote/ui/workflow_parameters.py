@@ -157,6 +157,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
     def __init__(self,job,parent=None,*,bindings_provider=None):
         super().__init__(parent)
         self.job=deepcopy(job);self.base=deepcopy(job['parameters']);self.previous_tab=0
+        self.bindings_provider=bindings_provider
         migration_note=''
         if Path(job['filename']).name in ('re_setup.py','spam_setup.py'):
             from labremote.runtime.setup_workflow import migrate_legacy
@@ -176,6 +177,17 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         self.name=QtWidgets.QLineEdit(job['name']);self.repeat=QtWidgets.QSpinBox();self.repeat.setRange(1,10000);self.repeat.setValue(job['repeat'])
         self.policy=QtWidgets.QComboBox();self.policy.addItems(['stop','skip']);self.policy.setCurrentText(job['on_failure'])
         form.addRow('이름',self.name);form.addRow('반복',self.repeat);form.addRow('실패 시',self.policy)
+        from labremote.runtime.workflow_queue import target_fpga
+        self.original_fpga=target_fpga(job)
+        self.fpga_target=QtWidgets.QComboBox();self.fpga_target.addItem('FPGA 미사용',None)
+        if bindings_provider is not None:
+            for family,bridge in bindings_provider().values():
+                if family=='fpga':self.fpga_target.addItem(bridge.worker.profile.alias+' · '+bridge.worker.name,bridge.worker.name)
+        if self.original_fpga and self.fpga_target.findData(self.original_fpga)<0:
+            self.fpga_target.addItem(self.original_fpga+' · 연결 끊김',self.original_fpga)
+        self.fpga_target.setCurrentIndex(max(0,self.fpga_target.findData(self.original_fpga)))
+        self.refresh_mapping=QtWidgets.QCheckBox('선택한 FPGA의 현재 핀 매핑으로 갱신')
+        form.addRow('실행 FPGA',self.fpga_target);form.addRow(self.refresh_mapping)
         filename=QtWidgets.QLabel(job['filename']);filename.setWordWrap(True);form.addRow('Workflow',filename)
         self.tabs=QtWidgets.QTabWidget();layout.addWidget(self.tabs,1)
         if migration_note:
@@ -281,6 +293,17 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 fresh=freeze_job(job['filename']);job.update(source=fresh['source'],sha256=fresh['sha256'])
             job['monitor']=self.monitor.value()
             job.update(name=self.name.text().strip(),repeat=self.repeat.value(),on_failure=self.policy.currentText(),parameters=parameters)
+            target=self.fpga_target.currentData()
+            if target:
+                job['fpga_id']=target
+                if 'fpga' in job['parameters']:job['parameters']['fpga']=target
+                if target!=self.original_fpga or self.refresh_mapping.isChecked():
+                    bindings=self.bindings_provider() if self.bindings_provider else {}
+                    worker=next((b.worker for f,b in bindings.values() if f=='fpga' and b.worker.name==target),None)
+                    if worker is None:raise ValueError('매핑을 갱신할 FPGA를 연결하세요.')
+                    job['fpga_profiles']={target:worker.profile.document()}
+            elif self.original_fpga:
+                raise ValueError('FPGA를 사용하는 항목의 실행 장비를 선택하세요.')
             validate_plan(dict(schema_version=1,repeat=1,jobs=[job]));self.job=job
         except Exception as exc:self.error.setText(str(exc));return
         super().accept()

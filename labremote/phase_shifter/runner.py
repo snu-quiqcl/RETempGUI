@@ -19,7 +19,7 @@ class PhaseShifterRunner(WorkflowTask):
         super().__init__(worker, 'PHASE_SHIFTER_RAMSEY')
         self.exclusive_fpga = True
 
-    def start(self, settings, directory=None, single=False):
+    def start(self, settings, directory=None, single=False, parent=None):
         join_completed((self.worker,))
         c = config.validate(settings, single=single)
         skipped = []
@@ -30,7 +30,7 @@ class PhaseShifterRunner(WorkflowTask):
                 raise RuntimeError('다른 FPGA 작업이 끝난 뒤 실행하세요.')
             return self.launch(self._execute, (self.worker,),
                 dict(settings=c, directory=str(tab_data_directory(directory, 'phase_shifter')),
-                     scan_points=plan, skipped_angles=skipped, codes=[point['code'] for point in plan]))
+                     scan_points=plan, skipped_angles=skipped, codes=[point['code'] for point in plan]),parent=parent)
 
     def _execute(self):
         from labremote.devices.fpga.adapter import Cancellation

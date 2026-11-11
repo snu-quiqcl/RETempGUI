@@ -85,6 +85,10 @@ class InputState(QtCore.QObject):
         for attr in ('ccd_tab','flip_tab','workflow_tab','queue_tab','monitor_tab','queue_monitor','connection_settings_window'):
             if hasattr(self.owner,attr):roots[attr]=getattr(self.owner,attr)
         if not legacy:
+            workspace=getattr(self.owner,'experiment_workspace',None)
+            if workspace is not None:
+                for i,slot in enumerate(workspace.slots):
+                    for name,view in slot.views.items():roots['experiment/'+str(i)+'/'+name]=view
             if hasattr(self.owner,'motor_tab'):roots['motor_tab']=self.owner.motor_tab
             for name,window in getattr(self.owner,'detail_windows',{}).items():
                 if window not in roots.values():roots['window/'+name]=window

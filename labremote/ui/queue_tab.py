@@ -53,6 +53,10 @@ class QueueTab(QtWidgets.QWidget):
         self.table.setRowCount(len(entries))
         for row,(j,child) in enumerate(entries):
             label=('    ↳ ' if child else '▾ ' if is_group(j) else '')+j['name']
+            if not is_group(j):
+                from labremote.runtime.workflow_queue import target_fpga
+                target=target_fpga(j)
+                if target:label+=' · '+target
             values=(label,j['repeat'],j['on_failure'],f"{len(j['jobs'])} workflows" if is_group(j) else j['filename'])
             from labremote.runtime.monitor_config import settings
             m=settings(j) if not is_group(j) else None
@@ -158,7 +162,14 @@ class QueueTab(QtWidgets.QWidget):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Add workflow',str(Path(__file__).resolve().parents[1]/'workflow'),'Python (*.py)')
         if path:
             try:
-                job=freeze_job(path);selected=self.selected()
+                job=freeze_job(path)
+                from labremote.runtime.workflow_queue import target_fpga
+                target=target_fpga(job)
+                if target:
+                    worker=next((bridge.worker for family,bridge in self.bindings_provider().values() if family=='fpga' and bridge.worker.name==target),None)
+                    if worker is None:raise ValueError('Workflow 대상 FPGA를 먼저 연결하세요: '+target)
+                    job.update(fpga_id=target,fpga_profiles={target:worker.profile.document()})
+                selected=self.selected()
                 top=selected[2][0] if selected else None
                 if not top_level and top is not None and is_group(self.jobs[top]):
                     self.jobs[top]['jobs'].append(job);ref=(top,len(self.jobs[top]['jobs'])-1)
@@ -220,11 +231,11 @@ class QueueTab(QtWidgets.QWidget):
     def progress(self,state):
         current=next(((f"{p['group_name']} [{p['group_iteration']}/{p['group_repeat']}] / " if 'group_id' in p else '')+p['name'] for p in state['steps'] if p['status']=='running'),'')
         done=sum(p['status'] in ('completed','failed','cancelled','skipped') for p in state['steps'])
-        self.status.setText(f"{state['status']} · {done}/{len(state['steps'])} · {current} · {state['folder']}");self.state_changed.emit(state)
+        self.status.setText(f"{state['status']} · {done}/{len(state['steps'])} · {current} · {state.get('waiting_reason','')} · {state['folder']}");self.state_changed.emit(state)
     def pause(self):
         if self.still_running():self.thread.runner.pause_after_current();self.status.setText('현재 workflow 종료 후 일시정지합니다.')
     def resume(self):
-        if self.still_running():self.thread.runner.resume()
+        if self.still_running():self.thread.runner.resume(self.bindings_provider())
     def shutdown(self):
         if self.still_running():self.thread.runner.cancel();self.status.setText('중단 중 — 현재 workflow 정리·저장을 기다립니다.')
     def still_running(self):return self.thread is not None and self.thread.isRunning()

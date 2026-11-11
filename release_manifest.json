@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Per-FPGA windows, isolated pin roles and presets, USB identity and alias storage, frozen workflow mappings and ordered disconnect",
+  "revision_note": "Separate manual FPGA connections/instances from shared selectable experiment workspace; one-FPGA workflow reservation and sequential queue reconnect pause",
   "files": [
     {
       "path": ".gitattributes",
@@ -234,8 +234,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 35463,
-      "sha256": "4a09666b1df3861b94b46ef2dbb324437c5732d23d4d2bb6a6cae72c404e2e17"
+      "bytes": 36663,
+      "sha256": "730530bef796389d748fbf56095a1f82ae8a29a92daf7920a23cc720e3cf1013"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -939,8 +939,8 @@
     },
     {
       "path": "labremote/devices/fpga/worker.py",
-      "bytes": 7335,
-      "sha256": "76fd4c4c73aa145ff0cb25bd559309233ec92e344f941781dacd61a33c362100"
+      "bytes": 8529,
+      "sha256": "bb6416221529f833e90735f4c67f7740e41286372b81c7ff81e3f2c27bec2ee0"
     },
     {
       "path": "labremote/devices/keithley/__init__.py",
@@ -1774,8 +1774,8 @@
     },
     {
       "path": "labremote/runtime/waveform_runner.py",
-      "bytes": 5002,
-      "sha256": "c34ebe37388c484804aa6922171f6cd541b23cb6cc677a3f443203497d764d24"
+      "bytes": 5097,
+      "sha256": "5c285feea34227057550e9b7fc9c1b1e0c5a1da02a11c3207cb4b9484f9c21ce"
     },
     {
       "path": "labremote/runtime/workflow_loader.py",
@@ -1784,8 +1784,8 @@
     },
     {
       "path": "labremote/runtime/workflow_queue.py",
-      "bytes": 13617,
-      "sha256": "b0f2fc56058307622984e08aa5f7dcc6e3f331498d43e20bfd0bb87a513737fa"
+      "bytes": 16363,
+      "sha256": "387ebd3694f20fa2c5bdf321be9bc1ecdaface07a9f356406cf22ba5bae77f47"
     },
     {
       "path": "labremote/runtime/workflow_result.py",
@@ -1794,8 +1794,8 @@
     },
     {
       "path": "labremote/runtime/workflow_runner.py",
-      "bytes": 7825,
-      "sha256": "43b00efb9f126d567f8dcc86a53d6a30789ac12e0d35e22edee4c129f154bb13"
+      "bytes": 8464,
+      "sha256": "0d636313005d506710d6757645cebf649c682af4d31030432cb440d538db1592"
     },
     {
       "path": "labremote/sequence_examples/pmt_exposure.py",
@@ -1809,8 +1809,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 26925,
-      "sha256": "26b67f0d39af3c597ac2742c6804f75c513bfd0444f4e097cad39e9e86e4b14f"
+      "bytes": 28667,
+      "sha256": "b64aa15ce17a4a96c666ee22be37d21f0f22586ebc1fdd3d01e3f5a05ce49e98"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -1819,8 +1819,8 @@
     },
     {
       "path": "labremote/ui/daily_characterization.py",
-      "bytes": 11159,
-      "sha256": "a0a01759ba8e094db43ccd7484af44684f20c61d557cc53ebfbcdfcdb01b28cd"
+      "bytes": 11756,
+      "sha256": "0ee5c24231e4cb8ff579e70fa00b5ad0e208d91f8a929c39a8ae2b9c74ec8466"
     },
     {
       "path": "labremote/ui/decay_tab.py",
@@ -1844,18 +1844,18 @@
     },
     {
       "path": "labremote/ui/experiment_shell.py",
-      "bytes": 24614,
-      "sha256": "eb91be2ad85f147c312398d71f252bdea47a1524fc86d4e13f078a7e1bdb6142"
+      "bytes": 25704,
+      "sha256": "deed837941f982c7c6111d02d254ab10e69b5624751ae69641b5491d11850818"
     },
     {
       "path": "labremote/ui/fpga_count_tab.py",
-      "bytes": 11686,
-      "sha256": "151faad98a0ffef839e407513cadb2295ca262af3a5dddd612b3b9b2fc16cd0a"
+      "bytes": 11904,
+      "sha256": "72022906a90df54f31399b2397ebf59c2f1cd8012c867fd82c4b27fddab9d757"
     },
     {
       "path": "labremote/ui/input_state.py",
-      "bytes": 11641,
-      "sha256": "13ee51653942041fcc9bca102b886416880cca57ca1e62d563a29e7ecf731851"
+      "bytes": 11943,
+      "sha256": "25ec4fbd15b13c103881314187a3216ea0d3e5e09b256a63ba55b47fd2c88018"
     },
     {
       "path": "labremote/ui/library_updates.py",
@@ -1864,8 +1864,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 24539,
-      "sha256": "e91279e0e544f641fccb179e8b127bc626a3d034eb014c45602dc61e004142c2"
+      "bytes": 22931,
+      "sha256": "20d7f099328ffeb85af3073ffc40503f4fd0210e667c571d30b8d55b940da882"
     },
     {
       "path": "labremote/ui/monitor_dashboard.py",
@@ -1899,8 +1899,8 @@
     },
     {
       "path": "labremote/ui/queue_tab.py",
-      "bytes": 18140,
-      "sha256": "865cad70c3bc4a78f90cfd4d1e22c9be422f96762381da6a1d25280e03faa11e"
+      "bytes": 18184,
+      "sha256": "3636e0ebb4ec2d4969277f03878df9ed112a452663edb0fd611487453e6570ba"
     },
     {
       "path": "labremote/ui/rabi_tab.py",
@@ -1969,8 +1969,8 @@
     },
     {
       "path": "labremote/ui/workflow_tab.py",
-      "bytes": 11743,
-      "sha256": "abd5664d5f9f591bb4f5bd89c4be538bc6048868912d171027d99c1963095fde"
+      "bytes": 15516,
+      "sha256": "a897fe873c6c576100848b6a660099a9a87ae7b2dd8454983b8efc6e2e715cac"
     },
     {
       "path": "requirements.txt",
@@ -2079,13 +2079,13 @@
     },
     {
       "path": "docs/MULTI_FPGA_KO.md",
-      "bytes": 6481,
-      "sha256": "a7c04667bb8c08e66f2c50b0fa96fae8b1e21c8628a4b4260ec27e7498538fd2"
+      "bytes": 6770,
+      "sha256": "c0daa5bc013fd2174912974737f283eeb5af9ffe202eac7a77e0959eac3a4e59"
     },
     {
       "path": "labremote/devices/fpga/mapping.py",
-      "bytes": 13392,
-      "sha256": "d49a3c98bee09d98b82b17da33bd3e401d500ea8236a20364df74851138d2e7c"
+      "bytes": 13703,
+      "sha256": "8ce8904c2a63c7f92ecaf95300f2c5e3bd6685d02d1cce50d7a4c2d6bc88ad45"
     },
     {
       "path": "labremote/devices/fpga/registry.py",
@@ -2149,8 +2149,8 @@
     },
     {
       "path": "labremote/phase_shifter/runner.py",
-      "bytes": 5988,
-      "sha256": "16179fea2af57068256d632a4fec5efddd3ac9df658b103fa85a53b8ef7e2f8d"
+      "bytes": 6015,
+      "sha256": "5292e6a46241172e822e8d8d5ac7467f665cd699e5c40ef4a54833706bc96f9a"
     },
     {
       "path": "labremote/phase_shifter/tab.py",
@@ -2169,8 +2169,8 @@
     },
     {
       "path": "labremote/ui/fpga_mapping.py",
-      "bytes": 9355,
-      "sha256": "763c1706cec158cce9a8fcbff8b8ea71d44ae131fe0bf7132376518add69b34c"
+      "bytes": 10287,
+      "sha256": "032050e165068a019ceb5bfc7d5f6ab92b293c53a0f2b5dd346bce8b0082185a"
     },
     {
       "path": "labremote/ui/hom_tab.py",
@@ -2179,8 +2179,8 @@
     },
     {
       "path": "labremote/ui/ion_check_tab.py",
-      "bytes": 14403,
-      "sha256": "02311b4919a1658216f0ece915ab9d4f9a8084b8a08592f74bab3b08eeed0842"
+      "bytes": 14324,
+      "sha256": "e7fad6a87152288946b24ff45f5c495ebc6f30e5854729406c87a1478d45f2b7"
     },
     {
       "path": "labremote/ui/micromotion_tab.py",
@@ -2194,13 +2194,13 @@
     },
     {
       "path": "tests/test_decay.py",
-      "bytes": 13487,
-      "sha256": "b5e6055d87a779f007e5b68e100111cf629ba3ba4895e743590b5ff97384dcc5"
+      "bytes": 13491,
+      "sha256": "5695911f039da14090bd9b3f5a4d99aee7cfd69ecc8f2b83922ec2ab6884ca97"
     },
     {
       "path": "tests/test_entanglement.py",
-      "bytes": 25062,
-      "sha256": "1be952267bb2c70cfe2836ef9ef13d42c184abe092f8d81547aba14975cde890"
+      "bytes": 25090,
+      "sha256": "ccdcccd642a3882c5aedbaa85b9dfd5f18dbbbf1a3c1bb9b9c52152f8a310ecc"
     },
     {
       "path": "tests/test_fpga_sequence_file.py",
@@ -2209,23 +2209,88 @@
     },
     {
       "path": "tests/test_hom.py",
-      "bytes": 18966,
-      "sha256": "5ac045396f95acd46519be7cd289dda3acd64a8ad145eb5a9f9dc0bcef06dae3"
+      "bytes": 18994,
+      "sha256": "c216a2d04453dfb4aed24af1c5d17cb0d73ba5491fc1de5a3a392544cc53845b"
     },
     {
       "path": "tests/test_multi_fpga.py",
-      "bytes": 15786,
-      "sha256": "c0ee85959b0a5e8197a54b5ba2941d32de663b89c1a93b5f01372b68dffd7867"
+      "bytes": 13733,
+      "sha256": "2f3204bf8734ea248e45743b640207c5d60d244e7ca6d5da5f1adb955ae7d875"
     },
     {
       "path": "tests/test_v6_fpga_counts.py",
-      "bytes": 13240,
-      "sha256": "757fe4f1ef951304d8bb6165693f56d028c86bdad2ecc777ef2fa633dfb3d48f"
+      "bytes": 13241,
+      "sha256": "201cf694d479c2728bc3c5b75cc059a5770de81fe73ca70f0a66b44a7c05b5c2"
     },
     {
       "path": "tests/test_v6_workflow_editor.py",
       "bytes": 7652,
       "sha256": "2f2165b63f79ff87ac3ffd25f937d073b9a051a60f99cf71282331839fad7d78"
+    },
+    {
+      "path": "tests/test_fpga_window_lifetime.py",
+      "bytes": 1437,
+      "sha256": "10556613156760725d99740f427b93c177ef9f451ca16fec84ac4377ba972518"
+    },
+    {
+      "path": "docs/FPGA_WORKSPACE_KO.md",
+      "bytes": 4365,
+      "sha256": "9af4b3b2b1a47b66a35680cc6b4120cf1f93d0c906aeeb7d66bb0376f03a4322"
+    },
+    {
+      "path": "labremote/runtime/execution_scope.py",
+      "bytes": 1196,
+      "sha256": "6da4e5009c2cb754470f2cae663010ddae9f581e29944b93abc26d4739f32305"
+    },
+    {
+      "path": "labremote/runtime/experiment_jobs.py",
+      "bytes": 3340,
+      "sha256": "86ed13c62432d723050ea0ff715a11cf43ea5f4606d0ab9baec688cecc9a7096"
+    },
+    {
+      "path": "labremote/ui/experiment_workspace.py",
+      "bytes": 14226,
+      "sha256": "9258abbfd64f7b473be8afa4b5136ad5aeb322e61a848d7ee18494ab7ea60af7"
+    },
+    {
+      "path": "labremote/ui/fpga_connections.py",
+      "bytes": 5338,
+      "sha256": "3f2dddb09824d4d87404e89b6af2230ae5aed121e94af50a24e3630b53b3b989"
+    },
+    {
+      "path": "labremote/ui/workflow_parameters.py",
+      "bytes": 22070,
+      "sha256": "830dc255ec9bd825f913ffaba028d67dc76efb1c9e3a83f14190def052ce45b7"
+    },
+    {
+      "path": "tests/test_experiment_ui.py",
+      "bytes": 9259,
+      "sha256": "e90c8d53117514f8e593f05cac1ef3f9d6ab5ce9b9a710036ef321a9dd907a41"
+    },
+    {
+      "path": "tests/test_fluorescence.py",
+      "bytes": 10675,
+      "sha256": "61d037517271b50e80f9d611f4654a1ea784f873211f2e49d68bcd07d6d6a50c"
+    },
+    {
+      "path": "tests/test_fpga_workspace.py",
+      "bytes": 7867,
+      "sha256": "aee815986fdf96edf9bdce40e625e8477cf123f2547c982e09dfce0026b2a1e9"
+    },
+    {
+      "path": "tests/test_fpga_workspace_window.py",
+      "bytes": 4100,
+      "sha256": "3875373a7dd9cccbc386132ad81c1d8c3a9c7c6faf75299140b0b9f59519893d"
+    },
+    {
+      "path": "tests/test_pulse_experiments.py",
+      "bytes": 11533,
+      "sha256": "8e04eaaf5eaf80ee93cd25aac95ed5f219495b3ff78a948536a2dfc172c85575"
+    },
+    {
+      "path": "tests/test_rabi.py",
+      "bytes": 14188,
+      "sha256": "2e158578aa3ae82653d2c7d82320fa786e4a022ca08b2ee094f078839990664c"
     }
   ]
 }

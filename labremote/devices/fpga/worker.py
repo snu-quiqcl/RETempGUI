@@ -9,6 +9,7 @@ class FPGAWorker(AcquisitionWorker):
     def __init__(self, name='fpga_local'):
         from .mapping import load_profile
         self.profile = load_profile(name)
+        self._fpga_owner = None
         self._disconnecting = False
         self._claimed_port = None
         super().__init__()
@@ -34,10 +35,28 @@ class FPGAWorker(AcquisitionWorker):
         self.micromotion_runner=MicromotionRunner(self)
         self.ramsey_runner=PulseRunner(self,'ramsey');self.spam_runner=PulseRunner(self,'spam');self.initialization_runner=PulseRunner(self,'initialization')
 
+    def reserve_fpga(self, owner):
+        with self._lock:
+            if self._disconnecting or self._closing or self.ps is None or self.connection_error:
+                raise ConnectionError('FPGA is not connected: '+self.name)
+            if self._fpga_owner is owner:return
+            if self._fpga_owner is not None or self.has_foreground_requests():
+                raise RuntimeError('FPGA is occupied: '+self.name)
+            self._fpga_owner=owner
+        owner.remember(self)
+
+    def release_fpga(self, owner):
+        with self._lock:
+            if self._fpga_owner is owner:self._fpga_owner=None
+
     def enqueue(self,handle):
         from .mapping import CURRENT, FROZEN
         from labremote.runtime.errors import OperationCancelled
         with self._lock:
+            owner=getattr(handle.group,'owner',None)
+            if self._fpga_owner is not None and owner is not self._fpga_owner and handle.action != 'DISCONNECT':
+                handle.finish(RuntimeError('FPGA is occupied: '+self.name))
+                return handle
             if self._disconnecting and handle.action not in ('DISCONNECT',):
                 # Cleanup emitted by a cancelled runner must still be admitted.
                 cleanup_groups = [getattr(t, attr, None) for t in self._background_tasks for attr in ('cleanup_group', 'fpga_cleanup_group')]
@@ -71,7 +90,7 @@ class FPGAWorker(AcquisitionWorker):
         with self._lock:
             if profile.device_id != self.profile.device_id:
                 raise ValueError('Cannot change FPGA identity')
-            if self._closing or self._disconnecting or self.waveform_runner.running() or self.has_foreground_requests() or any(t.running() for t in self._background_tasks):
+            if self._closing or self._disconnecting or self._fpga_owner is not None or self.waveform_runner.running() or self.has_foreground_requests() or any(t.running() for t in self._background_tasks):
                 raise RuntimeError('Stop FPGA jobs before changing mapping')
             if self.ps is not None and profile.document()['pins'] != self.profile.document()['pins']:
                 raise RuntimeError('Disconnect before changing board pin names')
@@ -111,12 +130,16 @@ class FPGAWorker(AcquisitionWorker):
             self._disconnecting = True
             result = self._disconnect_handle = ExecutionHandle('DISCONNECT', None)
             tasks = tuple(self._background_tasks)
+            owner=self._fpga_owner
+            cancellation=getattr(owner,'cancellation',None)
+            if cancellation is not None:cancellation.set()
         self.cancel_pending()
 
         def finish():
             try:
                 for task in tasks:
                     task.join()
+                if cancellation is not None:owner.released.wait()
                 DeviceAPI(self)._submit('DISCONNECT', lambda w: w.disconnect_device()).wait()
                 result.finish()
             except Exception as exc:

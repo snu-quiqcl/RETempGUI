@@ -2,16 +2,22 @@ from labremote.runtime.jobs import WorkflowGroup
 from labremote.api.devices import Devices
 from types import SimpleNamespace
 
-def run_workflow(bindings, workflow, *, on_event=None, stop_event=None, parameters=None, run_directory=None, queue_context=None, fpga_profiles=None):
+def run_workflow(bindings, workflow, *, on_event=None, stop_event=None, parameters=None, run_directory=None, queue_context=None, fpga_profiles=None, fpga_id=None):
     from .workflow_result import workflow_session
     from labremote.devices.fpga.mapping import profiles_scope
-    with workflow_session(), profiles_scope(fpga_profiles):
-        return _run_workflow(bindings, workflow, on_event=on_event, stop_event=stop_event, parameters=parameters, run_directory=run_directory, queue_context=queue_context)
+    from .execution_scope import ExecutionOwner, execution_scope
+    owner=ExecutionOwner('Workflow')
+    try:
+        with execution_scope(owner), workflow_session(), profiles_scope(fpga_profiles):
+            return _run_workflow(bindings, workflow, on_event=on_event, stop_event=stop_event, parameters=parameters, run_directory=run_directory, queue_context=queue_context, fpga_id=fpga_id)
+    finally:owner.release()
 
 
-def _run_workflow(bindings, workflow, *, on_event=None, stop_event=None, parameters=None, run_directory=None, queue_context=None):
+def _run_workflow(bindings, workflow, *, on_event=None, stop_event=None, parameters=None, run_directory=None, queue_context=None, fpga_id=None):
     group = WorkflowGroup(stop_event, on_event)
-    devices = Devices(bindings, group=group)
+    group.owner.cancellation=group.stop
+    devices = Devices(bindings, group=group, single_fpga=True, fpga_id=fpga_id)
+    if fpga_id is not None:devices.fpga(fpga_id)
     from copy import deepcopy
     devices.parameters=deepcopy(parameters or {})
     devices.run_directory=run_directory
@@ -83,8 +89,14 @@ class WorkflowTask:
             if self.running():error=RuntimeError(self.label+' is already running or stopping')
             elif any(w._closing or w.ps is None or w.connection_error for w in participants):error=ConnectionError('Connect all participating devices first')
             elif self.label=='MOTOR_SCAN' and conflicting_scan(participants):error=RuntimeError('A participating device already belongs to a scan')
+            if error is None:
+                try:
+                    for w in participants:
+                        if hasattr(w,'reserve_fpga'):w.reserve_fpga(group.owner)
+                except Exception as exc:error=exc
             if parent is not None:parent.add(handle)
             if error is not None:
+                if group.owns_execution:group.owner.release()
                 if parent is not None:parent.stop.set()
                 handle.finish(error);self.worker.task_changed.emit(self.label,handle);self.worker.failure.emit(self.label,str(error));return handle
             for previous in self.participants:previous._background_tasks.discard(self)

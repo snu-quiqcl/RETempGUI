@@ -45,6 +45,7 @@ def freeze_job(filename,*,name=None,repeat=1,on_failure='stop',parameters=None,m
     state = CURRENT.get()
     if state is not None:
         job['fpga_profiles'] = {state[0].device_id: state[0].document()}
+        job['fpga_id'] = state[0].device_id
     return job
 
 def is_group(job):
@@ -93,9 +94,11 @@ def validate_plan(plan):
 
 
 def validate_job(j,ids):
-        if not isinstance(j,dict) or set(j)-{'monitor','fpga_profiles'}!={'id','name','filename','source','sha256','repeat','on_failure','parameters'}:raise ValueError('Invalid Queue job fields')
+        if not isinstance(j,dict) or set(j)-{'monitor','fpga_profiles','fpga_id'}!={'id','name','filename','source','sha256','repeat','on_failure','parameters'}:raise ValueError('Invalid Queue job fields')
         from labremote.devices.fpga.mapping import profiles_scope
         with profiles_scope(j.get('fpga_profiles')):pass
+        target=target_fpga(j)
+        if target is not None and (not isinstance(target,str) or not target.isidentifier()):raise ValueError('Invalid FPGA ID')
         if not all(isinstance(j[k],str) and j[k] for k in ('id','name','filename','source','sha256')):raise ValueError('Invalid workflow identity/source')
         from .monitor_config import settings
         settings(j)
@@ -127,21 +130,61 @@ def expand_steps(plan):
             else:append(item,iteration)
     return steps
 
+def target_fpga(job):
+    import ast
+    names=set()
+    for name in (job.get('fpga_id'),job.get('parameters',{}).get('fpga')):
+        if name:names.add(name)
+    for node in ast.walk(ast.parse(job['source'])):
+        if isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr=='fpga':
+            value=node.args[0] if node.args else next((kw.value for kw in node.keywords if kw.arg=='name'),None)
+            if isinstance(value,ast.Constant) and isinstance(value.value,str):names.add(value.value)
+    if len(names)>1:raise ValueError('Queue 항목 하나는 FPGA 한 대만 사용할 수 있습니다: '+', '.join(sorted(names)))
+    if names:return next(iter(names))
+    profiles=job.get('fpga_profiles',{})
+    return next(iter(profiles)) if len(profiles)==1 else None
+
+
 class QueueRunner:
     def __init__(self,bindings,plan,directory,publish=lambda state:None):
         self.bindings=dict(bindings);self.plan=validate_plan(plan);self.directory=tab_data_directory(directory, 'queues');self.publish=publish
         from labremote.devices.fpga.mapping import profiles_from_bindings
         profiles=profiles_from_bindings(self.bindings)
         for job in workflow_jobs(self.plan['jobs']):
-            if profiles or job.get('fpga_profiles'):
-                job['fpga_profiles']={**deepcopy(profiles), **job.get('fpga_profiles',{})}
+            target=target_fpga(job)
+            if target:
+                job['fpga_id']=target
+                frozen=job.get('fpga_profiles',{}).get(target) or profiles.get(target)
+                if frozen:job['fpga_profiles']={target:deepcopy(frozen)}
         self.stop=threading.Event();self.pause=threading.Event();self.lock=threading.Lock();self.active=None;self.state=None;self.folder=None
     def cancel(self):
         with self.lock:
             self.stop.set()
             if self.active is not None:self.active.set()
     def pause_after_current(self):self.pause.set()
-    def resume(self):self.pause.clear()
+    def resume(self,bindings=None):
+        with self.lock:
+            if bindings is not None:self.bindings=dict(bindings)
+            self.pause.clear()
+
+    def wait_for_fpga(self,job):
+        target=target_fpga(job)
+        if target is None:return True
+        while not self.stop.is_set():
+            with self.lock:bindings=dict(self.bindings)
+            worker=next((bridge.worker for family,bridge in bindings.values() if family=='fpga' and bridge.worker.name==target),None)
+            reason=''
+            if worker is None or worker.ps is None or worker.connection_error or worker._closing or worker._disconnecting:
+                reason=target+' 연결 끊김 · 개별 연결 후 계속을 누르세요.'
+            elif getattr(worker,'_fpga_owner',None) is not None or worker.has_foreground_requests():
+                reason=target+' 사용 중 · 완료 후 계속을 누르세요.'
+            elif job.get('fpga_profiles',{}).get(target,{}).get('pins',worker.profile.document()['pins']) != worker.profile.document()['pins']:
+                reason=target+' 핀 이름이 Queue 저장 시점과 다릅니다. Queue 중지 후 항목을 수정하세요.'
+            if not reason:return True
+            self.pause.set();self.state.update(status='paused',waiting_reason=reason);self.commit()
+            while self.pause.is_set() and not self.stop.wait(.1):pass
+            if not self.stop.is_set():self.state.update(status='running',waiting_reason='');self.commit()
+        return False
     def commit(self):
         self.state['updated_at']=now();save(self.folder/'queue_manifest.json',self.state);self.publish(deepcopy(self.state))
     def run(self):
@@ -162,7 +205,9 @@ class QueueRunner:
                     while self.pause.is_set() and not self.stop.wait(.1):pass
                     if self.stop.is_set():break
                     self.state['status']='running';self.commit()
-                job=jobs[step['job_id']];folder=self.folder/'steps'/step['step_id'];folder.mkdir(parents=True,exist_ok=False)
+                job=jobs[step['job_id']]
+                if not self.wait_for_fpga(job):break
+                folder=self.folder/'steps'/step['step_id'];folder.mkdir(parents=True,exist_ok=False)
                 (folder/'workflow.py').write_text(job['source'],encoding='utf-8');save(folder/'parameters.json',job['parameters'])
                 step.update(status='running',started_at=now(),directory=folder.relative_to(self.folder).as_posix());self.commit()
                 started=time.monotonic();local=CancellationToken()
@@ -176,7 +221,7 @@ class QueueRunner:
                         context={k:step[k] for k in ('step_id','iteration','job_repeat','group_id','group_name','group_iteration','group_repeat') if k in step}
                         context['queue_id']=self.state['queue_id']
                         save(folder/'queue_context.json',context)
-                        result=run_workflow(self.bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context,fpga_profiles=job.get('fpga_profiles'))
+                        result=run_workflow(self.bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context,fpga_profiles=job.get('fpga_profiles'),fpga_id=target_fpga(job))
                 except Exception as exc:
                     error_details=traceback.format_exc()
                     with owner.lock:used_workers=tuple(owner.workers)

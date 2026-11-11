@@ -32,11 +32,13 @@ class ExperimentShellMixin:
             index=self.device_tabs.indexOf(widget)
             if index>=0:self.device_tabs.removeTab(index)
             window=DetailWindow(title,widget,self);self.detail_windows[title]=window;self.device_tabs.detail_windows[widget]=window
-        for name,panel in self.family_tabs['fpga'].items():
-            self.detail_windows['FPGA · '+name]=panel.fpga_window
+        from .fpga_connections import FPGAConnections
+        self.fpga_connections=FPGAConnections(self)
+        self.family_subtabs['fpga'].insertTab(0,self.fpga_connections,'장비 연결')
         self.home=QtWidgets.QWidget();root=QtWidgets.QVBoxLayout(self.home);root.setSpacing(14)
         heading=QtWidgets.QHBoxLayout();heading.addWidget(QtWidgets.QLabel('실험 준비'),1)
         fpga_button=QtWidgets.QPushButton('로컬 FPGA 검색 / 연결');fpga_button.clicked.connect(self.open_local_fpga);heading.addWidget(fpga_button)
+        experiments=QtWidgets.QPushButton('실험 창 열기');experiments.clicked.connect(lambda:self.detail_windows['실험'].open());heading.addWidget(experiments)
         settings=QtWidgets.QPushButton('연결 설정 / 장비 목록');heading.addWidget(settings);root.addLayout(heading)
         self.connection_settings_window=DetailWindow('연결 설정',server_panel,self);settings.clicked.connect(self.connection_settings_window.open)
         box=QtWidgets.QGroupBox('Configuration');line=QtWidgets.QHBoxLayout(box)
@@ -63,6 +65,9 @@ class ExperimentShellMixin:
         from labremote.ui.queue_tab import QueueTab
         from labremote.ui.queue_monitor import QueueMonitor
         self.queue_tab=QueueTab(self._bindings,self)
+        from .experiment_workspace import ExperimentWorkspace
+        self.experiment_workspace=ExperimentWorkspace(self)
+        self.detail_windows['실험']=DetailWindow('실험',self.experiment_workspace,self)
         self.queue_monitor=QueueMonitor(self)
         self.queue_tab.state_changed.connect(self.queue_monitor.accept_live)
         self.queue_tab.plan_changed.connect(self.queue_monitor.accept_plan)
@@ -92,14 +97,17 @@ class ExperimentShellMixin:
             action.triggered.connect(window.open)
 
     def open_local_fpga(self):
-        from .fpga_mapping import LocalFPGADialog
-        if not hasattr(self,'local_fpga_dialog'):self.local_fpga_dialog=LocalFPGADialog(self)
-        self.local_fpga_dialog.show();self.local_fpga_dialog.raise_()
+        self.detail_windows['FPGA'].open()
+        self.family_subtabs['fpga'].setCurrentWidget(self.fpga_connections)
+        self.fpga_connections.search()
 
     def open_device_control(self,family,name=None):
         if self._closing:return
         if family=='fpga' and name in self.family_tabs['fpga']:
-            self.family_tabs['fpga'][name].fpga_window.open();return
+            panel=self.family_tabs['fpga'][name];tabs=self.family_subtabs['fpga']
+            self.detail_windows['FPGA'].open()
+            tabs.setCurrentWidget(panel if tabs.indexOf(panel)>=0 else self.fpga_connections)
+            return
         title='CCD' if family in ('oven_psu','oven_relay') else equipment.FAMILY_GROUP[family]
         window=self.detail_windows[title];window.open()
         if family=='flip':
@@ -126,9 +134,11 @@ class ExperimentShellMixin:
                 self._add_family(family,name)
                 self.equipment_profile=document;self.profile_dirty=True
                 self.refresh_experiment_home()
-                return
+                return True
             self.apply_equipment(document)
-        except Exception as exc:self.shell_message.setText(str(exc))
+        except Exception as exc:
+            self.shell_message.setText(str(exc))
+            return False
 
     def selected_equipment(self,group=None):
         return [e for e in self.equipment_profile['devices'] if e['enabled'] and (group is None or e['group']==group)]
@@ -139,6 +149,7 @@ class ExperimentShellMixin:
 
     def ensure_equipment(self,entry):
         family,name=entry['family'],entry['name']
+        if family=='fpga':return  # Registering a saved profile never connects USB.
         if family in self.family_tabs:self._add_family(family,name)
         elif family=='flip':self.flip_tab._add_worker(name)
         elif family=='oven_psu':self.ccd_tab.oven_panel.psu_name.setText(name)
@@ -170,7 +181,7 @@ class ExperimentShellMixin:
         return identity==(*self._endpoint(),target)
 
     def workflows_running(self):
-        return self.workflow_tab.still_running() or self.queue_tab.still_running() or any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values())
+        return (hasattr(self,'experiment_workspace') and self.experiment_workspace.still_running()) or self.workflow_tab.still_running() or self.queue_tab.still_running() or any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values())
 
     def active_experiment_tasks(self):
         tasks={t for panel in self._panels() for t in getattr(panel.worker,'_background_tasks',())}
@@ -223,9 +234,10 @@ class ExperimentShellMixin:
     def connect_equipment(self,group=None):
         if self._discovery_pending:
             self.shell_message.setText('서버 장비 목록 조회가 끝난 뒤 연결하세요.');return
+        if group=='FPGA':self.open_local_fpga();return
         if self._closing or self.workflows_running() or self.active_experiment_tasks():self.shell_message.setText('실행 중인 작업 종료 후 연결하세요.');return
         if self.connection_queue or self.connection_handle is not None:return
-        self.connection_queue=deque(self.selected_equipment(group));self.shell_message.setText('선택한 장비를 순서대로 연결합니다. 실패한 장비는 재연결 버튼으로 다시 시도하세요.')
+        self.connection_queue=deque(e for e in self.selected_equipment(group) if e['family']!='fpga');self.shell_message.setText('선택한 장비를 순서대로 연결합니다. 실패한 장비는 재연결 버튼으로 다시 시도하세요.')
         self.pump_connections()
 
     def connect_equipment_entry(self,entry):
@@ -238,7 +250,7 @@ class ExperimentShellMixin:
         if family=='ccd':
             if not worker.isRunning():worker._closing=False;worker.start()
             return self.ccd_tab.api.connect(**self.ccd_tab.settings())
-        if family=='fpga':return self.family_tabs[family][name]._connect()
+        if family=='fpga':raise RuntimeError('FPGA 장비 연결 탭에서 개별 연결하세요.')
         if family=='motors':return self.family_tabs[family][name].api.connect_motor(*self._endpoint(),self.family_tabs[family][name].target.text().strip())
         if family=='flip':
             from labremote.devices.flip.settings import save_endpoint
@@ -288,6 +300,9 @@ class ExperimentShellMixin:
 
     def stop_experiment_tasks(self):
         self.connection_queue.clear();self.workflow_tab.cancel();self.queue_tab.shutdown()
+        for slot in self.experiment_workspace.slots:
+            for view in slot.views.values():
+                if hasattr(view,'cancel') and hasattr(view,'source'):view.cancel()
         for panel in self.family_tabs['fpga'].values():
             if hasattr(panel,'daily_tab'):panel.daily_tab.workflow.cancel()
         for task in self.active_experiment_tasks():task.cancel()

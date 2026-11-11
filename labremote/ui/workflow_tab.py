@@ -17,6 +17,7 @@ class WorkflowThread(QtCore.QThread):
         self.bindings = dict(bindings)
         from labremote.devices.fpga.mapping import profiles_from_bindings
         self.fpga_profiles = profiles_from_bindings(self.bindings)
+        self.fpga_id=next(iter(self.fpga_profiles)) if len(self.fpga_profiles)==1 else None
         from labremote.runtime.jobs import CancellationToken
         self.stop_event = CancellationToken()
 
@@ -25,7 +26,7 @@ class WorkflowThread(QtCore.QThread):
             if self.stop_event.is_set(): raise OperationCancelled('Stopped before loading workflow')
             from labremote.runtime.workflow_result import workflow_session
             with workflow_session(), load_workflow(self.source, self.filename) as workflow:
-                result = run_workflow(self.bindings, workflow, stop_event=self.stop_event, fpga_profiles=self.fpga_profiles)
+                result = run_workflow(self.bindings, workflow, stop_event=self.stop_event, fpga_profiles=self.fpga_profiles,fpga_id=self.fpga_id)
             self.result_ready.emit(result)
         except Exception as error:
             self.error_ready.emit(f'{type(error).__name__}: {error}', isinstance(error, OperationCancelled))
@@ -44,6 +45,11 @@ class WorkflowTab(QtWidgets.QWidget):
         self.filename = None
         self.workflow_root = Path(__file__).resolve().parents[1] / 'workflow'
         layout = QtWidgets.QVBoxLayout(self)
+        self.fpga_selector=QtWidgets.QComboBox();self.fpga_selector.setProperty('persistInput',False)
+        self.fpga_selector.addItem('FPGA 미사용',None);layout.addWidget(self.fpga_selector)
+        self.fixed_fpga=None
+        self.target_timer=QtCore.QTimer(self);self.target_timer.setInterval(300)
+        self.target_timer.timeout.connect(self.refresh_fpga);self.target_timer.start()
         note = QtWidgets.QLabel('파일의 main(devices)를 실행합니다. 각 operation 뒤에 .wait()를 붙이면 순서대로 실행됩니다.')
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -69,6 +75,8 @@ class WorkflowTab(QtWidgets.QWidget):
         self.run_button = QtWidgets.QPushButton('저장 후 실행')
         self.stop_button = QtWidgets.QPushButton('중단')
         for button in (self.save_button, self.save_as_button, self.run_button, self.stop_button): row.addWidget(button)
+        self.queue_button=QtWidgets.QPushButton('Queue에 추가');row.addWidget(self.queue_button)
+        self.queue_button.clicked.connect(self.add_to_queue)
         row.addStretch(1)
         layout.addLayout(row)
         self.status = QtWidgets.QLabel('대기 중')
@@ -88,6 +96,45 @@ class WorkflowTab(QtWidgets.QWidget):
         self.save_shortcut.activated.connect(self.save_code)
         self.refresh_files()
         self._editing(True)
+
+    def refresh_fpga(self):
+        if self.still_running():return
+        selected=self.fixed_fpga or self.fpga_selector.currentData()
+        items=[('FPGA 미사용',None)]
+        for family,bridge in self.bindings_provider().values():
+            if family=='fpga':items.append((bridge.worker.profile.alias+' · '+bridge.worker.name,bridge.worker.name))
+        if selected and selected not in [n for _,n in items]:items.append((selected+' · 연결 끊김',selected))
+        previous=[(self.fpga_selector.itemText(i),self.fpga_selector.itemData(i)) for i in range(self.fpga_selector.count())]
+        if previous!=items:
+            with QtCore.QSignalBlocker(self.fpga_selector):
+                self.fpga_selector.clear()
+                for title,name in items:self.fpga_selector.addItem(title,name)
+                self.fpga_selector.setCurrentIndex(max(0,self.fpga_selector.findData(selected)))
+
+    def add_to_queue(self):
+        try:
+            if self.still_running():raise RuntimeError('실행 완료 후 Queue에 추가하세요.')
+            host=self.parent()
+            while host is not None and not hasattr(host,'queue_tab'):host=host.parent()
+            if host is None:
+                owner=getattr(self.bindings_provider,'__self__',None)
+                host=getattr(owner,'host',owner)
+            queue=getattr(host,'queue_tab',None)
+            if queue is None or queue.still_running():raise RuntimeError('편집 가능한 Queue가 없습니다.')
+            from labremote.runtime.experiment_jobs import source_job
+            selected=self.fixed_fpga or self.fpga_selector.currentData()
+            worker=next((bridge.worker for family,bridge in self.bindings_provider().values() if family=='fpga' and bridge.worker.name==selected),None)
+            if selected and worker is None:raise ValueError('선택한 FPGA를 연결하세요.')
+            job=source_job(self.source.toPlainText(),self.filename or 'workflow.py','Workflow',{},worker.profile if worker else None)
+            from labremote.runtime.workflow_queue import validate_plan, target_fpga
+            import ast
+            uses_fpga=any(isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr=='fpga' for node in ast.walk(ast.parse(job['source'])))
+            if (uses_fpga or target_fpga(job)) and worker is None:
+                raise ValueError('Queue에 저장할 FPGA를 먼저 선택하세요.')
+            validate_plan(dict(schema_version=1,repeat=1,jobs=[job]))
+            queue.jobs.append(job);queue.dirty=True;queue.refresh(len(queue.jobs)-1)
+            self.status.setText('현재 코드 · FPGA · 핀 매핑을 Queue에 저장했습니다.')
+        except Exception as exc:self.status.setText(str(exc))
 
     def _modified(self, modified):
         self.path_label.setText((self.filename or '파일을 선택하세요') + ('  • 수정됨' if modified else ''))
@@ -188,7 +235,9 @@ class WorkflowTab(QtWidgets.QWidget):
             owner=getattr(self.bindings_provider,'__self__',None)
             guard=getattr(owner,'_assert_workflow_ready',None)
             if guard is not None:guard()
-            bindings = {key: value for key, value in self.bindings_provider().items() if value[0] in SUPPORTED_FAMILIES}
+            selected=self.fixed_fpga or self.fpga_selector.currentData()
+            bindings = {key: value for key, value in self.bindings_provider().items() if value[0] in SUPPORTED_FAMILIES and (value[0]!='fpga' or value[1].worker.name==selected)}
+            if selected and not any(v[0]=='fpga' for v in bindings.values()):raise RuntimeError('선택한 FPGA를 연결하세요.')
         except RuntimeError as error:
             self.status.setText(f'실행 불가: {error}');return
         if not bindings:
@@ -232,7 +281,8 @@ class WorkflowTab(QtWidgets.QWidget):
             self.stop_button.setEnabled(False)
             self.status.setText('중단 중 — 진행 중인 assign의 readback을 기다립니다.')
 
-    def shutdown(self): self.cancel()
+    def shutdown(self):
+        self.target_timer.stop();self.cancel()
 
     def still_running(self):
         return self.thread is not None and self.thread.isRunning()

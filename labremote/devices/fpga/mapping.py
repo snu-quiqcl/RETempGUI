@@ -272,6 +272,11 @@ The same immutable profile is retained by a nested operation until it completes.
                 if __limit is not None:
                     # Qt normally drops surplus signal arguments for a slot.
                     args = args[:__limit]
+                if editor and __name=='start':
+                    routing=self.__dict__.get('fpga_role_mapping')
+                    if routing is not None and routing.dirty():
+                        self.status.setText('변경한 핀 매핑을 저장한 뒤 실행하세요.')
+                        return
                 worker = self.__dict__.get('worker')
                 if worker is None and __name == '__init__':
                     worker = kwargs.get('worker') or next((a for a in args if getattr(a, 'family', None) == 'fpga' and hasattr(a, 'profile')), None)

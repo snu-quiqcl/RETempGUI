@@ -132,7 +132,17 @@ class DailyCharacterization(QtWidgets.QTabWidget):
             destination=ROOT/'workflows.local'/worker.profile.device_id/'daily_fluorescence.py'
             if not destination.exists():
                 destination.parent.mkdir(parents=True,exist_ok=True)
-                source=template.read_text(encoding='utf-8').replace("'fpga_local'",repr(worker.profile.device_id))
+                if template.exists():
+                    source=template.read_text(encoding='utf-8')
+                else:
+                    # The editable workflow directory is private/ignored and
+                    # need not exist on another computer or a clean checkout.
+                    source=("def main(devices):\n"
+                            "    fpga = devices.fpga('fpga_local')\n"
+                            "    ea = fpga.run_fluorescence('EA').wait()\n"
+                            "    ec = fpga.run_fluorescence('EC').wait()\n"
+                            "    return {'EA': ea, 'EC': ec}\n")
+                source=source.replace("'fpga_local'",repr(worker.profile.device_id))
                 destination.write_text(source,encoding='utf-8')
             template=destination
         self.workflow.load_path(str(template),check_unsaved=False)

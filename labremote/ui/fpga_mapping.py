@@ -31,6 +31,8 @@ class RoleMapping(W.QGroupBox):
     def refresh(self):
         document = self.worker.profile.document()
         mapping = {**DEFAULT_ROLES, **document['experiments'].get(self.experiment, {})}
+        self._loaded=dict(mapping)
+        self._loaded_document=document
         for role, combo in self.choices.items():
             combo.clear()
             for pin, name in document['pins'].items():
@@ -38,6 +40,10 @@ class RoleMapping(W.QGroupBox):
                     combo.addItem(f'{name} [{pin}]', pin)
             combo.setCurrentIndex(combo.findData(mapping[role]))
         self.status.setText(document['alias'] + ' · ' + document['device_id'] + '\n기존 실험의 역할 이름을 유지하며, 이 표에서 실제 FPGA 핀을 선택합니다. 실행 중 매핑은 변경할 수 없습니다.')
+
+    def dirty(self):
+        current=self._loaded
+        return any(combo.currentData()!=current[role] for role,combo in self.choices.items())
 
     def apply(self):
         try:
@@ -49,8 +55,10 @@ class RoleMapping(W.QGroupBox):
             document['experiments'][self.experiment] = roles
             self.worker.update_profile(Profile(document)); self.refresh()
             self.status.setText('저장 완료 · 다음 실행부터 적용')
+            return True
         except Exception as exc:
             self.status.setText(str(exc))
+            return False
 
 
 class BoardMapping(W.QDialog):
@@ -70,6 +78,10 @@ class BoardMapping(W.QDialog):
         for title, fn in [('Configuration 불러오기',self.load),('다른 이름으로 저장',self.export),('적용 / 로컬 저장',self.apply)]:
             button=W.QPushButton(title); button.clicked.connect(fn); row.addWidget(button)
         self.status=W.QLabel(); self.status.setWordWrap(True); root.addWidget(self.status)
+        if worker.ps is not None:
+            self.alias.setReadOnly(True)
+            self.table.setEditTriggers(W.QAbstractItemView.NoEditTriggers)
+            self.status.setText('핀 이름 변경과 Configuration 불러오기는 연결 해제 후 가능합니다.')
 
     def populate(self):
         self.alias.setText(self.document['alias'])
@@ -86,6 +98,8 @@ class BoardMapping(W.QDialog):
         return Profile(document)
 
     def load(self):
+        if self.worker.ps is not None:
+            self.status.setText('연결 해제 후 Configuration을 불러오세요.');return
         path,_=W.QFileDialog.getOpenFileName(self,'Load FPGA Configuration','','JSON (*.json)')
         if not path:return
         try:
@@ -152,7 +166,8 @@ class LocalFPGADialog(W.QDialog):
                 name,stable=identify(info,self.ports,self.alias.text().strip())
                 if not stable:self.fallback[key]=name
             if name not in self.owner.family_tabs['fpga']:
-                self.owner.register_equipment('fpga',name)
+                if not self.owner.register_equipment('fpga',name):
+                    raise RuntimeError(self.owner.shell_message.text())
             panel=self.owner.family_tabs['fpga'][name]
             panel.serial.setText(info['device']);panel._serial_ports=self.ports
             self.owner.open_device_control('fpga',name)

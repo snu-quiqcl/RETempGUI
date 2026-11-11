@@ -1,3 +1,7 @@
+# 안내
+
+최신 화면 구조와 사용법은 [FPGA_WORKSPACE_KO.md](FPGA_WORKSPACE_KO.md)를 참조하세요. 아래는 이전 FPGA별 전체 실험 창 구조의 기록입니다.
+
 # 여러 FPGA와 장비별 핀 매핑
 
 ## 연결과 식별

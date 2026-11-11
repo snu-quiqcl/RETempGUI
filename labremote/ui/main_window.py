@@ -140,6 +140,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         for name in (*configured_instrument_names('windfreak'), *cfg.get('windfreak_names', [])):
             self._add(name)
         for family in ('sg384','anapico','dds4','ds1052e','mso7054','thermotek','keithley','osa','mdt','fpga','motors','dac'):
+            if family=='fpga':continue  # Manual connection page creates instances.
             for name in (*configured_instrument_names(family), *cfg.get(family+'_names', [])):
                 self._add_family(family,name)
         self.close_timer = QtCore.QTimer(self); self.close_timer.timeout.connect(self._close_ready)
@@ -266,11 +267,15 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             self.others_tabs.setCurrentWidget(self.motor_tab)
             return
         if name in panels:
-            if family=='fpga' and hasattr(panels[name],'fpga_window'):panels[name].fpga_window.open()
-            else:tabs.setCurrentWidget(panels[name])
+            self.open_device_control(family,name) if family=='fpga' else tabs.setCurrentWidget(panels[name])
             return
         if family=='fpga':
-            tabs=QtWidgets.QTabWidget()
+            panel=AuxiliaryTab(family,name,*self._endpoint(),self)
+            panel.hide();panel.attach_fpga_controls()
+            panel.endpoint_provider=self._endpoint
+            panel.log_message.connect(self.log.appendPlainText)
+            panels[name]=panel
+            return
         if family=='dac':
             from labremote.devices.dac.tab import DACPanel
             panel=DACPanel(name,*self._endpoint(),self)
@@ -279,42 +284,12 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         elif family in ('thermotek','keithley'):panel=EquipmentTab(family,name,*self._endpoint(),self)
         elif family in ('osa','mdt','fpga','motors','dac'):panel=AuxiliaryTab(family,name,*self._endpoint(),self)
         else:panel=RFDeviceTab(family,name,*self._endpoint(),self)
-        if family in ("mdt","fpga"):panel.attach_automation(self._bindings)
+        if family=='mdt':panel.attach_automation(self._bindings)
         panel.endpoint_provider=self._endpoint
         panel.log_message.connect(self.log.appendPlainText)
         title=panel.config.device if family=='dac' and name in ('dac_ea','dac_ec') else name
         panels[name]=panel;tabs.addTab(panel,title)
         if family=='dac':tabs.addTab(panel.sequence_tab,title+' Sequence')
-        if family=='fpga':
-            from .daily_characterization import DailyCharacterization
-            panel.daily_tab=DailyCharacterization(panel.worker,self._bindings,self)
-            tabs.addTab(panel.daily_tab,'Daily characterization' if len(panels)==1 else 'Daily · '+name)
-            from .decay_tab import DecayTab
-            panel.decay_tab=DecayTab(panel.worker,self)
-            tabs.addTab(panel.decay_tab,'Decay' if len(panels)==1 else 'Decay · '+name)
-            from .hom_tab import HOMTab
-            panel.hom_tab=HOMTab(panel.worker,self)
-            tabs.addTab(panel.hom_tab,'HOM' if len(panels)==1 else 'HOM · '+name)
-            from .entanglement_tab import EntanglementTab
-            panel.entanglement_tab=EntanglementTab(panel.worker,self)
-            tabs.addTab(panel.entanglement_tab,'Entanglement' if len(panels)==1 else 'Entanglement · '+name)
-            from .ion_check_tab import IonCheckTab
-            panel.ion_check_tab=IonCheckTab(panel.worker,self)
-            tabs.addTab(panel.ion_check_tab,'Ion Check' if len(panels)==1 else 'Ion Check · '+name)
-            from .micromotion_tab import MicromotionTab
-            panel.micromotion_tab=MicromotionTab(panel.worker,self._bindings,self)
-            tabs.addTab(panel.micromotion_tab,'Micromotion' if len(panels)==1 else 'Micromotion · '+name)
-            from labremote.phase_shifter.hold_tab import EtcTab
-            panel.etc_tab=EtcTab(panel.worker,self)
-            tabs.addTab(panel.etc_tab,'etc' if len(panels)==1 else 'etc · '+name)
-            from .detail_window import DetailWindow
-            panel.fpga_window=DetailWindow(panel.worker.profile.alias+' · '+name,tabs,self)
-            panel.fpga_tabs=tabs
-            launcher=QtWidgets.QWidget();line=QtWidgets.QVBoxLayout(launcher)
-            button=QtWidgets.QPushButton(panel.worker.profile.alias+' · 열기')
-            button.clicked.connect(panel.fpga_window.open);line.addWidget(button)
-            self.family_subtabs['fpga'].addTab(launcher,name)
-            if hasattr(self,'detail_windows'):self.detail_windows['FPGA · '+name]=panel.fpga_window
 
 
     def _panels(self):
@@ -349,7 +324,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
                 if answer==QtWidgets.QMessageBox.Cancel or (answer==QtWidgets.QMessageBox.Save and not self.save_equipment()):event.ignore();return
             for panel in self.family_tabs['fpga'].values():
                 if hasattr(panel,'daily_tab') and not panel.daily_tab.workflow.confirm_close():event.ignore();return
-            if not self.workflow_tab.confirm_close() or not self.queue_tab.confirm_close():
+            if not self.experiment_workspace.confirm_close() or not self.workflow_tab.confirm_close() or not self.queue_tab.confirm_close():
                 event.ignore()
                 return
             self.input_state.save()
@@ -357,6 +332,8 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             self._closing = True
             self.connection_queue.clear()
             for detail in [*self.detail_windows.values(),self.connection_settings_window]:detail.setEnabled(False)
+            self.experiment_workspace.shutdown()
+            self.fpga_connections.shutdown()
             self.workflow_tab.shutdown()
             self.queue_tab.shutdown()
             for panel in self.family_tabs['fpga'].values():
@@ -379,11 +356,11 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         else:self.close_equipment_windows();event.accept()
 
     def _running(self):
-        return self.workflow_tab.still_running() or self.queue_tab.still_running() or self.queue_monitor.still_running() or self.discovery_worker.isRunning() or any(p.still_running() for p in self._panels())
+        return self.experiment_workspace.still_running() or self.fpga_connections.still_running() or self.workflow_tab.still_running() or self.queue_tab.still_running() or self.queue_monitor.still_running() or self.discovery_worker.isRunning() or any(p.still_running() for p in self._panels())
 
     def _shutdown_workers_when_ready(self):
         if self._workers_shutdown:return
-        if self.workflow_tab.still_running() or self.queue_tab.still_running():return
+        if self.experiment_workspace.still_running() or self.workflow_tab.still_running() or self.queue_tab.still_running():return
         if any(hasattr(p,'daily_tab') and p.daily_tab.still_running() for p in self.family_tabs['fpga'].values()):return
         from labremote.runtime.workflow_runner import _TASK_LOCK
         with _TASK_LOCK:tasks={task for panel in self._panels() for task in panel.worker._background_tasks}

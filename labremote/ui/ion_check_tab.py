@@ -111,7 +111,7 @@ class IonCheckTab(QtWidgets.QWidget):
         if path:self.directory.setText(path)
 
     def external_busy(self):
-        return any(getattr(self.host,name,None) is not None and getattr(self.host,name).still_running() for name in ('workflow_tab','queue_tab'))
+        return getattr(self.worker,'_fpga_owner',None) is not None
 
     def start(self,mode):
         try:
