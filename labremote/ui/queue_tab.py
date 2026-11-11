@@ -22,12 +22,12 @@ class QueueTab(QtWidgets.QWidget):
         super().__init__(parent);self.bindings_provider=bindings_provider;self.jobs=[];self.thread=None;self.dirty=False
         layout=QtWidgets.QVBoxLayout(self);layout.addWidget(QtWidgets.QLabel('각 작업은 독립된 main(devices) workflow입니다. 추가한 Python 소스와 JSON 변수를 사본으로 보관합니다.'))
         row=QtWidgets.QHBoxLayout();layout.addLayout(row);self.edit_buttons=[]
-        for label,fn in [('Workflow 추가',self.add_file),('편집',self.edit_job),('복제',self.duplicate),('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('Queue 불러오기',self.load_plan),('Queue 저장',self.save_plan)]:
+        for label,fn in [('Workflow 추가',self.add_file),('편집',self.edit_job),('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('Queue 불러오기',self.load_plan),('Queue 저장',self.save_plan)]:
             b=QtWidgets.QPushButton(label);b.clicked.connect(fn);row.addWidget(b);self.edit_buttons.append(b)
         self.table=QtWidgets.QTableWidget(0,7);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일','Monitor','실행 FPGA','핀 매핑'])
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
-        for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('각도별 그룹 생성',self.angle_groups),('선택 그룹 안에 추가',lambda:self.add_file(top_level=False))]:
+        for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('복제',self.duplicate),('선택 그룹 안에 추가',lambda:self.add_file(top_level=False))]:
             button=QtWidgets.QPushButton(label);button.clicked.connect(fn);row.addWidget(button);self.edit_buttons.append(button)
         row.addWidget(QtWidgets.QLabel('Workflow 추가는 그룹 밖에 추가합니다. 그룹 안에 넣으려면 그룹을 선택하고 ‘선택 그룹 안에 추가’를 누르세요.'))
         self._row_refs=[]
@@ -103,47 +103,11 @@ class QueueTab(QtWidgets.QWidget):
 
     @staticmethod
     def copy_item(item):
+        # Preserve every saved setting; only execution identities must be unique.
         item=deepcopy(item);item['id']=uuid4().hex
         if is_group(item):
             for child in item['jobs']:child['id']=uuid4().hex
         return item
-
-    @staticmethod
-    def apply_angle(group,basis,phase):
-        targets=[j for j in group['jobs'] if Path(j['filename']).name in ('queue_entanglement.py','re.py')
-                 and isinstance(j['parameters'].get('settings'),dict)]
-        if not targets:raise ValueError('그룹 안에 Entanglement 탭에서 추가한 얽힘 workflow가 필요합니다.')
-        from labremote.entanglement.config import validate
-        for job in targets:
-            settings=deepcopy(job['parameters']['settings'])
-            settings.update(basis=basis,phase_magnitude_deg=phase)
-            validate(settings)
-            job['parameters']['settings']=settings
-
-    def angle_groups(self):
-        selected=self.selected()
-        if self.still_running() or selected is None:return
-        items,i,ref=selected
-        if not is_group(items[i]):self.status.setText('복제할 Repeat Group을 선택해 주세요.');return
-        dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('각도별 그룹 생성');form=QtWidgets.QFormLayout(dialog)
-        angles=QtWidgets.QLineEdit('0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330')
-        form.addRow('MW detuned 각도 목록 (deg)',angles)
-        form.addRow(QtWidgets.QLabel('선택한 그룹 다음에 각도별 복사본을 추가합니다. 원본 그룹은 유지합니다.'))
-        buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
-        buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);form.addRow(buttons)
-        if dialog.exec_()!=QtWidgets.QDialog.Accepted:return
-        try:
-            import math
-            values=[float(v.strip()) for v in angles.text().split(',')]
-            if not values or len(values)>1000 or any(not math.isfinite(v) or not 0<=v<=360 for v in values):raise ValueError('각도는 0..360 범위여야 합니다 (최대 1000개).')
-            groups=[]
-            for phase in values:
-                group=self.copy_item(items[i]);group['name']=f'MW detuned {phase:g}°'
-                self.apply_angle(group,'mw_detuned',phase);groups.append(group)
-            candidate=self.jobs[:ref[0]+1]+groups+self.jobs[ref[0]+1:]
-            validate_plan(dict(schema_version=2,repeat=self.repeat.value(),jobs=candidate))
-            self.jobs=candidate;self.dirty=True;self.refresh(ref[0]+1)
-        except Exception as exc:self.status.setText('설정 오류: '+str(exc))
 
     def edit_group(self,items,i,ref):
         group=deepcopy(items[i]);dialog=QtWidgets.QDialog(self);dialog.setWindowTitle('Repeat Group');form=QtWidgets.QFormLayout(dialog)

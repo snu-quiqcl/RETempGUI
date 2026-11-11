@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Queue phase-hold workflow with frozen calibration; actual Ion Check routes and setup target selection",
+  "revision_note": "Replace angle generation with independent full-setting Queue duplication",
   "files": [
     {
       "path": ".gitattributes",
@@ -1899,8 +1899,8 @@
     },
     {
       "path": "labremote/ui/queue_tab.py",
-      "bytes": 18970,
-      "sha256": "256ff21c714b8d4b97e7643e4904ab04d76f25941f583f53fe0b068fca753427"
+      "bytes": 16522,
+      "sha256": "f64c6542636dfef7d8572809ab092dea501206d23d26df7d6b02b504819e5949"
     },
     {
       "path": "labremote/ui/rabi_tab.py",
@@ -2234,8 +2234,8 @@
     },
     {
       "path": "docs/FPGA_WORKSPACE_KO.md",
-      "bytes": 9081,
-      "sha256": "dc9a0efed09020c2c12eeace39461681def94f468eb280daf593aa5402297ba8"
+      "bytes": 9504,
+      "sha256": "30693df5885b0eedc188f884327539152ef200467955a9df967b66738426ba51"
     },
     {
       "path": "labremote/runtime/execution_scope.py",
@@ -2344,8 +2344,13 @@
     },
     {
       "path": "tests/test_re_spam_workflows.py",
-      "bytes": 7058,
-      "sha256": "7973410556db3d84ebae8bb21f3cad45f640ae7f33c982037114604015862c40"
+      "bytes": 7043,
+      "sha256": "6882bf08f3fedde6eb81fd7f98f5f32f2841d7bf8864cc7b07165c8b9690dc9f"
+    },
+    {
+      "path": "tests/test_repeat_groups.py",
+      "bytes": 9616,
+      "sha256": "b43522fe11f02bdf16ea9bf466e2a039f6d6ddbcff9d457acab54a2dec1850be"
     }
   ]
 }
