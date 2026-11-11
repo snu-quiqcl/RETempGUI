@@ -5,10 +5,14 @@ from copy import deepcopy
 from pathlib import Path
 from labremote.config.paths import CONFIG_ROOT
 from labremote.devices.fpga.controller import hd, INPUTS
+from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, capability
 
 ROOT=CONFIG_ROOT/'operations/characterization'
-PMTS=tuple(name for name,_ in INPUTS.values() if name.startswith('PMT'))
-AOMS=('AOMA','AOMC')
+COUNTER_PINS=tuple(pin for pin in PINS if 'counter' in capability(pin))
+OUTPUT_PINS=tuple(pin for pin in PINS if 'output' in capability(pin))
+FAST_PINS=tuple(pin for pin in PINS if capability(pin)=='fast output')
+PMTS=tuple(name for name,pin in DEFAULT_ROLES.items() if pin in COUNTER_PINS)+COUNTER_PINS
+AOMS=tuple(name for name,pin in DEFAULT_ROLES.items() if pin in OUTPUT_PINS)+OUTPUT_PINS
 
 
 def read(path):return json.loads(Path(path).read_text(encoding='utf-8-sig'))
@@ -39,7 +43,7 @@ def validate_settings(value):
 
 def validate_route(route):
     if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or route['AOM'] not in AOMS:
-        raise ValueError('Select a supported PMT and AOMA/AOMC')
+        raise ValueError('Select a counter input and an output pin')
     return deepcopy(route)
 
 
@@ -47,7 +51,7 @@ def validate_roles(value):
     if not isinstance(value,dict) or value.get('schema_version')!=1 or value.get('setup')!='EC':raise ValueError('Expected EC setup mapping schema 1')
     if set(value.get('routes',{}))!={'EA','EC'}:raise ValueError('Both EA and EC mappings are required')
     for route in value['routes'].values():
-        if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or route['AOM'] not in AOMS:raise ValueError('Select a supported PMT and AOMA/AOMC')
+        if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or route['AOM'] not in AOMS:raise ValueError('Select a counter input and an output pin')
     return deepcopy(value)
 
 

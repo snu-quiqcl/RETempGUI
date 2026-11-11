@@ -24,7 +24,7 @@ class QueueTab(QtWidgets.QWidget):
         row=QtWidgets.QHBoxLayout();layout.addLayout(row);self.edit_buttons=[]
         for label,fn in [('Workflow 추가',self.add_file),('편집',self.edit_job),('복제',self.duplicate),('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('Queue 불러오기',self.load_plan),('Queue 저장',self.save_plan)]:
             b=QtWidgets.QPushButton(label);b.clicked.connect(fn);row.addWidget(b);self.edit_buttons.append(b)
-        self.table=QtWidgets.QTableWidget(0,5);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일','Monitor'])
+        self.table=QtWidgets.QTableWidget(0,7);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일','Monitor','실행 FPGA','핀 매핑'])
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('각도별 그룹 생성',self.angle_groups),('선택 그룹 안에 추가',lambda:self.add_file(top_level=False))]:
@@ -61,6 +61,12 @@ class QueueTab(QtWidgets.QWidget):
             from labremote.runtime.monitor_config import settings
             m=settings(j) if not is_group(j) else None
             values+=('—' if m is None else {'none':'없음','ion':'Ion Check','spam':'SPAM','ent':'RE'}[m['kind']]+(' · '+m['title'] if m['title'] else ''),)
+            if is_group(j):values+=('항목별 지정','항목별 저장')
+            else:
+                from labremote.runtime.workflow_queue import requires_fpga
+                profile=j.get('fpga_profiles',{}).get(target)
+                values+=((profile['alias']+' · '+target if profile else target or ('선택 필요' if requires_fpga(j) else '미사용')),
+                         '저장됨' if profile else '미저장 · 편집 필요' if target or requires_fpga(j) else '—')
             for k,v in enumerate(values):
                 cell=QtWidgets.QTableWidgetItem(str(v))
                 if is_group(j):
@@ -169,12 +175,16 @@ class QueueTab(QtWidgets.QWidget):
                     worker=next((bridge.worker for family,bridge in self.bindings_provider().values() if family=='fpga' and bridge.worker.name==target),None)
                     if worker is None:raise ValueError('Workflow 대상 FPGA를 먼저 연결하세요: '+target)
                     job.update(fpga_id=target,fpga_profiles={target:worker.profile.document()})
+                from labremote.ui.workflow_parameters import WorkflowJobDialog
+                dialog=WorkflowJobDialog(job,self,bindings_provider=self.bindings_provider)
+                if dialog.exec_()!=QtWidgets.QDialog.Accepted:return
+                job=dialog.job
                 selected=self.selected()
                 top=selected[2][0] if selected else None
                 if not top_level and top is not None and is_group(self.jobs[top]):
                     self.jobs[top]['jobs'].append(job);ref=(top,len(self.jobs[top]['jobs'])-1)
                 else:self.jobs.append(job);ref=(len(self.jobs)-1,None)
-                self.dirty=True;self.refresh(ref);self.edit_job()
+                self.dirty=True;self.refresh(ref)
             except Exception as exc:self.status.setText(str(exc))
     def edit_job(self):
         selected=self.selected()

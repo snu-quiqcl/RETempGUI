@@ -1,3 +1,4 @@
+from labremote.ui.pin_selector import PinSelector
 from labremote.devices.fpga.mapping import settings_path
 from labremote.devices.fpga.mapping import bound_methods
 """Daily experiment views share the existing FPGA worker and workflow API."""
@@ -18,8 +19,8 @@ class FluorescenceTab(QtWidgets.QWidget):
         self.roles={}
         mapping_row=QtWidgets.QHBoxLayout();root.addLayout(mapping_row)
         for role,names in (('PMT',config.PMTS),('AOM',config.AOMS)):
-            box=QtWidgets.QComboBox();box.addItems(names);self.roles[role]=box
-            mapping_row.addWidget(QtWidgets.QLabel(role));mapping_row.addWidget(box)
+            box=PinSelector(worker,'fluorescence',input_pin=role=='PMT');self.roles[role]=box
+            mapping_row.addWidget(QtWidgets.QLabel('검출 입력 (PMT)' if role=='PMT' else '출력 (AOM · 계수 시 미사용)'));mapping_row.addWidget(box)
         row=QtWidgets.QHBoxLayout();root.addLayout(row)
         for key,title,lo,hi in (('exposure_ms','Exposure (ms)',.1,6000),('num_average','Samples / batch',1,65535),('num_repeat','Batches',1,65535),('timeout_s','Timeout / batch (s)',.1,3600)):
             field=QtWidgets.QDoubleSpinBox() if key in ('exposure_ms','timeout_s') else QtWidgets.QSpinBox()
@@ -52,7 +53,7 @@ class FluorescenceTab(QtWidgets.QWidget):
         for role,box in self.roles.items():box.setCurrentText(route[role])
 
     def value(self):
-        return config.validate_settings(dict(schema_version=1,chamber=self.chamber,roles={r:b.currentText() for r,b in self.roles.items()},**{key:field.value() for key,field in self.fields.items()}))
+        return config.validate_settings(dict(schema_version=1,chamber=self.chamber,roles={r:b.route() for r,b in self.roles.items()},**{key:field.value() for key,field in self.fields.items()}))
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load fluorescence settings',str(config.ROOT),'JSON (*.json)')
@@ -85,6 +86,7 @@ class FluorescenceTab(QtWidgets.QWidget):
         self.controls()
 
     def controls(self):
+        for box in self.roles.values():box.refresh()
         runner=self.worker.fluorescence_runner;active=runner.running()
         ready=self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing
         self.start_button.setEnabled(self.config_valid and ready and not active and not self.worker.has_requests() and not self.worker.waveform_runner.running() and not any(t.running() for t in self.worker._background_tasks))

@@ -1,3 +1,4 @@
+from labremote.ui.pin_selector import PinSelector
 from labremote.devices.fpga.mapping import settings_path
 from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
@@ -23,7 +24,7 @@ class PulseExperimentTab(QtWidgets.QWidget):
             field.setRange(lo,hi);field.setSingleStep(step);self.fields[key]=field;form.addRow(title,field)
         mapping=QtWidgets.QGroupBox('이 실험의 FPGA 역할 매핑');mapping_form=QtWidgets.QFormLayout(mapping);left.addWidget(mapping)
         for role,names in rabi.ROLE_CHOICES.items():
-            box=QtWidgets.QComboBox();box.addItems(names);self.roles[role]=box;mapping_form.addRow(role,box)
+            box=PinSelector(worker,kind,input_pin=role=='PMT',fast_only=role!='PMT');self.roles[role]=box;mapping_form.addRow(role,box)
         for title,callback in [('조건·매핑 불러오기',self.load),('조건·매핑 저장',self.save),('다른 이름으로 저장',self.save_as)]:
             button=QtWidgets.QPushButton(title);button.clicked.connect(callback);left.addWidget(button);self.config_buttons.append(button)
         left.addStretch()
@@ -52,7 +53,7 @@ class PulseExperimentTab(QtWidgets.QWidget):
 
     def value(self):
         values={k:round(f.value()*100) if k in model.times(self.kind) else f.value() for k,f in self.fields.items()}
-        return model.validate(self.kind,dict(schema_version=1,experiment=self.kind,chamber=self.chamber,roles={r:b.currentText() for r,b in self.roles.items()},**values))
+        return model.validate(self.kind,dict(schema_version=1,experiment=self.kind,chamber=self.chamber,roles={r:b.route() for r,b in self.roles.items()},**values))
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load '+model.title(self.kind)+' settings',str(config.ROOT),'JSON (*.json)')
@@ -87,6 +88,7 @@ class PulseExperimentTab(QtWidgets.QWidget):
         self.controls()
 
     def controls(self):
+        for box in self.roles.values():box.refresh()
         runner=getattr(self.worker,self.kind+"_runner");active=runner.running()
         busy=self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks)
         self.start_button.setEnabled(self.config_valid and self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing and not busy)

@@ -13,7 +13,7 @@ class RoleMapping(W.QGroupBox):
     def __init__(self, worker, experiment, parent=None):
         super().__init__('실험 신호 → FPGA 핀 이름', parent)
         self.worker, self.experiment = worker, experiment
-        self.setCheckable(True); self.setChecked(False)
+        self.setCheckable(True); self.setChecked(True)
         outer = W.QVBoxLayout(self)
         self.body = W.QWidget(); outer.addWidget(self.body)
         form = W.QFormLayout(self.body)
@@ -26,7 +26,7 @@ class RoleMapping(W.QGroupBox):
         reload = W.QPushButton('현재 매핑 다시 읽기'); reload.clicked.connect(self.refresh)
         buttons.addWidget(apply); buttons.addWidget(reload); form.addRow(buttons)
         self.status = W.QLabel(); self.status.setWordWrap(True); form.addRow(self.status)
-        self.toggled.connect(self.body.setVisible); self.body.hide(); self.refresh()
+        self.toggled.connect(self.body.setVisible); self.refresh()
 
     def refresh(self):
         document = self.worker.profile.document()
@@ -36,8 +36,11 @@ class RoleMapping(W.QGroupBox):
         for role, combo in self.choices.items():
             combo.clear()
             for pin, name in document['pins'].items():
-                if compatible(self.experiment, role, pin):
-                    combo.addItem(f'{name} [{pin}]', pin)
+                if ('input' in capability(pin)) == ('input' in capability(DEFAULT_ROLES[role])):
+                    allowed=compatible(self.experiment, role, pin)
+                    combo.addItem(f'{name} [{pin}]'+(' · 펌웨어 기능 불일치' if not allowed else ''), pin)
+                    item=combo.model().item(combo.count()-1);item.setEnabled(allowed)
+                    item.setToolTip(capability(pin)+(' · 이 실험의 카운터/타이밍 기능과 호환되지 않습니다.' if not allowed else ''))
             combo.setCurrentIndex(combo.findData(mapping[role]))
         self.status.setText(document['alias'] + ' · ' + document['device_id'] + '\n기존 실험의 역할 이름을 유지하며, 이 표에서 실제 FPGA 핀을 선택합니다. 실행 중 매핑은 변경할 수 없습니다.')
 

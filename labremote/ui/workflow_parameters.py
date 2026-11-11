@@ -172,7 +172,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         if kind is None:
             kind={'queue_entanglement.py':'entanglement','re.py':'entanglement','ion_checks.py':'ion','ion_check.py':'ion','spam.py':'spam'}.get(Path(job['filename']).name)
         profile_error=''
-        self.setWindowTitle('Workflow 설정');self.resize(1000,860)
+        self.setWindowTitle('Queue 항목 편집');self.resize(1000,860)
         layout=QtWidgets.QVBoxLayout(self);form=QtWidgets.QFormLayout();layout.addLayout(form)
         self.name=QtWidgets.QLineEdit(job['name']);self.repeat=QtWidgets.QSpinBox();self.repeat.setRange(1,10000);self.repeat.setValue(job['repeat'])
         self.policy=QtWidgets.QComboBox();self.policy.addItems(['stop','skip']);self.policy.setCurrentText(job['on_failure'])
@@ -182,18 +182,22 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         self.fpga_target=QtWidgets.QComboBox();self.fpga_target.addItem('FPGA 미사용',None)
         if bindings_provider is not None:
             for family,bridge in bindings_provider().values():
-                if family=='fpga':self.fpga_target.addItem(bridge.worker.profile.alias+' · '+bridge.worker.name,bridge.worker.name)
+                if family=='fpga' and bridge.worker.ps is not None and not bridge.worker.connection_error and not bridge.worker._closing:
+                    self.fpga_target.addItem(bridge.worker.profile.alias+' · '+bridge.worker.name,bridge.worker.name)
         if self.original_fpga and self.fpga_target.findData(self.original_fpga)<0:
             self.fpga_target.addItem(self.original_fpga+' · 연결 끊김',self.original_fpga)
         self.fpga_target.setCurrentIndex(max(0,self.fpga_target.findData(self.original_fpga)))
         self.refresh_mapping=QtWidgets.QCheckBox('선택한 FPGA의 현재 핀 매핑으로 갱신')
-        form.addRow('실행 FPGA',self.fpga_target);form.addRow(self.refresh_mapping)
+        self.refresh_mapping.setParent(self);self.refresh_mapping.hide()  # Compatibility adapter for the load button.
         filename=QtWidgets.QLabel(job['filename']);filename.setWordWrap(True);form.addRow('Workflow',filename)
         self.tabs=QtWidgets.QTabWidget();layout.addWidget(self.tabs,1)
         if migration_note:
             notice=QtWidgets.QLabel(migration_note);notice.setWordWrap(True);layout.insertWidget(1,notice)
         self.editor=None;self.settings_config=config;self.settings_filename='entanglement.local.json'
-        if kind=='setup':
+        if self.base.get('kind') and isinstance(self.base.get('settings'),dict):
+            from .queue_experiment_parameters import ExperimentParameters
+            self.editor=ExperimentParameters(self.base);self.tabs.addTab(self.editor,'실험 조건')
+        elif kind=='setup':
             from .setup_parameters import SetupParameters
             self.editor=SetupParameters(bindings_provider);self.tabs.addTab(self.editor,'장비 · 파라미터 설정')
             if not self.base:self.base=self.editor.defaults()
@@ -216,13 +220,19 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                     self.base=self.editor.defaults()
             except Exception as exc:profile_error=str(exc)
         self.json=QtWidgets.QPlainTextEdit();self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
-        self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집') if kind!='setup' else -1
-        if kind=='setup':self.json.setParent(self);self.json.hide()
+        if self.editor is not None:self.tabs.setTabText(0,'실험 조건')
+        self.json_index=self.tabs.addTab(self.json,'실험 조건') if self.editor is None else -1
+        from .queue_fpga import QueueFPGASettings
+        self.pin_settings=QueueFPGASettings(job,self.fpga_target,bindings_provider,kind)
+        self.mapping_index=self.tabs.addTab(self.pin_settings,'FPGA · 핀 설정')
         self.monitor=MonitorSettings(job);self.monitor_index=self.tabs.addTab(self.monitor,'Monitor')
+        if self.editor is not None and kind!='setup':self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집')
+        if kind=='setup':self.json.setParent(self);self.json.hide()
+        self.mapping_preview=self.pin_settings.preview
         self.reload=QtWidgets.QCheckBox('Python 소스를 현재 파일에서 다시 가져오기');layout.addWidget(self.reload)
         self.error=QtWidgets.QLabel();self.error.setWordWrap(True);self.error.setStyleSheet('color: #b42318');layout.addWidget(self.error)
         buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
-        buttons.button(QtWidgets.QDialogButtonBox.Ok).setText('적용');buttons.button(QtWidgets.QDialogButtonBox.Cancel).setText('취소')
+        buttons.button(QtWidgets.QDialogButtonBox.Ok).setText('Queue 항목에 적용');buttons.button(QtWidgets.QDialogButtonBox.Cancel).setText('취소')
         buttons.accepted.connect(self.accept);buttons.rejected.connect(self.reject);layout.addWidget(buttons)
         if self.editor is not None:
             try:
@@ -237,8 +247,25 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 self.editor.load_button.clicked.connect(self.load_file)
                 self.editor.saved_button.clicked.connect(lambda:self.load_settings(None))
         self.tabs.currentChanged.connect(self.switch_tab)
+        if self.original_fpga is None:
+            inferred=target_fpga(dict(job,parameters=self.base))
+            index=self.fpga_target.findData(inferred) if inferred else -1
+            if index>=0:self.fpga_target.setCurrentIndex(index)
+        if bindings_provider is not None and hasattr(self.editor,'fpga'):
+            self.editor.fpga.setReadOnly(True)
+            self.editor.fpga.setToolTip('FPGA · 핀 설정 탭에서 변경하세요.')
+        self.fpga_target.currentIndexChanged.connect(self.update_fpga_preview)
+        self.refresh_mapping.toggled.connect(lambda checked:self.pin_settings.load_defaults() if checked else None)
+        self.pin_settings.set_parameters(self.base)
+        self.update_fpga_preview()
         if profile_error:self.error.setText('저장된 측정 설정을 확인하세요: '+profile_error)
 
+    def update_fpga_preview(self,*_):
+        target=self.fpga_target.currentData()
+        from labremote.runtime.workflow_queue import requires_fpga
+        self.fpga_target.setItemText(0,'FPGA 선택 필요' if requires_fpga(dict(self.job,parameters=self.base)) else 'FPGA 미사용')
+        if self.bindings_provider is not None and hasattr(self.editor,'fpga'):
+            self.editor.fpga.setText(target or '')
     def read_json(self):
         value=json.loads(self.json.toPlainText())
         if not isinstance(value,dict):raise ValueError('Parameters must be a JSON object')
@@ -246,13 +273,19 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         return value
 
     def switch_tab(self,index):
-        if self.editor is None:return
+        if self.editor is None:
+            try:self.base=self.read_json();self.pin_settings.set_parameters(self.base);self.previous_tab=index;self.error.clear()
+            except Exception as exc:
+                with QtCore.QSignalBlocker(self.tabs):self.tabs.setCurrentIndex(self.previous_tab)
+                self.error.setText(str(exc))
+            return
         try:
             if self.previous_tab==0 and index!=0:
                 self.base=self.editor.parameters(self.base,validate=False)
                 self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
             elif self.previous_tab==self.json_index:
                 value=self.read_json();self.editor.populate(value);self.base=value
+            self.pin_settings.set_parameters(self.base)
             self.previous_tab=index;self.error.clear()
         except Exception as exc:
             with QtCore.QSignalBlocker(self.tabs):self.tabs.setCurrentIndex(self.previous_tab)
@@ -268,6 +301,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             base=self.read_json() if self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base,validate=False)
             base['settings']=settings;base.setdefault('fpga','fpga_local')
             self.editor.populate(base);self.base=base
+            self.pin_settings.set_parameters(base)
             self.json.setPlainText(json.dumps(base,ensure_ascii=False,indent=2))
             origin=path or self.settings_config.ROOT/self.settings_filename
             self.editor.info.setText('불러온 설정: '+str(origin) if Path(origin).exists() else '프로젝트 기본 설정을 불러왔습니다. 저장된 실험 설정 파일은 없습니다.')
@@ -276,11 +310,21 @@ class WorkflowJobDialog(QtWidgets.QDialog):
 
     def accept(self):
         try:
+            self.update_fpga_preview()
+            from labremote.runtime.workflow_queue import requires_fpga
+            if self.bindings_provider is not None and self.fpga_target.currentData() is None and requires_fpga(dict(self.job,parameters=self.base)):
+                raise ValueError('FPGA · 핀 설정 탭에서 사용할 장비를 선택하세요.')
             parameters=self.read_json() if self.editor is None or self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
+            self.pin_settings.set_parameters(parameters)
+            target=self.fpga_target.currentData();snapshot=None
+            if target and (self.bindings_provider is not None or target in self.pin_settings.documents):
+                parameters,snapshot=self.pin_settings.value(parameters)
             if self.editor is not None:
                 from .setup_parameters import SetupParameters
                 from .spam_parameters import SpamParameters
-                if isinstance(self.editor,SetupParameters):
+                from .queue_experiment_parameters import ExperimentParameters
+                if isinstance(self.editor,ExperimentParameters):pass
+                elif isinstance(self.editor,SetupParameters):
                     from labremote.runtime.setup_workflow import validate
                     validate(parameters)
                 elif isinstance(self.editor,SpamParameters):self.editor.validate_parameters(parameters)
@@ -297,13 +341,12 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             if target:
                 job['fpga_id']=target
                 if 'fpga' in job['parameters']:job['parameters']['fpga']=target
-                if target!=self.original_fpga or self.refresh_mapping.isChecked():
-                    bindings=self.bindings_provider() if self.bindings_provider else {}
-                    worker=next((b.worker for f,b in bindings.values() if f=='fpga' and b.worker.name==target),None)
-                    if worker is None:raise ValueError('매핑을 갱신할 FPGA를 연결하세요.')
-                    job['fpga_profiles']={target:worker.profile.document()}
+                if snapshot is not None:job['fpga_profiles']={target:snapshot}
             elif self.original_fpga:
                 raise ValueError('FPGA를 사용하는 항목의 실행 장비를 선택하세요.')
+            elif self.bindings_provider is not None:
+                from labremote.runtime.workflow_queue import requires_fpga
+                if requires_fpga(job):raise ValueError('FPGA를 사용하는 항목의 실행 장비를 선택하세요.')
             validate_plan(dict(schema_version=1,repeat=1,jobs=[job]));self.job=job
         except Exception as exc:self.error.setText(str(exc));return
         super().accept()

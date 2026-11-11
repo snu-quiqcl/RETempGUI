@@ -22,7 +22,7 @@ def value_of(widget):
         if isinstance(widget,W.QAbstractSpinBox) and widget.isReadOnly():return None
         return {'kind':'number','value':widget.value()}
     if isinstance(widget,W.QComboBox):
-        return {'kind':'choice','value':widget.currentText()}
+        return {'kind':'choice','value':widget.route() if hasattr(widget,'route') else widget.currentText()}
     if isinstance(widget,(W.QCheckBox,W.QRadioButton)):
         return {'kind':'check','value':widget.isChecked()}
     if isinstance(widget,(W.QPlainTextEdit,W.QTextEdit)):
@@ -44,6 +44,9 @@ def apply_value(widget, saved):
             widget.setValue(value if isinstance(widget,W.QDoubleSpinBox) else int(value))
         elif kind=='check' and type(value) is bool:widget.setChecked(value)
         elif kind=='choice' and isinstance(value,str):
+            if hasattr(widget,'route'):
+                try:widget.setCurrentText(value);return True
+                except ValueError:return False
             index=widget.findText(value,QtCore.Qt.MatchExactly)
             if index>=0:widget.setCurrentIndex(index)
             elif widget.isEditable():widget.setEditText(value)

@@ -300,11 +300,11 @@ class AuxiliaryTab(QtWidgets.QWidget):
                         and (latest is individual or latest.quality=='valid')):
                     value=individual.requested;commanded=isinstance(value,bool)
                 if not self.connected or pending:value=None
-                text='Pending' if pending else 'Unknown' if value is None else 'ON' if value else 'OFF'
+                text='연결 안 됨' if not self.connected else 'Pending' if pending else 'Unknown' if value is None else 'ON' if value else 'OFF'
                 if self.connected and value is None and not pending and not failed and OUTPUTS[name][1]!=0:text='읽기 미지원'
                 label.setText(name+'\n'+text+(' *' if commanded and value is not None else ''))
                 label.setProperty('outputValue',value)
-                color='#238636' if value is True else '#616161'
+                color='#238636' if value is True else '#b62324' if value is False else '#616161'
                 label.setStyleSheet('QPushButton { background-color: '+color+'; color: white; border-radius: 4px; padding: 6px; }')
                 label.setToolTip('Commanded state only; this output has no physical readback.' if commanded else 'Click to turn OFF' if value else 'Click to turn ON')
                 if self.connected and value is None and not pending and not failed and OUTPUTS[name][1]!=0:

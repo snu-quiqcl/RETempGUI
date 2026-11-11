@@ -236,7 +236,10 @@ class SignalMap(Mapping):
             return {name: (pin, hd.external_slow_port if pin.startswith(('jc_', 'jd_')) else hd.external_control_port, getattr(hd, name + '_out')) for name, pin in hd.output_mapping.items()}
         return {getattr(hd, name + '_counter_result'): (name, pin) for pin, name in hd.input_mapping.items() if hasattr(hd, name + '_counter_result')}
 
-    def __getitem__(self, name): return self._values()[name]
+    def __getitem__(self, name):
+        if self.outputs and name in PINS and 'output' in capability(name):
+            return (name, hd.external_slow_port if name.startswith(('jc_', 'jd_')) else hd.external_control_port, getattr(hd, name+'_out'))
+        return self._values()[name]
     def __iter__(self): return iter(self._values())
     def __len__(self): return len(self._values())
 
