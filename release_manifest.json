@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Queue-local FPGA/input/output mapping tab with isolated snapshots and per-device editing drafts",
+  "revision_note": "Queue phase-hold workflow with frozen calibration; actual Ion Check routes and setup target selection",
   "files": [
     {
       "path": ".gitattributes",
@@ -1784,8 +1784,8 @@
     },
     {
       "path": "labremote/runtime/workflow_queue.py",
-      "bytes": 17217,
-      "sha256": "f483eed95113d633f1d4cca74283da7d298329f6e4103bf844f3084d731175b4"
+      "bytes": 17512,
+      "sha256": "e81b6b46855bbaebef98c51ee0f46c537346f78d99d21d02442e85e0b2071aa7"
     },
     {
       "path": "labremote/runtime/workflow_result.py",
@@ -2084,8 +2084,8 @@
     },
     {
       "path": "labremote/devices/fpga/mapping.py",
-      "bytes": 14236,
-      "sha256": "6a6287efde399a6c0f75013e4096b2ed7f246197b3bd60a8f2095c04953eca85"
+      "bytes": 14357,
+      "sha256": "8404fda2bd75f052d190d4ae59e5b6002e557d11416a1e8cb6b67c68a64a8bd5"
     },
     {
       "path": "labremote/devices/fpga/registry.py",
@@ -2169,8 +2169,8 @@
     },
     {
       "path": "labremote/ui/fpga_mapping.py",
-      "bytes": 10675,
-      "sha256": "5bcc6167f95a18a27b9b35f3d70f023404381d5d1bdebb20ecc58260a3d6e1f6"
+      "bytes": 11924,
+      "sha256": "391ab9a94c7e18b47a6ebe06d0272671ccfe7771ffae511b9ffe2557b22cdaaa"
     },
     {
       "path": "labremote/ui/hom_tab.py",
@@ -2179,8 +2179,8 @@
     },
     {
       "path": "labremote/ui/ion_check_tab.py",
-      "bytes": 14324,
-      "sha256": "e7fad6a87152288946b24ff45f5c495ebc6f30e5854729406c87a1478d45f2b7"
+      "bytes": 14487,
+      "sha256": "ac2097e53acaed7a4a7962e3d98001baa17c5b39501cf82410b1c7dcf37426e2"
     },
     {
       "path": "labremote/ui/micromotion_tab.py",
@@ -2234,8 +2234,8 @@
     },
     {
       "path": "docs/FPGA_WORKSPACE_KO.md",
-      "bytes": 6562,
-      "sha256": "4315463798a0bb3497762b8a997b62293f106e813998f52e37eb015745ca11f5"
+      "bytes": 9081,
+      "sha256": "dc9a0efed09020c2c12eeace39461681def94f468eb280daf593aa5402297ba8"
     },
     {
       "path": "labremote/runtime/execution_scope.py",
@@ -2259,8 +2259,8 @@
     },
     {
       "path": "labremote/ui/workflow_parameters.py",
-      "bytes": 25275,
-      "sha256": "4b4285339d61e3d917b001f98ef15ff64393c021e347712ac6ff56e37c5a305c"
+      "bytes": 26857,
+      "sha256": "f18750cfab11f5cc358a580bdf236e496900ca55c29557f4b4648d82a7e4179b"
     },
     {
       "path": "tests/test_experiment_ui.py",
@@ -2304,13 +2304,48 @@
     },
     {
       "path": "labremote/ui/queue_fpga.py",
-      "bytes": 14706,
-      "sha256": "03db0ddfe61d964f482a08b2a6775ea6cbf798023100180d5335fda41ceac5dc"
+      "bytes": 17545,
+      "sha256": "aa5670a26a4ef34763e005778b9750509b3df6f279948fbc055094dbe8326f38"
     },
     {
       "path": "tests/test_queue_pin_editor.py",
       "bytes": 8264,
       "sha256": "39ccf78bf9665175719308c1a628ee5cded39d070a21f0ee259c4893926ed16c"
+    },
+    {
+      "path": "labremote/runtime/workflow_ui.py",
+      "bytes": 572,
+      "sha256": "346bdbdcabe4097c8fe287158e1db07ffcc7d4b0527e5b19c22979b3e90dab11"
+    },
+    {
+      "path": "labremote/ui/phase_hold_parameters.py",
+      "bytes": 3510,
+      "sha256": "d234bdad56579b3f9ec5da186b2946ff8d7cd23b73c25799831ea8b83802f9c3"
+    },
+    {
+      "path": "labremote/workflow/phase_hold.py",
+      "bytes": 697,
+      "sha256": "5346a999cc762a5444be80d7bda61f21e6a5638a84a5c25b5fb920dc37b8de84"
+    },
+    {
+      "path": "tests/test_generic_setup.py",
+      "bytes": 9429,
+      "sha256": "54c2c8e56ff4a602ff930f81dec359eaf5e526dbf9a4a284b36761bdf5bc0f31"
+    },
+    {
+      "path": "tests/test_ion_check_tab.py",
+      "bytes": 8631,
+      "sha256": "0c9081c292ff5038765344700e79f1b9134394bee66504827ffc1984c53fe9ac"
+    },
+    {
+      "path": "tests/test_phase_ion_queue.py",
+      "bytes": 8320,
+      "sha256": "9e876cc164199df5f71b87bbe566bcb317591bcfedf4382ee0057be032a0accb"
+    },
+    {
+      "path": "tests/test_re_spam_workflows.py",
+      "bytes": 7058,
+      "sha256": "7973410556db3d84ebae8bb21f3cad45f640ae7f33c982037114604015862c40"
     }
   ]
 }

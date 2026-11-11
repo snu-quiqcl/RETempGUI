@@ -11,6 +11,11 @@ KINDS = {'MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi'
 ROLE_LABELS = {'PMT':'검출 입력 (PMT)','AOM':'광 제어 (AOM)','MW':'마이크로파 (MW)',
                'EOM_7G_1':'EOM 7G-1','EOM_7G_2':'EOM 7G-2','EOM_2G':'EOM 2G',
                'TRIGGER':'트리거 입력','DETECTOR':'검출 입력','COUNTER':'추가 Counter 입력'}
+ION_CHANNELS={'pmt_1':('ION_PMT1','PMTA','검출 입력 1'),'pmt_2':('ION_PMT2','PMTC','검출 입력 2'),
+              'laser_a':('ION_A','AOMA','Laser A (EA)'),'laser_b':('ION_B','AOMB','Laser B (170)'),
+              'laser_c':('ION_C','AOMC','Laser C (EC)')}
+ROLE_LABELS.update({role:title for role,_,title in ION_CHANNELS.values()})
+ION_FIXED=('EOM_7GA1','EOM_7GA2','EOM_7GC1','EOM_7GC2','EOM_2GA','EOM_2GC','MW_A','MW_C')
 
 
 class QueueFPGASettings(W.QWidget):
@@ -24,7 +29,7 @@ class QueueFPGASettings(W.QWidget):
         self.rows={};self._loading=False
         root=W.QVBoxLayout(self)
         box=W.QGroupBox('실행 FPGA');root.addWidget(box);layout=W.QVBoxLayout(box)
-        row=W.QHBoxLayout();layout.addLayout(row);row.addWidget(target,2)
+        row=self.target_row=W.QHBoxLayout();layout.addLayout(row);row.addWidget(target,2)
         self.status=W.QLabel();row.addWidget(self.status,1)
         self.reset=W.QPushButton('FPGA 기본 매핑 불러오기');row.addWidget(self.reset)
         layout.addWidget(W.QLabel('이 Queue 항목은 선택한 FPGA 한 대를 사용합니다.'))
@@ -76,7 +81,7 @@ class QueueFPGASettings(W.QWidget):
     def experiment_name(self):
         p=self.parameters
         if p.get('kind')=='PulseExperimentTab':return p.get('experiment_kind','ramsey')
-        return KINDS.get(p.get('kind')) or {'ion':'ion_check','spam':'spam','entanglement':'entanglement'}.get(self.kind)
+        return KINDS.get(p.get('kind')) or {'ion':'ion_check','spam':'spam','entanglement':'entanglement','phase_hold':'phase_shifter','setup':'setup'}.get(self.kind)
 
     def set_parameters(self,parameters):
         self.parameters=deepcopy(parameters);self.rebuild()
@@ -89,6 +94,9 @@ class QueueFPGASettings(W.QWidget):
         # resolved through the selected board's stored experiment mapping.
         for path,role,experiment,token in self.direct_routes():
             if experiment not in ('fluorescence','rabi','ramsey','initialization','spam'):
+                if experiment=='ion_check':
+                    from labremote.ion_check.config import default_mapping
+                    token=default_mapping()[path[-1]]
                 if experiment=='micromotion':
                     from labremote.micromotion.config import defaults
                     token=defaults(self.parameters['settings'].get('chamber','EC'))[path[-1]]
@@ -108,6 +116,11 @@ class QueueFPGASettings(W.QWidget):
         p=self.parameters;settings=p.get('settings',{});experiment=self.experiment_name()
         if not isinstance(settings,dict):return []
         result=[]
+        if experiment=='ion_check':
+            from labremote.ion_check.config import default_mapping
+            channels=settings.get('mapping',default_mapping())
+            return [(('settings','mapping',key),role,experiment,channels.get(key) or '')
+                    for key,(role,_,_) in ION_CHANNELS.items()]
         if experiment=='scan':
             from labremote.devices.fpga.mapping import physical
             pin=next((pin for pin in PINS if getattr(physical,pin+'_counter_result',None)==settings.get('pmt')),None)
@@ -146,6 +159,11 @@ class QueueFPGASettings(W.QWidget):
             name=self.target.currentData();document=self.documents.get(name)
             experiment=self.experiment_name()
             self.experiment.setVisible(experiment is None);self.experiment_label.setVisible(experiment is None)
+            if experiment=='setup':
+                self.experiment.hide();self.experiment_label.hide();self.reset.hide()
+                self.inputs.parentWidget().hide();self.outputs.parentWidget().hide()
+                self.status.setText('Setup의 FPGA 출력은 실험 조건의 장비·파라미터 행에서 지정합니다.')
+                self.update_preview();return
             if document is None:
                 self.preview.setPlainText('FPGA 및 매핑 미지정');return
             direct=self.direct_routes()
@@ -154,6 +172,8 @@ class QueueFPGASettings(W.QWidget):
                     pin=self.overrides.get(name,{}).get(path,self.resolve(token,exp,document))
                     title=(' / '.join(path[1:-2])+' · ' if len(path)>3 else '')+ROLE_LABELS.get(role,role)
                     self.add_row(path,title,pin,exp,role,document,direct=True)
+                if experiment=='ion_check':
+                    for role in ION_FIXED:self.add_row(('ion_check',role),role,self.resolve(role,experiment,document),experiment,role,document,direct=False)
             else:
                 exp=experiment or self.experiment.currentData()
                 from .fpga_mapping import ROLES
@@ -166,15 +186,16 @@ class QueueFPGASettings(W.QWidget):
         finally:self._loading=False
 
     def add_row(self,key,title,selected,experiment,role,document,*,direct):
-        input_pin=role in ('PMT','TRIGGER','DETECTOR','COUNTER') if direct else 'input' in capability(DEFAULT_ROLES[role])
+        input_pin=role in ('PMT','TRIGGER','DETECTOR','COUNTER','ION_PMT1','ION_PMT2') if direct else 'input' in capability(DEFAULT_ROLES[role])
         table=self.inputs if input_pin else self.outputs;row=table.rowCount();table.insertRow(row)
         combo=W.QComboBox();table.setItem(row,0,W.QTableWidgetItem(title));table.setCellWidget(row,1,combo)
-        if direct and role=='COUNTER':combo.addItem('사용 안 함','')
+        if direct and role in ('COUNTER','ION_PMT2'):combo.addItem('사용 안 함','')
         for pin in PINS:
             kind=capability(pin)
             if ('input' in kind)!=input_pin:continue
             allowed=(('counter' in kind) if input_pin else experiment=='fluorescence' or kind=='fast output') if direct else compatible(experiment,role,pin)
             if direct and experiment=='micromotion' and role!='COUNTER':allowed='stopwatch' in kind
+            if direct and experiment=='ion_check' and not input_pin:allowed='output' in kind
             if direct and experiment=='phase_shifter' and not input_pin:
                 allowed=kind=='slow output' if role.startswith('PHASE ') else kind=='fast output' if role=='microwave' else 'output' in kind
             combo.addItem(document['pins'][pin]+' ['+pin+']'+(' · 기능 미지원' if not allowed else ''),pin)
@@ -195,10 +216,11 @@ class QueueFPGASettings(W.QWidget):
         self.preview.setPlainText(json.dumps(self.documents.get(name,{}),ensure_ascii=False,indent=2))
 
     def value(self,parameters):
-        name=self.target.currentData();document=self.documents.get(name)
+        name=self.target.currentData();document=deepcopy(self.documents.get(name))
         if document is None:raise ValueError('실행 FPGA를 연결하고 기본 매핑을 불러오세요.')
         parameters=deepcopy(parameters)
         for path,pin in self.overrides.get(name,{}).items():
+            if self.experiment_name()=='ion_check':continue
             obj=parameters
             for key in path[:-1]:obj=obj[key]
             if self.experiment_name()=='scan':
@@ -206,6 +228,15 @@ class QueueFPGASettings(W.QWidget):
                 obj[path[-1]]=getattr(physical,pin+'_counter_result')
             elif self.experiment_name()=='phase_shifter':obj[path[-1]]=document['pins'][pin]
             else:obj[path[-1]]=pin
+        if self.experiment_name()=='ion_check':
+            chosen={path[-1]:self.overrides.get(name,{}).get(path,self.resolve(token,'ion_check',document))
+                    for path,role,exp,token in self.direct_routes()}
+            channels=parameters['settings'].setdefault('mapping',{})
+            routes=document['experiments'].setdefault('ion_check',{})
+            for key,pin in chosen.items():
+                canonical=ION_CHANNELS[key][1]
+                channels[key]=canonical if pin else None
+                if pin:routes[canonical]=pin
         profile=Profile(deepcopy(document))
         for combo in self.rows.values():
             index=combo.currentIndex()
@@ -213,7 +244,13 @@ class QueueFPGASettings(W.QWidget):
                 raise ValueError('실험 기능에 맞는 입력·출력 핀을 선택하세요.')
         from labremote.devices.fpga.mapping import scope
         experiment=self.experiment_name()
-        if self.direct_routes() and experiment in ('fluorescence','rabi','initialization','ramsey','spam'):
+        if experiment=='ion_check':
+            from labremote.ion_check import config
+            with scope(profile,'ion_check'):
+                config.validate(parameters['settings'],require_thresholds=True)
+                used=[profile.view('ion_check').output_mapping[role] for role in config.output_levels(parameters['settings'])]
+                if len(set(used))!=len(used):raise ValueError('Ion Check의 레이저·EOM·MW 출력은 서로 다른 핀을 사용해야 합니다.')
+        elif self.direct_routes() and experiment in ('fluorescence','rabi','initialization','ramsey','spam'):
             from labremote.characterization import config, rabi, pulse_experiment
             groups=parameters['settings'].values() if self.kind=='spam' and set(parameters['settings'])=={'EA','EC'} else [parameters['settings']]
             with scope(profile,experiment):
@@ -228,6 +265,6 @@ class QueueFPGASettings(W.QWidget):
             from labremote.phase_shifter import config,hold
             with scope(profile):
                 c=parameters['settings']
-                if self.parameters.get('kind')=='PhaseHoldTab':hold.request(c['phase_angle_deg'],c['phase_outputs'],calibration=c.get('calibration'))
+                if self.kind=='phase_hold' or self.parameters.get('kind')=='PhaseHoldTab':hold.request(c['phase_angle_deg'],c['phase_outputs'],calibration=c.get('calibration'))
                 else:config.validate(c)
         return parameters,profile.document()

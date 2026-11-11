@@ -6,6 +6,7 @@ from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, Profile, capabil
 ROLES = {
     'fluorescence': ('PMTA','PMTC','PMTFA','PMTFC','AOMA','AOMC'),
     'micromotion': ('SYNC','PMTA','PMTC','PMTFA','PMTFC'),
+    'ion_check': ('PMTA','PMTC','AOMA','AOMB','AOMC','EOM_7GA1','EOM_7GA2','EOM_7GC1','EOM_7GC2','EOM_2GA','EOM_2GC','MW_A','MW_C'),
 }
 
 
@@ -16,7 +17,7 @@ class RoleMapping(W.QGroupBox):
         self.setCheckable(True); self.setChecked(True)
         outer = W.QVBoxLayout(self)
         self.body = W.QWidget(); outer.addWidget(self.body)
-        form = W.QFormLayout(self.body)
+        form = self.form = W.QFormLayout(self.body)
         self.choices = {}
         for role in ROLES.get(experiment, tuple(DEFAULT_ROLES)):
             combo = W.QComboBox(); combo.setProperty('persistInput', False)
@@ -27,8 +28,25 @@ class RoleMapping(W.QGroupBox):
         buttons.addWidget(apply); buttons.addWidget(reload); form.addRow(buttons)
         self.status = W.QLabel(); self.status.setWordWrap(True); form.addRow(self.status)
         self.toggled.connect(self.body.setVisible); self.refresh()
+        if experiment=='ion_check' and hasattr(parent,'mapping_fields'):
+            for box in parent.mapping_fields.values():box.currentIndexChanged.connect(self.ion_channels_changed)
+
+    def ion_channels_changed(self,*_):
+        pending={role:box.currentData() for role,box in self.choices.items()}
+        self.refresh()
+        for role,pin in pending.items():
+            if role in self.choices:self.choices[role].setCurrentIndex(self.choices[role].findData(pin))
 
     def refresh(self):
+        parent=self.parentWidget()
+        if self.experiment=='ion_check' and hasattr(parent,'mapping_fields'):
+            from .queue_fpga import ION_FIXED
+            roles=tuple(dict.fromkeys([box.currentData() for box in parent.mapping_fields.values() if box.currentData()]+list(ION_FIXED)))
+            if tuple(self.choices)!=roles:
+                for _ in self.choices:self.form.removeRow(0)
+                self.choices={}
+                for i,role in enumerate(roles):
+                    box=W.QComboBox();box.setProperty('persistInput',False);self.choices[role]=box;self.form.insertRow(i,role,box)
         document = self.worker.profile.document()
         mapping = {**DEFAULT_ROLES, **document['experiments'].get(self.experiment, {})}
         self._loaded=dict(mapping)

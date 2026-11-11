@@ -42,6 +42,8 @@ def compatible(experiment, role, pin):
         return False
     original = DEFAULT_ROLES[role]
     if 'input' not in capability(original):
+        if experiment=='ion_check' and role in ('AOMA','AOMB','AOMC'):
+            return hasattr(physical,pin+'_out')
         if experiment == 'hom' and role == 'AOMB':
             return hasattr(physical, pin + '_out')
         # Preserve the reviewed number of port-write instructions and timing.

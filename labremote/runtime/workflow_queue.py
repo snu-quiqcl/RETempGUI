@@ -132,7 +132,8 @@ def expand_steps(plan):
 
 def requires_fpga(job):
     import ast
-    return bool(job.get('fpga_id') or job.get('parameters',{}).get('fpga') or job.get('fpga_profiles')) or any(
+    return bool(job.get('fpga_id') or job.get('parameters',{}).get('fpga') or job.get('fpga_profiles') or
+                any(row.get('family')=='fpga' for row in job.get('parameters',{}).get('steps',[]) if isinstance(row,dict))) or any(
         isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr=='fpga'
         for node in ast.walk(ast.parse(job['source'])))
 
@@ -142,6 +143,8 @@ def target_fpga(job):
     names=set()
     for name in (job.get('fpga_id'),job.get('parameters',{}).get('fpga')):
         if name:names.add(name)
+    for row in job.get('parameters',{}).get('steps',[]):
+        if isinstance(row,dict) and row.get('family')=='fpga' and row.get('device'):names.add(row['device'])
     for node in ast.walk(ast.parse(job['source'])):
         if isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr=='fpga':
             value=node.args[0] if node.args else next((kw.value for kw in node.keywords if kw.arg=='name'),None)

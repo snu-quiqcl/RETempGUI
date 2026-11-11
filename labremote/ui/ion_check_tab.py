@@ -23,6 +23,7 @@ class IonCheckTab(QtWidgets.QWidget):
         for label,callback in [('불러오기',self.load),('저장',self.save)]:
             button=QtWidgets.QPushButton(label);button.clicked.connect(callback);buttons.addWidget(button)
         form.addRow(buttons)
+        pin_group=QtWidgets.QGroupBox('입력·출력 핀 설정');form=QtWidgets.QFormLayout(pin_group);left.addWidget(pin_group)
         for key,label in [('pmt_1','PMT 입력 1'),('pmt_2','PMT 입력 2'),('laser_a','Laser A (EA)'),('laser_b','Laser B (170)'),('laser_c','Laser C (EC)')]:
             box=QtWidgets.QComboBox()
             if key=='pmt_2':box.addItem('사용 안 함 · 입력 1만 측정',None)
@@ -32,6 +33,7 @@ class IonCheckTab(QtWidgets.QWidget):
                 for name in config.LASER_CHOICES:box.addItem(name,name)
             self.mapping_fields[key]=box;form.addRow(label,box);box.currentIndexChanged.connect(self.mapping_changed)
         text=QtWidgets.QLabel('두 PMT 선택 시 count를 합산합니다.\nA 단계: 7GA ON / C 단계: 7GC ON\n7G 출력은 기존 EA/EC 매핑을 사용합니다.');text.setWordWrap(True);form.addRow(text)
+        form=measurement_form
         for key,label,lo,hi,value in [('exposure_us','노출 시간 (µs)',1,10000,1000),('settle_us','안정화 대기 (µs)',1,10000,100),
                                     ('threshold_a','Laser A threshold',0,65535,0),('threshold_b','Laser B threshold',0,65535,0),('threshold_c','Laser C threshold',0,65535,0)]:
             box=QtWidgets.QSpinBox();box.setRange(lo,hi);box.setValue(value)
