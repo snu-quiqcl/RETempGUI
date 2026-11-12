@@ -203,9 +203,7 @@ class EtcTab(QtWidgets.QTabWidget):
         from .rabi_tab import PhaseRabiTab
         self.rabi = PhaseRabiTab(worker, self)
         self.addTab(self.rabi, '위상별 Rabi')
-        for a, b in zip(self.ramsey.mapping.phase_selectors, self.rabi.mapping.phase_selectors):
-            a.currentIndexChanged.connect(lambda _, src=a, dst=b: dst.setCurrentIndex(max(0, dst.findData(src.currentData()))))
-            b.currentIndexChanged.connect(lambda _, src=b, dst=a: dst.setCurrentIndex(max(0, dst.findData(src.currentData()))))
+        # Phase Rabi owns its mapping; never synchronize it with other experiments.
         # Both modes address the same phase shifter, with one shared mapping.
         for a, b in zip(self.ramsey.mapping.phase_selectors, self.hold.selectors):
             a.currentIndexChanged.connect(lambda _, src=a, dst=b: dst.setCurrentIndex(max(0, dst.findData(src.currentData()))))

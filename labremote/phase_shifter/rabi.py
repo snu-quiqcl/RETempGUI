@@ -10,6 +10,11 @@ from .rabi_sequence import build_program
 DEFAULTS = dict(config.DEFAULTS, pulse_start_us=0., pulse_stop_us=100., pulse_step_us=2.)
 
 def times(c):
+    if 'pulse_points' in c:
+        count=c['pulse_points']
+        if type(count) is not int or not 6 <= count <= 4097:
+            raise ValueError('Pulse points는 6~4097 사이 정수여야 합니다.')
+        c=dict(c,pulse_start_us=0.,pulse_stop_us=float(Decimal(str(c['pulse_step_us']))*(count-1)))
     vals = [c[k] for k in ('pulse_start_us','pulse_stop_us','pulse_step_us')]
     if any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) for v in vals):
         raise ValueError('펄스 시간은 유한한 숫자로 입력하세요.')
@@ -29,6 +34,8 @@ def times(c):
 def validate(value):
     c=deepcopy(value)
     ts=times(c)
+    if 'pulse_points' in c:
+        c.update(pulse_start_us=0.,pulse_stop_us=ts[-1]/100)
     c=config.validate(c)
     skipped=[]
     phases=config.scan_points(c,skipped)

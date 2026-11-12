@@ -26,23 +26,24 @@ class PhaseRabiTab(W.QWidget):
         for key,title,lo,hi,dec in [('scan_start_deg','시작 위상 (°)',0,360,6),('scan_stop_deg','끝 위상 (°)',0,360,6),('scan_step_deg','위상 간격 (°)',.000001,360,6)]:
             self.field(phase,key,title,lo,hi,dec)
         self.field(phase,'phase_settle_clocks','위상 안정화 (µs)',.03,655.38,2,100)
-        pulse=self.group(left,'Rabi 펄스 스캔')
-        for key,title,lo in [('pulse_start_us','시작 시간 (µs)',0),('pulse_stop_us','끝 시간 (µs)',0),('pulse_step_us','시간 간격 (µs)',.01)]:
-            self.field(pulse,key,title,lo,655.38,2)
-        self.field(pulse,'N_average','지점당 반복 횟수',1,65535,0)
+        form=self.group(left,'Rabi 실험 변수 · 이 실험 전용')
+        for key,title in [('T_cool','Cooling time'),('T_wait_for_aom_off','AOM wait'),('T_init','Init time'),('T_det','Detection time')]:
+            self.field(form,key,title+' (µs)',0,655.35,2,100)
+        for key,title in [('T_cool_repeat','Cooling repeats'),('T_det_repeat','Detection repeats')]:
+            self.field(form,key,title,1,65535,0)
+        self.field(form,'pulse_step_us','Pulse step (µs)',.03,655.38,2)
+        self.field(form,'pulse_points','Pulse points (0 포함)',6,4097,0)
+        self.field(form,'N_average','Shots / point',1,65535,0)
+        self.field(form,'threshold','Threshold (counts ≥)',0,65535,0)
+        self.field(form,'timeout_s','Timeout / point (s)',.1,600,1)
         self.summary=W.QLabel();self.summary.setWordWrap(True);left.addWidget(self.summary)
         self.skip=W.QCheckBox('기존 CSV에서 보정 불가 각도 제외');self.skip.setChecked(True);left.addWidget(self.skip);self.skip.toggled.connect(self.controls)
         self.mapping=PhaseShifterEtcTab(config.hd)
-        group=W.QGroupBox('이 실험의 FPGA 역할 매핑');group.setCheckable(True);group.setChecked(False)
-        layout=W.QVBoxLayout(group);layout.addWidget(self.mapping);self.mapping.hide();group.toggled.connect(self.mapping.setVisible);left.addWidget(group)
+        group=W.QGroupBox('이 실험의 FPGA 역할 매핑 · 독립 설정')
+        layout=W.QVBoxLayout(group)
+        note=W.QLabel('MW·AOM·EOM·PMT 및 D0~D11을 여기서 직접 선택합니다.\n다른 실험과 설정을 공유하거나 동기화하지 않습니다.')
+        note.setWordWrap(True);layout.addWidget(note);layout.addWidget(self.mapping);left.addWidget(group)
         self.mapping.selection_changed.connect(self.controls)
-        advanced=W.QGroupBox('냉각 · 초기화 · 검출');advanced.setCheckable(True);advanced.setChecked(False);left.addWidget(advanced)
-        body=W.QWidget();W.QVBoxLayout(advanced).addWidget(body);form=W.QFormLayout(body);body.hide();advanced.toggled.connect(body.setVisible)
-        for key,title in [('T_cool','냉각 시간'),('T_init','초기화 시간'),('T_det','검출 시간'),('T_wait_for_aom_off','AOM OFF 대기')]:
-            self.field(form,key,title+' (µs)',0,655.35,2,100)
-        for key,title in [('T_cool_repeat','냉각 반복'),('T_det_repeat','검출 반복')]:self.field(form,key,title,1,65535,0)
-        self.field(form,'threshold','Bright 기준 (counts ≥)',0,65535,0)
-        self.field(form,'timeout_s','지점당 Timeout (s)',.1,600,1)
         for title,fn in [('설정 불러오기',self.load),('설정 저장',self.save)]:
             b=W.QPushButton(title);b.clicked.connect(fn);left.addWidget(b)
         left.addStretch()
@@ -72,13 +73,15 @@ class PhaseRabiTab(W.QWidget):
     def field(self,form,key,title,lo,hi,dec,scale=1):
         box=W.QDoubleSpinBox() if dec else W.QSpinBox()
         if dec:box.setDecimals(dec)
-        box.setRange(lo,hi);box.setValue(rabi.DEFAULTS[key]/scale if dec else int(rabi.DEFAULTS[key]));box.setProperty('scale',scale)
+        default=51 if key=='pulse_points' else rabi.DEFAULTS[key]
+        box.setRange(lo,hi);box.setValue(default/scale if dec else int(default));box.setProperty('scale',scale)
         self.fields[key]=box;form.addRow(title,box);box.valueChanged.connect(self.controls)
 
     def value(self):
         c=dict(rabi.DEFAULTS)
         for k,b in self.fields.items():
             v=b.value()*b.property('scale');c[k]=round(v) if b.property('scale')==100 or isinstance(b,W.QSpinBox) else v
+        c['pulse_start_us']=0.;c['pulse_stop_us']=(c['pulse_points']-1)*c['pulse_step_us']
         c['calibration']=self.calibration.active();c['skip_unreliable']=self.skip.isChecked()
         return self.mapping.apply_to(c)
 
@@ -87,10 +90,11 @@ class PhaseRabiTab(W.QWidget):
         error=''
         try:
             c=dict(rabi.DEFAULTS)
-            for k in ('scan_start_deg','scan_stop_deg','scan_step_deg','pulse_start_us','pulse_stop_us','pulse_step_us'):c[k]=self.fields[k].value()
+            for k in ('scan_start_deg','scan_stop_deg','scan_step_deg','pulse_points','pulse_step_us'):c[k]=self.fields[k].value()
             c.update(calibration=self.calibration.active(),skip_unreliable=self.skip.isChecked())
             skipped=[];phases=config.scan_points(c,skipped);times=rabi.times(c)
             text=f'{len(phases)}개 위상 × {len(times)}개 시간 × {self.fields["N_average"].value()} shots'
+            text+=f'\n펄스 시간: 0~{times[-1]/100:g} µs (0 포함)'
             if skipped:text+='\n제외 각도: '+', '.join(str(p['angle_deg']) for p in skipped)
             self.summary.setText(text)
             self.mapping.selection()
@@ -107,7 +111,10 @@ class PhaseRabiTab(W.QWidget):
         if path:self.directory.setText(path)
 
     def populate(self,c):
-        c,_,_,_=rabi.validate(c)
+        c,_,times,_=rabi.validate(c)
+        if times[0]!=0:
+            raise ValueError('이전 설정의 시작 시간이 0이 아닙니다. 이 화면은 0부터 시작하는 펄스 스캔을 사용합니다.')
+        c['pulse_points']=len(times)
         self.calibration.set_table(c.get('calibration'));self.skip.setChecked(c.get('skip_unreliable',True))
         for k,b in self.fields.items():b.setValue(c[k]/b.property('scale') if isinstance(b,W.QDoubleSpinBox) else int(c[k]))
         for role,box in self.mapping.output_selectors.items():box.setCurrentIndex(box.findData(c['outputs'][role]))
@@ -121,7 +128,10 @@ class PhaseRabiTab(W.QWidget):
     def save(self):
         try:
             c,*_=rabi.validate(self.value());path,_=W.QFileDialog.getSaveFileName(self,'설정 저장','phase_rabi.json','JSON (*.json)')
-            if path:Path(path).write_text(json.dumps(c,ensure_ascii=False,indent=2),encoding='utf-8')
+            if path:
+                c.update(experiment='phase_rabi',settings_version=2)
+                Path(path).write_text(json.dumps(c,ensure_ascii=False,indent=2),encoding='utf-8')
+                self.status.setText('위상별 Rabi 전용 설정 저장: '+path)
         except Exception as exc:self.status.setText(str(exc))
 
     def load(self):
