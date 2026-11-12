@@ -264,7 +264,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
             except Exception as exc:self.log_message.emit('FPGA port memory: '+str(exc))
         self.connected=True
         self.status.setText((self.worker.profile.alias+' · '+self.name+' · '+self.serial.text()+' — 연결됨') if self.family=='fpga' else self.name+' — Connected')
-        self._buttons();self.api.refresh()
+        self._buttons();self.api.refresh(automatic=True) if self.family=='fpga' else self.api.refresh()
 
     def _disconnected(self,message):
         if hasattr(self,'output_pending'):self.output_pending.clear()
@@ -332,7 +332,8 @@ class AuxiliaryTab(QtWidgets.QWidget):
                 self.log_message.emit(self.name+' · '+str(handle.error))
             return
         self.message.setText(handle.action+' completed')
-        if handle.action=='SET_OUTPUT':self.api.refresh()
+        if handle.action=='SET_OUTPUT':
+            self.api.refresh(automatic=True) if self.family=='fpga' else self.api.refresh()
         if self.family=='fpga' or handle.action not in ('SPECTRUM','MEASURE'):return
         if getattr(self,'_last_result',None)==handle.request_id:return
         self._last_result=handle.request_id

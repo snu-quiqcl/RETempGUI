@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Replace angle generation with independent full-setting Queue duplication",
+  "revision_note": "Drain automatic FPGA refresh before workflow; preserve foreign ownership and transport error stops",
   "files": [
     {
       "path": ".gitattributes",
@@ -234,8 +234,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 36663,
-      "sha256": "730530bef796389d748fbf56095a1f82ae8a29a92daf7920a23cc720e3cf1013"
+      "bytes": 36883,
+      "sha256": "d657f5271f4a9ed5b0d096a2b2d799d04a1dac2a0322e82e780b586e5ef8d565"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -939,8 +939,8 @@
     },
     {
       "path": "labremote/devices/fpga/worker.py",
-      "bytes": 8529,
-      "sha256": "bb6416221529f833e90735f4c67f7740e41286372b81c7ff81e3f2c27bec2ee0"
+      "bytes": 9753,
+      "sha256": "e44b47fd129eb0f1dc532e6a036b75dd273e68243efdd10e04e8c21d99f3b9af"
     },
     {
       "path": "labremote/devices/keithley/__init__.py",
@@ -1679,8 +1679,8 @@
     },
     {
       "path": "labremote/runtime/auto_monitor.py",
-      "bytes": 5846,
-      "sha256": "7c636c2fa8eab9364c37fb3a79b8dafc2a75c8ab72cdf1f34fe0517816b953dc"
+      "bytes": 5560,
+      "sha256": "859c99ecdeddbdd51c0cbe8cb2310826c453cc31cab5af5463445a3c51eab2d9"
     },
     {
       "path": "labremote/runtime/bindings.py",
@@ -1784,8 +1784,8 @@
     },
     {
       "path": "labremote/runtime/workflow_queue.py",
-      "bytes": 17512,
-      "sha256": "e81b6b46855bbaebef98c51ee0f46c537346f78d99d21d02442e85e0b2071aa7"
+      "bytes": 17947,
+      "sha256": "5b5471db42162f2add75c52efb23fee4d8883d768f6a64d77342122e9b763aa4"
     },
     {
       "path": "labremote/runtime/workflow_result.py",
@@ -1809,8 +1809,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 28744,
-      "sha256": "274a0a9844b79685a00f8a01865b3846e1e649eb11b47d7100b7d4833a2e7ed0"
+      "bytes": 28880,
+      "sha256": "adea690e360275cd93fb8daa54dfb53e8a083aace174cae07ad3977720b571d2"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -2234,8 +2234,8 @@
     },
     {
       "path": "docs/FPGA_WORKSPACE_KO.md",
-      "bytes": 9504,
-      "sha256": "30693df5885b0eedc188f884327539152ef200467955a9df967b66738426ba51"
+      "bytes": 9957,
+      "sha256": "ef03daa7a2aba4d53ffaba1abde025e7495efe899552a137f1cb3966f90b65be"
     },
     {
       "path": "labremote/runtime/execution_scope.py",
@@ -2351,6 +2351,11 @@
       "path": "tests/test_repeat_groups.py",
       "bytes": 9616,
       "sha256": "b43522fe11f02bdf16ea9bf466e2a039f6d6ddbcff9d457acab54a2dec1850be"
+    },
+    {
+      "path": "tests/test_queue_refresh.py",
+      "bytes": 6090,
+      "sha256": "78624a3882f5e9c272447bd3a965a0e7c5b9b1ebffbf3041498cf86fe707f488"
     }
   ]
 }

@@ -190,6 +190,12 @@ class QueueRunner:
                 reason=target+' 연결 끊김 · 개별 연결 후 계속을 누르세요.'
             elif getattr(worker,'_fpga_owner',None) is not None or worker.has_foreground_requests():
                 reason=target+' 사용 중 · 완료 후 계속을 누르세요.'
+                with worker._lock:
+                    owner=getattr(worker,'_fpga_owner',None)
+                    actions=[h.action for h in [worker._active,*worker._pending]
+                             if h is not None and not h.done.is_set() and not getattr(h,'automatic_monitor',False)]
+                    detail=str(owner) if owner is not None else ', '.join(actions)
+                if detail:reason+=' 작업: '+detail
             elif job.get('fpga_profiles',{}).get(target,{}).get('pins',worker.profile.document()['pins']) != worker.profile.document()['pins']:
                 reason=target+' 핀 이름이 Queue 저장 시점과 다릅니다. Queue 중지 후 항목을 수정하세요.'
             if not reason:

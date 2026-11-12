@@ -43,7 +43,21 @@ class FPGAWorker(AcquisitionWorker):
             if self._fpga_owner is not None or self.has_foreground_requests():
                 raise RuntimeError('FPGA is occupied: '+self.name)
             self._fpga_owner=owner
+            reads=[h for h in [self._active,*self._pending]
+                   if h is not None and not h.done.is_set() and getattr(h,'automatic_monitor',False)]
         owner.remember(self)
+        # Reserve before draining: a new UI poll cannot slip into the gap.
+        # Wait outside the worker lock so the serial FIFO can finish its read.
+        try:
+            for handle in reads:
+                try:handle.wait()
+                except Exception as exc:raise ConnectionError('FPGA status refresh failed before experiment: '+str(exc)) from exc
+            with self._lock:
+                if self._disconnecting or self._closing or self.ps is None or self.connection_error:
+                    raise ConnectionError('FPGA connection unavailable after status refresh: '+self.name)
+        except BaseException:
+            self.release_fpga(owner)
+            raise
 
     def release_fpga(self, owner):
         with self._lock:
@@ -55,6 +69,10 @@ class FPGAWorker(AcquisitionWorker):
         with self._lock:
             owner=getattr(handle.group,'owner',None)
             if self._fpga_owner is not None and owner is not self._fpga_owner and handle.action != 'DISCONNECT':
+                if getattr(handle,'automatic_monitor',False):
+                    # Best-effort UI read; never inject it into an owned experiment.
+                    self._monitor_pending.discard(handle.monitor_key)
+                    handle.finish();return handle
                 handle.finish(RuntimeError('FPGA is occupied: '+self.name))
                 return handle
             if self._disconnecting and handle.action not in ('DISCONNECT',):
@@ -65,8 +83,9 @@ class FPGAWorker(AcquisitionWorker):
                     return handle
             state = CURRENT.get()
             handle.fpga_mapping = state if state is not None and state[0].device_id == self.profile.device_id else (FROZEN.get().get(self.profile.device_id, self.profile), None)
-        from labremote.runtime.characterization_guard import enqueue
-        return enqueue(self,handle,super().enqueue)
+            # Admission and ownership use the same lock, including FIFO insertion.
+            from labremote.runtime.characterization_guard import enqueue
+            return enqueue(self,handle,super().enqueue)
 
     def execute(self, handle):
         from .mapping import scope

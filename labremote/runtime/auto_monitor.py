@@ -68,6 +68,7 @@ class AutoMonitor:
 
     def foreground_busy(self,worker):
         with worker._lock:
+            if getattr(worker,'_fpga_owner',None) is not None:return True
             # One automatic read may wait behind the active operation. Waiting
             # for an entirely idle worker starves reads during a fast PID loop.
             handles=worker._pending

@@ -38,7 +38,11 @@ class DeviceAPI:
             return acquire(target)
         return self._submit('ACQUIRE ' + str(path), read)
 
-    def refresh(self):
+    def refresh(self, *, automatic=False):
+        if automatic:
+            from labremote.runtime.auto_monitor import AUTO_MONITOR
+            AUTO_MONITOR.request(self.worker,('MONITOR REFRESH',lambda w:w.refresh()))
+            return
         return self._submit('REFRESH', lambda w: w.refresh())
 
     def auto_monitor(self):
