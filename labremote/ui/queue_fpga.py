@@ -7,7 +7,7 @@ from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, EXPERIMENTS, Pro
 
 KINDS = {'MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi','DecayExperimentTab':'decay',
          'HOMTab':'hom','EntanglementTab':'entanglement','IonCheckTab':'ion_check',
-         'MicromotionPage':'micromotion','PhaseShifterTab':'phase_shifter','PhaseHoldTab':'phase_shifter'}
+         'MicromotionPage':'micromotion','PhaseShifterTab':'phase_shifter','PhaseHoldTab':'phase_shifter','PhaseRabiTab':'phase_shifter'}
 ROLE_LABELS = {'PMT':'검출 입력 (PMT)','AOM':'광 제어 (AOM)','MW':'마이크로파 (MW)',
                'EOM_7G_1':'EOM 7G-1','EOM_7G_2':'EOM 7G-2','EOM_2G':'EOM 2G',
                'TRIGGER':'트리거 입력','DETECTOR':'검출 입력','COUNTER':'추가 Counter 입력'}
@@ -266,5 +266,8 @@ class QueueFPGASettings(W.QWidget):
             with scope(profile):
                 c=parameters['settings']
                 if self.kind=='phase_hold' or self.parameters.get('kind')=='PhaseHoldTab':hold.request(c['phase_angle_deg'],c['phase_outputs'],calibration=c.get('calibration'))
+                elif self.parameters.get('kind')=='PhaseRabiTab':
+                    from labremote.phase_shifter.rabi import validate
+                    validate(c)
                 else:config.validate(c)
         return parameters,profile.document()

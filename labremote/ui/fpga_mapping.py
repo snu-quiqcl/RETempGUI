@@ -12,7 +12,7 @@ ROLES = {
 
 class RoleMapping(W.QGroupBox):
     def __init__(self, worker, experiment, parent=None):
-        super().__init__('실험 신호 → FPGA 핀 이름', parent)
+        super().__init__('이 실험의 FPGA 역할 매핑', parent)
         self.worker, self.experiment = worker, experiment
         self.setCheckable(True); self.setChecked(True)
         outer = W.QVBoxLayout(self)

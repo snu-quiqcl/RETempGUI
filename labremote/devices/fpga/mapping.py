@@ -300,6 +300,9 @@ The same immutable profile is retained by a nested operation until it completes.
                     result = __fn(self, *args, **kwargs)
                     if editor and __name == '__init__':
                         from labremote.ui.fpga_mapping import RoleMapping
+                        from PyQt5.QtWidgets import QGroupBox
+                        if any(g.title() == '이 실험의 FPGA 역할 매핑' for g in self.findChildren(QGroupBox)):
+                            return result
                         self.fpga_role_mapping = RoleMapping(worker, kind, self)
                         layout = self.layout()
                         if hasattr(layout, 'insertWidget'):

@@ -27,6 +27,8 @@ class FPGAWorker(AcquisitionWorker):
         self.hom_runner=HOMRunner(self)
         from labremote.phase_shifter.runner import PhaseShifterRunner
         self.phase_shifter_runner=PhaseShifterRunner(self)
+        from labremote.phase_shifter.rabi_runner import PhaseRabiRunner
+        self.phase_rabi_runner=PhaseRabiRunner(self)
         from labremote.ion_check.runner import IonCheckRunner
         self.ion_check_runner=IonCheckRunner(self)
         from labremote.entanglement.runner import EntanglementRunner

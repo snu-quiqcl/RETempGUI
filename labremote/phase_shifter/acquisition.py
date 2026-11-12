@@ -29,7 +29,7 @@ def cleanup(controller, c):
     controller._run(s, 0, threading.Event())
 
 
-def run(controller, c, scan_codes, cancelled, on_rows, on_point):
+def run(controller, c, scan_codes, cancelled, on_rows, on_point, builder=None):
     controller._idle()
     d = controller.device
 
@@ -55,7 +55,7 @@ def run(controller, c, scan_codes, cancelled, on_rows, on_point):
         check()
         for code in scan_codes:
             check()
-            program = build_program(dict(c, phase_code=code), hd)
+            program = (builder or build_program)(dict(c, phase_code=code), hd)
             stale = length()
             while stale:
                 check()

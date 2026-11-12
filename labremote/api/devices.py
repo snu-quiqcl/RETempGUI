@@ -566,6 +566,9 @@ class FPGAAPI(DeviceAPI):
     def run_phase_shifter(self, *, settings, directory=None):
         return self.worker.phase_shifter_runner.start(settings,directory=directory,parent=self.group)
 
+    def run_phase_rabi(self, *, settings, directory=None):
+        return self.worker.phase_rabi_runner.start(settings,directory=directory,parent=self.group)
+
     def hold_phase(self,phase_angle_deg,phase_outputs,calibration=None):
         from labremote.phase_shifter import hold
         from labremote.devices.fpga.adapter import Cancellation
