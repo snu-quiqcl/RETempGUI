@@ -48,6 +48,8 @@ def build_program(parameters, hd=None):
     code = integer('phase_code', 0, 4095)
     averages = integer('N_average', 1, 65535)
     half_pi = integer('half_pi_time', 3, 65538)
+    first_pi = integer('half_pi_first_clocks', 3, 65538) if 'half_pi_first_clocks' in p else half_pi
+    second_pi = integer('half_pi_second_clocks', 3, 65538) if 'half_pi_second_clocks' in p else half_pi
     zero_settle = integer('phase_zero_settle_clocks', 3, 65538)
     phase_settle = integer('phase_settle_clocks', 3, 65538)
     cool = integer('T_cool', 0, 65535)
@@ -104,12 +106,12 @@ def build_program(parameters, hd=None):
     s.wait_n_clocks(zero_settle - 3, 'Zero-code settling')
     set_outputs('First pi/2 ON', microwave=1)
     # wait(n) consumes n+2 clocks; the output instruction consumes one clock.
-    s.wait_n_clocks(half_pi - 3)
+    s.wait_n_clocks(first_pi - 3)
     set_outputs('First pi/2 OFF', microwave=0)
     set_phase(code, 'Target phase code while microwave is OFF')
     s.wait_n_clocks(phase_settle - 3, 'Fixed phase settling')
     set_outputs('Second pi/2 ON', microwave=1)
-    s.wait_n_clocks(half_pi - 3)
+    s.wait_n_clocks(second_pi - 3)
     set_outputs('Second pi/2 OFF', microwave=0)
 
     set_outputs('Detection', aom=1)

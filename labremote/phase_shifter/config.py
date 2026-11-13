@@ -76,6 +76,8 @@ def codes(c):
 
 def validate(value, single=False):
     c = normalize(value)
+    if c.get('halfpi_calibration') and c.get('calibration'):
+        raise ValueError('Rabi 보정 Ramsey는 위상 선형 변환만 사용합니다.')
     plan = [resolve(c["phase_angle_deg"], c.get("calibration"))] if single else scan_points(c)
     if c.get("calibration"):
         c["phase_code"] = plan[0]["code"]
@@ -87,4 +89,10 @@ def validate(value, single=False):
         raise ValueError('Timeout은 0.1..600초 범위여야 합니다.')
     # Same definition and same validation used for actual execution.
     build_program(c, hd).program(show=False)
+    if c.get('halfpi_calibration'):
+        from .halfpi import apply
+        for p in plan:
+            point=apply(p,c['halfpi_calibration'])
+            build_program(dict(c,phase_code=point['code'],half_pi_first_clocks=point['half_pi_first_clocks'],
+                               half_pi_second_clocks=point['half_pi_second_clocks']),hd).program(show=False)
     return c

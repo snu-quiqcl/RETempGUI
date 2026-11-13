@@ -49,6 +49,7 @@ def execute(devices):
     if kind=='MicromotionPage':
         return api.run_micromotion(settings=c,mode=p['mode'],dac=devices.dac(p['dac']) if p.get('dac') else None,directory=directory).wait()
     if kind=='PhaseShifterTab':return api.run_phase_shifter(settings=c,directory=directory).wait()
+    if kind=='HalfPiRamseyTab':return api.run_phase_shifter(settings=c,directory=directory).wait()
     if kind=='PhaseRabiTab':return api.run_phase_rabi(settings=c,directory=directory).wait()
     if kind=='PhaseHoldTab':return api.hold_phase(**c).wait()
     method={'HOMTab':'run_hom','EntanglementTab':'run_entanglement','IonCheckTab':'run_ion_check',

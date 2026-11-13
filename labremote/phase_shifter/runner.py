@@ -24,6 +24,9 @@ class PhaseShifterRunner(WorkflowTask):
         c = config.validate(settings, single=single)
         skipped = []
         plan = [config.resolve(c['phase_angle_deg'], c.get('calibration'))] if single else config.scan_points(c, skipped)
+        if c.get('halfpi_calibration'):
+            from .halfpi import apply
+            plan=[apply(p,c['halfpi_calibration']) for p in plan]
         with _TASK_LOCK:
             if (self.worker.waveform_runner.running() or self.worker.has_requests() or
                     any(task.running() for task in self.worker._background_tasks)):
@@ -54,6 +57,10 @@ class PhaseShifterRunner(WorkflowTask):
                                [*c['outputs'].values(), *c['phase_outputs']]})
 
         report['skipped_angles'] = self.settings.get('skipped_angles', [])
+        if c.get('halfpi_calibration'):
+            report['experiment']='rabi_corrected_ramsey'
+            report['halfpi_conversion']='Linear interpolation of 250/frequency_khz in actual code; first pulse at code 0; quantized to 10 ns'
+            (source/'phase_rabi_result.json').write_text(c['halfpi_calibration']['json'],encoding='utf-8')
         if c.get('calibration'):
             report['phase_conversion'] = 'Conditional empirical Ramsey inverse table; applied_angle_deg is model estimate, not measured RF phase'
             is_data = c['calibration'].get('kind') == 'ramsey_data_interpolation'
@@ -92,9 +99,16 @@ class PhaseShifterRunner(WorkflowTask):
                     checkpoint()
                     self.publish(phase='측정 중', points=points)
 
+                def build(parameters,hd):
+                    from .sequence import build_program
+                    target=self.settings['scan_points'][len(points)]
+                    return build_program(dict(parameters,half_pi_first_clocks=target['half_pi_first_clocks'],
+                                              half_pi_second_clocks=target['half_pi_second_clocks']),hd)
+
+                options={'builder':build} if c.get('halfpi_calibration') else {}
                 self.call(DeviceAPI(self.worker, group=self.group)._submit(
                     'PHASE_SHIFTER_ACQUIRE', lambda w: run(w.raw_device.controller, c,
-                    self.settings['codes'], Cancellation(), received, point)))
+                    self.settings['codes'], Cancellation(), received, point,**options)))
         except Exception as exc:
             error = exc
         if self.handle.cancelled() and error is None:

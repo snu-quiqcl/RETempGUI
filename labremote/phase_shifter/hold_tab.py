@@ -203,6 +203,9 @@ class EtcTab(QtWidgets.QTabWidget):
         from .rabi_tab import PhaseRabiTab
         self.rabi = PhaseRabiTab(worker, self)
         self.addTab(self.rabi, '위상별 Rabi')
+        from .halfpi_tab import HalfPiRamseyTab
+        self.halfpi_ramsey=HalfPiRamseyTab(worker,self)
+        self.addTab(self.halfpi_ramsey,'Rabi 보정 Ramsey')
         # Phase Rabi owns its mapping; never synchronize it with other experiments.
         # Both modes address the same phase shifter, with one shared mapping.
         for a, b in zip(self.ramsey.mapping.phase_selectors, self.hold.selectors):
@@ -213,3 +216,4 @@ class EtcTab(QtWidgets.QTabWidget):
         self.ramsey.shutdown()
         self.hold.shutdown()
         self.rabi.shutdown()
+        self.halfpi_ramsey.shutdown()
