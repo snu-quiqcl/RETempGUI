@@ -3,6 +3,13 @@ from copy import deepcopy
 from collections import Counter
 import numpy as np
 from labremote.decay.plotting import fit_decay
+from functools import lru_cache
+
+@lru_cache(maxsize=256)
+def _cached_fit(values,lower):
+    values=np.asarray(values)
+    start=lower+int(np.argmax(values[lower:]))
+    return dict(fit_decay(np.arange(start,120)*1.25,values[start:]),start_bin=start)
 
 COLORS = ('#176eb5', '#e68a2e', '#319270')
 
@@ -12,9 +19,7 @@ def decay_fits(data, c):
             (data['c'],'PMTC',c['decay_lower_c']),
             (np.asarray(data['a'])+data['c'],'Total',max(c['decay_lower_a'],c['decay_lower_c']))):
         values = np.asarray(values)
-        start = lower + int(np.argmax(values[lower:]))
-        fit = fit_decay(np.arange(start,120)*1.25,values[start:])
-        result[label] = dict(fit,start_bin=start)
+        result[label] = deepcopy(_cached_fit(tuple(values.tolist()),lower))
     return result
 
 def decay_counts(data, c):
@@ -99,12 +104,12 @@ class EntanglementPlot:
         self.fits={}
         figure.subplots_adjust(left=.08,right=.9,bottom=.055,top=.94,hspace=.62,wspace=.38)
 
-    def update(self, d):
+    def update(self, d, prepared_fits=None):
         for ax in self.axes:ax.clear(); ax.grid(alpha=.18)
         self.probability_axis.clear()
         last=d.get('latest') or dict(a=[0]*120,c=[0]*120)
         for ax,src,title,key in zip(self.axes[:2],(d,last),('Accumulated arrivals','Latest batch arrivals'),('accumulated','latest_batch')):
-            fits=decay_fits(src,self.config); self.fits[key]=fits
+            fits=prepared_fits[key] if prepared_fits is not None else decay_fits(src,self.config); self.fits[key]=fits
             for values,name,color in zip((src['a'],src['c'],np.asarray(src['a'])+src['c']),('PMTA','PMTC','Total'),COLORS):
                 values=np.asarray(values); f=fits[name]; label=name
                 if f['status']=='completed':label+=f": tau={f['tau_ns']:.2f} ns"

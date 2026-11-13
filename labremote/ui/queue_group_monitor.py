@@ -34,6 +34,10 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         self.mode.setCurrentIndex(1 if slot.get('monitor',{}).get('view')=='latest' else 0)
         self.mode.currentIndexChanged.connect(self.draw);self.cycle.currentIndexChanged.connect(self.draw)
         self.figure,self.canvas=chart(self.layout_,1150 if self.kind=='ent' else 400)
+        self.draw_pending=False
+        if self.kind=='ent':
+            from .entanglement_view import EntanglementView
+            self.live_view=EntanglementView(self,self.figure,self.canvas,self.summary.setText)
         if self.kind=='ent':self.canvas.setMinimumWidth(950)
         self.update_slot(slot)
 
@@ -67,15 +71,21 @@ class WorkflowPanel(QtWidgets.QGroupBox):
 
     def draw(self):
         if self.kind=='generic':return
+        if not self.isVisible():self.draw_pending=True;return
+        self.draw_pending=False
         try:
             self.cycle.setEnabled(self.mode.currentIndex()==2)
-            self.figure.clear()
+            if self.kind!='ent':self.figure.clear()
             if self.kind=='ion':self.draw_ion()
             elif self.kind=='spam':self.draw_spam()
             else:self.draw_ent()
             if self.kind!='ent':self.figure.tight_layout(pad=1.5)
-            self.canvas.draw_idle()
+            if self.kind!='ent':self.canvas.draw_idle()
         except Exception as exc:self.summary.setText('결과 표시 오류: '+str(exc))
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        if self.draw_pending:self.draw()
 
     def draw_ion(self):
         from labremote.ion_check.config import LABELS,pmt_names,default_mapping
@@ -125,7 +135,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         else:
             basis='ZZ' if c['basis']=='zz' else f"MW detuned · phase {c['phase_magnitude_deg']:g}°"
             self.summary.setText(f"{basis} · 완료 FPGA batch {len(d['batches'])} · 실제 trial {d['attempts']:,} · herald {d['heralds']:,}\n선택 그룹/회차의 완료 batch 누적 · population 오차: ±1σ binomial standard error")
-        self.plot=EntanglementPlot(self.figure,c);self.plot.update(d)
+        self.live_view.submit(d,c)
 
     def open_full(self):
         from labremote.entanglement.plotting import EntanglementPlot
@@ -167,6 +177,7 @@ class GroupDashboard(QtWidgets.QWidget):
         self.launch()
 
     def poll(self):
+        if not self.isVisible():return
         if self.state and self.state['status'] in ('running','paused') and not self.pending:
             self.pending=(self.generation,self.state);self.launch()
 
@@ -250,7 +261,10 @@ class GroupDashboard(QtWidgets.QWidget):
                 elif r['kind']=='ent':parts.append(f"{sum(b['heralded'] for b in r['batches'])} herald / {sum(b['attempts'] for b in r['batches']):,} trials")
             if not parts:parts=[s.get('result',{}).get('reason',s.get('reason',''))]
             values=[s.get('group_iteration',s['job_repeat']),s['name'],s['job_repeat'],s['status'],' · '.join(parts),f"{s['elapsed_s']:.2f}" if 'elapsed_s' in s else '']
-            for col,v in enumerate(values):self.table.setItem(i,col,QtWidgets.QTableWidgetItem(str(v)))
+            for col,v in enumerate(values):
+                old=self.table.item(i,col);text=str(v)
+                if old is None:self.table.setItem(i,col,QtWidgets.QTableWidgetItem(text))
+                elif old.text()!=text:old.setText(text)
         if 0<=selected<self.table.rowCount():self.table.selectRow(selected)
         self.show_details()
 

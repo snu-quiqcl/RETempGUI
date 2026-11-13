@@ -15,13 +15,14 @@ PMTS=tuple(name for name,pin in DEFAULT_ROLES.items() if pin in COUNTER_PINS)+CO
 AOMS=tuple(name for name,pin in DEFAULT_ROLES.items() if pin in OUTPUT_PINS)+OUTPUT_PINS
 
 
-def read(path):return json.loads(Path(path).read_text(encoding='utf-8-sig'))
+def read(path):
+    from labremote.runtime.json_storage import read_json
+    return read_json(path)
 
 
 def save(path,value):
-    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
-    temp=path.with_suffix(path.suffix+'.tmp')
-    temp.write_text(json.dumps(value,indent=2,ensure_ascii=False,allow_nan=False)+'\n',encoding='utf-8');temp.replace(path)
+    from labremote.runtime.json_storage import save_json
+    save_json(path,value)
 
 
 def validate_settings(value):

@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Drain automatic FPGA refresh before workflow; preserve foreign ownership and transport error stops",
+  "revision_note": "Coordinate JSON readers and writers with bounded replacement retries; asynchronous coalesced entanglement plotting",
   "files": [
     {
       "path": ".gitattributes",
@@ -249,8 +249,8 @@
     },
     {
       "path": "labremote/characterization/config.py",
-      "bytes": 5329,
-      "sha256": "c69fdc31835d2759a273e92d08235389f50a13906f65a67c30fffc306fb96b23"
+      "bytes": 5200,
+      "sha256": "f334d12a78101e48832f6814393739c3cdbde060ee595ace5d8e83d6e9ed1485"
     },
     {
       "path": "labremote/characterization/fluorescence.py",
@@ -1894,8 +1894,8 @@
     },
     {
       "path": "labremote/ui/queue_monitor.py",
-      "bytes": 6758,
-      "sha256": "64236a362cd1ab46411f12c9def2baeef1d0c1a65f5d1c6cf36f2d573bfa26f8"
+      "bytes": 8498,
+      "sha256": "bbec49be27a6802148e637c448c7c918669fd51d176b19130eb3212a99ee8a13"
     },
     {
       "path": "labremote/ui/queue_tab.py",
@@ -2164,8 +2164,8 @@
     },
     {
       "path": "labremote/ui/entanglement_tab.py",
-      "bytes": 12381,
-      "sha256": "b8c12e2ec85dcfd0e49295cd86abfd8dae47e8db2d1c1351a74a27631de58eef"
+      "bytes": 12462,
+      "sha256": "d2cced907e670397e1eadeed60961eca821ba2ccf54d957206989371b76d01c5"
     },
     {
       "path": "labremote/ui/fpga_mapping.py",
@@ -2199,8 +2199,8 @@
     },
     {
       "path": "tests/test_entanglement.py",
-      "bytes": 25090,
-      "sha256": "ccdcccd642a3882c5aedbaa85b9dfd5f18dbbbf1a3c1bb9b9c52152f8a310ecc"
+      "bytes": 25223,
+      "sha256": "4e86e0b60532ea02d82e441078d2b1db88c0be2326b131167e90d66c351b069f"
     },
     {
       "path": "tests/test_fpga_sequence_file.py",
@@ -2234,8 +2234,8 @@
     },
     {
       "path": "docs/FPGA_WORKSPACE_KO.md",
-      "bytes": 9957,
-      "sha256": "ef03daa7a2aba4d53ffaba1abde025e7495efe899552a137f1cb3966f90b65be"
+      "bytes": 10789,
+      "sha256": "8243d5e40ab408bacd857ddba82dcb42266b0776a26954091cdd20e6ddbfd35e"
     },
     {
       "path": "labremote/runtime/execution_scope.py",
@@ -2356,6 +2356,46 @@
       "path": "tests/test_queue_refresh.py",
       "bytes": 6090,
       "sha256": "78624a3882f5e9c272447bd3a965a0e7c5b9b1ebffbf3041498cf86fe707f488"
+    },
+    {
+      "path": "labremote/entanglement/plotting.py",
+      "bytes": 11506,
+      "sha256": "df4fe06ca5570b82294e7c1732beb40e72b51e795d269bca76ba4ebf6701a3d1"
+    },
+    {
+      "path": "labremote/runtime/json_storage.py",
+      "bytes": 1359,
+      "sha256": "4b76422aed44d80b3f986a8127c7750cba38e48b25da9f883eca7f7ff0144fd9"
+    },
+    {
+      "path": "labremote/runtime/queue_monitor_data.py",
+      "bytes": 10003,
+      "sha256": "759bc19bedf63b7b0289d07113a728c05946b2ca55f87a9dd5797fa30ece954a"
+    },
+    {
+      "path": "labremote/ui/entanglement_view.py",
+      "bytes": 1839,
+      "sha256": "6e1aebd07f9a1abd0cc8a2362e3a0a8bae1542af9a648cb9f6b8f6387ba0f89e"
+    },
+    {
+      "path": "labremote/ui/queue_group_monitor.py",
+      "bytes": 19184,
+      "sha256": "7a474a1fd013c63ce3e5f914a567736b6d4f59223436108a713d70a23efbc22d"
+    },
+    {
+      "path": "tests/test_monitor_settings.py",
+      "bytes": 6337,
+      "sha256": "ebc8547376f6afc832119ea9af8fd146b7c5bbf270cbeebdbaf29f9ad4d0e584"
+    },
+    {
+      "path": "tests/test_queue_group_monitor.py",
+      "bytes": 11574,
+      "sha256": "1a8842e53a11f3b13b403b23819ba02cdc4466145f3ae73731cb7be908eadf37"
+    },
+    {
+      "path": "tests/test_result_storage_ui.py",
+      "bytes": 6577,
+      "sha256": "daa9f1b4da3dfa9a1a4ebec6a22be25881525124a627370703d1f4b2ee4062ae"
     }
   ]
 }

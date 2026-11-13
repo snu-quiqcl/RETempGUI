@@ -66,7 +66,8 @@ class ResultStore:
         path=Path(path);stat=path.stat();stamp=(stat.st_mtime_ns,stat.st_size)
         key=str(path.resolve());old=self.cache.get(key)
         if old and old[0]==stamp:return old[1]
-        value=json.loads(path.read_text(encoding='utf-8-sig'))
+        from .json_storage import read_json
+        value=read_json(path)
         self.cache[key]=(stamp,value)
         return value
 

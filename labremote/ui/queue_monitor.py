@@ -61,7 +61,10 @@ class QueueMonitor(QtWidgets.QWidget):
         selected=self.table.currentRow();self.table.setRowCount(len(steps))
         for i,p in enumerate(steps):
             values=[p['step_id'],p['name'],p['iteration'],p['job_repeat'],p['status'],f"{p['elapsed_s']:.3f}" if 'elapsed_s' in p else '',p.get('result',{}).get('reason',p.get('reason','')),p.get('group_name',''),f"{p['group_iteration']}/{p['group_repeat']}" if 'group_iteration' in p else '']
-            for j,v in enumerate(values):self.table.setItem(i,j,QtWidgets.QTableWidgetItem(str(v)))
+            for j,v in enumerate(values):
+                old=self.table.item(i,j);text=str(v)
+                if old is None:self.table.setItem(i,j,QtWidgets.QTableWidgetItem(text))
+                elif old.text()!=text:old.setText(text)
         keys=sorted({k for p in steps for k,v in p.get('result',{}).get('metrics',{}).items() if isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v)})
         choice=self.metric.currentData()
         with QtCore.QSignalBlocker(self.metric):

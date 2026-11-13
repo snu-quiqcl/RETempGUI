@@ -49,6 +49,8 @@ class EntanglementTab(QtWidgets.QWidget):
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(12,14)); self.canvas=FigureCanvasQTAgg(self.figure); self.canvas.setMinimumSize(750,1080)
+        from .entanglement_view import EntanglementView
+        self.live_view=EntanglementView(self,self.figure,self.canvas,self.status.setText)
         plot_scroll=QtWidgets.QScrollArea(); plot_scroll.setWidgetResizable(True); plot_scroll.setWidget(self.canvas); layout.addWidget(plot_scroll,1); split.setSizes([390,1050])
         try:c=config.load()
         except Exception as exc:c=config.defaults(); self.status.setText(str(exc))
@@ -141,8 +143,7 @@ class EntanglementTab(QtWidgets.QWidget):
             self.render(data,runner.settings['settings']); self.revision=len(data['batches'])
 
     def render(self,data,c):
-        if self.plot is None:self.plot=EntanglementPlot(self.figure,c)
-        self.plot.update(data); self.canvas.draw_idle()
+        self.live_view.submit(data,c)
         m=data['metrics']
         def fmt(key):return '—' if m[key] is None else f'{m[key]:.5g}'
         last=data.get('latest'); latest=''
@@ -166,4 +167,4 @@ class EntanglementTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
     def shutdown(self):
-        self.timer.stop(); self.worker.entanglement_runner.cancel()
+        self.timer.stop(); self.live_view.stop(); self.worker.entanglement_runner.cancel()
