@@ -22,8 +22,10 @@ def times(c):
     if any(v != int(v) for v in (start,stop,step)):
         raise ValueError('펄스 시간 분해능은 0.01 µs입니다.')
     start,stop,step = map(int,(start,stop,step))
-    if not 0 <= start <= stop <= 65538 or step <= 0:
-        raise ValueError('펄스 범위는 0~655.38 µs, 간격은 양수여야 합니다.')
+    if not 7 <= step <= 65535 or not 0 <= start <= stop <= step*65535:
+        raise ValueError('Pulse step은 0.07~655.35 µs, 총 길이는 최대 65535 step입니다.')
+    if start % step:
+        raise ValueError('시작 시간은 Pulse step의 정수배여야 합니다.')
     if (stop-start)%step:
         raise ValueError('끝 시간은 시작 시간에서 간격의 정수배로 설정하세요.')
     result=list(range(start,stop+1,step))

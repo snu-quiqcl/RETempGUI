@@ -31,7 +31,7 @@ class PhaseRabiTab(W.QWidget):
             self.field(form,key,title+' (µs)',0,655.35,2,100)
         for key,title in [('T_cool_repeat','Cooling repeats'),('T_det_repeat','Detection repeats')]:
             self.field(form,key,title,1,65535,0)
-        self.field(form,'pulse_step_us','Pulse step (µs)',.03,655.38,2)
+        self.field(form,'pulse_step_us','Pulse step (µs)',.07,655.35,2)
         self.field(form,'pulse_points','Pulse points (0 포함)',6,4097,0)
         self.field(form,'N_average','Shots / point',1,65535,0)
         self.field(form,'threshold','Threshold (counts ≥)',0,65535,0)

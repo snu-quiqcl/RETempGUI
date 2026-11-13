@@ -47,9 +47,15 @@ def build_program(parameters, hd=None):
 
     code = integer('phase_code', 0, 4095)
     averages = integer('N_average', 1, 65535)
-    pulse = integer('pulse_clocks', 0, 65538)
-    if 0 < pulse < 3:
-        raise ValueError('Nonzero pulse must be at least 3 clocks')
+    from decimal import Decimal
+    step_value = Decimal(str(p['pulse_step_us'])) * 100
+    if not step_value.is_finite() or step_value != int(step_value) or not 7 <= step_value <= 65535:
+        raise ValueError('Pulse step must be 0.07..655.35 us in 0.01 us increments')
+    step = int(step_value)
+    pulse = integer('pulse_clocks', 0, step * 65535)
+    if pulse % step:
+        raise ValueError('Pulse duration must be an integer multiple of step')
+    pulse_index = pulse // step
     zero_settle = integer('phase_zero_settle_clocks', 3, 65538)
     phase_settle = integer('phase_settle_clocks', 3, 65538)
     cool = integer('T_cool', 0, 65535)
@@ -104,8 +110,17 @@ def build_program(parameters, hd=None):
 
     # Zero duration is a true no-MW reference, not a minimum-width pulse.
     if pulse:
+        if pulse_index > 1:
+            s.load_immediate(reg[10], 0, 'Reset MW step counter every shot')
         set_outputs('Rabi pulse ON', microwave=1)
-        s.wait_n_clocks(pulse - 3)
+        if pulse_index > 1:
+            # wait(n)=n+2, add=1, branch=2: each full loop is step clocks.
+            s.repeat_microwave = s.wait_n_clocks(step - 5, 'MW step loop')
+            s.add(reg[10], reg[10], 1)
+            s.branch_if_less_than('repeat_microwave', reg[10], pulse_index - 1)
+        # ON instruction costs 1; final wait costs step-1.
+        # Total ON-to-OFF interval = 1+(index-1)*step+(step-1).
+        s.wait_n_clocks(step - 3, 'Final MW step including ON instruction compensation')
         set_outputs('Rabi pulse OFF', microwave=0)
 
     set_outputs('Detection', aom=1)
