@@ -1,3 +1,5 @@
+from labremote.ui.responsive import FlowLayout
+from labremote.ui.responsive import ScrollTabs
 from labremote.devices.fpga.mapping import settings_path
 from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
@@ -32,7 +34,7 @@ class DecayExperimentTab(QtWidgets.QWidget):
         self.profile_buttons=[]
         for text,fn in [('Load settings / mapping',self.load),('Save settings / mapping',self.save),('Save as',self.save_as)]:
             b=QtWidgets.QPushButton(text);b.clicked.connect(fn);form.addRow(b);self.profile_buttons.append(b)
-        right=QtWidgets.QWidget();split.addWidget(right);layout=QtWidgets.QVBoxLayout(right);row=QtWidgets.QHBoxLayout();layout.addLayout(row)
+        right=QtWidgets.QWidget();split.addWidget(right);layout=QtWidgets.QVBoxLayout(right);row=FlowLayout();layout.addLayout(row)
         self.run=QtWidgets.QPushButton('Run '+chamber+' '+config.LABELS[mode]);self.stop=QtWidgets.QPushButton('Stop / save partial');row.addWidget(self.run);row.addWidget(self.stop)
         self.run.clicked.connect(self.start);self.stop.clicked.connect(self.api.stop_decay)
         self.directory=QtWidgets.QLineEdit(str(decay_directory(None, chamber, mode)));layout.addWidget(self.directory)
@@ -115,11 +117,11 @@ class DecayExperimentTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
 @bound_methods('decay', editor=False)
-class DecayTab(QtWidgets.QTabWidget):
+class DecayTab(ScrollTabs):
     def __init__(self,worker,parent=None):
         super().__init__(parent);self.experiments={}
         for chamber in ('EA','EC'):
-            tabs=QtWidgets.QTabWidget();self.addTab(tabs,chamber)
+            tabs=ScrollTabs();self.addTab(tabs,chamber)
             for mode in config.MODES:
                 panel=DecayExperimentTab(worker,chamber,mode,tabs);self.experiments[chamber,mode]=panel;tabs.addTab(panel,config.LABELS[mode])
     def shutdown(self):

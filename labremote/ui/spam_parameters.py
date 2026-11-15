@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 """EA/EC Queue forms share the standalone SPAM field definitions and validation."""
 from copy import deepcopy
 from PyQt5 import QtWidgets
@@ -10,7 +11,7 @@ class SpamParameters(QtWidgets.QWidget):
         layout=QtWidgets.QVBoxLayout(self);form=QtWidgets.QFormLayout();layout.addLayout(form)
         self.fpga=QtWidgets.QLineEdit('fpga_local');form.addRow('FPGA 장비',self.fpga)
         note=QtWidgets.QLabel('Workflow 1회: EA SPAM → EC SPAM. 각 챔버 설정을 이 Queue 항목에 저장합니다.\nMW 주파수·출력은 외부에서 설정합니다. 시간 입력 단위는 µs입니다.');note.setWordWrap(True);layout.addWidget(note)
-        self.chambers=QtWidgets.QTabWidget();layout.addWidget(self.chambers,1)
+        self.chambers=ScrollTabs();layout.addWidget(self.chambers,1)
         for chamber in ('EA','EC'):
             page=QtWidgets.QWidget();body=QtWidgets.QVBoxLayout(page);self.chambers.addTab(page,chamber+' SPAM')
             bar=QtWidgets.QHBoxLayout();body.addLayout(bar)

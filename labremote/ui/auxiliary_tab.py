@@ -1,3 +1,5 @@
+from labremote.ui.responsive import FlowLayout
+from labremote.ui.responsive import ScrollTabs
 """Manual controls for OSA/MDT/local FPGA/QCoDeS motors, all through common APIs."""
 from collections import deque
 import time
@@ -54,12 +56,12 @@ class AuxiliaryTab(QtWidgets.QWidget):
                 self.host=QtWidgets.QLineEdit(cfg['host']);self.port=QtWidgets.QSpinBox();self.port.setRange(1,65535);self.port.setValue(cfg['port'])
                 self.target=QtWidgets.QLineEdit(self.config.get('instrument',name))
                 for title,editor in [('Instrument Server',self.host),('Port',self.port),('Instrument',self.target)]:form.addRow(title,editor)
-            row=QtWidgets.QHBoxLayout();root.addLayout(row)
+            row=FlowLayout();root.addLayout(row)
             self.connect_btn=QtWidgets.QPushButton('Connect');self.disconnect_btn=QtWidgets.QPushButton('Disconnect')
             row.addWidget(self.connect_btn);row.addWidget(self.disconnect_btn)
             self.connect_btn.clicked.connect(self._connect);self.disconnect_btn.clicked.connect(self.api.disconnect)
             self._button(row,'Read all',self.api.refresh);self._button(row,'Cancel operation / workflow',self.api.cancel)
-            self.status=QtWidgets.QLabel(name+' — Disconnected');root.addWidget(self.status)
+            self.status=QtWidgets.QLabel(name+' — Disconnected');self.status.setWordWrap(True);root.addWidget(self.status)
             self.message=QtWidgets.QLabel();self.message.setWordWrap(True);root.addWidget(self.message)
             grid=QtWidgets.QGridLayout();root.addLayout(grid)
             if family=='osa':
@@ -179,7 +181,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
     def attach_automation(self,bindings):
         if self.family not in ('mdt','fpga'):return
         manual=QtWidgets.QWidget();manual.setLayout(self.layout())
-        root=QtWidgets.QVBoxLayout(self);self.automation_tabs=QtWidgets.QTabWidget();root.addWidget(self.automation_tabs)
+        root=QtWidgets.QVBoxLayout(self);self.automation_tabs=ScrollTabs();root.addWidget(self.automation_tabs)
         self.automation_tabs.addTab(manual,'Manual')
         if self.family=='mdt':
             from labremote.ui.pid_tab import PIDTab

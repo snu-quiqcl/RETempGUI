@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 """Read-only queue outcomes and metrics, independent of hardware polling."""
 import json
 import math
@@ -25,7 +26,7 @@ class QueueMonitor(QtWidgets.QWidget):
     def __init__(self,parent=None):
         super().__init__(parent);self.latest=None;self.current=None;self.follow=True;self.reader=None
         root=QtWidgets.QVBoxLayout(self)
-        self.views=QtWidgets.QTabWidget();root.addWidget(self.views)
+        self.views=ScrollTabs();root.addWidget(self.views)
         from .queue_group_monitor import GroupDashboard
         self.dashboard=GroupDashboard(self);self.views.addTab(self.dashboard,'그룹별 모니터')
         overview=QtWidgets.QWidget();self.views.addTab(overview,'전체 실행 목록')

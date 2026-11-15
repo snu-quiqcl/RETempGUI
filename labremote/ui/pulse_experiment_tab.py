@@ -1,3 +1,4 @@
+from labremote.ui.responsive import FlowLayout
 from labremote.ui.pin_selector import PinSelector
 from labremote.devices.fpga.mapping import settings_path
 from labremote.devices.fpga.mapping import bound_methods
@@ -29,7 +30,7 @@ class PulseExperimentTab(QtWidgets.QWidget):
             button=QtWidgets.QPushButton(title);button.clicked.connect(callback);left.addWidget(button);self.config_buttons.append(button)
         left.addStretch()
         result=QtWidgets.QWidget();right=QtWidgets.QVBoxLayout(result);split.addWidget(result);split.setSizes([350,750])
-        row=QtWidgets.QHBoxLayout();right.addLayout(row)
+        row=FlowLayout();right.addLayout(row)
         self.start_button=QtWidgets.QPushButton('Run '+chamber+' '+model.title(kind));self.stop_button=QtWidgets.QPushButton('Stop / save partial')
         self.start_button.clicked.connect(self.start);self.stop_button.clicked.connect(getattr(self.api,"stop_"+kind));row.addWidget(self.start_button);row.addWidget(self.stop_button)
         self.directory=QtWidgets.QLineEdit(str(characterization_directory(None, chamber, kind)));right.addWidget(self.directory)

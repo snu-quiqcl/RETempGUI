@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 from labremote.devices.fpga.mapping import bound_methods
 """FPGA / etc: phase-shifter Ramsey setup, execution and live results."""
 import json
@@ -29,7 +30,7 @@ class PhaseShifterTab(QtWidgets.QWidget):
         scroll.setWidgetResizable(True)
         scroll.setMinimumWidth(440)
         settings = QtWidgets.QWidget()
-        self.settings_panel = QtWidgets.QTabWidget()
+        self.settings_panel = ScrollTabs()
         left = QtWidgets.QVBoxLayout(settings)
         scroll.setWidget(settings)
         split.addWidget(self.settings_panel)

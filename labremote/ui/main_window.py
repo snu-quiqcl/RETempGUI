@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 """RF device tabs and the shared workflow editor."""
 import argparse
 import sys
@@ -85,25 +86,25 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         for w in (QtWidgets.QLabel('Host'),self.discovery_host,QtWidgets.QLabel('Port'),self.discovery_port,self.rescan_btn,self.manual_family,self.manual_name,add): row.addWidget(w)
         # Server settings are reparented into a detail window below.
         self.device_tabs = MainTabs()
-        self.windfreak_subtabs = QtWidgets.QTabWidget()
-        self.rf_tabs=QtWidgets.QTabWidget()
-        self.oscillo_tabs=QtWidgets.QTabWidget()
+        self.windfreak_subtabs = ScrollTabs()
+        self.rf_tabs=ScrollTabs()
+        self.oscillo_tabs=ScrollTabs()
         self.device_tabs.addTab(self.rf_tabs,'RF')
         self.device_tabs.addTab(self.oscillo_tabs,'oscillo')
         self.rf_tabs.addTab(self.windfreak_subtabs, 'Windfreak')
         self.family_subtabs = {'windfreak': self.windfreak_subtabs}
         for family,title in [('sg384','SG384'),('anapico','AnaPico'),('dds4','DDS / AD9912')]:
-            tabs=QtWidgets.QTabWidget(); self.family_subtabs[family]=tabs
+            tabs=ScrollTabs(); self.family_subtabs[family]=tabs
             self.rf_tabs.addTab(tabs,title)
-        self.ds1052e_subtabs=QtWidgets.QTabWidget()
+        self.ds1052e_subtabs=ScrollTabs()
         self.family_subtabs['ds1052e']=self.ds1052e_subtabs
         self.oscillo_tabs.addTab(self.ds1052e_subtabs,'DS1052E')
-        mso_tabs=QtWidgets.QTabWidget();self.family_subtabs['mso7054']=mso_tabs
+        mso_tabs=ScrollTabs();self.family_subtabs['mso7054']=mso_tabs
         self.oscillo_tabs.addTab(mso_tabs,'MSO7054')
-        self.mira_tabs=QtWidgets.QTabWidget();self.others_tabs=QtWidgets.QTabWidget()
+        self.mira_tabs=ScrollTabs();self.others_tabs=ScrollTabs()
         self.device_tabs.addTab(self.mira_tabs,'mira');self.device_tabs.addTab(self.others_tabs,'others')
         for family,title,parent in [('thermotek','THERMOTEK',self.mira_tabs),('keithley','Keithley',self.others_tabs),('osa','OSA',self.mira_tabs),('mdt','MDT',self.mira_tabs),('fpga','FPGA',self.device_tabs),('dac','DAC',self.device_tabs)]:
-            tabs=QtWidgets.QTabWidget();self.family_subtabs[family]=tabs;parent.addTab(tabs,title)
+            tabs=ScrollTabs();self.family_subtabs[family]=tabs;parent.addTab(tabs,title)
         from labremote.ui.motor_tab import MotorTab
         self.motor_tab=MotorTab(self,endpoint=self._endpoint);self.family_subtabs['motors']=self.motor_tab
         self.others_tabs.addTab(self.motor_tab,'Motor')

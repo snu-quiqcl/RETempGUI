@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Coordinate JSON readers and writers with bounded replacement retries; asynchronous coalesced entanglement plotting",
+  "revision_note": "Isolate tab scroll extents and wrap action rows; preserve page identity and hardware actions",
   "files": [
     {
       "path": ".gitattributes",
@@ -999,8 +999,8 @@
     },
     {
       "path": "labremote/devices/mso7054/tab.py",
-      "bytes": 11570,
-      "sha256": "aebc6fdd921eac1b7eb50591a00df78c9661922e407599dd4e9fb71618d73fad"
+      "bytes": 11608,
+      "sha256": "e82cd1ece0b7e9a4cb146b5611f183e873da6be00573f054d99656f2cf992c34"
     },
     {
       "path": "labremote/devices/mso7054/worker.py",
@@ -1809,8 +1809,8 @@
     },
     {
       "path": "labremote/ui/auxiliary_tab.py",
-      "bytes": 28880,
-      "sha256": "adea690e360275cd93fb8daa54dfb53e8a083aace174cae07ad3977720b571d2"
+      "bytes": 28985,
+      "sha256": "4d8fc048549fb4271014e902cf734ead47e6a9745b9aa42d30d7566d3762a20e"
     },
     {
       "path": "labremote/ui/connection_status.py",
@@ -1819,18 +1819,18 @@
     },
     {
       "path": "labremote/ui/daily_characterization.py",
-      "bytes": 11946,
-      "sha256": "46c9200ed6134c70d6558e74b955cc24a5bb6cf3b5e194b7bc1d6b6766f5fe3a"
+      "bytes": 12041,
+      "sha256": "073681beb69c9a7a93046b2b70e07149463719a2ce8ba54b71186a7a972c8ffe"
     },
     {
       "path": "labremote/ui/decay_tab.py",
-      "bytes": 10143,
-      "sha256": "3c09f7db137e3d5e286f520cfb5affc9b90a38307c006dc733e0ae94cb9927b2"
+      "bytes": 10208,
+      "sha256": "2655d16d247e16377b27662407512f87b2988efb886b32a1556f8d06add732bf"
     },
     {
       "path": "labremote/ui/detail_window.py",
-      "bytes": 1989,
-      "sha256": "627287227cb27be07c4e5d76ca053be88fc57f1857238208c856cc28b2cdb6d3"
+      "bytes": 2027,
+      "sha256": "f9f26ece1ffc39014b11b84a9a83b1290dc4eea65a0a7fc8015fd58cfd76444e"
     },
     {
       "path": "labremote/ui/equipment_configuration.py",
@@ -1839,8 +1839,8 @@
     },
     {
       "path": "labremote/ui/equipment_tab.py",
-      "bytes": 17076,
-      "sha256": "e68dbf972cef417138facf7a64cd67c4e1202bae1b8ab65828cb2bc7f05b650f"
+      "bytes": 17145,
+      "sha256": "3013b86bbdd1c160115ea0c1358c6e0c492f6ad088fae0034c93fa1b596fbbd7"
     },
     {
       "path": "labremote/ui/experiment_shell.py",
@@ -1864,8 +1864,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 22931,
-      "sha256": "20d7f099328ffeb85af3073ffc40503f4fd0210e667c571d30b8d55b940da882"
+      "bytes": 22889,
+      "sha256": "4af3dd09552593c1988c4fbfdde4a85460c5953fca2c6681d82004df2ddbbf2d"
     },
     {
       "path": "labremote/ui/monitor_dashboard.py",
@@ -1889,13 +1889,13 @@
     },
     {
       "path": "labremote/ui/pulse_experiment_tab.py",
-      "bytes": 9998,
-      "sha256": "ea824206feff291776f22027e297d0e2cb72a4d10bffaefdc3b27bfc5057e611"
+      "bytes": 10035,
+      "sha256": "13bdd2fed7acc6f77f268192b2359d96c09899e8cefc4033411652fa462d00f6"
     },
     {
       "path": "labremote/ui/queue_monitor.py",
-      "bytes": 8498,
-      "sha256": "bbec49be27a6802148e637c448c7c918669fd51d176b19130eb3212a99ee8a13"
+      "bytes": 8536,
+      "sha256": "7c4885db05ef92ccbc2e8f3480d3f5aa759ae05cbd88d9287e44c3b8347452d9"
     },
     {
       "path": "labremote/ui/queue_tab.py",
@@ -1904,13 +1904,13 @@
     },
     {
       "path": "labremote/ui/rabi_tab.py",
-      "bytes": 10458,
-      "sha256": "1b57f36b89c02ca36435ba01030118a7512b88d986a08496ca236a0e4adc294c"
+      "bytes": 10495,
+      "sha256": "29cf32fe860c29e5ad6b36978c7fe880cb2b7ddae2168fb34413b2935ebd41bd"
     },
     {
       "path": "labremote/ui/rf_device_tab.py",
-      "bytes": 18728,
-      "sha256": "c2994e0ea3b368de66f0e9cb38e140128cd1b8c40184a05a82a815fda8a314b3"
+      "bytes": 18774,
+      "sha256": "ebc38b969c268591ad58bb56c35d80c310af45d1d1066647c405054afd5bdb37"
     },
     {
       "path": "labremote/ui/shutter_status.py",
@@ -2154,8 +2154,8 @@
     },
     {
       "path": "labremote/phase_shifter/tab.py",
-      "bytes": 19227,
-      "sha256": "1ad18d438915a9bace6a46b685729c48f1e7be6120c85efa26b31b5c70361e06"
+      "bytes": 19265,
+      "sha256": "c81f726dc161093bf96a12535bfc27842b43dd029441d675f26ebab6becd06c2"
     },
     {
       "path": "labremote/sequences/ion_check_sequence.py",
@@ -2164,18 +2164,18 @@
     },
     {
       "path": "labremote/ui/entanglement_tab.py",
-      "bytes": 12462,
-      "sha256": "d2cced907e670397e1eadeed60961eca821ba2ccf54d957206989371b76d01c5"
+      "bytes": 12499,
+      "sha256": "7bdf28187e186b37085677d8ee08c038c42732e8239b503cd005572e9d093a64"
     },
     {
       "path": "labremote/ui/fpga_mapping.py",
-      "bytes": 11924,
-      "sha256": "391ab9a94c7e18b47a6ebe06d0272671ccfe7771ffae511b9ffe2557b22cdaaa"
+      "bytes": 12024,
+      "sha256": "3f8cdc95624c57f25b5a2f6504036039d7400c1fcf626ad7bb701ec2eedf354e"
     },
     {
       "path": "labremote/ui/hom_tab.py",
-      "bytes": 11381,
-      "sha256": "8a30d1e4f8fe2d8fa5251a7350a525092ccf7da2c8c8fb84c2acbcb40671d6c0"
+      "bytes": 11418,
+      "sha256": "32ea4296c857965828d7817dd717963d7f1e8ece190bbc70a05c56178c63c975"
     },
     {
       "path": "labremote/ui/ion_check_tab.py",
@@ -2234,8 +2234,8 @@
     },
     {
       "path": "docs/FPGA_WORKSPACE_KO.md",
-      "bytes": 10789,
-      "sha256": "8243d5e40ab408bacd857ddba82dcb42266b0776a26954091cdd20e6ddbfd35e"
+      "bytes": 11481,
+      "sha256": "814fbfbc97c6e8cfb79d97f917ea1f1da62e26cc114f23ebeff6d5bc1655f4e4"
     },
     {
       "path": "labremote/runtime/execution_scope.py",
@@ -2249,8 +2249,8 @@
     },
     {
       "path": "labremote/ui/experiment_workspace.py",
-      "bytes": 14226,
-      "sha256": "9258abbfd64f7b473be8afa4b5136ad5aeb322e61a848d7ee18494ab7ea60af7"
+      "bytes": 14344,
+      "sha256": "853cd42b601f63f31ef378f56f4315fff60639a9234de02b7311715172c8c7d6"
     },
     {
       "path": "labremote/ui/fpga_connections.py",
@@ -2259,8 +2259,8 @@
     },
     {
       "path": "labremote/ui/workflow_parameters.py",
-      "bytes": 26857,
-      "sha256": "f18750cfab11f5cc358a580bdf236e496900ca55c29557f4b4648d82a7e4179b"
+      "bytes": 26895,
+      "sha256": "0f55e42ead0c22dd57eb7ea491212e376713baf674b8ec22d50654b63d095a52"
     },
     {
       "path": "tests/test_experiment_ui.py",
@@ -2294,8 +2294,8 @@
     },
     {
       "path": "labremote/ui/pin_selector.py",
-      "bytes": 2298,
-      "sha256": "565c0770fe950c1d68c505c76a457f2e64e8c871b0a380bd74350a69d24b109f"
+      "bytes": 2421,
+      "sha256": "37a31645c350c38bdb73cc5c50a743dc5931efa2362df213e4d4c9ccc71065c7"
     },
     {
       "path": "labremote/ui/queue_experiment_parameters.py",
@@ -2379,8 +2379,8 @@
     },
     {
       "path": "labremote/ui/queue_group_monitor.py",
-      "bytes": 19184,
-      "sha256": "7a474a1fd013c63ce3e5f914a567736b6d4f59223436108a713d70a23efbc22d"
+      "bytes": 19222,
+      "sha256": "7f24ba5a18c36a471a504270119550244f81cf16369f007053d602edeb0564e8"
     },
     {
       "path": "tests/test_monitor_settings.py",
@@ -2396,6 +2396,21 @@
       "path": "tests/test_result_storage_ui.py",
       "bytes": 6577,
       "sha256": "daa9f1b4da3dfa9a1a4ebec6a22be25881525124a627370703d1f4b2ee4062ae"
+    },
+    {
+      "path": "labremote/ui/responsive.py",
+      "bytes": 4334,
+      "sha256": "b521b6e13fe18f78b14f3b0a94700f6c09f4a958b3e2eeca61539f943f04f03c"
+    },
+    {
+      "path": "labremote/ui/spam_parameters.py",
+      "bytes": 5373,
+      "sha256": "189e63ddf116ff2456731ebe1b94aa152a15bba12182a18b9f8f3dd4dc130bdd"
+    },
+    {
+      "path": "tests/test_responsive_layout.py",
+      "bytes": 3682,
+      "sha256": "bedcaba3b50a1aa3c41222e02327c5cf2860136ee8a1796e23007f1809c95719"
     }
   ]
 }

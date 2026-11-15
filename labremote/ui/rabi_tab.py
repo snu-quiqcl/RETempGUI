@@ -1,3 +1,4 @@
+from labremote.ui.responsive import FlowLayout
 from labremote.ui.pin_selector import PinSelector
 from labremote.devices.fpga.mapping import settings_path
 from labremote.devices.fpga.mapping import bound_methods
@@ -34,7 +35,7 @@ class RabiTab(QtWidgets.QWidget):
             button=QtWidgets.QPushButton(title);button.clicked.connect(callback);left.addWidget(button);self.config_buttons.append(button)
         left.addStretch()
         result=QtWidgets.QWidget();right=QtWidgets.QVBoxLayout(result);split.addWidget(result);split.setSizes([350,750])
-        row=QtWidgets.QHBoxLayout();right.addLayout(row)
+        row=FlowLayout();right.addLayout(row)
         self.start_button=QtWidgets.QPushButton('Run '+chamber+' Rabi');self.stop_button=QtWidgets.QPushButton('Stop / save partial')
         self.start_button.clicked.connect(self.start);self.stop_button.clicked.connect(self.api.stop_rabi);row.addWidget(self.start_button);row.addWidget(self.stop_button)
         self.directory=QtWidgets.QLineEdit(str(characterization_directory(None, chamber, 'rabi')));right.addWidget(self.directory)

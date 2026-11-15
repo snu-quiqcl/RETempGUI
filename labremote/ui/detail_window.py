@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 """One persistent detail window per device group; closing only hides it."""
 from PyQt5 import QtCore,QtWidgets
 
@@ -31,7 +32,7 @@ class DetailWindow(QtWidgets.QMainWindow):
             event.accept()
         else:self.hide();event.ignore()
 
-class MainTabs(QtWidgets.QTabWidget):
+class MainTabs(ScrollTabs):
     """Legacy programmatic selection raises a detached detail view, without duplicating it."""
     def __init__(self,parent=None):
         super().__init__(parent);self.detail_windows={}

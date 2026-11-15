@@ -1,3 +1,5 @@
+from labremote.ui.responsive import bounded_combo
+from labremote.ui.responsive import ScrollTabs
 """Shared experiment pages select a connected FPGA without moving running jobs."""
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets as W
@@ -42,7 +44,7 @@ class ExperimentSlot(W.QWidget):
         self.views={};self.selected=None;self.current=None;self._refreshing=False;self._pin_signatures={}
         self.root=W.QVBoxLayout(self)
         self.selection=W.QGroupBox('FPGA 선택');form=W.QVBoxLayout(self.selection)
-        self.choice=W.QComboBox();self.choice.setProperty('persistInput',False);form.addWidget(self.choice)
+        self.choice=W.QComboBox();bounded_combo(self.choice);self.choice.setProperty('persistInput',False);form.addWidget(self.choice)
         self.info=W.QLabel();self.info.setWordWrap(True);form.addWidget(self.info)
         self.queue_button=W.QPushButton('현재 조건으로 Queue에 추가');form.addWidget(self.queue_button)
         self.queue_button.clicked.connect(self.add_to_queue)
@@ -188,7 +190,7 @@ class ExperimentSlot(W.QWidget):
             for timer in view.findChildren(QtCore.QTimer):timer.stop()
 
 
-class ExperimentWorkspace(W.QTabWidget):
+class ExperimentWorkspace(ScrollTabs):
     def __init__(self,host):
         super().__init__();self.host=host;self.slots=[]
         from .motor_scan_tab import MotorScanTab,SCAN_TABS
@@ -203,19 +205,19 @@ class ExperimentWorkspace(W.QTabWidget):
         from .micromotion_tab import MicromotionTab
         from labremote.phase_shifter.hold_tab import EtcTab
         def group(title):
-            tabs=W.QTabWidget();self.addTab(tabs,title);return tabs
+            tabs=ScrollTabs();self.addTab(tabs,title);return tabs
         scan=group('Scan')
         for n,(title,axes) in enumerate(SCAN_TABS,1):self.add_slot(scan,title,lambda w,b,n=n:MotorScanTab(w,b,n,host))
         daily=group('Daily characterization')
         for chamber in ('EA','EC'):
-            pages=W.QTabWidget();daily.addTab(pages,chamber)
+            pages=ScrollTabs();daily.addTab(pages,chamber)
             self.add_slot(pages,'Fluorescence',lambda w,b,c=chamber:FluorescenceTab(w,c,host))
             self.add_slot(pages,'Rabi',lambda w,b,c=chamber:RabiTab(w,c,b,host))
             for kind in ('initialization','ramsey','spam'):
                 self.add_slot(pages,kind.title(),lambda w,b,c=chamber,k=kind:PulseExperimentTab(w,k,c,b,host))
         decay=group('Decay')
         for chamber in ('EA','EC'):
-            pages=W.QTabWidget();decay.addTab(pages,chamber)
+            pages=ScrollTabs();decay.addTab(pages,chamber)
             for mode in MODES:self.add_slot(pages,LABELS[mode],lambda w,b,c=chamber,m=mode:DecayExperimentTab(w,c,m,host))
         self.add_slot(self,'HOM',lambda w,b:HOMTab(w,host))
         self.add_slot(self,'Entanglement',lambda w,b:EntanglementTab(w,host))

@@ -1,3 +1,4 @@
+from labremote.ui.responsive import bounded_combo, FlowLayout
 """Board aliases and explicit experiment-role routing; no hardware I/O."""
 import json
 from PyQt5 import QtCore, QtWidgets as W
@@ -20,9 +21,9 @@ class RoleMapping(W.QGroupBox):
         form = self.form = W.QFormLayout(self.body)
         self.choices = {}
         for role in ROLES.get(experiment, tuple(DEFAULT_ROLES)):
-            combo = W.QComboBox(); combo.setProperty('persistInput', False)
+            combo = W.QComboBox(); bounded_combo(combo); combo.setProperty('persistInput', False)
             self.choices[role] = combo; form.addRow(role, combo)
-        buttons = W.QHBoxLayout()
+        buttons = FlowLayout()
         apply = W.QPushButton('이 FPGA의 실험 매핑 저장'); apply.clicked.connect(self.apply)
         reload = W.QPushButton('현재 매핑 다시 읽기'); reload.clicked.connect(self.refresh)
         buttons.addWidget(apply); buttons.addWidget(reload); form.addRow(buttons)
@@ -46,7 +47,7 @@ class RoleMapping(W.QGroupBox):
                 for _ in self.choices:self.form.removeRow(0)
                 self.choices={}
                 for i,role in enumerate(roles):
-                    box=W.QComboBox();box.setProperty('persistInput',False);self.choices[role]=box;self.form.insertRow(i,role,box)
+                    box=W.QComboBox();bounded_combo(box);box.setProperty('persistInput',False);self.choices[role]=box;self.form.insertRow(i,role,box)
         document = self.worker.profile.document()
         mapping = {**DEFAULT_ROLES, **document['experiments'].get(self.experiment, {})}
         self._loaded=dict(mapping)

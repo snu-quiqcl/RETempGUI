@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 from labremote.devices.ds1052e.tab import DS1052ETab
 from labremote.devices.mso7054.worker import MSO7054Worker
 import csv
@@ -63,7 +64,7 @@ class MSO7054Tab(DS1052ETab):
                 child = item.layout(); child.setParent(None); content.addLayout(child)
             else:
                 content.addItem(item)
-        self.pages = QtWidgets.QTabWidget(); outer.addWidget(self.pages)
+        self.pages = ScrollTabs(); outer.addWidget(self.pages)
         scroll = QtWidgets.QScrollArea(); scroll.setWidgetResizable(True); scroll.setWidget(page)
         self.pages.addTab(scroll, 'Waveform / controls')
         history_page = QtWidgets.QWidget(); layout = QtWidgets.QVBoxLayout(history_page)

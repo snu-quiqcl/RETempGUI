@@ -1,3 +1,4 @@
+from labremote.ui.responsive import FlowLayout
 from labremote.devices.fpga.mapping import settings_path
 from labremote.devices.fpga.mapping import bound_methods
 from pathlib import Path
@@ -41,7 +42,7 @@ class HOMTab(QtWidgets.QWidget):
         for text,fn in [('Load settings',self.load),('Save settings',self.save),('Save settings as…',self.save_as)]:
             button=QtWidgets.QPushButton(text); button.clicked.connect(fn); form.addRow(button)
         right=QtWidgets.QWidget(); split.addWidget(right); layout=QtWidgets.QVBoxLayout(right)
-        row=QtWidgets.QHBoxLayout(); layout.addLayout(row)
+        row=FlowLayout(); layout.addLayout(row)
         self.run=QtWidgets.QPushButton('Run HOM'); self.stop=QtWidgets.QPushButton('Stop / save partial'); self.queue=QtWidgets.QPushButton('Add to Queue')
         for b in (self.run,self.stop,self.queue):row.addWidget(b)
         self.run.clicked.connect(self.start); self.stop.clicked.connect(self.api.stop_hom); self.queue.clicked.connect(self.add_to_queue)

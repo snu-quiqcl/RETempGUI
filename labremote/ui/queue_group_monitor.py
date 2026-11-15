@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 """Group/workflow dashboard fed only by Queue manifests and saved result files."""
 from copy import deepcopy
 import json
@@ -159,7 +160,7 @@ class GroupDashboard(QtWidgets.QWidget):
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);split.addWidget(scroll);body=QtWidgets.QWidget();scroll.setWidget(body);self.body=QtWidgets.QVBoxLayout(body)
         self.group_title=QtWidgets.QLabel();self.group_title.setWordWrap(True);self.body.addWidget(self.group_title)
         self.progress=QtWidgets.QProgressBar();self.body.addWidget(self.progress)
-        self.monitor_tabs=QtWidgets.QTabWidget();self.body.addWidget(self.monitor_tabs,1)
+        self.monitor_tabs=ScrollTabs();self.body.addWidget(self.monitor_tabs,1)
         self.table=QtWidgets.QTableWidget(0,6);self.table.setHorizontalHeaderLabels(['회차','Workflow','작업 반복','상태','측정 요약','시간(s)'])
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);self.table.setMinimumHeight(190);self.body.addWidget(self.table)
         self.details=QtWidgets.QPlainTextEdit();self.details.setReadOnly(True);self.details.setMaximumHeight(120);self.body.addWidget(self.details);self.table.itemSelectionChanged.connect(self.show_details)

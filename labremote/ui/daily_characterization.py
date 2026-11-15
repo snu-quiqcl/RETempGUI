@@ -1,3 +1,4 @@
+from labremote.ui.responsive import FlowLayout
 from labremote.ui.pin_selector import PinSelector
 from labremote.devices.fpga.mapping import settings_path
 from labremote.devices.fpga.mapping import bound_methods
@@ -15,18 +16,18 @@ from labremote.characterization.fluorescence import draw
 class FluorescenceTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,parent=None):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.api=device_api(worker);self.fields={};self.run_id=None;self.rendered_id=None
-        root=QtWidgets.QVBoxLayout(self);self.mapping_label=QtWidgets.QLabel();root.addWidget(self.mapping_label)
+        root=QtWidgets.QVBoxLayout(self);self.mapping_label=QtWidgets.QLabel();self.mapping_label.setWordWrap(True);root.addWidget(self.mapping_label)
         self.roles={}
         mapping_row=QtWidgets.QHBoxLayout();root.addLayout(mapping_row)
         for role,names in (('PMT',config.PMTS),('AOM',config.AOMS)):
             box=PinSelector(worker,'fluorescence',input_pin=role=='PMT');self.roles[role]=box
             mapping_row.addWidget(QtWidgets.QLabel('검출 입력 (PMT)' if role=='PMT' else '출력 (AOM · 계수 시 미사용)'));mapping_row.addWidget(box)
-        row=QtWidgets.QHBoxLayout();root.addLayout(row)
+        row=QtWidgets.QFormLayout();row.setRowWrapPolicy(QtWidgets.QFormLayout.WrapLongRows);root.addLayout(row)
         for key,title,lo,hi in (('exposure_ms','Exposure (ms)',.1,6000),('num_average','Samples / batch',1,65535),('num_repeat','Batches',1,65535),('timeout_s','Timeout / batch (s)',.1,3600)):
             field=QtWidgets.QDoubleSpinBox() if key in ('exposure_ms','timeout_s') else QtWidgets.QSpinBox()
             if isinstance(field,QtWidgets.QDoubleSpinBox):field.setDecimals(1);field.setSingleStep(.1)
-            field.setRange(lo,hi);self.fields[key]=field;row.addWidget(QtWidgets.QLabel(title));row.addWidget(field)
-        row=QtWidgets.QHBoxLayout();root.addLayout(row);self.config_buttons=[]
+            field.setRange(lo,hi);self.fields[key]=field;row.addRow(title,field)
+        row=FlowLayout();root.addLayout(row);self.config_buttons=[]
         for title,callback in (('변수 불러오기',self.load),('변수 저장',self.save),('다른 이름으로 저장',self.save_as)):
             button=QtWidgets.QPushButton(title);row.addWidget(button);button.clicked.connect(callback);self.config_buttons.append(button)
         self.start_button=QtWidgets.QPushButton('Run '+chamber+' Fluorescence');self.stop_button=QtWidgets.QPushButton('Stop / save partial')

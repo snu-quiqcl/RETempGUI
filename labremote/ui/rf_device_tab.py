@@ -1,3 +1,4 @@
+from labremote.ui.responsive import FlowLayout
 """RF instrument panels using one common API and library-driven readouts."""
 from PyQt5 import QtCore, QtWidgets
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
@@ -23,14 +24,14 @@ class RFDeviceTab(QtWidgets.QWidget):
         self.api=device_api(self.worker)
         root=QtWidgets.QVBoxLayout(self)
         connection=QtWidgets.QGroupBox(f'{family.upper()} — {name}')
-        box=QtWidgets.QVBoxLayout(connection); buttons=QtWidgets.QHBoxLayout()
+        box=QtWidgets.QVBoxLayout(connection); buttons=FlowLayout()
         self.connect_button=QtWidgets.QPushButton('Connect')
         self.disconnect_button=QtWidgets.QPushButton('Disconnect')
         self.refresh_button=QtWidgets.QPushButton('Refresh')
         self.cancel_button=QtWidgets.QPushButton('Cancel operation / workflow')
         for widget in (self.connect_button,self.disconnect_button,self.refresh_button,self.cancel_button):buttons.addWidget(widget)
-        buttons.addStretch();box.addLayout(buttons)
-        self.status=QtWidgets.QLabel('Disconnected');box.addWidget(self.status)
+        box.addLayout(buttons)
+        self.status=QtWidgets.QLabel('Disconnected');self.status.setWordWrap(True);box.addWidget(self.status)
         box.addWidget(QtWidgets.QLabel('Monitoring: every 60 s; explicit reads always query the server'))
         root.addWidget(connection)
         self.connect_button.clicked.connect(self._connect)

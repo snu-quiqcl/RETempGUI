@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs
 """Queue-only parameter editor. Editing never connects to an instrument."""
 import json
 from copy import deepcopy
@@ -193,7 +194,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         self.refresh_mapping=QtWidgets.QCheckBox('선택한 FPGA의 현재 핀 매핑으로 갱신')
         self.refresh_mapping.setParent(self);self.refresh_mapping.hide()  # Compatibility adapter for the load button.
         filename=QtWidgets.QLabel(job['filename']);filename.setWordWrap(True);form.addRow('Workflow',filename)
-        self.tabs=QtWidgets.QTabWidget();layout.addWidget(self.tabs,1)
+        self.tabs=ScrollTabs();layout.addWidget(self.tabs,1)
         if migration_note:
             notice=QtWidgets.QLabel(migration_note);notice.setWordWrap(True);layout.insertWidget(1,notice)
         self.editor=None;self.settings_config=config;self.settings_filename='entanglement.local.json'

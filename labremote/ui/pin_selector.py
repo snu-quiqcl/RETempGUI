@@ -1,3 +1,4 @@
+from labremote.ui.responsive import bounded_combo
 """Physical pin selection with device aliases and legacy preset compatibility."""
 from PyQt5 import QtCore, QtWidgets as W
 from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, capability
@@ -5,7 +6,7 @@ from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, capability
 
 class PinSelector(W.QComboBox):
     def __init__(self, worker, experiment, *, input_pin=False, fast_only=False):
-        super().__init__()
+        super().__init__();bounded_combo(self)
         self.worker, self.experiment = worker, experiment
         self.input_pin, self.fast_only = input_pin, fast_only
         self._token = None

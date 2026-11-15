@@ -1,3 +1,4 @@
+from labremote.ui.responsive import ScrollTabs, FlowLayout
 """THERMOTEK and Keithley controls over the common device API and library."""
 from collections import deque
 import time
@@ -21,16 +22,16 @@ class EquipmentTab(QtWidgets.QWidget):
         self.api=device_api(self.worker)
         root=QtWidgets.QVBoxLayout(self)
         if family=='thermotek':
-            self.chiller_tabs=QtWidgets.QTabWidget();root.addWidget(self.chiller_tabs)
+            self.chiller_tabs=ScrollTabs();root.addWidget(self.chiller_tabs)
             self.monitor_page=QtWidgets.QWidget();self.control_page=QtWidgets.QWidget()
             self.chiller_tabs.addTab(self.monitor_page,'Monitor');self.chiller_tabs.addTab(self.control_page,'Control')
             monitor=QtWidgets.QVBoxLayout(self.monitor_page)
             root=QtWidgets.QVBoxLayout(self.control_page)
-        line=QtWidgets.QHBoxLayout();root.addLayout(line)
+        line=FlowLayout();root.addLayout(line)
         self.connect_btn=QtWidgets.QPushButton('Connect');self.disconnect_btn=QtWidgets.QPushButton('Disconnect')
         self.read_btn=QtWidgets.QPushButton('Read once');self.cancel_btn=QtWidgets.QPushButton('Cancel operation / workflow')
         for button in (self.connect_btn,self.disconnect_btn,self.read_btn,self.cancel_btn):line.addWidget(button)
-        self.status=QtWidgets.QLabel(name+' — Disconnected');root.addWidget(self.status)
+        self.status=QtWidgets.QLabel(name+' — Disconnected');self.status.setWordWrap(True);root.addWidget(self.status)
         self.message=QtWidgets.QLabel();self.message.setWordWrap(True);root.addWidget(self.message)
         self.connect_btn.clicked.connect(self._connect)
         self.disconnect_btn.clicked.connect(self.api.disconnect)
