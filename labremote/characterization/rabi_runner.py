@@ -35,6 +35,8 @@ class RabiRunner(WorkflowTask):
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Rabi_'+chamber+'_'+self.handle.request_id)
         folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
         config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={name:hashlib.sha256((Path(__file__).parent/name).read_bytes()).hexdigest() for name in ('rabi.py','rabi_sequence.py')}))
+        from .live_pulse import LiveSummary
+        live=LiveSummary('rabi',c)
         points=[];error=None;cleanup_errors=[];frequency=self.settings['frequency_hz']
         self.publish(chamber=chamber,phase='Starting',folder=str(folder),points=0,total=c['N_qubit_control'])
         try:
@@ -45,6 +47,7 @@ class RabiRunner(WorkflowTask):
                 def point(index,counts):
                     points.append(dict(frequency_hz=frequency,index=index,counts=counts))
                     self.publish(phase='Measuring',points=len(points),frequency_hz=frequency,pulse_time_us=index*c['T_mw_step']*.01,
+                                 live=live.add(dict(index=index,counts=counts,complete=True)),
                                  latest_point=dict(frequency_hz=frequency,time_us=index*c['T_mw_step']*.01,population=sum(n>=c['N_threshold'] for n in counts)/len(counts)))
                 self.call(DeviceAPI(self.worker,group=self.group)._submit('RABI_ACQUIRE',lambda w:run(w.raw_device.controller,c,Cancellation(),rows,point)))
         except Exception as exc:

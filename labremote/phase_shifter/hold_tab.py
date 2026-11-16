@@ -101,6 +101,19 @@ class PhaseHoldTab(QtWidgets.QWidget):
         self.timer.timeout.connect(self.controls)
         self.timer.start()
         self.controls()
+        # Calibration and target angle belong to settings; apply/reset stay visible.
+        self.settings_panel=QtWidgets.QWidget();left=QtWidgets.QVBoxLayout(self.settings_panel)
+        root.removeWidget(self.mapping_group);left.addWidget(self.mapping_group)
+        for widget in (self.calibration,title,self.angle,self.converted):
+            right.removeWidget(widget);left.addWidget(widget)
+        left.addStretch()
+        root.removeItem(right);result=QtWidgets.QWidget();result.setLayout(right)
+        split=QtWidgets.QSplitter();root.addWidget(split,1)
+        scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(380)
+        scroll.setWidget(self.settings_panel);split.addWidget(scroll);split.addWidget(result)
+        split.setSizes([500,900])
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
 
     def names(self):
         return [combo.currentData() for combo in self.selectors]

@@ -22,7 +22,7 @@ class HalfPiRamseyTab(PhaseShifterTab):
             '선형 시간 보간 / 10 ns 양자화 · 실패 피팅 통과·외삽 금지\n'
             '주파수 오차 ≤25%, 인접 코드 간격 ≤512, 중복 코드 시간 차이 ≤10%\n'
             'Rabi와 같은 MW 주파수·출력·배선, 공명 조건에서 사용하세요.')
-        note.setWordWrap(True);layout.addWidget(note);self.layout().insertWidget(2,self.source_group)
+        note.setWordWrap(True);layout.addWidget(note);self.settings_panel.widget(0).widget().layout().insertWidget(0,self.source_group)
         preview=W.QWidget();pv=W.QVBoxLayout(preview)
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg

@@ -75,6 +75,8 @@ class IonCheckTab(QtWidgets.QWidget):
         worker.task_progress.connect(self.progress)
         self.timer=QtCore.QTimer(self);self.timer.timeout.connect(self.controls);self.timer.start(200)
         self.draw();self.controls()
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,left_scroll)
 
     def populate(self,c):
         c=config.validate(c)

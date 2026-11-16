@@ -21,7 +21,8 @@ class LiveSummary:
             errors=[(s['bright'] if i==0 else s['received']-s['bright'])/s['received'] if s['received'] else None for i,s in enumerate(self.states)]
             data=dict(states=self.states,threshold=self.settings['N_threshold'],errors=errors+[sum(errors)/2 if all(e is not None for e in errors) else None])
         else:
-            step=self.settings['precession_time']*.00001 if self.kind=='ramsey' else self.settings['T_init_step']*.01
+            step=(self.settings['precession_time']*.00001 if self.kind=='ramsey' else
+                  self.settings['T_mw_step']*.01 if self.kind=='rabi' else self.settings['T_init_step']*.01)
             self.points.append([record['index']*step,bright/n if n else None])
             histogram=[0]*41
             for v in counts:histogram[min(v,40)]+=1
@@ -53,7 +54,9 @@ class LivePlot:
             hist,ax=figure.subplots(2,1);self.hist=hist;self.bars=hist.bar(range(41),[0]*41)
             hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Counts',ylim=(0,1))
             self.line,=ax.plot([],[],'o-');self.axis=ax
-            ax.set(xlabel='Nominal free precession time (ms)' if kind=='ramsey' else 'Nominal initialization time (us)',ylabel='Bright population',ylim=(-.05,1.05));ax.grid(True,alpha=.3)
+            xlabel={'ramsey':'Nominal free precession time (ms)','rabi':'Nominal microwave pulse time (us)',
+                    'initialization':'Nominal initialization time (us)'}[kind]
+            ax.set(xlabel=xlabel,ylabel='Bright population',ylim=(-.05,1.05));ax.grid(True,alpha=.3)
         figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)
 
     def update(self,data):

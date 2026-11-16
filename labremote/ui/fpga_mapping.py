@@ -15,6 +15,7 @@ class RoleMapping(W.QGroupBox):
     def __init__(self, worker, experiment, parent=None):
         super().__init__('이 실험의 FPGA 역할 매핑', parent)
         self.worker, self.experiment = worker, experiment
+        self.owner = parent
         self.setCheckable(True); self.setChecked(True)
         outer = W.QVBoxLayout(self)
         self.body = W.QWidget(); outer.addWidget(self.body)
@@ -39,7 +40,7 @@ class RoleMapping(W.QGroupBox):
             if role in self.choices:self.choices[role].setCurrentIndex(self.choices[role].findData(pin))
 
     def refresh(self):
-        parent=self.parentWidget()
+        parent=self.owner
         if self.experiment=='ion_check' and hasattr(parent,'mapping_fields'):
             from .queue_fpga import ION_FIXED
             roles=tuple(dict.fromkeys([box.currentData() for box in parent.mapping_fields.values() if box.currentData()]+list(ION_FIXED)))

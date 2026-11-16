@@ -16,7 +16,7 @@ class DecayExperimentTab(QtWidgets.QWidget):
         root=QtWidgets.QVBoxLayout(self)
         note=QtWidgets.QLabel('171: initialization before pulse · 174: no EOM initialization · PMT − SYNC: 1.25 ns/bin · dashed: fitted decay · pulse preview: +5 bins (6.25 ns) · probability: counts / received trials');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1);scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(370);split.addWidget(scroll)
-        left=QtWidgets.QWidget();scroll.setWidget(left);form=QtWidgets.QFormLayout(left)
+        left=self.settings_panel=QtWidgets.QWidget();scroll.setWidget(left);form=QtWidgets.QFormLayout(left)
         for key,label,lo,hi in config.FIELDS:
             is_time=key in config.TIME_LABELS
             box=QtWidgets.QDoubleSpinBox() if is_time or key in ('timeout_s','reference_tau_ns') else QtWidgets.QSpinBox()
@@ -51,6 +51,8 @@ class DecayExperimentTab(QtWidgets.QWidget):
         try:self.populate(config.load(chamber,mode))
         except Exception as exc:self.populate(config.defaults(chamber,mode));self.status.setText(str(exc))
         worker.task_progress.connect(self.progress);self.timer=QtCore.QTimer(self);self.timer.timeout.connect(self.controls);self.timer.start(300);self.controls()
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
     def populate(self,c):
         for k,b in self.fields.items():b.setValue(config.time_to_display(k,c[k]))
         for k,b in self.roles.items():b.setCurrentText(c['roles'][k])

@@ -304,8 +304,12 @@ The same immutable profile is retained by a nested operation until it completes.
                         if any(g.title() == '이 실험의 FPGA 역할 매핑' for g in self.findChildren(QGroupBox)):
                             return result
                         self.fpga_role_mapping = RoleMapping(worker, kind, self)
-                        layout = self.layout()
-                        if hasattr(layout, 'insertWidget'):
+                        from PyQt5.QtWidgets import QFormLayout, QTabWidget
+                        panel = getattr(self, 'settings_panel', None)
+                        layout = panel.layout() if panel is not None and not isinstance(panel, QTabWidget) else self.layout()
+                        if isinstance(layout, QFormLayout):
+                            layout.insertRow(0, self.fpga_role_mapping)
+                        elif hasattr(layout, 'insertWidget'):
                             layout.insertWidget(0, self.fpga_role_mapping)
                         else:
                             layout.addWidget(self.fpga_role_mapping)

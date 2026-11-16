@@ -14,18 +14,18 @@ class PulseExperimentTab(QtWidgets.QWidget):
         super().__init__(parent);self.kind=kind;self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
         self.live_plot=None;self.live_revision=0;self.fields={};self.roles={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
         root=QtWidgets.QVBoxLayout(self)
-        note=QtWidgets.QLabel('EC FPGA · '+chamber+' '+model.title(kind)+' · MW 주파수·출력은 외부 설정 · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
+        mw_note='MW 펄스 미사용 · 시작/종료 시 MW OFF' if kind=='initialization' else 'MW 주파수·출력은 외부 설정'
+        note=QtWidgets.QLabel('EC FPGA · '+chamber+' '+model.title(kind)+' · '+mw_note+' · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1)
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(330);split.addWidget(scroll)
-        settings=QtWidgets.QWidget();scroll.setWidget(settings);left=QtWidgets.QVBoxLayout(settings)
+        settings=self.settings_panel=QtWidgets.QWidget();scroll.setWidget(settings);left=QtWidgets.QVBoxLayout(settings)
+        from .pulse_controls import pin_controls
+        mapping,self.roles=pin_controls(worker,kind,settings);left.addWidget(mapping)
         form=QtWidgets.QFormLayout();left.addLayout(form)
         for key,title,lo,hi,dec,step in model.fields(kind):
             field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
             if dec:field.setDecimals(dec)
             field.setRange(lo,hi);field.setSingleStep(step);self.fields[key]=field;form.addRow(title,field)
-        mapping=QtWidgets.QGroupBox('이 실험의 FPGA 역할 매핑');mapping_form=QtWidgets.QFormLayout(mapping);left.addWidget(mapping)
-        for role,names in rabi.ROLE_CHOICES.items():
-            box=PinSelector(worker,kind,input_pin=role=='PMT',fast_only=role!='PMT');self.roles[role]=box;mapping_form.addRow(role,box)
         for title,callback in [('조건·매핑 불러오기',self.load),('조건·매핑 저장',self.save),('다른 이름으로 저장',self.save_as)]:
             button=QtWidgets.QPushButton(title);button.clicked.connect(callback);left.addWidget(button);self.config_buttons.append(button)
         left.addStretch()
@@ -42,6 +42,8 @@ class PulseExperimentTab(QtWidgets.QWidget):
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(8,9));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumSize(300,400);right.addWidget(self.canvas,1)
+        from .experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
         self.config_valid=False
         try:self.populate(model.load(kind,chamber));self.config_valid=True
         except Exception as exc:self.status.setText(str(exc))
@@ -115,10 +117,13 @@ class PulseExperimentTab(QtWidgets.QWidget):
                     from labremote.characterization.live_pulse import LivePlot
                     if self.live_plot is None:self.live_plot=LivePlot(self.figure,self.kind)
                     self.live_plot.update(data);self.canvas.draw_idle();self.live_revision=data['revision']
-                    self.summary.setText(f"{self.chamber} · {data['revision']} complete points/batches · fitting after acquisition")
+                    unit='상태별 배치' if self.kind=='spam' else '측정점'
+                    detail='누적 히스토그램·오류율' if self.kind=='spam' else '피팅은 수집 종료 후'
+                    self.summary.setText(f"{self.chamber} · {data['revision']}/{state.get('total','?')} {unit} 완료 · 매 {unit} 갱신 · {detail}")
                 except Exception as exc:self.status.setText('Live display error: '+str(exc))
 
     def show_result(self,data,report):
+        self.live_plot=None;self.live_revision=0
         model.draw(self.figure,data);self.canvas.draw_idle()
         self.summary.setText(f"{report['chamber']} {model.title(self.kind)} · {report['status']} · {report['completed_points']} complete points/batches\n"+model.summary(data))
 

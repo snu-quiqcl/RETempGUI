@@ -61,6 +61,8 @@ class HOMTab(QtWidgets.QWidget):
         self.populate(c); self.render(Accumulator(c).data(),c)
         worker.task_progress.connect(self.progress)
         self.timer=QtCore.QTimer(self); self.timer.timeout.connect(self.controls); self.timer.start(300); self.controls()
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
 
     def update_trials(self):
         n=1

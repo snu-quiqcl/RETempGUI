@@ -108,6 +108,8 @@ class MicromotionPage(W.QWidget):
         worker.task_progress.connect(self.progress)
         self.timer=QtCore.QTimer(self);self.timer.timeout.connect(self.tick);self.timer.start(500)
         split.setSizes([340,1000]);self.tick()
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
 
     def empty_report(self):
         return dict(settings=self.value(),mode=self.experiment_mode,points=[],valley=dict(valid=False,reason='Awaiting measurement'))

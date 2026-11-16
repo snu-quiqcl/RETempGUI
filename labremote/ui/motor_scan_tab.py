@@ -107,6 +107,63 @@ class MotorScanTab(QtWidgets.QWidget):
         self.config_widgets=[self.load_btn,self.z_enabled,self.channel,self.directory,browse,*self.fields.values()]
         worker.task_progress.connect(self.progress);worker.task_changed.connect(self.changed)
         self.timer=QtCore.QTimer(self);self.timer.timeout.connect(self.tick);self.timer.start(1000);self.tick()
+        # Keep acquisition actions/results visible while the entire settings column hides.
+        settings.removeItem(line);root.addLayout(line)
+        root.removeWidget(self.settings_panel)
+        result=QtWidgets.QWidget();result_layout=QtWidgets.QVBoxLayout(result)
+        result_layout.setContentsMargins(0,0,0,0)
+        while root.count():
+            item=root.takeAt(0)
+            if item.widget() is not None:
+                widget=item.widget();hidden=widget.isHidden();result_layout.addWidget(widget)
+                widget.setVisible(not hidden)
+            elif item.layout() is not None:result_layout.addLayout(item.layout())
+        result_layout.setStretch(0,1)
+        # Put run controls and display tools above the right-hand scan result.
+        result_layout.removeItem(line);result_layout.insertLayout(0,line)
+        result_layout.removeWidget(self.status);result_layout.insertWidget(1,self.status)
+        result_layout.removeItem(plane_line);result_layout.insertLayout(2,plane_line)
+        heading=QtWidgets.QLabel(self.title+' · Scan 결과')
+        result_layout.insertWidget(0,heading)
+        result_layout.setStretchFactor(self.canvas,1)
+        # Reuse the same editors in narrow vertical forms instead of a wide grid.
+        def detach(layout):
+            while layout.count():
+                item=layout.takeAt(0)
+                if item.widget() is not None:item.widget().hide()
+                elif item.layout() is not None:
+                    detach(item.layout());item.layout().deleteLater()
+        detach(settings)
+        for axis,box in zip('xyz',(self.x_motor,self.y_motor,self.z_motor)):
+            group=QtWidgets.QGroupBox(axis.upper()+' axis');axis_form=QtWidgets.QFormLayout(group);settings.addWidget(group)
+            if axis=='z':axis_form.addRow(self.z_enabled);self.z_enabled.show()
+            axis_form.addRow('Motor',box);box.show()
+            for suffix,label in (('start_um','Start (µm)'),('stop_um','End (µm)'),('step_um','Step (µm)')):
+                editor=self.fields[axis+'_'+suffix];axis_form.addRow(label,editor);editor.show()
+            axis_form.addRow('Current (µm)',self.position_labels[axis]);self.position_labels[axis].show()
+        acquisition_form=QtWidgets.QFormLayout();settings.addLayout(acquisition_form)
+        acquisition_form.addRow('PMT',self.channel);self.channel.show()
+        for key,label in [('exposure_ms','Exposure (ms)'),('average','Average'),('settle_ms','Settle (ms)')]:
+            acquisition_form.addRow(label,self.fields[key]);self.fields[key].show()
+        acquisition_form.addRow('Z target (µm)',self.z_target);self.z_target.show()
+        for widget in (self.move_z_btn,self.load_btn,note):settings.addWidget(widget);widget.show()
+        note.setWordWrap(True);settings.addStretch()
+        split=QtWidgets.QSplitter();root.addWidget(split,1)
+        scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(360)
+        scroll.setWidget(self.settings_panel);split.addWidget(scroll);split.addWidget(result)
+        split.setSizes([500,1000])
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
+        self.settings_toggle.setText('설정')
+        self.settings_toggle.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
+        self.settings_toggle.setFixedSize(42,60)
+        # Empty results still show the plot's purpose before the first scan.
+        idle_axis=self.figure.add_subplot(111)
+        idle_axis.set(xlabel='X position (µm)',ylabel='Y position (µm)',title='XY scan')
+        idle_axis.text(.5,.5,'Scan 결과 대기 중\n왼쪽 설정 탭에서 변수를 설정하세요.',
+                       ha='center',va='center',transform=idle_axis.transAxes,color='#92a5bd')
+        self.figure.subplots_adjust(left=.10,right=.94,bottom=.12,top=.92)
+        self.canvas.draw_idle()
 
     def step_changed(self,axis,value):
         for suffix in ('start_um','stop_um'):

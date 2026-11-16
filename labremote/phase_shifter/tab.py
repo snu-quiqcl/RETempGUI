@@ -169,6 +169,8 @@ class PhaseShifterTab(QtWidgets.QWidget):
         self.timer.timeout.connect(self.controls)
         self.timer.start()
         self.controls()
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,self.settings_panel)
 
     @staticmethod
     def _group(layout, title):

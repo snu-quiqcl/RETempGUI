@@ -13,11 +13,14 @@ class RabiTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,bindings,parent=None):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
         self.fields={};self.roles={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
+        self.live_plot=None;self.live_revision=0
         root=QtWidgets.QVBoxLayout(self)
         note=QtWidgets.QLabel('EC FPGA · '+chamber+' microwave Rabi · MW 주파수·출력은 외부 설정 · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1)
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(330);split.addWidget(scroll)
-        settings=QtWidgets.QWidget();scroll.setWidget(settings);left=QtWidgets.QVBoxLayout(settings)
+        settings=self.settings_panel=QtWidgets.QWidget();scroll.setWidget(settings);left=QtWidgets.QVBoxLayout(settings)
+        from .pulse_controls import pin_controls
+        mapping,self.roles=pin_controls(worker,'rabi',settings);left.addWidget(mapping)
         form=QtWidgets.QFormLayout();left.addLayout(form)
         for key,title,lo,hi,dec,step in [
             ('T_cool','Cooling time (us)',0,655.35,2,1),('T_cool_repeat','Cooling repeats',1,65535,0,1),
@@ -28,9 +31,6 @@ class RabiTab(QtWidgets.QWidget):
             field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
             if dec:field.setDecimals(dec)
             field.setRange(lo,hi);field.setSingleStep(step);self.fields[key]=field;form.addRow(title,field)
-        mapping=QtWidgets.QGroupBox('이 실험의 FPGA 역할 매핑');mapping_form=QtWidgets.QFormLayout(mapping);left.addWidget(mapping)
-        for role,names in rabi.ROLE_CHOICES.items():
-            box=PinSelector(worker,'rabi',input_pin=role=='PMT',fast_only=role!='PMT');self.roles[role]=box;mapping_form.addRow(role,box)
         for title,callback in [('조건·매핑 불러오기',self.load),('조건·매핑 저장',self.save),('다른 이름으로 저장',self.save_as)]:
             button=QtWidgets.QPushButton(title);button.clicked.connect(callback);left.addWidget(button);self.config_buttons.append(button)
         left.addStretch()
@@ -47,6 +47,8 @@ class RabiTab(QtWidgets.QWidget):
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(8,9));self.canvas=FigureCanvasQTAgg(self.figure);right.addWidget(self.canvas,1)
+        from .experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
         self.config_valid=False
         try:self.populate(rabi.load(chamber));self.config_valid=True
         except Exception as exc:self.status.setText(str(exc))
@@ -88,7 +90,8 @@ class RabiTab(QtWidgets.QWidget):
             if not self.directory.text().strip():raise ValueError('결과 저장 폴더를 지정하세요.')
             handle=self.api.run_rabi(self.chamber,settings=c,directory=self.directory.text())
             if handle.done.is_set() and handle.error:raise handle.error
-            self.run_id=handle.request_id;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.figure.clear();self.canvas.draw_idle();self.summary.clear();self.status.setText('Starting · '+self.run_id)
+            self.live_plot=None;self.live_revision=0
+            self.run_id=handle.request_id;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.figure.clear();self.canvas.draw_idle();self.summary.setText('매 측정점 완료 시 갱신 · 피팅은 수집 종료 후');self.status.setText('Starting · '+self.run_id)
         except Exception as exc:self.status.setText(str(exc))
         self.controls()
 
@@ -102,10 +105,19 @@ class RabiTab(QtWidgets.QWidget):
 
     def progress(self,label,state):
         if label!='RABI' or state.get('chamber')!=self.chamber or state.get('run_id')!=self.worker.rabi_runner.state.get('run_id'):return
-        if self.run_id!=state['run_id']:self.live={};self.live_axis=None;self.live_lines={};self.rendered_id=None;self.summary.clear()
+        if self.run_id!=state['run_id']:
+            self.live_plot=None;self.live_revision=0
+            self.live={};self.live_axis=None;self.live_lines={};self.rendered_id=None;self.summary.clear()
         self.run_id=state['run_id'];self.status.setText(f"{state.get('phase','')} · {state.get('points',0)}/{state.get('total','?')} · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
         if state.get('analysis') is not None and self.rendered_id!=self.run_id:
             self.show_result(state['analysis'],state['result']);self.rendered_id=self.run_id
+        elif state.get('live') is not None and self.rendered_id!=self.run_id:
+            data=state['live']
+            if data['revision']>self.live_revision:
+                from labremote.characterization.live_pulse import LivePlot
+                if self.live_plot is None:self.live_plot=LivePlot(self.figure,'rabi')
+                self.live_plot.update(data);self.canvas.draw_idle();self.live_revision=data['revision']
+                self.summary.setText(f"{self.chamber} · {data['revision']}/{state.get('total','?')} 측정점 완료 · 매 측정점 갱신 · 피팅은 수집 종료 후")
         elif state.get('latest_point') and self.rendered_id!=self.run_id:
             p=state['latest_point'];self.live[p['frequency_hz'],p['time_us']]=p['population']
             if self.live_axis is None:
@@ -120,6 +132,7 @@ class RabiTab(QtWidgets.QWidget):
             ax.relim();ax.autoscale_view(scalex=True,scaley=False);self.canvas.draw_idle()
 
     def show_result(self,data,report):
+        self.live_plot=None;self.live_revision=0
         rabi.draw(self.figure,data);self.canvas.draw_idle()
         lines=[f"{report['chamber']} · {report['status']} · {report['completed_points']} points"]
         for curve in data['curves']:

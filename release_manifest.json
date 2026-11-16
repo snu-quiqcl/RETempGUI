@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Isolate tab scroll extents and wrap action rows; preserve page identity and hardware actions",
+  "revision_note": "Store Queue results by group, item name and repetition; retain manifest step identity and legacy readers",
   "files": [
     {
       "path": ".gitattributes",
@@ -1784,8 +1784,8 @@
     },
     {
       "path": "labremote/runtime/workflow_queue.py",
-      "bytes": 17947,
-      "sha256": "5b5471db42162f2add75c52efb23fee4d8883d768f6a64d77342122e9b763aa4"
+      "bytes": 18122,
+      "sha256": "3d9ee182f069e2a8d46fa0d890f5ef34fadde666114886f532984ad3161f0e4f"
     },
     {
       "path": "labremote/runtime/workflow_result.py",
@@ -2234,8 +2234,8 @@
     },
     {
       "path": "docs/FPGA_WORKSPACE_KO.md",
-      "bytes": 11481,
-      "sha256": "814fbfbc97c6e8cfb79d97f917ea1f1da62e26cc114f23ebeff6d5bc1655f4e4"
+      "bytes": 12816,
+      "sha256": "12eed9bed9c70e7c25a61b0e9b94b01cacfc6097009f8ee9076e9dc1ecc103e8"
     },
     {
       "path": "labremote/runtime/execution_scope.py",
@@ -2411,6 +2411,21 @@
       "path": "tests/test_responsive_layout.py",
       "bytes": 3682,
       "sha256": "bedcaba3b50a1aa3c41222e02327c5cf2860136ee8a1796e23007f1809c95719"
+    },
+    {
+      "path": "labremote/runtime/queue_paths.py",
+      "bytes": 1860,
+      "sha256": "da03aa74d9b451e4857f5c04843e25c1c8d1e40d6af7b2693b84be97c1a64c97"
+    },
+    {
+      "path": "tests/test_queue_group_storage.py",
+      "bytes": 4483,
+      "sha256": "19ea0925f6c76096484805ab9a27b0610e45cec07952a130e24bf6e0b93da603"
+    },
+    {
+      "path": "tests/test_workflow_queue.py",
+      "bytes": 7235,
+      "sha256": "ee0c1692f1d96c976a35972b2a0a8450948cffbf6e1a61854e04a8a08be29eb6"
     }
   ]
 }

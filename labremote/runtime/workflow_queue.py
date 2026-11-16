@@ -215,7 +215,10 @@ class QueueRunner:
         owner=CURRENT_EXECUTION.get()
         self.folder=self.directory/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_queue_'+uuid4().hex);self.folder.mkdir(parents=True,exist_ok=False)
         steps=expand_steps(self.plan)
+        from .queue_paths import directories
+        output_directories=directories(self.plan,steps)
         self.state=dict(schema_version=1,queue_id=self.folder.name,folder=str(self.folder),status='running',started_at=now(),plan=self.plan,steps=steps,error='')
+        self.state['storage_layout']='group_job_repeat_v1'
         self.commit();jobs={j['id']:j for j in workflow_jobs(self.plan['jobs'])};any_failed=False
         try:
             for step in steps:
@@ -228,7 +231,7 @@ class QueueRunner:
                     self.state['status']='running';self.commit()
                 job=jobs[step['job_id']]
                 if not self.wait_for_fpga(job):break
-                folder=self.folder/'steps'/step['step_id'];folder.mkdir(parents=True,exist_ok=False)
+                folder=self.folder/output_directories[step['step_id']];folder.mkdir(parents=True,exist_ok=False)
                 (folder/'workflow.py').write_text(job['source'],encoding='utf-8');save(folder/'parameters.json',job['parameters'])
                 step.update(status='running',started_at=now(),directory=folder.relative_to(self.folder).as_posix());self.commit()
                 started=time.monotonic();local=CancellationToken()

@@ -16,32 +16,46 @@ from labremote.characterization.fluorescence import draw
 class FluorescenceTab(QtWidgets.QWidget):
     def __init__(self,worker,chamber,parent=None):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.api=device_api(worker);self.fields={};self.run_id=None;self.rendered_id=None
-        root=QtWidgets.QVBoxLayout(self);self.mapping_label=QtWidgets.QLabel();self.mapping_label.setWordWrap(True);root.addWidget(self.mapping_label)
-        self.roles={}
-        mapping_row=QtWidgets.QHBoxLayout();root.addLayout(mapping_row)
-        for role,names in (('PMT',config.PMTS),('AOM',config.AOMS)):
-            box=PinSelector(worker,'fluorescence',input_pin=role=='PMT');self.roles[role]=box
-            mapping_row.addWidget(QtWidgets.QLabel('검출 입력 (PMT)' if role=='PMT' else '출력 (AOM · 계수 시 미사용)'));mapping_row.addWidget(box)
-        row=QtWidgets.QFormLayout();row.setRowWrapPolicy(QtWidgets.QFormLayout.WrapLongRows);root.addLayout(row)
+        root=QtWidgets.QVBoxLayout(self)
+        split=QtWidgets.QSplitter(QtCore.Qt.Horizontal);split.setChildrenCollapsible(False);root.addWidget(split,1)
+        scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(330);split.addWidget(scroll)
+        self.settings_panel=QtWidgets.QWidget();scroll.setWidget(self.settings_panel);left=QtWidgets.QVBoxLayout(self.settings_panel)
+        mapping=QtWidgets.QGroupBox('이 실험의 FPGA 역할 매핑');left.addWidget(mapping)
+        mapping_form=QtWidgets.QFormLayout(mapping)
+        self.roles={'PMT':PinSelector(worker,'fluorescence',input_pin=True),
+                    'AOM':PinSelector(worker,'fluorescence')}
+        mapping_form.addRow('검출 입력 (PMT)',self.roles['PMT'])
+        # Keep legacy settings round-trippable; fluorescence never drives AOM.
+        self.roles['AOM'].setParent(self);self.roles['AOM'].hide()
+        self.mapping_label=QtWidgets.QLabel();self.mapping_label.setWordWrap(True);mapping_form.addRow(self.mapping_label)
+        parameters=QtWidgets.QGroupBox('변수 설정');left.addWidget(parameters)
+        row=QtWidgets.QFormLayout(parameters);row.setRowWrapPolicy(QtWidgets.QFormLayout.WrapLongRows)
         for key,title,lo,hi in (('exposure_ms','Exposure (ms)',.1,6000),('num_average','Samples / batch',1,65535),('num_repeat','Batches',1,65535),('timeout_s','Timeout / batch (s)',.1,3600)):
             field=QtWidgets.QDoubleSpinBox() if key in ('exposure_ms','timeout_s') else QtWidgets.QSpinBox()
             if isinstance(field,QtWidgets.QDoubleSpinBox):field.setDecimals(1);field.setSingleStep(.1)
             field.setRange(lo,hi);self.fields[key]=field;row.addRow(title,field)
-        row=FlowLayout();root.addLayout(row);self.config_buttons=[]
+        row=FlowLayout();left.addLayout(row);self.config_buttons=[]
         for title,callback in (('변수 불러오기',self.load),('변수 저장',self.save),('다른 이름으로 저장',self.save_as)):
             button=QtWidgets.QPushButton(title);row.addWidget(button);button.clicked.connect(callback);self.config_buttons.append(button)
+        left.addStretch()
+        result=QtWidgets.QWidget();right=QtWidgets.QVBoxLayout(result);split.addWidget(result)
+        split.setStretchFactor(0,0);split.setStretchFactor(1,1);split.setSizes([390,850])
+        right.addWidget(QtWidgets.QLabel(chamber+' Fluorescence · 실험 결과'))
+        row=FlowLayout();right.addLayout(row)
         self.start_button=QtWidgets.QPushButton('Run '+chamber+' Fluorescence');self.stop_button=QtWidgets.QPushButton('Stop / save partial')
         row.addWidget(self.start_button);row.addWidget(self.stop_button);self.start_button.clicked.connect(self.start);self.stop_button.clicked.connect(self.api.stop_fluorescence)
-        row=QtWidgets.QHBoxLayout();root.addLayout(row)
-        self.directory=QtWidgets.QLineEdit(str(characterization_directory(None, chamber, 'fluorescence')));row.addWidget(self.directory)
+        self.directory=QtWidgets.QLineEdit(str(characterization_directory(None, chamber, 'fluorescence')));right.addWidget(self.directory)
+        row=FlowLayout();right.addLayout(row)
         folder=QtWidgets.QPushButton('결과 저장 폴더');folder.clicked.connect(self.choose_folder);row.addWidget(folder)
         load_result=QtWidgets.QPushButton('이전 결과 열기');load_result.clicked.connect(self.load_result);row.addWidget(load_result)
-        self.status=QtWidgets.QLabel('대기 중');self.status.setWordWrap(True);root.addWidget(self.status)
-        self.summary=QtWidgets.QLabel();self.summary.setWordWrap(True);root.addWidget(self.summary)
+        self.status=QtWidgets.QLabel('대기 중');self.status.setWordWrap(True);right.addWidget(self.status)
+        self.summary=QtWidgets.QLabel();self.summary.setWordWrap(True);right.addWidget(self.summary)
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-        self.figure=Figure(figsize=(8,9));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumHeight(500);root.addWidget(self.canvas,1)
-        root.addWidget(QtWidgets.QLabel('FFT: 원본 코드와 같은 명목상 exposure 간격 사용 · 배치 사이 PC 대기 시간은 제외됩니다.'))
+        self.figure=Figure(figsize=(8,9));self.canvas=FigureCanvasQTAgg(self.figure);right.addWidget(self.canvas,1)
+        note=QtWidgets.QLabel('FFT: 원본 코드와 같은 명목상 exposure 간격 사용 · 배치 사이 PC 대기 시간은 제외됩니다.');note.setWordWrap(True);right.addWidget(note)
+        from .experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
         self.config_valid=False
         try:self.populate(config.load_settings(chamber));self.config_valid=True
         except Exception as exc:self.status.setText(str(exc))
@@ -81,7 +95,7 @@ class FluorescenceTab(QtWidgets.QWidget):
         try:
             if not self.directory.text().strip():raise ValueError('결과 저장 폴더를 지정하세요.')
             handle=self.api.run_fluorescence(self.chamber,settings=self.value(),directory=self.directory.text())
-            self.run_id=handle.request_id;self.rendered_id=None;self.figure.clear();self.canvas.draw_idle();self.summary.setText('수집 중 · 분석은 수집 종료 후 표시됩니다.');self.status.setText('Starting · '+self.run_id)
+            self.run_id=handle.request_id;self.rendered_id=None;self.figure.clear();self.canvas.draw_idle();self.summary.setText('수집 중 · 매 배치 완료 시 누적 결과를 갱신합니다.');self.status.setText('Starting · '+self.run_id)
             if handle.done.is_set() and handle.error:self.status.setText(str(handle.error))
         except Exception as exc:self.status.setText(str(exc))
         self.controls()
@@ -95,18 +109,19 @@ class FluorescenceTab(QtWidgets.QWidget):
         for field in (*self.fields.values(),*self.roles.values(),*self.config_buttons):field.setEnabled(not active)
         try:
             route={r:b.currentText() for r,b in self.roles.items()}
-            self.mapping_label.setText(f"EC setup / {self.chamber} experiment · PMT={route['PMT']} · AOM={route['AOM']} (fluorescence에서는 미사용)")
+            self.mapping_label.setText(f"{self.chamber} Fluorescence · PMT={route['PMT']} · 선택한 입력 핀으로 계수합니다.")
         except Exception as exc:self.mapping_label.setText(str(exc));self.start_button.setEnabled(False)
 
     def progress(self,label,state):
         if label!='FLUORESCENCE' or state.get('chamber')!=self.chamber:return
         if state.get('run_id')!=self.worker.fluorescence_runner.state.get('run_id'):return
         if self.run_id!=state['run_id']:
-            self.figure.clear();self.canvas.draw_idle();self.summary.setText('새 실행 · 수집 중')
+            self.rendered_id=None;self.figure.clear();self.canvas.draw_idle();self.summary.setText('새 실행 · 수집 중')
         self.run_id=state['run_id']
         self.status.setText(f"{state.get('phase','')} · {state.get('samples',0)}/{state.get('total','?')} samples · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
-        if state.get('analysis') is not None and self.rendered_id!=self.run_id:
-            self.show_result(state['analysis'],state['result']);self.rendered_id=self.run_id
+        revision=(self.run_id,state.get('batches',0),state.get('phase'))
+        if state.get('analysis') is not None and self.rendered_id!=revision:
+            self.show_result(state['analysis'],state['result']);self.rendered_id=revision
 
     def show_result(self,data,report):
         draw(self.figure,data);self.canvas.draw_idle();s=report['summary']

@@ -45,13 +45,14 @@ class FluorescenceRunner(WorkflowTask):
             def rows(batch,values,valid):
                 writer.writerows([[batch,*row,int(valid)] for row in values]);stream.flush()
                 if valid:counts.extend(row[2] for row in values)
-            last_update=0.
             def batch_done(number):
-                nonlocal batches,last_update
+                nonlocal batches
                 batches=number
-                now=time.monotonic()
-                if now-last_update>=.2 or number==config['num_repeat']:
-                    self.publish(batches=number,samples=len(counts),elapsed_s=now-started);last_update=now
+                data=analyze(counts,config['exposure_ms'])
+                report=dict(chamber=chamber,run_id=self.handle.request_id,status='Acquiring',
+                            completed_batches=number,samples=len(counts),summary=data['summary'])
+                self.publish(batches=number,samples=len(counts),elapsed_s=time.monotonic()-started,
+                             analysis=data,result=report)
             try:
                 self.call(DeviceAPI(self.worker,group=self.group)._submit('FLUORESCENCE_ACQUIRE',
                     lambda w:acquire(w.raw_device.controller,config,route,Cancellation(),rows,batch_done)))
