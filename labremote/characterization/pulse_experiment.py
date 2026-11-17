@@ -30,7 +30,7 @@ def fields(kind):
     result=[('T_cool','Cooling (us)',0,655.35,2,1),('T_cool_repeat','Cooling repeats',1,65535,0,1),
             ('T_init','Initialization (us)',0,655.35,2,1),('T_det','Detection (us)',0,655.35,2,1)]
     if kind=='ramsey':result += [('T_det_repeat','Detection repeats',1,65535,0,1),('T_wait_for_aom_off','AOM off wait (us)',0,655.35,2,.1),
-        ('half_pi_time','Half π pulse (us)',.07,655.35,2,.01),('precession_time','Precession step (us)',.02,655.35,2,1),
+        ('half_pi_time','Half π pulse (us)',.07,655.35,2,.01),('precession_time','Precession step (us)',.04,10_000_000,2,1),
         ('max_precession_count','Delay points (from 0)',1,512,0,1),('fit_low_hz','Fit minimum (Hz)',0,5e7,3,1),('fit_high_hz','Fit maximum (Hz, 0=auto)',0,5e7,3,1)]
     else:result += [('WAIT_AOM','AOM wait (us)',0,655.35,2,.1),('T_PI','π pulse (us)',.07,655.35,2,.01),('N_repeat','Repeats / state',1,65535,0,1)]
     return result+[('N_average','Shots / point' if kind=='ramsey' else 'Attempts / batch',1,65535 if kind=='ramsey' else 1024,0,1),
@@ -57,7 +57,7 @@ def validate(kind,value):
         elif not 0<=c['fit_low_hz']<c['fit_high_hz']<=nyquist:raise ValueError('Fit range must be within the sampled Nyquist band')
         duration=c['N_average']*sum(c['T_cool']*c['T_cool_repeat']+c['T_init']+c['T_det']*c['T_det_repeat']+c['T_wait_for_aom_off']+2*c['half_pi_time']+i*c['precession_time']+200 for i in range(c['max_precession_count']))*1e-8
     else:duration=c['N_average']*(c['T_cool']*c['T_cool_repeat']+c['T_init']+c['T_det']+c['WAIT_AOM']+c['T_PI']+200)*1e-8
-    if c['timeout_s']<=duration:raise ValueError('Timeout must exceed nominal acquisition time')
+    if c['timeout_s']<=duration:raise ValueError(f'Timeout must exceed nominal acquisition time ({duration:.3f} s; configured {c["timeout_s"]:g} s)')
     return deepcopy(value)
 
 def load(kind,chamber,path=None):

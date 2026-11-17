@@ -1,5 +1,6 @@
 """A two-dimensional outer loop around the unchanged SPAM PulseRunner."""
 import csv
+import math
 from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
@@ -71,13 +72,13 @@ class SpamScanRunner(WorkflowTask):
         from labremote.config.device_config import load_rf_device_config, optional_number, sg_power_cap_dbm
         p = model.spec(axis)
         policy = registry().get(axis['family'], model.path(axis))
-        for v in model.axis_values(axis):
-            policy.validate(v * p.scale if p.decimals else v, request=True)
+        for row in model.axis_plan(axis):
+            policy.validate(row['command'], request=True)
         if axis['parameter'] == 'power':
             cfg = load_rf_device_config(axis['family'], axis['device'])
             cap = (optional_number(cfg, 'channels', axis['channel'], 'limits', 'max_power_dbm')
                    if axis['family'] == 'windfreak' else sg_power_cap_dbm(cfg, axis['channel']))
-            if cap is not None and axis['stop'] > cap:
+            if cap is not None and max(model.axis_values(axis)) > cap:
                 raise ValueError(f"{axis['device']} power exceeds configured limit {cap} dBm")
 
     def axis_api(self, key, group=None):
@@ -92,6 +93,34 @@ class SpamScanRunner(WorkflowTask):
             target = int(target)
         return self.call(getattr(api, p.method)(target))
 
+    def read_axis(self, key, planned, point=None):
+        axis = self.settings['settings'][key]
+        p = model.spec(axis)
+        native = self.call(self.axis_api(key).acquire(model.path(axis)))
+        model.number(native, 'Readback ' + key)
+        if point is not None: point['readback_'+key] = float(native)/p.scale
+        from labremote.runtime.parameters import registry
+        policy = registry().get(axis['family'], model.path(axis))
+        policy.validate(native, request=True)
+        # Existing readback policies allow finite transport/calibration error;
+        # record the returned setting, never relabel the request as readback.
+        tolerance = max(policy.abs_tolerance,abs(planned*p.scale)*policy.rel_tolerance,
+                        4*math.ulp(float(planned*p.scale)))
+        if model.is_dds_frequency(axis):
+            tolerance = max(float(model.resolution(axis))*p.scale/2,4*math.ulp(float(native)))
+        if abs(native-planned*p.scale) > tolerance:
+            raise ValueError('축 readback 불일치: ' + key + ' (장비 분해능 / DDS clock을 확인하세요.)')
+        return int(native) if p.decimals==0 else float(native)/p.scale
+
+    def accept_coordinate(self, values, index, actual):
+        previous = values[index]
+        if previous is not None and actual != previous:
+            raise ValueError('같은 축 지점의 readback이 이전 측정과 다릅니다.')
+        for i, value in enumerate(values):
+            if value is None or i==index: continue
+            if (i<index and value>=actual) or (i>index and value<=actual):
+                raise ValueError('장비 readback 후 중복된 축 값 또는 역전된 값이 있습니다.')
+
     def _execute(self):
         c = self.settings['settings']
         chamber = c['spam']['chamber']
@@ -100,13 +129,19 @@ class SpamScanRunner(WorkflowTask):
         folder = Path(self.settings['directory']) / (datetime.now().strftime('%Y%m%d_%H%M%S') + '_' + self.handle.request_id[:8])
         folder.mkdir(parents=True, exist_ok=False)
         write_snapshot(folder)
-        config.save(folder / 'configuration.json', dict(**self.settings, fpga=self.worker.name, run_id=self.handle.request_id))
-        xs, ys = model.axis_values(c['x']), model.axis_values(c['y'])
+        plans = {key:model.axis_plan(c[key]) for key in ('x','y')}
+        axes = {key:[row['applied'] for row in plans[key]] for key in plans}
+        xs, ys = axes['x'], axes['y']
+        actual_axes = {key:[None]*len(axes[key]) for key in axes}
+        configuration = dict(**self.settings, fpga=self.worker.name,run_id=self.handle.request_id,
+                             axis_values=axes,axis_plan=plans,
+                             resolution={key:model.resolution_note(c[key]) for key in axes})
+        config.save(folder / 'configuration.json', configuration)
         points, initial, touched, restoration = [], {}, set(), {}
         report = dict(experiment='spam_2d', chamber=chamber, folder=str(folder), run_id=self.handle.request_id,
                       expected_points=len(xs)*len(ys), completed_points=0, status='running', error='')
         self.publish(chamber=chamber, phase='Starting', folder=str(folder), total=len(xs)*len(ys), points=0,
-                     settings=c, records=[])
+                     settings=c, records=[], axis_values=axes)
         error = None
         try:
             # Acquire every restore value before the first write. DDS values
@@ -122,16 +157,36 @@ class SpamScanRunner(WorkflowTask):
             for iy, y in enumerate(ys):
                 for ix, x in enumerate(xs):
                     self.check()
-                    point = dict(ix=ix, iy=iy, x=x, y=y, status='running', metrics={}, folder=None, error='')
+                    point = dict(ix=ix, iy=iy, x=None, y=None, status='running', metrics={}, folder=None, error='')
+                    for key,index in (('x',ix),('y',iy)):
+                        point['requested_'+key] = plans[key][index]['requested']
+                        point['planned_'+key] = plans[key][index]['applied']
+                        point['command_'+key] = plans[key][index]['command']
+                        point['readback_'+key] = None
+                        point[key+'_source'] = 'unconfirmed'
                     self.publish(phase=f'Setting ({ix+1}, {iy+1})', current=[ix, iy])
                     try:
                         # Reapply both axes for an unambiguous point, including
                         # two parameters on the same physical instrument.
-                        for key, value in (('y', y), ('x', x)):
+                        for key, index in (('y', iy), ('x', ix)):
                             if key in self.axis_workers:
                                 touched.add(key)  # failed writes may have changed hardware
-                                self.apply_axis(key, value)
+                                self.apply_axis(key, plans[key][index]['command'], native=True)
                                 self.wait(c[key]['settle_s'])
+                        # Read both axes after all writes (one device may serve
+                        # both axes and changing frequency may affect power).
+                        for key,index in (('x',ix),('y',iy)):
+                            planned = plans[key][index]['applied']
+                            if key in self.axis_workers:
+                                actual = self.read_axis(key,planned,point)
+                                point['readback_'+key] = actual
+                                point[key+'_source'] = 'last_transmitted' if c[key]['family']=='dds4' else 'setpoint_readback'
+                            else:
+                                actual = planned
+                                point[key+'_source'] = 'fpga_ticks'
+                            point[key] = actual
+                            self.accept_coordinate(actual_axes[key],index,actual)
+                        for key,index in (('x',ix),('y',iy)): actual_axes[key][index] = point[key]
                         settings = model.settings_at(c, x, y)
                         handle = self.point_runner.start(chamber, settings=settings,
                             directory=folder / f'p{iy:03d}_{ix:03d}', parent=self.group)
@@ -151,6 +206,7 @@ class SpamScanRunner(WorkflowTask):
                     finally:
                         points.append(point)
                         config.save(folder / 'points.json', points)
+                        config.save(folder / 'configuration.json', dict(configuration,actual_axis_values=actual_axes))
                         self.publish(records=points, points=sum(p['status']=='completed' for p in points), phase='Measuring')
         except Exception as exc:
             error = exc
@@ -165,7 +221,12 @@ class SpamScanRunner(WorkflowTask):
                 cleanup.owner = self.group.owner
                 cleanup.owns_execution = False
                 try:
-                    self.apply_axis(key, initial[key], group=cleanup, native=True)
+                    restore_value = initial[key]
+                    if model.is_dds_frequency(c[key]):
+                        clock = c[key].get('dds_clock_hz',1e9)
+                        word = round(restore_value*2**48/clock)
+                        restore_value = min((word+.25)*clock/2**48,model.spec(c[key]).high*1e6,clock/2)
+                    self.apply_axis(key, restore_value, group=cleanup, native=True)
                     restoration[key] = 'restored'
                 except Exception as exc:
                     restoration[key] = 'failed: ' + str(exc)
@@ -176,9 +237,12 @@ class SpamScanRunner(WorkflowTask):
                           error=str(error) if error else '', completed_points=sum(p['status']=='completed' for p in points),
                           restoration=restoration, restore_requested=c['restore'])
             config.save(folder / 'points.json', points)
+            config.save(folder / 'configuration.json', dict(configuration,actual_axis_values=actual_axes))
             config.save(folder / 'result.json', report)
             with (folder / 'summary.csv').open('w', newline='', encoding='utf-8-sig') as stream:
-                columns = ['ix', 'iy', 'x', 'y', 'status', *model.METRICS, 'folder', 'error']
+                columns = ['ix', 'iy', 'x', 'y', 'status', *model.METRICS, 'folder', 'error',
+                           *[prefix+key for key in ('x','y') for prefix in ('requested_','planned_','command_','readback_')],
+                           'x_source','y_source']
                 writer = csv.DictWriter(stream, columns)
                 writer.writeheader()
                 for p in points:
@@ -187,13 +251,13 @@ class SpamScanRunner(WorkflowTask):
                 from matplotlib.figure import Figure
                 from matplotlib.backends.backend_agg import FigureCanvasAgg
                 figure = Figure(figsize=(9, 6)); FigureCanvasAgg(figure)
-                model.draw_map(figure, c, points)
+                model.draw_map(figure, c, points, axis_values=axes)
                 figure.savefig(folder / 'heatmap.png', dpi=140)
             except Exception as exc:
                 # Raw/point records are already durable even if plotting fails.
                 report['plot_error'] = str(exc)
                 config.save(folder / 'result.json', report)
-            self.results[chamber] = dict(report=report, settings=c, records=points)
+            self.results[chamber] = dict(report=report, settings=c, records=points,axis_values=axes)
             self.publish(phase=report['status'], result=report, records=points, error=report['error'])
         if error is not None:
             raise error

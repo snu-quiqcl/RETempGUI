@@ -31,15 +31,24 @@ class AxisEditor(W.QGroupBox):
         self.stop = W.QDoubleSpinBox()
         self.points = W.QSpinBox(); self.points.setRange(2, 501); self.points.setValue(11)
         self.settle = W.QDoubleSpinBox(); self.settle.setRange(0, 60000); self.settle.setSuffix(' ms'); self.settle.setValue(100)
+        self.clock = W.QDoubleSpinBox(); self.clock.setRange(.000001,1000); self.clock.setDecimals(6); self.clock.setValue(1000); self.clock.setSuffix(' MHz')
         for title, field in [('Start', self.start), ('Stop', self.stop), ('Points', self.points), ('Settle', self.settle)]:
             field.setKeyboardTracking(False)
             form.addRow(title, field)
             field.valueChanged.connect(self.changed)
+        form.addRow('DDS system clock', self.clock)
+        self.clock_label = form.labelForField(self.clock)
+        self.clock.valueChanged.connect(self.changed)
+        self.resolution_label = W.QLabel(); self.resolution_label.setWordWrap(True); form.addRow(self.resolution_label)
+        self.preview = W.QPlainTextEdit(); self.preview.setReadOnly(True); self.preview.setMaximumHeight(85)
+        self.preview.setProperty('persistInput',False); form.addRow('적용 예정값',self.preview)
+        self.preview_valid = False
+        self.changed.connect(self.update_preview)
         self.workers = {}
         self.family.currentIndexChanged.connect(self.rebuild)
         self.parameter.currentIndexChanged.connect(self.range_changed)
         self.device.currentIndexChanged.connect(self.changed)
-        self.channel.currentIndexChanged.connect(self.changed)
+        self.channel.currentIndexChanged.connect(self.update_limits)
         self.rebuild()
 
     def refresh_devices(self, workers):
@@ -67,14 +76,35 @@ class AxisEditor(W.QGroupBox):
         for field in (self.device, self.channel, self.settle): field.setEnabled(family != 'spam')
         self.range_changed()
 
+    def update_limits(self):
+        if self.parameter.currentData() is None: return
+        p = model.spec(self.value())
+        for field in (self.start,self.stop):
+            with QtCore.QSignalBlocker(field):
+                field.setDecimals(max(4,p.decimals)); field.setRange(p.low,p.high); field.setSuffix(' '+p.unit)
+                field.setSingleStep(float(model.resolution(self.value())))
+        dds_frequency = model.is_dds_frequency(self.value())
+        self.clock.setVisible(dds_frequency); self.clock_label.setVisible(dds_frequency)
+        self.changed.emit()
+
+    def update_preview(self):
+        try:
+            axis = self.value()
+            if axis == getattr(self,'_preview_axis',None): return
+            self._preview_axis = axis
+            p = model.spec(axis)
+            self.resolution_label.setText(model.resolution_note(axis))
+            values = model.axis_values(axis)
+            self.preview.setPlainText(', '.join(np.format_float_positional(v,trim='-') for v in values)+' '+p.unit)
+            self.preview.setToolTip('반올림된 예정값입니다. 실행 시 장비 readback으로 확인한 값이 결과 좌표에 저장됩니다.')
+            self.preview_valid = True
+        except (ValueError,KeyError,TypeError) as exc:
+            self.preview.setPlainText(str(exc)); self.preview_valid = False
+
     def range_changed(self):
         family, key = self.family.currentData(), self.parameter.currentData()
         if key is None: return
-        p = model.PARAMETERS[family][key]
-        for field in (self.start, self.stop):
-            with QtCore.QSignalBlocker(field):
-                field.setDecimals(p.decimals); field.setRange(p.low, p.high); field.setSuffix(' ' + p.unit)
-                field.setSingleStep(1 if p.decimals == 0 else .01 if family == 'spam' else 1)
+        self.update_limits()
         defaults = {'power': (-20, -8), 'frequency': (1995, 2005), 'vva': (300, 700),
                     'T_det': (40, 120), 'T_PI': (50, 100), 'T_init': (1, 3),
                     'T_cool': (100, 500), 'WAIT_AOM': (.1, 1.1)}
@@ -86,10 +116,12 @@ class AxisEditor(W.QGroupBox):
 
     def value(self):
         family = self.family.currentData()
-        return dict(family=family, device='' if family == 'spam' else self.device.currentText(),
+        result = dict(family=family, device='' if family == 'spam' else self.device.currentText(),
                     channel=self.channel.currentData(), parameter=self.parameter.currentData(),
                     start=self.start.value(), stop=self.stop.value(), points=self.points.value(),
                     settle_s=0 if family == 'spam' else self.settle.value()/1000)
+        if model.is_dds_frequency(result): result['dds_clock_hz'] = self.clock.value()*1e6
+        return result
 
     def populate(self, axis):
         self.family.setCurrentIndex(self.family.findData(axis['family']))
@@ -97,8 +129,10 @@ class AxisEditor(W.QGroupBox):
         if self.device.findText(axis['device']) < 0 and axis['device']: self.device.addItem(axis['device'])
         self.device.setCurrentText(axis['device'])
         self.channel.setCurrentIndex(self.channel.findData(axis['channel']))
+        self.clock.setValue(axis.get('dds_clock_hz',1e9)/1e6)
         self.start.setValue(axis['start']); self.stop.setValue(axis['stop']); self.points.setValue(axis['points'])
         self.settle.setValue(axis['settle_s']*1000)
+        self.update_preview()
 
 
 @bound_methods('spam', editor=True)
@@ -186,10 +220,10 @@ class SpamScanTab(W.QWidget):
         active = runner.running()
         workers = self.workers()
         if not active:
-            for axis in (self.x, self.y): axis.refresh_devices(workers)
+            for axis in (self.x, self.y): axis.refresh_devices(workers); axis.update_preview()
         ready = self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing
         busy = self.worker.has_foreground_requests() or any(t.running() for t in self.worker._background_tasks)
-        self.start_button.setEnabled(ready and not busy)
+        self.start_button.setEnabled(ready and not busy and self.x.preview_valid and self.y.preview_valid)
         self.stop_button.setEnabled(active and runner.settings['settings']['spam']['chamber'] == self.chamber)
         self.settings_panel.setEnabled(not active)
         for widget in (self.directory, self.browse, self.open_button): widget.setEnabled(not active)
@@ -203,7 +237,7 @@ class SpamScanTab(W.QWidget):
             handle = self.api.run_spam_scan(settings=c, workers=self.workers(), directory=self.directory.text())
             if handle.done.is_set() and handle.error: raise handle.error
             self.run_id = handle.request_id; self.revision = None; self.selected = None
-            self.dataset = dict(settings=c, records=[], folder=None)
+            self.dataset = dict(settings=c, records=[], folder=None,axis_values={k:model.axis_values(c[k]) for k in ('x','y')})
             self.hist_figure.clear(); self.hist_canvas.draw_idle(); self.summary.setText('측정 중…')
             self.redraw(); self.status.setText('Starting · ' + self.run_id)
         except Exception as exc: self.status.setText(str(exc))
@@ -221,23 +255,24 @@ class SpamScanTab(W.QWidget):
         self.progress_bar.setRange(0, state.get('total', 1)); self.progress_bar.setValue(state.get('points', 0))
         revision = (self.run_id, len(state.get('records', [])))
         if revision != self.revision:
-            self.dataset = dict(settings=state['settings'], records=state.get('records', []), folder=state.get('folder'))
+            self.dataset = dict(settings=state['settings'], records=state.get('records', []), folder=state.get('folder'),axis_values=state.get('axis_values'))
             self.revision = revision
             if self.selected is None and self.dataset['records']:
                 p = self.dataset['records'][-1]; self.selected = (p['ix'], p['iy'])
-            self.redraw()
+            try: self.redraw()
+            except Exception as exc: self.status.setText(self.status.text()+' · Display: '+str(exc))
         self.controls()
 
     def redraw(self):
         if self.dataset is None: return
-        self.map_axis = model.draw_map(self.figure, self.dataset['settings'], self.dataset['records'], self.metric.currentData(), self.selected)
+        self.map_axis = model.draw_map(self.figure, self.dataset['settings'], self.dataset['records'], self.metric.currentData(), self.selected,self.dataset.get('axis_values'))
         self.canvas.draw_idle(); self.show_selected()
 
     def select_cell(self, event):
         if self.dataset is None or event.inaxes is not getattr(self, 'map_axis', None) or event.xdata is None: return
-        c = self.dataset['settings']
-        self.selected = (int(np.argmin(abs(np.array(model.axis_values(c['x'])) - event.xdata))),
-                         int(np.argmin(abs(np.array(model.axis_values(c['y'])) - event.ydata))))
+        axes = model.plot_values(self.dataset['settings'],self.dataset['records'],self.dataset.get('axis_values'))
+        self.selected = (int(np.argmin(abs(np.array(axes['x']) - event.xdata))),
+                         int(np.argmin(abs(np.array(axes['y']) - event.ydata))))
         self.redraw()
 
     def show_selected(self):
@@ -246,7 +281,9 @@ class SpamScanTab(W.QWidget):
         p = next((p for p in self.dataset['records'] if (p['ix'], p['iy']) == self.selected), None)
         if p is None:
             self.summary.setText('아직 측정하지 않은 지점입니다.'); self.hist_canvas.draw_idle(); return
-        title = f"X = {p['x']:g} / Y = {p['y']:g}\n{p['status']}"
+        def value(key): return '미확인' if p.get(key) is None else np.format_float_positional(p[key],trim='-')
+        title = f"X = {value('x')} / Y = {value('y')}\n{p['status']}"
+        if 'x_source' in p: title += f"\nX: {p['x_source']} / Y: {p['y_source']}"
         try:
             if not p.get('folder'): raise ValueError(p.get('error') or 'SPAM 데이터 없음')
             folder = Path(self.dataset['folder']).resolve()
@@ -298,8 +335,9 @@ class SpamScanTab(W.QWidget):
         try:
             report = config.read(path); folder = Path(path).parent
             if report['experiment'] != 'spam_2d' or report['chamber'] != self.chamber: raise ValueError('다른 실험 / 챔버의 결과입니다.')
-            settings = model.validate(config.read(folder / 'configuration.json')['settings'])
-            self.dataset = dict(settings=settings, records=config.read(folder / 'points.json'), folder=str(folder))
+            configuration = config.read(folder / 'configuration.json')
+            settings = model.validate(configuration['settings'])
+            self.dataset = dict(settings=settings, records=config.read(folder / 'points.json'), folder=str(folder),axis_values=configuration.get('axis_values'))
             self.selected = None
             if self.dataset['records']:
                 p = self.dataset['records'][0]; self.selected = (p['ix'], p['iy'])
