@@ -26,6 +26,12 @@ class PulseExperimentTab(QtWidgets.QWidget):
             field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
             if dec:field.setDecimals(dec)
             field.setRange(lo,hi);field.setSingleStep(step);self.fields[key]=field;form.addRow(title,field)
+        if kind=='spin_echo':
+            self.echo_note=QtWidgets.QLabel();self.echo_note.setWordWrap(True);left.addWidget(self.echo_note)
+            def echo_values():
+                ticks=round(self.fields['precession_time'].value()*100);ticks+=ticks%2
+                self.echo_note.setText(f"π = {2*self.fields['half_pi_time'].value():.2f} us (자동) · 적용 Echo step = {ticks/100:.2f} us\n총 자유진화 시간 τ, 각 대기 τ/2 · 동일 위상\nτ=0은 연속 2π pulse 기준점")
+            self.fields['precession_time'].valueChanged.connect(echo_values);self.fields['half_pi_time'].valueChanged.connect(echo_values);echo_values()
         for title,callback in [('조건·매핑 불러오기',self.load),('조건·매핑 저장',self.save),('다른 이름으로 저장',self.save_as)]:
             button=QtWidgets.QPushButton(title);button.clicked.connect(callback);left.addWidget(button);self.config_buttons.append(button)
         left.addStretch()

@@ -20,7 +20,7 @@ from .vendor import HardwareDefinition_remote_ent_test_ec as legacy
 
 PINS = tuple(f'{bank}_{n}' for bank in ('ja', 'jb', 'jc', 'jd') for n in range(8))
 DEFAULT_ROLES = {**{name: pin for pin, name in legacy.input_mapping.items()}, **legacy.output_mapping}
-EXPERIMENTS = ('fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'decay',
+EXPERIMENTS = ('spin_echo', 'fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'decay',
                'hom', 'entanglement', 'ion_check', 'micromotion', 'phase_shifter')
 CURRENT = ContextVar('fpga_mapping', default=None)
 FROZEN = ContextVar('fpga_workflow_profiles', default={})

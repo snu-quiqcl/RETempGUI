@@ -39,8 +39,10 @@ def run(controller,kind,c,cancelled,on_rows,on_record):
         if received!=expected:raise RuntimeError(f'Missing {kind} FIFO rows: {received}/{expected}')
     try:
         check();cleanup(controller,c['roles']);h=hardware(c['roles'])
-        if kind in ('ramsey','initialization'):
-            if kind=='ramsey':
+        if kind in ('ramsey','spin_echo','initialization'):
+            if kind=='spin_echo':
+                from labremote.characterization.spin_echo_sequence import build_program
+            elif kind=='ramsey':
                 from labremote.characterization.ramsey_sequence import build_program
             else:
                 from labremote.characterization.initialization_sequence import build_program
@@ -51,7 +53,7 @@ def run(controller,kind,c,cancelled,on_rows,on_record):
                 for r in rows:
                     point=records.setdefault(r[1],dict(index=r[1],counts=[],complete=False));point['counts'].append(r[2]);point['complete']=len(point['counts'])==c['N_average'];changed.add(r[1])
                 for index in sorted(changed):on_record(records[index])
-            collect(build_program(c,h),c['N_average']*(c['max_precession_count'] if kind=='ramsey' else c['N_init_control']),-1,-1,consume)
+            collect(build_program(c,h),c['N_average']*(c['max_precession_count'] if kind in ('ramsey','spin_echo') else c['N_init_control']),-1,-1,consume)
         else:
             from labremote.characterization.spam_sequence import build_program
             for batch in range(c['N_repeat']):

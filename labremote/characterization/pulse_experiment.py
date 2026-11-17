@@ -6,10 +6,13 @@ import numpy as np
 from . import config,rabi
 from .ramsey_fit import fit_ramsey,population_and_error
 
-KINDS=('ramsey','spam','initialization')
-def title(kind):return {'ramsey':'Ramsey','spam':'SPAM','initialization':'Initialization'}[kind]
+KINDS=('ramsey','spam','initialization','spin_echo')
+def title(kind):return {'spin_echo':'Spin Echo','ramsey':'Ramsey','spam':'SPAM','initialization':'Initialization'}[kind]
 def defaults(kind,chamber):
     if kind not in KINDS or chamber not in ('EA','EC'):raise ValueError('Unknown experiment/chamber')
+    if kind=='spin_echo':
+        c=defaults('ramsey',chamber);c['experiment']=kind
+        c.pop('fit_low_hz');c.pop('fit_high_hz');return c
     if kind=='initialization':
         return dict(schema_version=1,experiment=kind,chamber=chamber,roles=rabi.defaults(chamber)['roles'],T_cool=50000,T_cool_repeat=6,T_init_step=20,T_det=8000,T_det_repeat=1,WAIT_AOM=100,N_average=500,N_init_control=21,N_threshold=4,timeout_s=120.)
     c=dict(schema_version=1,experiment=kind,chamber=chamber,roles=rabi.defaults(chamber)['roles'],
@@ -21,10 +24,13 @@ def defaults(kind,chamber):
     return c
 
 def times(kind):
+    if kind=='spin_echo':return times('ramsey')
     if kind=='initialization':return ('T_cool','T_init_step','T_det','WAIT_AOM')
     return ('T_cool','T_init','T_det')+(('T_wait_for_aom_off','half_pi_time','precession_time') if kind=='ramsey' else ('WAIT_AOM','T_PI'))
 
 def fields(kind):
+    if kind=='spin_echo':
+        return [(k,'Echo step: total free time (us)',.08,10_000_000,2,.02) if k=='precession_time' else (k,title,lo,hi,dec,step) for k,title,lo,hi,dec,step in fields('ramsey') if k not in ('fit_low_hz','fit_high_hz')]
     if kind=='initialization':
         return [('T_cool','Cooling (us)',0,655.35,2,1),('T_cool_repeat','Cooling repeats',1,65535,0,1),('T_init_step','Initialization step (us)',.02,655.35,2,.01),('T_det','Detection (us)',0,655.35,2,1),('T_det_repeat','Detection repeats (original: fixed 1)',1,1,0,1),('WAIT_AOM','AOM wait (us)',0,655.35,2,.1),('N_average','Shots / point',1,65535,0,1),('N_init_control','Time points (from 0)',1,512,0,1),('N_threshold','Bright threshold (>=)',0,65535,0,1),('timeout_s','Timeout / scan (s)',.1,3600,1,1)]
     result=[('T_cool','Cooling (us)',0,655.35,2,1),('T_cool_repeat','Cooling repeats',1,65535,0,1),
@@ -43,13 +49,17 @@ def validate(kind,value):
         v=value[key]
         if key in times(kind):low=round(low*100);high=round(high*100);dec=0
         if isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) or not low<=v<=high or (not dec and type(v) is not int):raise ValueError('Invalid '+key)
+    if kind=='spin_echo':
+        value=deepcopy(value);value['precession_time']+=value['precession_time']%2
     roles=value['roles']
     if not isinstance(roles,dict) or set(roles)!=set(rabi.ROLE_CHOICES) or any(roles[k] not in names for k,names in rabi.ROLE_CHOICES.items()):raise ValueError('Invalid FPGA roles')
-    shots=value['N_average']*(value['N_init_control'] if kind=='initialization' else value['max_precession_count'] if kind=='ramsey' else 2*value['N_repeat'])
+    shots=value['N_average']*(value['N_init_control'] if kind=='initialization' else value['max_precession_count'] if kind in ('ramsey','spin_echo') else 2*value['N_repeat'])
     if shots>2000000:raise ValueError('Maximum 2,000,000 attempts')
     c=value
     if kind=='initialization':
         duration=c['N_average']*sum(c['T_cool']*c['T_cool_repeat']+i*c['T_init_step']+c['T_det']+3*c['WAIT_AOM']+200 for i in range(c['N_init_control']))*1e-8
+    elif kind=='spin_echo':
+        duration=c['N_average']*sum(c['T_cool']*c['T_cool_repeat']+3*c['T_cool_repeat']+c['T_init']+c['T_det']*c['T_det_repeat']+3*c['T_det_repeat']+c['T_wait_for_aom_off']+4*c['half_pi_time']+i*c['precession_time']+200 for i in range(c['max_precession_count']))*1e-8
     elif kind=='ramsey':
         nyquist=.5/(c['precession_time']*1e-8)
         if c['fit_high_hz']==0:
@@ -75,6 +85,9 @@ def clean(value):
     return value
 
 def analyze(kind,records,c):
+    if kind=='spin_echo':
+        from .spin_echo_analysis import analyze
+        return clean(analyze(records,c))
     if kind=='initialization':
         from .initialization_analysis import analyze
         return clean(analyze(records,c))
@@ -104,12 +117,12 @@ def draw(figure,data):
     if data['experiment']=='initialization':
         from .initialization_analysis import draw
         draw(figure,data);return
-    if data['experiment']=='ramsey':
+    if data['experiment'] in ('ramsey','spin_echo'):
         hist,ax=figure.subplots(2,1);counts=data['last_counts']
         bins=np.bincount(np.minimum(np.asarray(counts,dtype=np.int64),40),minlength=41);hist.bar(np.arange(41),bins);hist.set(xlabel='Photon counts (40 includes overflow)',ylabel='Counts')
         ax.errorbar(np.array(data['time_s'])*1000,data['population'],yerr=data['population_error'],fmt='o-',label='Measured')
         if data['fit_time_s']:ax.plot(np.array(data['fit_time_s'])*1000,data['fit_population'],'--',label='Fit')
-        ax.set(xlabel='Nominal free precession time (ms)',ylabel='Bright population',ylim=(-.05,1.05));ax.legend();ax.grid(True,alpha=.3)
+        ax.set(xlabel='Total free evolution time (ms)' if data['experiment']=='spin_echo' else 'Nominal free precession time (ms)',ylabel='Bright population',ylim=(-.05,1.05));ax.legend();ax.grid(True,alpha=.3)
     else:
         from .live_pulse import LivePlot
         plot=LivePlot(figure,'spam')
@@ -118,6 +131,9 @@ def draw(figure,data):
     figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)
 
 def summary(data):
+    if data['experiment']=='spin_echo':
+        f=data['fit']
+        return (f"T2 echo = {f['t2_echo_s']:.6g} s" if f.get('t2_resolved') else 'T2 echo unresolved')+' · '+f.get('message','')
     if data['experiment']=='initialization':
         fit=data['fit'];return ('Initialization tau = %.5g us' % fit['tau_us']) if fit['status']=='completed' else 'Initialization fit: '+fit['message']
     if data['experiment']=='ramsey':

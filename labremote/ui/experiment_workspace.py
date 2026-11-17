@@ -214,8 +214,8 @@ class ExperimentWorkspace(ScrollTabs):
             pages=ScrollTabs();daily.addTab(pages,chamber)
             self.add_slot(pages,'Fluorescence',lambda w,b,c=chamber:FluorescenceTab(w,c,host))
             self.add_slot(pages,'Rabi',lambda w,b,c=chamber:RabiTab(w,c,b,host))
-            for kind in ('initialization','ramsey','spam'):
-                self.add_slot(pages,kind.title(),lambda w,b,c=chamber,k=kind:PulseExperimentTab(w,k,c,b,host))
+            for kind in ('initialization','ramsey','spin_echo','spam'):
+                self.add_slot(pages,'Spin Echo' if kind=='spin_echo' else kind.title(),lambda w,b,c=chamber,k=kind:PulseExperimentTab(w,k,c,b,host))
             self.add_slot(pages,'SPAM 2D Scan',lambda w,b,c=chamber:SpamScanTab(w,c,b,host))
         decay=group('Decay')
         for chamber in ('EA','EC'):

@@ -609,6 +609,11 @@ class FPGAAPI(DeviceAPI):
 
     def stop_initialization(self):return self.worker.initialization_runner.cancel()
 
+    def run_spin_echo(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None):
+        return self.worker.spin_echo_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,frequency_hz=frequency_hz,parent=self.group)
+
+    def stop_spin_echo(self):return self.worker.spin_echo_runner.cancel()
+
     def run_ramsey(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None):
         return self.worker.ramsey_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,frequency_hz=frequency_hz,parent=self.group)
 

@@ -35,6 +35,7 @@ class FPGAWorker(AcquisitionWorker):
         self.entanglement_runner=EntanglementRunner(self)
         from labremote.micromotion.runner import MicromotionRunner
         self.micromotion_runner=MicromotionRunner(self)
+        self.spin_echo_runner=PulseRunner(self,'spin_echo')
         self.ramsey_runner=PulseRunner(self,'ramsey');self.spam_runner=PulseRunner(self,'spam');self.initialization_runner=PulseRunner(self,'initialization')
         from labremote.characterization.spam_scan_runner import SpamScanRunner
         self.spam_scan_runner=SpamScanRunner(self)

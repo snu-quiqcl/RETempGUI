@@ -31,11 +31,11 @@ class PulseRunner(WorkflowTask):
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];chamber=c['chamber'];kind=self.kind
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+'_'+chamber+'_'+self.handle.request_id);folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
-        names=['pulse_experiment.py',kind+'_sequence.py']+(['ramsey_fit.py'] if kind=='ramsey' else ['initialization_analysis.py'] if kind=='initialization' else [])
+        names=['pulse_experiment.py',kind+'_sequence.py']+(['spin_echo_analysis.py','ramsey_sequence.py'] if kind=='spin_echo' else ['ramsey_fit.py'] if kind=='ramsey' else ['initialization_analysis.py'] if kind=='initialization' else [])
         config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={n:hashlib.sha256((Path(__file__).parent/n).read_bytes()).hexdigest() for n in names}))
         from .live_pulse import LiveSummary
         live=LiveSummary(kind,c)
-        records={};error=None;total=c['N_init_control'] if kind=='initialization' else c['max_precession_count'] if kind=='ramsey' else 2*c['N_repeat']
+        records={};error=None;total=c['N_init_control'] if kind=='initialization' else c['max_precession_count'] if kind in ('ramsey','spin_echo') else 2*c['N_repeat']
         self.publish(chamber=chamber,phase='Starting',folder=str(folder),points=0,total=total)
         try:
             with (folder/'raw_fifo.csv').open('w',newline='',encoding='utf-8') as stream:
@@ -55,7 +55,7 @@ class PulseRunner(WorkflowTask):
             data=model.analyze(kind,values,c);config.save(folder/'analysis.json',data)
             with (folder/'summary.csv').open('w',newline='',encoding='utf-8') as stream:
                 writer=csv.writer(stream)
-                if kind in ('ramsey','initialization'):
+                if kind in ('ramsey','spin_echo','initialization'):
                     writer.writerow(['time_s','received_shots','bright_shots','population','population_error']);writer.writerows(zip(data['time_s'],data['shot_counts'],data['bright_counts'],data['population'],data['population_error']))
                 else:
                     columns=['condition','N_attempts','N_success','N_received','N_error','success_probability','spam_error','conditional_fidelity'];writer.writerow(columns);writer.writerows([[s[k] for k in columns] for s in data['states']])

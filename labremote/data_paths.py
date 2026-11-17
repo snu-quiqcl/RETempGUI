@@ -73,7 +73,7 @@ def _dated_experiment_directory(directory, category, *parts):
 def characterization_directory(directory, chamber, experiment):
     if chamber not in ('EA', 'EC'):
         raise ValueError('Invalid chamber')
-    if experiment not in ('fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'spam_2d'):
+    if experiment not in ('fluorescence', 'rabi', 'spin_echo', 'ramsey', 'spam', 'initialization', 'spam_2d'):
         raise ValueError('Invalid characterization experiment')
     return _dated_experiment_directory(directory, 'characterization', chamber, experiment)
 
@@ -97,6 +97,6 @@ def tab_data_directory(directory, category, *parts):
 def series_directory(directory, recipe):
     chamber = recipe.get('chamber') if isinstance(recipe, dict) else None
     experiment = recipe.get('experiment') if isinstance(recipe, dict) else None
-    if chamber in ('EA', 'EC') and experiment in ('fluorescence', 'rabi', 'ramsey', 'spam', 'initialization'):
+    if chamber in ('EA', 'EC') and experiment in ('fluorescence', 'rabi', 'spin_echo', 'ramsey', 'spam', 'initialization'):
         return characterization_directory(directory, chamber, experiment)
     return tab_data_directory(directory, 'characterization', 'series')
