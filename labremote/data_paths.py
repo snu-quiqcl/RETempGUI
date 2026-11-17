@@ -73,7 +73,7 @@ def _dated_experiment_directory(directory, category, *parts):
 def characterization_directory(directory, chamber, experiment):
     if chamber not in ('EA', 'EC'):
         raise ValueError('Invalid chamber')
-    if experiment not in ('fluorescence', 'rabi', 'ramsey', 'spam', 'initialization'):
+    if experiment not in ('fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'spam_2d'):
         raise ValueError('Invalid characterization experiment')
     return _dated_experiment_directory(directory, 'characterization', chamber, experiment)
 

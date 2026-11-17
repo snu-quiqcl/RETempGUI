@@ -619,6 +619,11 @@ class FPGAAPI(DeviceAPI):
 
     def stop_spam(self):return self.worker.spam_runner.cancel()
 
+    def run_spam_scan(self, *, settings, workers, directory=None):
+        return self.worker.spam_scan_runner.start(settings, workers, directory=directory, parent=self.group)
+
+    def stop_spam_scan(self):return self.worker.spam_scan_runner.cancel()
+
     def run_rabi(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None):
         return self.worker.rabi_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,frequency_hz=frequency_hz,parent=self.group)
 

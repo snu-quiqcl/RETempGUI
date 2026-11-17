@@ -50,6 +50,14 @@ class DeviceWorker(QtCore.QThread):
 
     def enqueue(self, handle):
         with self._lock:
+            scan_owner = getattr(self, '_spam_scan_owner', None)
+            if scan_owner is not None and getattr(handle.group, 'owner', None) is not scan_owner and handle.action != 'DISCONNECT':
+                if getattr(handle, 'automatic_monitor', False):
+                    self._monitor_pending.discard(handle.monitor_key)
+                    handle.finish()
+                else:
+                    handle.finish(RuntimeError('Device is occupied by SPAM 2D Scan: ' + str(self.name)))
+                return handle
             if self._closing:
                 handle.finish(OperationCancelled('Worker is shutting down'))
                 return handle

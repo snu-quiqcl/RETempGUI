@@ -43,6 +43,8 @@ def make_job(view,worker,title):
 def execute(devices):
     p=devices.parameters;api=devices.fpga(p['fpga']);kind=p['kind'];c=p['settings']
     directory=devices.run_directory
+    if kind=='SpamScanTab':
+        return api.run_spam_scan(settings=c,workers=devices._workers,directory=directory).wait()
     if kind=='MotorScanTab':
         c=dict(c,directory=directory)
         return api.start_scan(devices.motor(p['x']),devices.motor(p['y']),c,z_motor=devices.motor(p['z']) if p.get('z') else None).wait()

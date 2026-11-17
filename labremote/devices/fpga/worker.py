@@ -36,6 +36,8 @@ class FPGAWorker(AcquisitionWorker):
         from labremote.micromotion.runner import MicromotionRunner
         self.micromotion_runner=MicromotionRunner(self)
         self.ramsey_runner=PulseRunner(self,'ramsey');self.spam_runner=PulseRunner(self,'spam');self.initialization_runner=PulseRunner(self,'initialization')
+        from labremote.characterization.spam_scan_runner import SpamScanRunner
+        self.spam_scan_runner=SpamScanRunner(self)
 
     def reserve_fpga(self, owner):
         with self._lock:

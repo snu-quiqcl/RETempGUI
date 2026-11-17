@@ -197,6 +197,7 @@ class ExperimentWorkspace(ScrollTabs):
         from .daily_characterization import FluorescenceTab
         from .rabi_tab import RabiTab
         from .pulse_experiment_tab import PulseExperimentTab
+        from .spam_scan_tab import SpamScanTab
         from .decay_tab import DecayExperimentTab
         from labremote.decay.config import MODES,LABELS
         from .hom_tab import HOMTab
@@ -215,6 +216,7 @@ class ExperimentWorkspace(ScrollTabs):
             self.add_slot(pages,'Rabi',lambda w,b,c=chamber:RabiTab(w,c,b,host))
             for kind in ('initialization','ramsey','spam'):
                 self.add_slot(pages,kind.title(),lambda w,b,c=chamber,k=kind:PulseExperimentTab(w,k,c,b,host))
+            self.add_slot(pages,'SPAM 2D Scan',lambda w,b,c=chamber:SpamScanTab(w,c,b,host))
         decay=group('Decay')
         for chamber in ('EA','EC'):
             pages=ScrollTabs();decay.addTab(pages,chamber)
