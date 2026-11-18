@@ -49,7 +49,8 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         self.setTitle(slot['name']+(' · 설정 '+slot['profile'][:6] if slot.get('variant') else ''))
         self.setToolTip(json.dumps(slot['records'][0]['settings'],ensure_ascii=False,indent=2) if slot['records'] else '')
         # Do not redraw plots for unrelated Queue transitions.
-        signature=json.dumps(slot,sort_keys=True,ensure_ascii=False)
+        signature=slot.get('_signature')
+        if signature is None:signature=json.dumps(slot,sort_keys=True,ensure_ascii=False)
         if signature==self.signature:return
         self.signature=signature
         if self.kind in ('ent','ion','spam'):
@@ -68,6 +69,12 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         return records
 
     def ent_data(self):
+        views=self.slot.get('_ent_views')
+        if views is not None:
+            mode=self.mode.currentIndex();cycle=None
+            if mode and self.slot['records']:
+                cycle=max(r['cycle'] for r in self.slot['records']) if mode==1 else self.cycle.currentData()
+            return views.get(cycle,(None,None))
         return pool_ent(self.selected_records())
 
     def draw(self):
@@ -162,7 +169,7 @@ class GroupDashboard(QtWidgets.QWidget):
         self.progress=QtWidgets.QProgressBar();self.body.addWidget(self.progress)
         self.monitor_tabs=ScrollTabs();self.body.addWidget(self.monitor_tabs,1)
         self.table=QtWidgets.QTableWidget(0,6);self.table.setHorizontalHeaderLabels(['회차','Workflow','작업 반복','상태','측정 요약','시간(s)'])
-        self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);self.table.setMinimumHeight(190);self.body.addWidget(self.table)
+        self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive);self.table.horizontalHeader().setStretchLastSection(True);self.table.setMinimumHeight(190);self.body.addWidget(self.table)
         self.details=QtWidgets.QPlainTextEdit();self.details.setReadOnly(True);self.details.setMaximumHeight(120);self.body.addWidget(self.details);self.table.itemSelectionChanged.connect(self.show_details)
         self.table.setMaximumHeight(210);self.details.setMaximumHeight(85)
         self.warning=QtWidgets.QLabel();self.warning.setWordWrap(True);root.addWidget(self.warning)
@@ -206,12 +213,14 @@ class GroupDashboard(QtWidgets.QWidget):
         keys=[g['key'] for g in groups]
         if self.selected not in keys:self.selected=keys[0] if keys else None
         with QtCore.QSignalBlocker(self.groups):
-            self.groups.clear()
-            for g in groups:
+            while self.groups.count()>len(groups):self.groups.takeItem(self.groups.count()-1)
+            for index,g in enumerate(groups):
                 cycles={s.get('group_iteration',s['job_repeat']) for s in g['steps']}
                 done=sum(all(s['status']=='completed' for s in g['steps'] if s.get('group_iteration',s['job_repeat'])==c) for c in cycles)
                 status='실행 중' if any(s['status']=='running' for s in g['steps']) else '실패' if any(s['status']=='failed' for s in g['steps']) else '완료' if done==len(cycles) else '대기/중단'
-                self.groups.addItem(f"{g['name']}\n전체 반복 {g['iteration']} · {status} · {done}/{len(cycles)}회 완료")
+                text=f"{g['name']}\n전체 반복 {g['iteration']} · {status} · {done}/{len(cycles)}회 완료"
+                if index>=self.groups.count():self.groups.addItem(text)
+                elif self.groups.item(index).text()!=text:self.groups.item(index).setText(text)
             self.groups.setCurrentRow(keys.index(self.selected) if self.selected in keys else -1)
         self.warning.setText('\n'.join(self.snapshot['warnings'][:4]));self.render_group()
 
@@ -253,13 +262,16 @@ class GroupDashboard(QtWidgets.QWidget):
         active=next((s['name'] for s in group['steps'] if s['status']=='running'),'')
         self.progress.setRange(0,len(cycles));self.progress.setValue(done);self.progress.setFormat(f'{done}/{len(cycles)}회 완료'+(' · '+active if active else ''))
         self.group=group;selected=self.table.currentRow();self.table.setRowCount(len(group['steps']))
+        records_by_step={}
+        for slot in slots:
+            for record in slot['records']:records_by_step.setdefault(record['step_id'],[]).append(record)
         for i,s in enumerate(group['steps']):
-            records=[r for slot in slots for r in slot['records'] if r['step_id']==s['step_id']];parts=[]
+            records=records_by_step.get(s['step_id'],[]);parts=[]
             for r in records:
                 if r['kind']=='ion' and r['samples']:parts.append(r['samples'][-1]['decision']+f" ({len(r['samples'])} measurements)")
                 elif r['kind']=='spam':
                     f=r['analysis'].get('spam_fidelity');parts.append(r['chamber']+' '+(f'{f:.2%}' if f is not None else '—'))
-                elif r['kind']=='ent':parts.append(f"{sum(b['heralded'] for b in r['batches'])} herald / {sum(b['attempts'] for b in r['batches']):,} trials")
+                elif r['kind']=='ent':parts.append(r['_summary'] if '_summary' in r else f"{sum(b['heralded'] for b in r['batches'])} herald / {sum(b['attempts'] for b in r['batches']):,} trials")
             if not parts:parts=[s.get('result',{}).get('reason',s.get('reason',''))]
             values=[s.get('group_iteration',s['job_repeat']),s['name'],s['job_repeat'],s['status'],' · '.join(parts),f"{s['elapsed_s']:.2f}" if 'elapsed_s' in s else '']
             for col,v in enumerate(values):

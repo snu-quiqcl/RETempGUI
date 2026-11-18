@@ -1,3 +1,4 @@
+from labremote.runtime.storage_paths import compact_run_folder
 """A two-dimensional outer loop around the unchanged SPAM PulseRunner."""
 import csv
 import math
@@ -127,7 +128,7 @@ class SpamScanRunner(WorkflowTask):
         # Keep nested PulseRunner paths below Windows' usual path limit.
         # The complete UUID remains in configuration/result metadata.
         folder = Path(self.settings['directory']) / (datetime.now().strftime('%Y%m%d_%H%M%S') + '_' + self.handle.request_id[:8])
-        folder.mkdir(parents=True, exist_ok=False)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True, exist_ok=False)
         write_snapshot(folder)
         plans = {key:model.axis_plan(c[key]) for key in ('x','y')}
         axes = {key:[row['applied'] for row in plans[key]] for key in plans}

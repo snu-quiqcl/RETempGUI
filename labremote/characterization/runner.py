@@ -1,3 +1,4 @@
+from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
 import csv
@@ -33,7 +34,7 @@ class FluorescenceRunner(WorkflowTask):
         from labremote.devices.fpga.adapter import Cancellation
         chamber=self.settings['settings']['chamber'];config=self.settings['settings'];route=self.settings['mapping']['routes'][chamber]
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+chamber+'_'+self.handle.request_id)
-        folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
         metadata={**self.settings,'run_id':self.handle.request_id,'fpga':self.worker.name,
                   'analysis_timebase':'Nominal exposure spacing; inter-batch host gaps excluded',
                   'source_sha256':{name:hashlib.sha256((Path(__file__).parent/name).read_bytes()).hexdigest() for name in ('fluorescence.py','config.py')}}

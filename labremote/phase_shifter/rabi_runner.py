@@ -1,3 +1,4 @@
+from labremote.runtime.storage_paths import compact_run_folder
 """Two-dimensional phase/time acquisition through the owned FPGA queue."""
 import csv
 import json
@@ -32,7 +33,7 @@ class PhaseRabiRunner(WorkflowTask):
     def _execute(self):
         c=self.settings['settings']; phases=self.settings['phases']; times=self.settings['times']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_phase_rabi_'+self.handle.request_id[:8])
-        folder.mkdir(parents=True,exist_ok=False);write_snapshot(folder)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False);write_snapshot(folder)
         source=folder/'source';source.mkdir()
         for p in Path(__file__).parent.glob('*.py'):shutil.copyfile(p,source/p.name)
         shutil.copyfile(config.hd.__file__,source/'hardware_definition.py')

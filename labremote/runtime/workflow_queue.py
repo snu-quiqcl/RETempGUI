@@ -169,6 +169,12 @@ class QueueRunner:
                 frozen=job.get('fpga_profiles',{}).get(target) or profiles.get(target)
                 if frozen:job['fpga_profiles']={target:deepcopy(frozen)}
         self.stop=threading.Event();self.pause=threading.Event();self.lock=threading.Lock();self.active=None;self.state=None;self.folder=None
+        self._queue_id=uuid4().hex
+        self._folder_name=datetime.now().strftime('%y%m%d_%H%M%S')+'_'+self._queue_id[:8]
+        from .queue_paths import directories
+        from .storage_paths import check_queue
+        steps=expand_steps(self.plan)
+        check_queue(self.directory/self._folder_name,self.plan,steps,directories(self.plan,steps))
     def cancel(self):
         with self.lock:
             self.stop.set()
@@ -213,12 +219,16 @@ class QueueRunner:
     def _run(self):
         from .execution_scope import CURRENT_EXECUTION
         owner=CURRENT_EXECUTION.get()
-        self.folder=self.directory/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_queue_'+uuid4().hex);self.folder.mkdir(parents=True,exist_ok=False)
+        self.folder=self.directory/self._folder_name
         steps=expand_steps(self.plan)
         from .queue_paths import directories
         output_directories=directories(self.plan,steps)
+        from .storage_paths import check_queue
+        check_queue(self.folder,self.plan,steps,output_directories)
+        self.folder.mkdir(parents=True,exist_ok=False)
         self.state=dict(schema_version=1,queue_id=self.folder.name,folder=str(self.folder),status='running',started_at=now(),plan=self.plan,steps=steps,error='')
         self.state['storage_layout']='group_job_repeat_v1'
+        self.state['run_uuid']=self._queue_id
         self.commit();jobs={j['id']:j for j in workflow_jobs(self.plan['jobs'])};any_failed=False
         try:
             for step in steps:

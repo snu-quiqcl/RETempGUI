@@ -1,3 +1,4 @@
+from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
 """Submit FPGA operations and maintain the DAC server restoration lease."""
@@ -150,7 +151,7 @@ class MicromotionRunner(WorkflowTask):
     def _execute(self):
         c=self.settings['settings'];mode=self.settings['mode']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+c['chamber']+'_'+self.handle.request_id[:8])
-        folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
         source=folder/'source';source.mkdir()
         paths=list(Path(__file__).parent.glob('*.py'))+[Path(config.hd.__file__),
             Path(config.hd.__file__).with_name('HardwareDefinition_v4_04.py')]

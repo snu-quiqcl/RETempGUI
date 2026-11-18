@@ -1,3 +1,4 @@
+from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
 import csv
@@ -41,7 +42,7 @@ class PhaseShifterRunner(WorkflowTask):
         c = self.settings['settings']
         folder = Path(self.settings['directory']) / (
             datetime.now().strftime('%Y%m%d_%H%M%S') + '_phase_' + self.handle.request_id[:8])
-        folder.mkdir(parents=True, exist_ok=False); write_snapshot(folder)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True, exist_ok=False); write_snapshot(folder)
         source = folder/'source'
         source.mkdir()
         for path in Path(__file__).parent.glob('*.py'):

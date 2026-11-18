@@ -3,6 +3,7 @@ import ast
 from copy import deepcopy
 import hashlib
 import json
+import os
 from pathlib import Path
 from .workflow_queue import expand_steps, workflow_jobs,validate_plan
 
@@ -58,9 +59,83 @@ def pool_ent(records):
     return c,acc.data()
 
 
+class EntPool:
+    """Append-only fast path, rebuilding safely on replacement/reordering."""
+    def __init__(self):
+        self.settings=None;self.batches=[];self.acc=None;self.value=(None,None)
+
+    def update(self,records):
+        from labremote.entanglement.plotting import Accumulator
+        if not records:
+            self.__init__();return self.value
+        c=records[0]['settings']
+        if any(r['settings']!=c for r in records):raise ValueError('Different entanglement settings cannot be pooled')
+        batches=[b for r in records for b in r['batches']]
+        prefix=(self.settings==c and len(batches)>=len(self.batches)
+                and all(a is b or a==b for a,b in zip(self.batches,batches)))
+        if prefix and len(batches)==len(self.batches):return self.value
+        if not prefix:self.acc=Accumulator(c);self.batches=[];self.settings=c
+        for b in batches[len(self.batches):]:self.acc.add(dict(b,batch=len(self.acc.batches)))
+        self.batches=batches;self.value=(c,self.acc.data())
+        return self.value
+
+
 class ResultStore:
-    """Used on one background reader thread at a time; unchanged files are cached."""
-    def __init__(self):self.cache={}
+    """One reader thread; index directory entries, validate file revisions each poll."""
+    def __init__(self):
+        self.cache={};self.directories={};self.record_cache={};self.pools={};self.revision=0
+
+    def discover(self,folder):
+        folder=Path(folder)
+        if folder.is_file():return [folder.resolve()]
+        found=[];pending=[folder]
+        while pending:
+            current=pending.pop()
+            try:stamp=current.stat().st_mtime_ns
+            except FileNotFoundError:continue
+            old=self.directories.get(current)
+            if old is None or old[0]!=stamp:
+                children=[];files=[]
+                with os.scandir(current) as entries:
+                    for entry in entries:
+                        if entry.is_dir(follow_symlinks=False):children.append(Path(entry.path))
+                        elif entry.name in ('result.json','results.json','samples.json'):
+                            files.append(Path(entry.path).resolve())
+                old=(stamp,children,files);self.directories[current]=old
+            pending.extend(old[1]);found.extend(old[2])
+        return found
+
+    @staticmethod
+    def stamp(path):
+        try:
+            stat=path.stat();return stat.st_mtime_ns,stat.st_size
+        except FileNotFoundError:return None
+
+    def records(self,state,step,warnings):
+        if not state.get('folder') or not step.get('directory'):return []
+        root=Path(state['folder']);directory=root/step['directory']
+        roots=[directory]
+        for name in step.get('result',{}).get('result_paths',[]):
+            path=Path(name);roots.append(path if path.is_absolute() else root/path)
+        files=set(p for folder in dict.fromkeys(roots) for p in self.discover(folder))
+        dependencies=set(files)
+        for path in files:dependencies.update((path.parent/'configuration.json',path.parent/'analysis.json'))
+        if step.get('result_file'):dependencies.add(root/step['result_file'])
+        signature=tuple((str(p),self.stamp(p)) for p in sorted(dependencies))
+        key=(str(directory),step['step_id'])
+        old=self.record_cache.get(key)
+        if old is not None and old[0]==signature:return old[1]
+        errors=[]
+        result=self._records(state,step,errors,files)
+        self.revision+=1
+        for record in result:
+            record['_revision']=self.revision
+            if record['kind']=='ent':
+                record['_summary']=f"{sum(b['heralded'] for b in record['batches'])} herald / {sum(b['attempts'] for b in record['batches']):,} trials"
+        if not errors:self.record_cache[key]=(signature,result)
+        else:self.record_cache.pop(key,None)
+        warnings.extend(errors)
+        return result
 
     def read(self,path):
         path=Path(path);stat=path.stat();stamp=(stat.st_mtime_ns,stat.st_size)
@@ -71,17 +146,9 @@ class ResultStore:
         self.cache[key]=(stamp,value)
         return value
 
-    def records(self,state,step,warnings):
-        if not state.get('folder') or not step.get('directory'):return []
-        root=Path(state['folder']);directory=root/step['directory'];files=set()
-        roots=[directory]
-        for p in step.get('result',{}).get('result_paths',[]):
-            path=Path(p);roots.append(path if path.is_absolute() else root/path)
-        for folder in roots:
-            if folder.is_file():files.add(folder.resolve())
-            elif folder.exists():
-                # Restricted to known result filenames; no raw FIFO reads or imports.
-                files.update(p.resolve() for pattern in ('result.json','results.json') for p in folder.rglob(pattern))
+    def _records(self,state,step,warnings,discovered):
+        root=Path(state['folder']);directory=root/step['directory']
+        files={p for p in discovered if p.name!='samples.json'}
         output=[];seen=set()
         for path in sorted(files):
             try:
@@ -105,7 +172,7 @@ class ResultStore:
             except Exception as exc:warnings.append(f'{step["step_id"]} · {path.name}: {exc}')
         # Ion Check checkpoints exist before its final result; replace, never append to it.
         if not any(r['kind']=='ion' for r in output):
-            for path in directory.rglob('samples.json') if directory.exists() else []:
+            for path in sorted(p for p in discovered if p.name=='samples.json' and directory in p.parents):
                 try:
                     cfg=self.read(path.parent/'configuration.json')
                     if cfg.get('dac') in ('not_connected','not_implemented'):
@@ -151,6 +218,7 @@ class ResultStore:
                 record=dict(record,step_id=step['step_id'],cycle=step.get('group_iteration',step['job_repeat']),
                             job_repeat=step['job_repeat'],step_status=step['status'])
                 slot['records'].append(record)
+        active_pools=set()
         for group in groups.values():
             slots=group['slots']
             for key in list(slots):
@@ -169,4 +237,16 @@ class ResultStore:
             group['slots']=sorted(slots.values(),key=lambda s:order.get(s['job_id'],len(order)))
             for slot in group['slots']:
                 slot['variant']=sum(s['job_id']==slot['job_id'] and s['kind']==slot['kind'] for s in group['slots'])>1
+                # Small GUI revision token; never serialize all photon histograms there.
+                slot['_signature']=(slot['name'],slot['variant'],json.dumps(slot['monitor'],sort_keys=True),
+                    tuple((r['path'],r['_revision'],r['cycle'],r['step_id'],r['step_status']) for r in slot['records']))
+                if slot['kind']=='ent':
+                    cycles={}
+                    for record in slot['records']:cycles.setdefault(record['cycle'],[]).append(record)
+                    views={}
+                    for cycle,records in [(None,slot['records']),*cycles.items()]:
+                        key=(group['key'],slot['job_id'],slot['profile'],cycle);active_pools.add(key)
+                        views[cycle]=self.pools.setdefault(key,EntPool()).update(records)
+                    slot['_ent_views']=views
+        self.pools={k:v for k,v in self.pools.items() if k in active_pools}
         return dict(state=state,groups=list(groups.values()),warnings=warnings)

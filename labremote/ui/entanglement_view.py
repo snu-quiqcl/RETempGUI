@@ -14,10 +14,13 @@ class EntanglementView(QtCore.QObject):
         super().__init__(widget)
         self.widget,self.figure,self.canvas,self.on_error=widget,figure,canvas,on_error
         self.pending=None;self.active=None;self.future=None;self.plot=None
+        self.last_submission=None
         self.timer=QtCore.QTimer(self);self.timer.setInterval(1000)
         self.timer.timeout.connect(self.tick);self.timer.start()
 
     def submit(self,data,settings):
+        if self.last_submission is not None and self.last_submission[0] is data and self.last_submission[1]==settings:return
+        self.last_submission=(data,settings)
         self.pending=(data,settings)
 
     def tick(self):
@@ -28,7 +31,7 @@ class EntanglementView(QtCore.QObject):
             try:
                 fits=self.future.result()
                 if self.plot is None or self.plot.config!=settings:
-                    self.plot=EntanglementPlot(self.figure,settings)
+                    self.plot=EntanglementPlot(self.figure,settings,reuse_artists=True)
                 self.plot.update(data,prepared_fits=fits);self.canvas.draw_idle()
             except Exception as exc:self.on_error('결과 표시 오류: '+str(exc))
             self.future=None;self.active=None

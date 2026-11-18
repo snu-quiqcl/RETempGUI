@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Store Queue results by group, item name and repetition; retain manifest step identity and legacy readers",
+  "revision_note": "Compact Queue archive names and preflight Windows path budgets before execution",
   "files": [
     {
       "path": ".gitattributes",
@@ -279,8 +279,8 @@
     },
     {
       "path": "labremote/characterization/pulse_runner.py",
-      "bytes": 5914,
-      "sha256": "44e5a730e6ebdf7a0a0901abfae6226ea87153ae758b403af201dfd54025bff7"
+      "bytes": 6114,
+      "sha256": "13f0863836cc200800167374d16c94ffe22dcef94a7096f67c98da42d4c133f4"
     },
     {
       "path": "labremote/characterization/rabi.py",
@@ -289,8 +289,8 @@
     },
     {
       "path": "labremote/characterization/rabi_runner.py",
-      "bytes": 5551,
-      "sha256": "305b8962d710aa637610c647e07b2e51446468ef705e44f6fa5f3eb499ca0984"
+      "bytes": 5827,
+      "sha256": "de021a063e1dfd00409226c27e000babe3eb3333976cbe9f48ea465f91f5b3f4"
     },
     {
       "path": "labremote/characterization/rabi_sequence.py",
@@ -309,8 +309,8 @@
     },
     {
       "path": "labremote/characterization/runner.py",
-      "bytes": 5512,
-      "sha256": "795555d2b667129616b685f4d006c2eb8678f43d519fe0f66b269ccd041150e0"
+      "bytes": 5766,
+      "sha256": "128b814bf03bced90ce8da281fdf734d2e3da4258dd978f7d6c6a4383916c3e9"
     },
     {
       "path": "labremote/characterization/spam_sequence.py",
@@ -709,8 +709,8 @@
     },
     {
       "path": "labremote/decay/runner.py",
-      "bytes": 7703,
-      "sha256": "72e1730eca8978c17fdd50144d04354f4e03962d7cf78399fd4e82155eede5b2"
+      "bytes": 7802,
+      "sha256": "c9acad4d5af1707e7577609c67c049644a2826174996c60032124668acaf38ad"
     },
     {
       "path": "labremote/decay/sequence.py",
@@ -1729,8 +1729,8 @@
     },
     {
       "path": "labremote/runtime/motor_scan_runner.py",
-      "bytes": 14644,
-      "sha256": "6f5c4269bd963a19e5ee8663e7de955bb45aecc7d30ab96386f9f1e7de8a3b8c"
+      "bytes": 14743,
+      "sha256": "d9a6b8953c0ddc7cd5b44755737d0e9d83d814208c8ae78d121c4fbdb768ee68"
     },
     {
       "path": "labremote/runtime/network.py",
@@ -1784,8 +1784,8 @@
     },
     {
       "path": "labremote/runtime/workflow_queue.py",
-      "bytes": 18122,
-      "sha256": "3d9ee182f069e2a8d46fa0d890f5ef34fadde666114886f532984ad3161f0e4f"
+      "bytes": 18608,
+      "sha256": "8419ebafb1a391fae3a46b2db731fe45dd5ad41ffb56eb3069870949535e7a86"
     },
     {
       "path": "labremote/runtime/workflow_result.py",
@@ -2099,8 +2099,8 @@
     },
     {
       "path": "labremote/entanglement/runner.py",
-      "bytes": 9023,
-      "sha256": "6148f6d912e74ebd9d6872f445c4d53b348bfeda52cb89fec217be4341a14eaa"
+      "bytes": 9122,
+      "sha256": "a5678c3fc268c7bbffe15016a981302d063a8bf74ca89f68c53ba4846d97028b"
     },
     {
       "path": "labremote/entanglement/sequence.py",
@@ -2114,8 +2114,8 @@
     },
     {
       "path": "labremote/hom/runner.py",
-      "bytes": 7705,
-      "sha256": "6c13acef84a15ddf1b2a413b5528e8bf9e08f64a3077688f2382a86f34b4e20e"
+      "bytes": 7804,
+      "sha256": "8d823a5b1d288084090eba255930551582c3763742d1bae44b290382954c0643"
     },
     {
       "path": "labremote/ion_check/config.py",
@@ -2124,8 +2124,8 @@
     },
     {
       "path": "labremote/ion_check/runner.py",
-      "bytes": 4052,
-      "sha256": "78b6a059109a29c95cf6453cb3fac55e4da05ab767b5619eef453e307728f1b8"
+      "bytes": 4151,
+      "sha256": "b814c3a90a482a7a47f1e28eb8468dc515941ebbad35768ad951617d4e530643"
     },
     {
       "path": "labremote/ion_check/sequence.py",
@@ -2139,8 +2139,8 @@
     },
     {
       "path": "labremote/micromotion/runner.py",
-      "bytes": 13717,
-      "sha256": "d48d07947c4ab4f6c2db1008d3ff6c26bc97df727eb48e1560ea8671a7f97e92"
+      "bytes": 13816,
+      "sha256": "ff09fd9c1c1bfd0da3f8507151f18859dbe730e950664e33053052f4a656a194"
     },
     {
       "path": "labremote/phase_shifter/hold_tab.py",
@@ -2149,8 +2149,8 @@
     },
     {
       "path": "labremote/phase_shifter/runner.py",
-      "bytes": 6015,
-      "sha256": "5292e6a46241172e822e8d8d5ac7467f665cd699e5c40ef4a54833706bc96f9a"
+      "bytes": 7092,
+      "sha256": "ee184a807945f71a1d82315de0ed971a21234c49dfeca786616f964588b4a596"
     },
     {
       "path": "labremote/phase_shifter/tab.py",
@@ -2234,8 +2234,8 @@
     },
     {
       "path": "docs/FPGA_WORKSPACE_KO.md",
-      "bytes": 12816,
-      "sha256": "12eed9bed9c70e7c25a61b0e9b94b01cacfc6097009f8ee9076e9dc1ecc103e8"
+      "bytes": 14068,
+      "sha256": "b5b8afab595a109e5406b34c407ed344fcd53524923101d8f903164317e5a686"
     },
     {
       "path": "labremote/runtime/execution_scope.py",
@@ -2426,6 +2426,26 @@
       "path": "tests/test_workflow_queue.py",
       "bytes": 7235,
       "sha256": "ee0c1692f1d96c976a35972b2a0a8450948cffbf6e1a61854e04a8a08be29eb6"
+    },
+    {
+      "path": "labremote/characterization/spam_scan_runner.py",
+      "bytes": 15988,
+      "sha256": "3d71191c106319b3f5dc8a6efd9c05098b7eb8f033f46db4afc213325b6d9969"
+    },
+    {
+      "path": "labremote/phase_shifter/rabi_runner.py",
+      "bytes": 5177,
+      "sha256": "cd01581addd56f0ce35ddc0166d9d0505b6992a243e6667b9cf76fd98bf6287a"
+    },
+    {
+      "path": "labremote/runtime/storage_paths.py",
+      "bytes": 2182,
+      "sha256": "36cdfc93f7cd4b52eb0cb61167bae1c053aa3f6c113910355f1e1910dc331928"
+    },
+    {
+      "path": "tests/test_queue_short_paths.py",
+      "bytes": 4339,
+      "sha256": "471046d123eaffbb7f17b5b281197e38215c89689efe42fc5ed95e3e99e90f83"
     }
   ]
 }
