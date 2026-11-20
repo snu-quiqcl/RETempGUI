@@ -41,7 +41,7 @@ def fields(root):
 class ExperimentSlot(W.QWidget):
     def __init__(self,host,title,factory,parent=None):
         super().__init__(parent);self.host=host;self.title=title;self.factory=factory
-        self.views={};self.selected=None;self.current=None;self._refreshing=False;self._pin_signatures={}
+        self.views={};self.selected=None;self.current=None;self._refreshing=False;self._pin_signatures={};self._selection_error=None
         self.root=W.QVBoxLayout(self)
         self.selection=W.QGroupBox('FPGA 선택');form=W.QVBoxLayout(self.selection)
         self.choice=W.QComboBox();bounded_combo(self.choice);self.choice.setProperty('persistInput',False);form.addWidget(self.choice)
@@ -80,7 +80,9 @@ class ExperimentSlot(W.QWidget):
             self.choose(force=True)
             return
         self.queue_button.setEnabled(ready and self.current is not None and not self.host.queue_tab.still_running())
-        if w is None:self.info.setText('연결된 장비만 선택할 수 있습니다.')
+        self.empty.setText('실험 화면을 열지 못했습니다. 위 오류를 확인하세요.' if self._selection_error else 'FPGA 장비 창에서 연결한 뒤 사용할 장비를 선택하세요.')
+        if self._selection_error:self.info.setText(self._selection_error)
+        elif w is None:self.info.setText('연결된 장비만 선택할 수 있습니다.')
         else:self.info.setText(('연결됨' if ready else '연결 끊김 · 재연결 후 실행하세요.')+
                               (' · 장비 사용 중' if active else '')+'\nFPGA 전환 시 실험 조건은 유지됩니다.')
         if self.current is not None:
@@ -148,9 +150,12 @@ class ExperimentSlot(W.QWidget):
                 self.root.addWidget(target);target.show();self.dock_selector(target)
                 for mapping in target.findChildren(RoleMapping):mapping.refresh()
         except Exception as exc:
-            self.info.setText(str(exc))
+            self._selection_error=f'{name} · 실험 설정 불러오기 실패: {type(exc).__name__}: {exc}'
             with QtCore.QSignalBlocker(self.choice):self.choice.setCurrentIndex(self.choice.findData(self.selected))
+            self.info.setText(self._selection_error)
+            self.empty.setText('실험 화면을 열지 못했습니다. 위 오류를 확인하세요.')
             return
+        self._selection_error=None
         self.refresh()
 
     def dock_selector(self,view):

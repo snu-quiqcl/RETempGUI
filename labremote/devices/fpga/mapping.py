@@ -133,7 +133,12 @@ class Profile:
 
     def bindings(self, experiment):
         defaults = default_document()['pins']
-        names = {role: defaults[pin] if pin else None for role, pin in DEFAULT_ROLES.items()}
+        pins = self._document['pins']
+        signals = set(pins.values())
+        # Existing common names retain their routing when the JSON moves pins.
+        # Newly added roles fall back to this board's nickname if absent.
+        names = {role: (defaults[pin] if defaults[pin] in signals else pins[pin])
+                 if pin else None for role, pin in DEFAULT_ROLES.items()}
         names.update(self._document['role_bindings'].get(experiment, {}))
         return names
 
