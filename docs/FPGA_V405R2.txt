@@ -1,9 +1,10 @@
 v4_05 revision 2: seven counter + stopwatch inputs
 2026-11-20
 
-Project remains v4_05.xpr. Hardware IDN is now "Seq v4_05r2" (11 bytes),
-within the UART command reply limit of 15 bytes. Old v4_05 firmware is rejected
-by the updated client: its reset map is incompatible with this revision.
+Project remains v4_05.xpr. Hardware IDN and client expected version are
+"Seq v4_05" (9 bytes), within the UART command reply limit of 15 bytes.
+The seven-input reset/address mapping below remains in effect. The IDN
+string is a version label, not an independent capability check.
 
 Pin    Counter address  Stopwatch address  Shared reset  SW start  Counter enable  SW done
 jb_0   0                6                  6             11        15              15

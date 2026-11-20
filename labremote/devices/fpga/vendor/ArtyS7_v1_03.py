@@ -8,7 +8,7 @@ v1_02: Added an example to read DNA_PORT in the main
 """
 
 __version__ = '1.03'
-EXPECTED_HW_VERSION = 'Seq v4_05r2'
+EXPECTED_HW_VERSION = 'Seq v4_05'
 import serial
 
 class escapeSequenceDetected(Exception):

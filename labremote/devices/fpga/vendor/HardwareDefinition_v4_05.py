@@ -8,7 +8,7 @@ Created on Thu Feb  1 21:08:57 2018
 # mux2 #(16) external_control(.d0(output_ports[0]), .d1(patterns[17:32]), .select(manual_control_on), .y(external_output));
 # assign monitoring_32bits = {external_output, stopped, manual_control_on, {(14-INSTRUCTION_MEMORY_ADDR_WIDTH){1'b0}}, PC[INSTRUCTION_MEMORY_ADDR_WIDTH-1:0]};
 
-HW_VERSION = 'Seq v4_05r2'
+HW_VERSION = 'Seq v4_05'
 
 #%%################################################################
 # Input connections to sequencer
