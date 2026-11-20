@@ -2,7 +2,7 @@ import threading
 import time
 from datetime import datetime
 from labremote.devices.fpga.controller import hd,OUTPUTS
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram
 from labremote.runtime.errors import OperationCancelled
 from .config import classify,pmt_names,output_levels,defaults
 

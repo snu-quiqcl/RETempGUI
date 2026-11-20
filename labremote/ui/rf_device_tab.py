@@ -46,6 +46,14 @@ class RFDeviceTab(QtWidgets.QWidget):
             self._number(grid,'offset','DC offset',1,'V',-5,5,self.api.set_offset)
             self.rows['frequency']['editor'].setValue(1)
             self.rows['amplitude']['editor'].setValue(-20)
+            row=self.rows['amplitude']
+            display=QtWidgets.QComboBox();display.addItems(['dBm','Vpp'])
+            display.setToolTip('UI display/input unit only; server amplitude is always Vpp')
+            row['units']=display;row['unit_label'].hide();row['input_box'].layout().addWidget(display)
+            row['apply'].clicked.disconnect()
+            row['apply'].clicked.connect(self._afg_apply_amplitude)
+            display.currentTextChanged.connect(self._afg_amplitude_unit)
+
             self._output(grid,'output',self.api)
             grid=self._group(root,'Instrument settings')
             self._readout(grid,'waveform','Waveform','')
@@ -66,7 +74,7 @@ class RFDeviceTab(QtWidgets.QWidget):
             self.write_buttons.append(self.afg_unit_apply);self.read_buttons.append(self.afg_unit_read)
 
             self._readout(grid,'load_impedance','Load setting','')
-            note='Amplitude input/readout is dBm (50 Ω); instrument unit is selectable above. Read/Connect do not change units (driver 0.3.0+ required). The server driver enforces its configured power limit and amplitude/offset limits. Connect and Disconnect preserve output; use RF OFF to disable it.'
+            note='Server amplitude is always Vpp. The amplitude selector controls UI input/display (dBm assumes sine / 50 Ω), independently of instrument unit. Driver 0.4.0+ required. The server driver enforces its configured power limit and amplitude/offset limits. Connect and Disconnect preserve output; use RF OFF to disable it.'
         elif family=='sg384':
             grid=self._group(root,'Shared frequency and phase — BNC / N')
             self._number(grid,'frequency','Frequency',1e6,'MHz',0,4050,self.api.set_frequency)
@@ -151,6 +159,23 @@ class RFDeviceTab(QtWidgets.QWidget):
         self.timer=QtCore.QTimer(self);self.timer.setInterval(60000);self.timer.timeout.connect(self._poll);self.timer.start()
         self._controls();self.worker.start()
 
+    def _afg_apply_amplitude(self):
+        from labremote.config.device_config import dbm_to_vpp
+        row=self.rows['amplitude'];value=row['editor'].value()
+        if row['unit']=='dBm':value=dbm_to_vpp(value)
+        return self._request(self.api.set_amplitude,value)
+
+    def _afg_amplitude_unit(self,unit):
+        from labremote.config.device_config import dbm_to_vpp,vpp_to_dbm
+        row=self.rows['amplitude'];editor=row['editor']
+        if unit==row['unit']:return
+        value=dbm_to_vpp(editor.value()) if unit=='Vpp' else vpp_to_dbm(editor.value())
+        editor.setDecimals(9 if unit=='Vpp' else 6)
+        editor.setRange(*self._input_bounds('amplitude',1,unit,editor.decimals()))
+        editor.setValue(value);row['unit']=unit
+        row['step'].saved.setdefault('Vpp',.001);row['step'].change_unit(unit)
+        self._snapshot({},'DISPLAY_UNIT')
+
     def _afg_apply_unit(self):
         unit=self.afg_unit_choice.currentData()
         if unit is not None:return self._request(self.api.set_amplitude_unit,unit)
@@ -199,6 +224,10 @@ class RFDeviceTab(QtWidgets.QWidget):
         from labremote.config.device_config import load_rf_device_config,sg_power_cap_dbm,dbm_to_vpp
         spec=registry().get(self.family,path)
         low,high=spec.minimum,spec.maximum
+        if self.family=='afg2105' and path=='amplitude' and unit=='dBm':
+            from labremote.config.device_config import vpp_to_dbm
+            low,high=vpp_to_dbm(low),vpp_to_dbm(high)
+
         if self.family=='sg384' and path.endswith('_power_dbm'):
             cap=sg_power_cap_dbm(load_rf_device_config('sg384',self.name),path.split('_')[0].upper())
             if cap is not None:high=min(high,cap)
@@ -276,6 +305,10 @@ class RFDeviceTab(QtWidgets.QWidget):
         for path,row in self.rows.items():
             state=states.get(path)
             value=state.observed if valid(state) else None
+            if self.family=='afg2105' and path=='amplitude' and row['unit']=='dBm' and value is not None:
+                from labremote.config.device_config import vpp_to_dbm
+                try:value=vpp_to_dbm(value)
+                except ValueError:value=None
             if self.family=='sg384' and path.endswith('_power_vpp'):
                 from labremote.config.device_config import dbm_to_vpp
                 state=states.get(path.replace('_power_vpp','_power_dbm'))

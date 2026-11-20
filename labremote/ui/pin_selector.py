@@ -39,6 +39,7 @@ class PinSelector(W.QComboBox):
         token = self._token
         with QtCore.QSignalBlocker(self):
             self.clear()
+            if not self.input_pin:self.addItem('미지정 — 출력 핀 선택 필요', None)
             for pin in PINS:
                 kind = capability(pin)
                 if ('input' in kind) != self.input_pin:continue

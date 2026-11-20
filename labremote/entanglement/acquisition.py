@@ -3,7 +3,7 @@ import threading
 import time
 from datetime import datetime
 from labremote.runtime.errors import OperationCancelled
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram
 from .config import CLEANUP_LEVELS, OUTPUTS, hd, nominal_trials
 from .sequence import build_program
 

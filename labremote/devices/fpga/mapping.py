@@ -1,4 +1,4 @@
-"""Per-device signal names and per-experiment roles for the v4_03 bitstream.
+"""Per-device signal names and per-experiment roles for the v4_05 bitstream.
 
 The vendor module is never modified. Contexts carry immutable snapshots across
 Qt callbacks, runner threads and queued operations; old sequencers keep their
@@ -15,7 +15,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from labremote.config.paths import CONFIG_ROOT
-from .vendor import HardwareDefinition_v4_04 as physical
+from .vendor import HardwareDefinition_v4_05 as physical
 from .vendor import HardwareDefinition_remote_ent_test_ec as legacy
 
 PINS = tuple(f'{bank}_{n}' for bank in ('ja', 'jb', 'jc', 'jd') for n in range(8))
@@ -28,19 +28,25 @@ ROOT = CONFIG_ROOT / 'devices/fpga'
 
 
 def capability(pin):
+    if pin is None:
+        return 'unassigned output'
     if pin not in PINS:
         raise ValueError('Unknown FPGA signal: ' + str(pin))
     if hasattr(physical, pin + '_counter_result'):
-        return 'counter / stopwatch input'
+        return 'counter / stopwatch input' if hasattr(physical, pin + '_stopwatch_result') else 'counter input'
     if hasattr(physical, pin + '_stopwatch_result'):
         return 'stopwatch input'
-    return 'slow output' if pin.startswith(('jc_', 'jd_')) else 'fast output'
+    return 'slow output' if pin and pin.startswith(('jc_', 'jd_')) else 'fast output'
 
 
 def compatible(experiment, role, pin):
+    if pin is None:
+        return role in ('TRIG', 'MW_C')
     if pin not in PINS:
         return False
     original = DEFAULT_ROLES[role]
+    if original is None:
+        return capability(pin) == 'fast output'
     if 'input' not in capability(original):
         if experiment=='ion_check' and role in ('AOMA','AOMB','AOMC'):
             return hasattr(physical,pin+'_out')
@@ -48,7 +54,7 @@ def compatible(experiment, role, pin):
             return hasattr(physical, pin + '_out')
         # Preserve the reviewed number of port-write instructions and timing.
         return capability(pin) == capability(original)
-    stopwatch = role == 'SYNC' or experiment in ('hom', 'decay', 'micromotion') or (experiment == 'entanglement' and role in ('PMTA', 'PMTC'))
+    stopwatch = role == 'SYNC' or not hasattr(physical, original + '_counter_result') or experiment in ('hom', 'decay', 'micromotion') or (experiment == 'entanglement' and role in ('PMTA', 'PMTC'))
     suffix = '_stopwatch_result' if stopwatch else '_counter_result'
     return hasattr(physical, pin + suffix)
 
@@ -115,6 +121,10 @@ class Profile:
             values.update(__name__=legacy.__name__, __file__=legacy.__file__, C1_phase_shifter_port=2, C2_phase_shifter_port=3)
             inputs, outputs = {}, {}
             for name, pin in names.items():
+                if pin is None:
+                    outputs[name] = None
+                    values[name + '_out'] = -1 if name == 'TRIG' else -2
+                    continue
                 for key, value in vars(physical).items():
                     if key.startswith(pin + '_'):
                         values[name + key[len(pin):]] = value
@@ -237,7 +247,7 @@ class SignalMap(Mapping):
 
     def _values(self):
         if self.outputs:
-            return {name: (pin, hd.external_slow_port if pin.startswith(('jc_', 'jd_')) else hd.external_control_port, getattr(hd, name + '_out')) for name, pin in hd.output_mapping.items()}
+            return {name: (pin, hd.external_slow_port if pin and pin.startswith(('jc_', 'jd_')) else hd.external_control_port, getattr(hd, name + '_out')) for name, pin in hd.output_mapping.items()}
         return {getattr(hd, name + '_counter_result'): (name, pin) for pin, name in hd.input_mapping.items() if hasattr(hd, name + '_counter_result')}
 
     def __getitem__(self, name):

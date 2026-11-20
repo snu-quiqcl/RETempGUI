@@ -2,7 +2,7 @@
 import numpy as np
 from scipy.stats import poisson
 from labremote.devices.fpga.controller import hd
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram,reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram,reg
 
 
 def build_program(settings,route):

@@ -43,9 +43,9 @@ class EntanglementRunner(WorkflowTask):
         # Queue archives its own workflow.py; standalone must not require that wrapper.
         files['decay_fit_source.py']=Path(__file__).resolve().parents[1]/'decay/plotting.py'
         files['hardware_definition.py']=Path(config.hd.__file__)
-        files['HardwareDefinition_v4_04.py']=Path(config.hd.__file__).with_name('HardwareDefinition_v4_04.py')
-        files['SequencerProgram_v1_08.py']=Path(config.hd.__file__).with_name('SequencerProgram_v1_08.py')
-        files['SequencerUtility_v1_03.py']=Path(config.hd.__file__).with_name('SequencerUtility_v1_03.py')
+        files['HardwareDefinition_v4_05.py']=Path(config.hd.__file__).with_name('HardwareDefinition_v4_05.py')
+        files['SequencerProgram_v1_09.py']=Path(config.hd.__file__).with_name('SequencerProgram_v1_09.py')
+        files['SequencerUtility_v1_04.py']=Path(config.hd.__file__).with_name('SequencerUtility_v1_04.py')
         hashes={}
         for name,path in files.items():
             hashes[name]=hashlib.sha256(path.read_bytes()).hexdigest()

@@ -13,7 +13,7 @@ def timed_stage(timings, name):
             timings[name] = (time.perf_counter() - start) * 1000
 
 from labremote.devices.fpga.mapping import hd, OUTPUTS, INPUTS
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 
 
 def exposure_program(channel, milliseconds):
@@ -49,7 +49,7 @@ class Controller:
         if self.device is not None:
             raise RuntimeError('이미 연결되어 있습니다.')
         if self.factory is None:
-            from labremote.devices.fpga.vendor.ArtyS7_v1_02 import ArtyS7
+            from labremote.devices.fpga.vendor.ArtyS7_v1_03 import ArtyS7
             factory = ArtyS7
         else:
             factory = self.factory
@@ -76,7 +76,7 @@ class Controller:
             raise RuntimeError('FPGA 상태 응답 오류')
         word = int(''.join(reply[2][:2]), 2)
         return {name: bool(word & (1 << bit)) if port == 0 else None
-                for name, (_, port, bit) in OUTPUTS.items()}
+                for name, (pin, port, bit) in OUTPUTS.items() if pin is not None}
 
     def _idle(self):
         if self.device is None:
@@ -105,7 +105,9 @@ class Controller:
 
     def set_output(self, name, enabled, cancelled):
         self._idle()
-        _, port, bit = OUTPUTS[name]
+        pin, port, bit = OUTPUTS[name]
+        if pin is None:
+            raise ValueError(name + ' output is unassigned; select a physical output pin first.')
         s = SequencerProgram()
         # Preserve current external outputs even when taking over manual mode.
         states = self.states()

@@ -16,7 +16,7 @@ COUNTER_PINS = tuple(p for p, name in PINS.items() if hasattr(hd, name + '_count
 
 def defaults(chamber='EC'):
     return dict(schema_version=1, chamber=chamber, trg_pin='ja_2',
-                pmt_pin='jb_4' if chamber == 'EC' else 'jb_6', counter_pin='',
+                pmt_pin='ja_4' if chamber == 'EC' else 'ja_6', counter_pin='',
                 rf_mhz=30.6314, events=10000, batches=1, periods=1,
                 timeout_s=30., settle_s=.1, gate_us=100., rf_repeats=500,
                 left=[.690, .710, .001], right=[.265, .285, .001], use_ldac=True)
@@ -48,7 +48,7 @@ def validate(settings):
     if c['trg_pin'] == c['pmt_pin']:
         raise ValueError('TRG and PMT must use distinct physical inputs')
     if c.get('counter_pin') not in ('', *COUNTER_PINS):
-        raise ValueError('RF test needs a counter-capable input; ja_2 has no counter')
+        raise ValueError('RF test needs a counter-capable input')
     for key, low, high in [('rf_mhz', 1., 100.), ('timeout_s', 1., 3600.),
                           ('settle_s', 0., 60.), ('gate_us', .1, 500.)]:
         value = float(c[key])

@@ -3,7 +3,7 @@ import math
 import threading
 import time
 from labremote.runtime.errors import OperationCancelled
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram
 from labremote.micromotion.acquisition import AcquisitionDeadline
 from . import config, sequence, model
 

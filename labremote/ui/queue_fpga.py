@@ -189,6 +189,7 @@ class QueueFPGASettings(W.QWidget):
         input_pin=role in ('PMT','TRIGGER','DETECTOR','COUNTER','ION_PMT1','ION_PMT2') if direct else 'input' in capability(DEFAULT_ROLES[role])
         table=self.inputs if input_pin else self.outputs;row=table.rowCount();table.insertRow(row)
         combo=W.QComboBox();table.setItem(row,0,W.QTableWidgetItem(title));table.setCellWidget(row,1,combo)
+        if not input_pin:combo.addItem('미지정 — 출력 핀 선택 필요', None)
         if direct and role in ('COUNTER','ION_PMT2'):combo.addItem('사용 안 함','')
         for pin in PINS:
             kind=capability(pin)

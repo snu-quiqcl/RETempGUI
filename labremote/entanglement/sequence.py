@@ -6,7 +6,7 @@ FIFO v2: full A/C arrival histograms x120 each, gated coincidence x240,
 six state words, then overflow/version metadata. No per-event arrival records.
 """
 import math
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 from labremote.devices.fpga.mapping import hd
 
 

@@ -287,6 +287,11 @@ class AuxiliaryTab(QtWidgets.QWidget):
             from labremote.devices.fpga.controller import OUTPUTS
             state_time=max(state.attempted_at,state.observed_at)
             for name,label in self.output_buttons.items():
+                if OUTPUTS[name][0] is None:
+                    label.setText(name+'\n미지정')
+                    label.setToolTip('실험 역할 매핑에서 실제 출력 핀을 먼저 선택하세요.')
+                    label.setEnabled(False)
+                    continue
                 individual=LIBRARY.read((self.worker._execution_device,'outputs.'+name))
                 individual_time=max(individual.attempted_at,individual.observed_at)
                 latest=individual if individual_time>state_time else state

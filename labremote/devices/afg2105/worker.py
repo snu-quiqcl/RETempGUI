@@ -48,4 +48,6 @@ class AFG2105Worker(DeviceWorker):
         identity = acquire(self.ps.IDN)
         if not isinstance(identity, dict) or str(identity.get('model','')).upper() != 'AFG-2105':
             raise ConnectionError('Expected AFG-2105: '+str(identity))
+        if str(getattr(self.raw_device.amplitude,'unit','')).lower() != 'vpp':
+            raise ConnectionError('AFG driver 0.4.0+ required: amplitude RPC unit must be Vpp; update server and reconnect')
         return {'idn': identity, 'family': self.family}

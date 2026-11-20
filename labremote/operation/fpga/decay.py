@@ -5,7 +5,7 @@ from datetime import datetime
 from labremote.runtime.errors import OperationCancelled
 from labremote.decay.config import hardware,set_auxiliary
 from labremote.decay.sequence import build_program
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram
 
 def cleanup(controller,c):
     d=controller.device

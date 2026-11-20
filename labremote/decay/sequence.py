@@ -1,5 +1,5 @@
 """Adapted pulse timing from the four supplied decay scripts; no host-side effects."""
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram,reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram,reg
 from .config import set_auxiliary
 
 def build_171_single(config,hd):

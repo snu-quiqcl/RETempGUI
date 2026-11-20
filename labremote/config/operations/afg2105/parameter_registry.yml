@@ -16,13 +16,13 @@ parameters:
   rel_tolerance: 0.00001
 - pattern: afg2105.amplitude
   kind: number
-  unit: dBm
+  unit: Vpp
   writable: true
   verification: readback
-  minimum: -56.020599913279625
-  maximum: 23.979400086720375
-  abs_tolerance: 0.05
-  rel_tolerance: 0.0
+  minimum: 0.001
+  maximum: 10.0
+  abs_tolerance: 0.0
+  rel_tolerance: 0.00574
 - pattern: afg2105.offset
   kind: number
   unit: V

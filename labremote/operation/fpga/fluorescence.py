@@ -2,7 +2,7 @@
 import time
 import threading
 from labremote.devices.fpga.controller import hd
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram
 from labremote.runtime.errors import OperationCancelled
 
 

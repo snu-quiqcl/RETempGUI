@@ -4,7 +4,7 @@ Counts are the sum of selected PMT inputs. Keep their sum below 65536.
 Normal completion leaves A/C and both 7G pairs on, B/2G/MW off.
 Cancellation/error output recovery belongs to the caller, not this builder.
 """
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 from labremote.devices.fpga.mapping import hd
 from labremote.devices.fpga.controller import OUTPUTS
 from labremote.ion_check.config import default_mapping,validate_mapping,pmt_names,output_levels

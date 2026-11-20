@@ -17,7 +17,7 @@ INTS={'phase_bins':(8,256),'target_events':(64,5000000),'max_attempts':(64,50000
 
 def defaults(chamber='EC'):
     return dict(schema_version=1,chamber=chamber,afg_name='',trg_pin='ja_2',
-        pmt_pin='jb_4' if chamber=='EC' else 'jb_6',start_khz=1000.,stop_khz=2000.,step_khz=10.,
+        pmt_pin='jb_0' if chamber=='EC' else 'jb_2',start_khz=1000.,stop_khz=2000.,step_khz=10.,
         amplitude_dbm=-20.,offset_v=0.,settle_s=.05,point_timeout_s=60.,
         phase_bins=64,target_events=50000,max_attempts=5000000,block_attempts=50000,
         count_exposure_us=10000,count_repeats=20,max_background_m=.05,rate_action='stop')

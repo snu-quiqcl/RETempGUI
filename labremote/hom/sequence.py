@@ -4,7 +4,7 @@ FIFO: 4*M words (A, C, HOM), tag 100; 48-bit valid/missing counters tags
 101/102 (least significant word first); tag 103 = overflow, protocol version, 0.
 No individual event records and no host-side chunk splitting.
 """
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 from .config import validate,hardware,outputs,auxiliary
 
 def build_program(settings):

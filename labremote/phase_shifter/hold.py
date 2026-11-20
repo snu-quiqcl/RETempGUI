@@ -1,7 +1,7 @@
 """Set a persistent slow-port phase word through the existing FPGA queue."""
 from labremote.api.devices import DeviceAPI
 from labremote.devices.fpga.adapter import Cancellation
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram
 from labremote.runtime.errors import OperationCancelled
 from labremote.runtime.workflow_runner import _TASK_LOCK
 from . import config

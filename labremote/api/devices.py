@@ -244,7 +244,7 @@ class AFG2105API(DeviceAPI):
         return self._submit('SET amplitude_unit',change,arguments=dict(unit=unit))
 
     def set_frequency(self, hz): return self._set('frequency',hz)
-    def set_amplitude(self, dbm): return self._set('amplitude',dbm)
+    def set_amplitude(self, vpp): return self._set('amplitude',vpp)
     def set_offset(self, volts): return self._set('offset',volts)
     def set_output(self, enabled): return self._set('output',enabled)
     def on(self): return self.set_output(True)

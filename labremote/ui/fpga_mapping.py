@@ -55,6 +55,7 @@ class RoleMapping(W.QGroupBox):
         self._loaded_document=document
         for role, combo in self.choices.items():
             combo.clear()
+            if role in ('TRIG', 'MW_C'):combo.addItem('미지정 — 출력 핀 선택 필요', None)
             for pin, name in document['pins'].items():
                 if ('input' in capability(pin)) == ('input' in capability(DEFAULT_ROLES[role])):
                     allowed=compatible(self.experiment, role, pin)
@@ -72,7 +73,14 @@ class RoleMapping(W.QGroupBox):
         try:
             document = self.worker.profile.document()
             roles = dict(document['experiments'].get(self.experiment, {}))
-            roles.update({role: box.currentData() for role, box in self.choices.items()})
+            for role, box in self.choices.items():
+                pin = box.currentData()
+                # Do not persist an unsupported, untouched default for an unused
+                # role (e.g. counter-only PMTFA in a stopwatch experiment).
+                if pin == DEFAULT_ROLES[role] and not compatible(self.experiment, role, pin):
+                    roles.pop(role, None)
+                else:
+                    roles[role] = pin
             # Active-role collisions are validated by each experiment; unused
             # logical roles may legitimately point to a currently selected pin.
             document['experiments'][self.experiment] = roles

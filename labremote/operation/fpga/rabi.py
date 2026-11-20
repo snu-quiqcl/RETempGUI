@@ -3,7 +3,7 @@ import threading
 import time
 from labremote.characterization.rabi import hardware
 from labremote.characterization.rabi_sequence import setup_rabi_program
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram
 from labremote.runtime.errors import OperationCancelled
 
 def cleanup(controller,roles):

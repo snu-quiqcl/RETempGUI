@@ -1,5 +1,5 @@
 """Ramsey sweep with clock-compensated, FPGA-local long precession steps."""
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 
 def delay_clocks(s, ticks, label):
     """Emit exactly ticks clocks; reg13 is private scratch, not a scan counter.

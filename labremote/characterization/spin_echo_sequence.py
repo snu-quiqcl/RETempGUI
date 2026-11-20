@@ -1,5 +1,5 @@
 """Same-phase Hahn echo; tau is total free evolution, excluding pulses."""
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 from .ramsey_sequence import delay_clocks
 
 def build_program(config,hd):

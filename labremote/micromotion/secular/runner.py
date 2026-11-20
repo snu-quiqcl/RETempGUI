@@ -97,7 +97,7 @@ class SecularRunner(WorkflowTask):
             run_id=self.handle.request_id,fpga=self.worker.name,afg=self.afg.name,
             folder=str(folder),status='running',planned_points=len(freqs),points=[],current_point=None,
             started_at=datetime.now().astimezone().isoformat(),cleanup='not_required',
-            metadata=dict(dac='Untouched: no DAC operations',outputs='External FPGA outputs unchanged',
+            metadata=dict(afg_amplitude_unit='Vpp',scan_amplitude_unit='dBm',dac='Untouched: no DAC operations',outputs='External FPGA outputs unchanged',
                 fit='Conditional first-event multinomial; measured mean rate and SEM',
                 phase='r(t)=R[1+M*cos(2*pi*f*t-theta)]; theta=atan2(b,a), radians',
                 timing='Stopwatch 1.25 ns; count WAIT n+3 clocks, segmented accumulated live time',
@@ -117,7 +117,7 @@ class SecularRunner(WorkflowTask):
             report['afg_initial']=self._source('READ',initial)
             self.check()
             report['afg_configured']=self._source('CONFIGURE',lambda w:
-                w.raw_device.configure_sine(freqs[0]*1000,c['amplitude_dbm'],c['offset_v']))
+                w.raw_device.configure_sine(freqs[0]*1000,(0.4*10**(c['amplitude_dbm']/10))**0.5,c['offset_v']))
             self.call(device_api(self.afg,group=self.group).on())
             with (folder/'raw_fifo.jsonl').open('w',encoding='utf-8') as raw:
                 for index,frequency in enumerate(freqs):

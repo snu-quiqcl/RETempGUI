@@ -38,7 +38,7 @@ class DecayRunner(WorkflowTask):
         folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
         source_paths={name:Path(__file__).parent/name for name in ('config.py','sequence.py','runner.py','plotting.py','storage.py')}
         source_paths.update(operation=Path(__file__).resolve().parents[1]/'operation/fpga/decay.py',
-            hardware_definition=Path(hd.__file__),hardware_base=Path(hd.__file__).with_name('HardwareDefinition_v4_04.py'))
+            hardware_definition=Path(hd.__file__),hardware_base=Path(hd.__file__).with_name('HardwareDefinition_v4_05.py'))
         metadata=dict(settings=c,fpga=self.worker.name,hardware_definition=hd.__name__,
             sequencer_clock_ns=10,stopwatch_bin_ns=1.25,
             time_settings_us={key:config.time_to_display(key,c[key]) for key in config.TIME_LABELS},

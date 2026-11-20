@@ -1,6 +1,6 @@
 """Bounded RF reference/photon acquisition; never writes external light outputs."""
 import math
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 from .config import hd, PINS, bins
 
 

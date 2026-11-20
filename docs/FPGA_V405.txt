@@ -1,0 +1,46 @@
+FPGA v4_05 client integration
+2026-11-20
+
+Firmware required: Sequencer v4_05. Restart the client after updating.
+The connection version check intentionally rejects v4_03/v4_04 firmware.
+
+Bundled active modules
+  ArtyS7_v1_03.py (preserves client's existing serial/version diagnostics)
+  HardwareDefinition_v4_05.py
+  SequencerProgram_v1_09.py (package-relative utility import)
+  SequencerUtility_v1_04.py
+Old versioned modules remain for reference; application imports and source snapshots
+use the new versions. Custom sequence files must import SequencerProgram_v1_09.
+
+Physical capabilities
+  Counter + stopwatch: jb_0, jb_2, ja_2
+  Counter only: jb_4, jb_6
+  Stopwatch only: ja_4 (read 8), ja_6 (read 9)
+  ja_4 and ja_6 are no longer outputs.
+  All measurement clocks, tick units (1.25 ns) and the 64-bit instruction format remain unchanged.
+
+TRIG / MW_C
+  Their old ja_4 / ja_6 output bindings are removed. No replacement pin is assumed.
+  In the experiment's FPGA role mapping, select a real compatible output for each
+  required role and save before running. Unassigned roles use negative sentinel
+  bit numbers only in the editor model; the encoder rejects these before upload.
+  Existing valid roles and counter channels retain their physical pin mapping.
+  Manual controls do not drive unassigned outputs.
+  Select replacement pins according to actual cabling; avoid conflicts with other
+  simultaneously active outputs. The existing fast-output restriction remains.
+
+Micromotion
+  Stopwatch choices include ja_4/ja_6 and exclude jb_4/jb_6.
+  New micromotion defaults use ja_4 (EC), ja_6 (EA) for timing.
+  Secular scan requires BOTH counter and stopwatch on one PMT input; new defaults
+  therefore use jb_0 (EC), jb_2 (EA), with ja_2 as SYNC. Verify actual wiring first.
+  Existing saved presets are not silently rewired. Select valid inputs and save
+  if an old preset references jb_4/jb_6 for timing.
+
+Verification
+  66 selected offline unit/UI tests: 64 passed, 2 skipped by existing conditions.
+  Includes module imports, version checking, physical capability separation,
+  unassigned-role upload rejection, explicit remapping, UI construction, serial
+  mock/control tests, count acquisition, custom sequence files and micromotion.
+  No hardware connection, firmware upload or physical measurement performed.
+  Existing FPGA 800 MHz/timing violations are not changed by this client update.

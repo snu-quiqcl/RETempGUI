@@ -156,7 +156,7 @@ class MicromotionRunner(WorkflowTask):
         source=folder if queue_archive_active() else folder/'source'
         if not queue_archive_active():source.mkdir()
         paths=list(Path(__file__).parent.glob('*.py'))+[Path(config.hd.__file__),
-            Path(config.hd.__file__).with_name('HardwareDefinition_v4_04.py')]
+            Path(config.hd.__file__).with_name('HardwareDefinition_v4_05.py')]
         hashes={}
         for path in paths:
             if not queue_archive_active():shutil.copyfile(path,source/path.name)

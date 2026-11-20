@@ -1,5 +1,5 @@
 """Original Rabi timing/order, explicit experiment-local hardware aliases."""
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 
 def setup_rabi_program(qubit_control_index, config, hd):
     T_cool = config['T_cool']

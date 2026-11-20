@@ -1,6 +1,6 @@
 """Original bounded phase-bin sequence; external cooling/light outputs untouched."""
 import math
-from labremote.devices.fpga.vendor.SequencerProgram_v1_08 import SequencerProgram, reg
+from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 from labremote.devices.fpga.mapping import hd
 from .model import _geometry, CORRELATION_LABEL, COUNT_LABEL
 
