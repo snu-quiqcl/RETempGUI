@@ -1,3 +1,5 @@
+Historical v4_05 revision 1 notes. Superseded by FPGA_V405R2.txt.
+
 FPGA v4_05 client integration
 2026-11-20
 

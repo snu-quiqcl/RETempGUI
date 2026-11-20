@@ -9,6 +9,7 @@ from . import config
 from labremote.devices.fpga.controller import hd,OUTPUTS
 
 FAST_OUTPUTS=tuple(name for name,pin in config.DEFAULT_ROLES.items() if pin in config.FAST_PINS or pin is None)+config.FAST_PINS
+FAST_OUTPUTS=config.RouteChoices(FAST_OUTPUTS, 'fast')
 ROLE_CHOICES={role:config.PMTS if role=='PMT' else FAST_OUTPUTS for role in ('PMT','AOM','MW','EOM_7G_1','EOM_7G_2','EOM_2G')}
 TIMES=('T_cool','WAIT_AOM','T_init','T_det','T_mw_step')
 

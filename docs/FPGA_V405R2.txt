@@ -1,0 +1,57 @@
+v4_05 revision 2: seven counter + stopwatch inputs
+2026-11-20
+
+Project remains v4_05.xpr. Hardware IDN is now "Seq v4_05r2" (11 bytes),
+within the UART command reply limit of 15 bytes. Old v4_05 firmware is rejected
+by the updated client: its reset map is incompatible with this revision.
+
+Pin    Counter address  Stopwatch address  Shared reset  SW start  Counter enable  SW done
+jb_0   0                6                  6             11        15              15
+jb_2   1                7                  5             10        14              14
+jb_4   2                11                 13            15        13              10
+jb_6   3                12                 12            14        12              9
+ja_2   4                10                 2             7         11              11
+ja_4   5                8                  4             9         10              13
+ja_6   13               9                  3             8         9               12
+
+Reset/start numbers are trigger_out bit positions. Counter enable numbers are
+output_ports[1] bit positions. SW done numbers are trigger_level_in positions.
+Each shared reset resets BOTH functions on that pin ONLY. All seven pins have
+independent reset/start/enable controls. trigger_out[1:0] remain unused.
+
+Counter read addresses 0..4 and stopwatch read addresses 6..10 are unchanged.
+Address 5 is ja_4 counter; address 13 is ja_6 counter. Addresses 11/12 are jb_4/6
+stopwatches. Address 14 (trigger flags) and 15 (wait residual) are unchanged.
+Only the sequencer's address-13 patterns[1:16] readback is removed.
+The patterns register, LED drive, manual outputs, UPDATE BITS and READ BITS stay.
+No extra physical pin, XDC reassignment or IOSTANDARD change is needed.
+
+The seven existing Clock Wizard outputs are connected (new channels use 6/7).
+Clock IP settings remain 800 MHz. Counter and stopwatch module internals, 64-bit
+instructions, FIFO format and the 16-bit trigger bus are unchanged.
+Only the new top-level connections and Python hardware definitions are required.
+
+Use the updated HardwareDefinition_v4_05.py and ArtyS7_v1_03.py with this firmware.
+SequencerProgram_v1_09 and SequencerUtility_v1_04 encoding is unchanged.
+Old hand-written programs with numeric reset masks must be reviewed:
+  jb_0 counter reset 15 -> 6; jb_2 counter reset 14 -> 5; ja_2 reset 1 -> 2.
+  Old bits 15/14 now START jb_4/jb_6 stopwatches.
+Read required results before a shared reset. Do not reset a counter while its
+same-pin stopwatch is running. The user selected mutually exclusive use.
+
+Verification:
+  verify_release.py checks every HDL/Python result/reset/start/enable/done route,
+  unique addresses 0..13, 14 control bits, encoding and UART ID length.
+  Vivado 2017.3 project check_syntax passed; existing parameter warnings remain.
+  Five IP cores reported up-to-date, unlocked.
+  XSim functional test passed seven-channel counts, stopwatch start/stop and
+  shared-reset isolation. It uses the actual counter/stopwatch RTL and top-level
+  connection statements with a BEHAVIORAL counter-IP model: not a timing test.
+
+Build / programming (performed by user):
+  Close/reopen v4_05.xpr, reset synthesis/implementation runs, then generate a
+  NEW bitstream. Existing .runs results/bitstreams are from before this edit.
+  Review the new timing report, including 100 MHz, 800 MHz and cross-clock paths.
+  This change does not fix the previously reported WNS/TNS/pulse-width violations.
+  No synthesis, implementation, bitstream generation or board programming was
+  performed for this revision. Restart RETempGUI after updating the FPGA.

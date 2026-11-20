@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets as W
-from labremote.devices.fpga.mapping import bound_methods
+from labremote.devices.fpga.mapping import bound_methods, signal_token
 from labremote.api.devices import device_api
 from labremote.devices.dac.model import atomic_json
 from labremote.data_paths import tab_data_directory
@@ -90,7 +90,9 @@ class SecularScanPage(W.QWidget):
     def value(self):
         c=dict(schema_version=1,chamber=self.chamber.currentText(),afg_name=self.source.currentData() or '')
         c.update({key:box.currentData() if isinstance(box,W.QComboBox) else box.value() for key,box in self.fields.items()})
-        return config.validate(c)
+        c=config.validate(c)
+        for key in ('trg_pin','pmt_pin'):c[key]=signal_token(c[key])
+        return c
 
     def refresh_sources(self):
         sources={bridge.worker.name:bridge.worker for family,bridge in self.bindings().values() if family=='afg2105'}

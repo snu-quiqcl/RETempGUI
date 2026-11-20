@@ -50,7 +50,7 @@ class RoleMapping(W.QGroupBox):
                 for i,role in enumerate(roles):
                     box=W.QComboBox();bounded_combo(box);box.setProperty('persistInput',False);self.choices[role]=box;self.form.insertRow(i,role,box)
         document = self.worker.profile.document()
-        mapping = {**DEFAULT_ROLES, **document['experiments'].get(self.experiment, {})}
+        mapping = self.worker.profile.bindings(self.experiment)
         self._loaded=dict(mapping)
         self._loaded_document=document
         for role, combo in self.choices.items():
@@ -59,11 +59,14 @@ class RoleMapping(W.QGroupBox):
             for pin, name in document['pins'].items():
                 if ('input' in capability(pin)) == ('input' in capability(DEFAULT_ROLES[role])):
                     allowed=compatible(self.experiment, role, pin)
-                    combo.addItem(f'{name} [{pin}]'+(' · 펌웨어 기능 불일치' if not allowed else ''), pin)
+                    combo.addItem(f'{name} [{pin}]'+(' · 펌웨어 기능 불일치' if not allowed else ''), name)
                     item=combo.model().item(combo.count()-1);item.setEnabled(allowed)
                     item.setToolTip(capability(pin)+(' · 이 실험의 카운터/타이밍 기능과 호환되지 않습니다.' if not allowed else ''))
+            if mapping[role] is not None and combo.findData(mapping[role]) < 0:
+                combo.addItem(str(mapping[role]) + ' · 공통 신호 없음', mapping[role])
+                combo.model().item(combo.count()-1).setEnabled(False)
             combo.setCurrentIndex(combo.findData(mapping[role]))
-        self.status.setText(document['alias'] + ' · ' + document['device_id'] + '\n기존 실험의 역할 이름을 유지하며, 이 표에서 실제 FPGA 핀을 선택합니다. 실행 중 매핑은 변경할 수 없습니다.')
+        self.status.setText(document['alias'] + ' · ' + document['device_id'] + '\n기존 실험의 역할 이름을 유지하며, 이 표에서 공통 신호 nickname을 선택합니다. 물리 핀 연결은 FPGA JSON 한 곳에서 관리합니다. 실행 중 매핑은 변경할 수 없습니다.')
 
     def dirty(self):
         current=self._loaded
@@ -72,18 +75,16 @@ class RoleMapping(W.QGroupBox):
     def apply(self):
         try:
             document = self.worker.profile.document()
-            roles = dict(document['experiments'].get(self.experiment, {}))
+            roles = dict(document['role_bindings'].get(self.experiment, {}))
             for role, box in self.choices.items():
-                pin = box.currentData()
-                # Do not persist an unsupported, untouched default for an unused
-                # role (e.g. counter-only PMTFA in a stopwatch experiment).
-                if pin == DEFAULT_ROLES[role] and not compatible(self.experiment, role, pin):
-                    roles.pop(role, None)
-                else:
-                    roles[role] = pin
-            # Active-role collisions are validated by each experiment; unused
-            # logical roles may legitimately point to a currently selected pin.
-            document['experiments'][self.experiment] = roles
+                signal = box.currentData()
+                if signal == self._loaded[role]:
+                    continue
+                pin = next((p for p, n in document['pins'].items() if n == signal), None)
+                if not compatible(self.experiment, role, pin):
+                    raise ValueError(role + ': incompatible common signal')
+                roles[role] = signal
+            document['role_bindings'][self.experiment] = roles
             self.worker.update_profile(Profile(document)); self.refresh()
             self.status.setText('저장 완료 · 다음 실행부터 적용')
             return True
@@ -138,6 +139,7 @@ class BoardMapping(W.QDialog):
             document=json.loads(Path(path).read_text(encoding='utf-8-sig'))
             document['device_id']=self.worker.profile.device_id
             document['alias']=self.alias.text().strip()
+            document['role_bindings']=self.worker.profile.document()['role_bindings']
             self.document=Profile(document).document();self.populate()
         except Exception as exc:self.status.setText(str(exc))
 
@@ -148,7 +150,7 @@ class BoardMapping(W.QDialog):
             if path:
                 from pathlib import Path
                 if not path.endswith('.local.json'):path += '.local.json'
-                Path(path).write_text(json.dumps(profile.document(),ensure_ascii=False,indent=2),encoding='utf-8')
+                Path(path).write_text(json.dumps(profile.board_document(),ensure_ascii=False,indent=2),encoding='utf-8')
         except Exception as exc:self.status.setText(str(exc))
 
     def apply(self):

@@ -1,0 +1,53 @@
+FPGA common signal mapping (schema 2)
+2026-11-20
+
+Connection model
+  Sequencer role -> common GUI signal nickname -> physical FPGA pin.
+  The experiment tab chooses the first connection.
+  labremote/config/devices/fpga/<device_id>.local.json owns the second connection
+  for ALL experiments on that FPGA. It contains schema_version, device_id, alias,
+  and pins only. There is no experiments section in this board file.
+
+Example board pins (excerpt, keep all other pins):
+  "jb_0": "Detector_A",
+  "jb_2": "Detector_C"
+To move Detector_A to jb_2, exchange these two nickname values. Nicknames must be
+unique. Keep the nickname itself stable when moving a cable to another pin.
+Changing a nickname is a signal rename and requires updating its experiment
+selections. Names are case sensitive; physical capabilities remain fixed by HDL.
+
+Experiment role selections are saved independently at:
+  labremote/config/devices/fpga/settings.local/<device_id>/role_bindings.local.json
+For example hom.PMTA = Detector_A and spam.PMTFA = Detector_A both follow the
+single Detector_A entry in the board file. New files initialize existing roles
+once from the current board names. Subsequently saved selections follow names.
+
+Experiments with their own direct signal selectors retain selections in their
+normal experiment presets. These explicit common references use signal:<nickname>
+in JSON so a sequencer role with the same spelling cannot shadow the signal.
+The GUI displays nickname [physical pin], without the internal prefix.
+Micromotion/secular presets and motor scans also save signal references/names.
+
+Migration
+  Existing schema 1 board files are backed up as *.json.v1.bak on first load.
+  Physical experiment overrides become references to the original board nickname;
+  role selections move into the separate experiment settings file.
+  Existing physical-pin experiment presets are migrated when opened through the
+  client settings path and backed up as *.json.physical.bak. Explicit physical
+  references in old scripts remain accepted for compatibility.
+  No fpga_2.local.json was present in the inspected client at deployment time;
+  the migration also handles an existing file supplied later.
+
+Applying edits
+  Stop experiments, close the client, edit the FPGA board JSON, then restart.
+  Alternatively use FPGA Configuration while disconnected and apply the file.
+  Experiments resolve their saved nickname through the selected board profile.
+  Existing queued jobs deliberately keep their frozen board/role snapshots;
+  if wiring changes, reload the FPGA mapping in the queue editor before running.
+  Unknown signals and incompatible input/output selections must be corrected.
+  TRIG and MW_C remain unassigned until the user chooses real output signals.
+
+No HDL, XDC, bitstream, 800 MHz clock or sequencer instruction format changed.
+Offline tests exercise migration, common rewiring across HOM/SPAM, actual
+sequence generation, independent snapshots, queue editing and input capabilities.
+Hardware measurements and physical cable checks have not been performed.

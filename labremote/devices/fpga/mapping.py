@@ -61,13 +61,13 @@ def compatible(experiment, role, pin):
 
 def default_document(name='fpga_local'):
     aliases = {pin: next((role for role, p in DEFAULT_ROLES.items() if p == pin), pin.replace('_', '').upper()) for pin in PINS}
-    return dict(schema_version=1, device_id=name, alias=name, pins=aliases, experiments={})
+    return dict(schema_version=2, device_id=name, alias=name, pins=aliases)
 
 
 def validate(document):
-    if not isinstance(document, dict) or document.get('schema_version') != 1:
-        raise ValueError('Expected FPGA mapping schema_version 1')
-    if set(document) - {'schema_version', 'device_id', 'alias', 'pins', 'experiments'}:
+    if not isinstance(document, dict) or document.get('schema_version') not in (1, 2):
+        raise ValueError('Expected FPGA mapping schema_version 1 or 2')
+    if set(document) - {'schema_version', 'device_id', 'alias', 'pins', 'experiments', 'role_bindings'}:
         raise ValueError('Unknown FPGA mapping fields')
     name = document.get('device_id')
     if not isinstance(name, str) or not name.isidentifier():
@@ -86,6 +86,7 @@ def validate(document):
     names = list(result['pins'].values())
     if any(not isinstance(n, str) or not n.isidentifier() or n.startswith('_') or n in PINS for n in names) or len(set(names)) != len(names):
         raise ValueError('Each pin needs a unique identifier name; physical pin IDs are reserved')
+    bindings = deepcopy(document.get('role_bindings', {}))
     experiments = document.get('experiments', {})
     if not isinstance(experiments, dict) or set(experiments) - set(EXPERIMENTS):
         raise ValueError('Unknown experiment mapping')
@@ -95,7 +96,25 @@ def validate(document):
         for role, pin in roles.items():
             if not compatible(experiment, role, pin):
                 raise ValueError(role + ' is incompatible with ' + str(pin))
-        result['experiments'][experiment] = dict(roles)
+    if document.get('schema_version') == 1 or 'experiments' in document:
+        for experiment in EXPERIMENTS:
+            routes = {**DEFAULT_ROLES, **experiments.get(experiment, {})}
+            bindings.setdefault(experiment, {role: result['pins'][pin] if pin else None
+                                             for role, pin in routes.items()})
+            for role, pin in experiments.get(experiment, {}).items():
+                bindings[experiment][role] = result['pins'][pin] if pin else None
+    if not isinstance(bindings, dict) or set(bindings) - set(EXPERIMENTS):
+        raise ValueError('Unknown experiment mapping')
+    for experiment in EXPERIMENTS:
+        bindings.setdefault(experiment, {role: result['pins'][pin] if pin else None
+                                         for role, pin in DEFAULT_ROLES.items()})
+    for experiment, roles in bindings.items():
+        if not isinstance(roles, dict) or set(roles) - set(DEFAULT_ROLES):
+            raise ValueError('Unknown experiment role')
+        for role, signal in roles.items():
+            if signal is not None and (not isinstance(signal, str) or not signal.isidentifier()):
+                raise ValueError('Experiment roles must reference common signal nicknames')
+    result['role_bindings'] = bindings
     return result
 
 
@@ -109,18 +128,43 @@ class Profile:
     def document(self):
         return deepcopy(self._document)
 
+    def board_document(self):
+        return {k: v for k, v in self.document().items() if k != 'role_bindings'}
+
+    def bindings(self, experiment):
+        defaults = default_document()['pins']
+        names = {role: defaults[pin] if pin else None for role, pin in DEFAULT_ROLES.items()}
+        names.update(self._document['role_bindings'].get(experiment, {}))
+        return names
+
+    def resolve(self, token, experiment=None):
+        if token is None or token == '' or token in PINS:
+            return token
+        if token.startswith('signal:'):
+            token = token[7:]
+        elif experiment is not None and token in DEFAULT_ROLES:
+            token = self.bindings(experiment)[token]
+            if token is None:
+                return None
+        pins = {name: pin for pin, name in self._document['pins'].items()}
+        if token not in pins:
+            raise ValueError('Unknown common FPGA signal: ' + str(token))
+        return pins[token]
+
     def view(self, experiment=None):
         if experiment not in self._views:
             names = {name: pin for pin, name in self._document['pins'].items()}
             if experiment is not None:
-                # Legacy names are experiment roles, never required board aliases.
-                names = dict(DEFAULT_ROLES)
-                names.update(self._document['experiments'].get(experiment, {}))
-                names.update({p.replace('_', '').upper(): p for p in PINS if p not in DEFAULT_ROLES.values()})
+                for role, signal in self.bindings(experiment).items():
+                    names[role] = None if signal is None else next(
+                        (p for p, n in self._document['pins'].items() if n == signal), 'missing')
+            names.update({'signal:' + n: p for p, n in self._document['pins'].items()})
             values = {k: v for k, v in vars(physical).items() if not k.startswith('__')}
             values.update(__name__=legacy.__name__, __file__=legacy.__file__, C1_phase_shifter_port=2, C2_phase_shifter_port=3)
             inputs, outputs = {}, {}
             for name, pin in names.items():
+                if pin == 'missing':
+                    continue
                 if pin is None:
                     outputs[name] = None
                     values[name + '_out'] = -1 if name == 'TRIG' else -2
@@ -128,6 +172,8 @@ class Profile:
                 for key, value in vars(physical).items():
                     if key.startswith(pin + '_'):
                         values[name + key[len(pin):]] = value
+                if name.startswith('signal:'):
+                    continue
                 if hasattr(physical, pin + '_out'):
                     outputs[name] = pin
                 else:
@@ -148,10 +194,24 @@ def profile_path(name):
 
 def load_profile(name):
     path = profile_path(name)
-    profile = Profile(json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else default_document(name))
+    document = json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else default_document(name)
+    routes = role_settings_path(name)
+    if document.get('schema_version') == 2 and routes.exists():
+        document['role_bindings'] = json.loads(routes.read_text(encoding='utf-8-sig'))['role_bindings']
+    profile = Profile(document)
     if profile.device_id != name:
         raise ValueError('FPGA profile identity mismatch')
+    if path.exists() and (document.get('schema_version') == 1 or 'experiments' in document or not routes.exists()):
+        backup = path.with_suffix('.json.v1.bak')
+        if not backup.exists():
+            backup.write_bytes(path.read_bytes())
+        save_profile(profile)
     return profile
+
+
+def role_settings_path(name):
+    profile_path(name)
+    return ROOT / 'settings.local' / name / 'role_bindings.local.json'
 
 
 def save_profile(profile):
@@ -163,8 +223,13 @@ def save_profile(profile):
         document = json.loads(other.read_text(encoding='utf-8-sig'))
         if isinstance(document, dict) and document.get('device_id') and str(document.get('alias', '')).casefold() == profile.alias.casefold():
             raise ValueError('FPGA alias already used by ' + document['device_id'])
+    routes = role_settings_path(profile.device_id)
+    routes.parent.mkdir(parents=True, exist_ok=True)
+    temporary = routes.with_suffix('.tmp')
+    temporary.write_text(json.dumps(dict(schema_version=1, role_bindings=profile.document()['role_bindings']), ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    temporary.replace(routes)
     temporary = path.with_suffix('.tmp')
-    temporary.write_text(json.dumps(profile.document(), ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    temporary.write_text(json.dumps(profile.board_document(), ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     temporary.replace(path)
 
 
@@ -209,13 +274,30 @@ def settings_path(path):
     """Keep first-device legacy settings; isolate subsequent device presets."""
     path = Path(path)
     state = CURRENT.get()
-    if state is None or state[0].device_id == 'fpga_local' or not path.name.endswith('.local.json'):
+    if state is None or not path.name.endswith('.local.json'):
         return path
     try:
         relative = path.relative_to(CONFIG_ROOT / 'operations')
     except ValueError:
         return path
-    return ROOT / 'settings.local' / state[0].device_id / relative
+    if state[0].device_id != 'fpga_local':
+        path = ROOT / 'settings.local' / state[0].device_id / relative
+    if path.exists():
+        original = json.loads(path.read_text(encoding='utf-8-sig'))
+        def migrate(value, field=None):
+            if isinstance(value, dict):
+                return {k: migrate(v, k) for k, v in value.items()} if field != 'roles' else {
+                    k: signal_token(v) if isinstance(v, str) and v in PINS else v for k, v in value.items()}
+            if field in ('trg_pin', 'pmt_pin', 'counter_pin') and isinstance(value, str) and value in PINS:
+                return signal_token(value)
+            return value
+        updated = migrate(original)
+        if updated != original:
+            backup = path.with_suffix('.json.physical.bak')
+            if not backup.exists():backup.write_bytes(path.read_bytes())
+            from labremote.runtime.json_storage import save_json
+            save_json(path, updated)
+    return path
 
 
 def write_snapshot(folder):
@@ -233,8 +315,14 @@ class Hardware:
 
     def __getattr__(self, name):
         state = CURRENT.get()
+        if state and state[1] is not None and name.endswith('_out') and name[:-4] in DEFAULT_ROLES:
+            role = name[:-4]
+            if not compatible(state[1], role, state[0].resolve(role, state[1])):
+                raise AttributeError(role + ': common signal has incompatible output timing/port')
         # Without a device context preserve the shipped public/default map.
         source = legacy if state is None else state[0].view(state[1])
+        if name.startswith('signal:') and state is None:
+            source = DEFAULT.view()
         return getattr(source, name)
 
 
@@ -251,6 +339,14 @@ class SignalMap(Mapping):
         return {getattr(hd, name + '_counter_result'): (name, pin) for pin, name in hd.input_mapping.items() if hasattr(hd, name + '_counter_result')}
 
     def __getitem__(self, name):
+        state = CURRENT.get()
+        if self.outputs and state and state[1] is not None and name in DEFAULT_ROLES:
+            if not compatible(state[1], name, state[0].resolve(name, state[1])):
+                raise ValueError(name + ': common signal has incompatible output timing/port')
+        if self.outputs and isinstance(name, str) and name.startswith('signal:'):
+            state = CURRENT.get()
+            pin = (state[0] if state else DEFAULT).resolve(name)
+            return (pin, physical.external_slow_port if pin.startswith(('jc_', 'jd_')) else physical.external_control_port, getattr(physical, pin + '_out'))
         if self.outputs and name in PINS and 'output' in capability(name):
             return (name, hd.external_slow_port if name.startswith(('jc_', 'jd_')) else hd.external_control_port, getattr(hd, name+'_out'))
         return self._values()[name]
@@ -260,13 +356,52 @@ class SignalMap(Mapping):
 
 class InputNames(Mapping):
     """Physical input IDs mapped to the active board's configured names."""
-    def __getitem__(self, pin): return hd.input_mapping[pin]
+    def __getitem__(self, pin): return hd.input_mapping[resolve_signal(pin)]
     def __iter__(self): return iter(hd.input_mapping)
     def __len__(self): return len(hd.input_mapping)
 
 
 OUTPUTS = SignalMap(True)
 INPUTS = SignalMap(False)
+
+
+def signal_token(pin):
+    """Persist a common signal reference, independently of sequencer role names."""
+    state = CURRENT.get()
+    profile = state[0] if state else DEFAULT
+    return 'signal:' + profile.document()['pins'][pin] if pin in PINS else pin
+
+
+def role_signal_token(role, experiment):
+    state = CURRENT.get()
+    name = (state[0] if state else DEFAULT).bindings(experiment)[role]
+    return 'signal:' + name if name else None
+
+
+def resolve_signal(token):
+    state = CURRENT.get()
+    return (state[0] if state else DEFAULT).resolve(token, state[1] if state else None)
+
+
+class RouteChoices:
+    """Legacy roles plus explicit common signals; validate actual pin capabilities."""
+    def __init__(self, legacy, feature):
+        self.legacy, self.feature = tuple(legacy), feature
+
+    def __iter__(self):
+        return iter(self.legacy)
+
+    def __contains__(self, token):
+        if token in self.legacy and not CURRENT.get():
+            return True
+        try:
+            pin = resolve_signal(token)
+            if pin is None:
+                return token in ('TRIG', 'MW_C')
+            kind = capability(pin)
+            return kind == 'fast output' if self.feature == 'fast' else self.feature in kind
+        except (ValueError, TypeError, AttributeError):
+            return False
 
 
 def bound_methods(experiment=None, editor=False):
@@ -311,6 +446,11 @@ The same immutable profile is retained by a nested operation until it completes.
                 with scope(profile, kind):
                     result = __fn(self, *args, **kwargs)
                     if editor and __name == '__init__':
+                        from labremote.ui.pin_selector import PinSelector
+                        if kind == 'micromotion' or self.findChildren(PinSelector):
+                            # These tabs already map their actual sequencer roles
+                            # directly to common signals in their own settings.
+                            return result
                         from labremote.ui.fpga_mapping import RoleMapping
                         from PyQt5.QtWidgets import QGroupBox
                         if any(g.title() == '이 실험의 FPGA 역할 매핑' for g in self.findChildren(QGroupBox)):

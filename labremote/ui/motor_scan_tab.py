@@ -266,8 +266,11 @@ class MotorScanTab(QtWidgets.QWidget):
                 if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not widget.minimum()<=value<=widget.maximum():
                     raise ValueError('Invalid saved '+key)
             if values['average']!=int(values['average']):raise ValueError('Average must be an integer')
-            if type(values['pmt']) is not int:raise ValueError('Invalid saved PMT')
-            index=self.channel.findData(values['pmt'])
+            selected=values['pmt']
+            if isinstance(selected,str):
+                selected=getattr(self.worker.profile.view(),selected+'_counter_result')
+            if type(selected) is not int:raise ValueError('Invalid saved PMT')
+            index=self.channel.findData(selected)
             if index<0:raise ValueError('Invalid saved PMT')
             from labremote.devices.fpga.scan_model import axis_points
             for axis in ('xyz' if z else 'xy'):
@@ -338,7 +341,7 @@ class MotorScanTab(QtWidgets.QWidget):
     def request(self):
         devices=Devices(self.bindings());x=devices.motor(self.x_motor.currentText());y=devices.motor(self.y_motor.currentText())
         settings={**self.scales,**{k:v.value() for k,v in self.fields.items()}};settings['average']=int(settings['average'])
-        settings.update(pmt=self.channel.currentData(),directory=self.directory.text(),scan=self.number)
+        settings.update(pmt=self.channel.currentText(),directory=self.directory.text(),scan=self.number)
         z=devices.motor(self.z_motor.currentText()) if self.z_enabled.isChecked() else None
         return x,y,settings,z
 

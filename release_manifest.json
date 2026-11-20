@@ -234,8 +234,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 39010,
-      "sha256": "0dcd983e8476b13a4872697c1b0213a27975f3ede07bc3b42f4778b5d9a97364"
+      "bytes": 38968,
+      "sha256": "819ce83cf36a2852e1b2201b2a23c6be707888102b56ccbf7d92cf2de405ec49"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -249,8 +249,8 @@
     },
     {
       "path": "labremote/characterization/config.py",
-      "bytes": 5200,
-      "sha256": "f334d12a78101e48832f6814393739c3cdbde060ee595ace5d8e83d6e9ed1485"
+      "bytes": 5274,
+      "sha256": "026e2141707a40cbfb0baf642768a358b3a963bdadcc9ffd1629e79fa5e9c85d"
     },
     {
       "path": "labremote/characterization/fluorescence.py",
@@ -284,8 +284,8 @@
     },
     {
       "path": "labremote/characterization/rabi.py",
-      "sha256": "f274df369c355a149113ef0c6d4c60f179372cfdd716bc4d64d0924c329430c6",
-      "bytes": 7689
+      "sha256": "593017e6fb914f94f008ad38e00436c7ab40b8dfd03a68484337b17b77711f0b",
+      "bytes": 7745
     },
     {
       "path": "labremote/characterization/rabi_runner.py",
@@ -1874,8 +1874,8 @@
     },
     {
       "path": "labremote/ui/motor_scan_tab.py",
-      "bytes": 26506,
-      "sha256": "aac90ba1ff1af62f2ac076a4c06afda36c50bbd5a7df5407a19f4e7f0a28e000"
+      "bytes": 30660,
+      "sha256": "40cbb4365cfb2d69abe828d8cd7ec062ec1f8f82e13d653e6f6197277e52d972"
     },
     {
       "path": "labremote/ui/motor_tab.py",
@@ -2084,8 +2084,8 @@
     },
     {
       "path": "labremote/devices/fpga/mapping.py",
-      "sha256": "71dc40d5aa975cd6c372f05a0017f8b4b5bb3673dd9bc402c898416be9d73f46",
-      "bytes": 15552
+      "sha256": "251e76ecd5651af38e15f71a0d4000e986126f18f4d4c30cda487e330ce3b16d",
+      "bytes": 22693
     },
     {
       "path": "labremote/devices/fpga/registry.py",
@@ -2134,8 +2134,8 @@
     },
     {
       "path": "labremote/micromotion/config.py",
-      "sha256": "24d37068b20811cad4dd9a83a9ea9191b127eee41919f156807629578b38337d",
-      "bytes": 4194
+      "sha256": "498cb0ddffdf32d313e254d190871bb61b0df80ed19499637c47b9e719321b93",
+      "bytes": 4283
     },
     {
       "path": "labremote/micromotion/runner.py",
@@ -2169,8 +2169,8 @@
     },
     {
       "path": "labremote/ui/fpga_mapping.py",
-      "sha256": "39a31c1be79277ceb232f94bb6b4d2e0ccc8537959cd3af598d9b27330a1856c",
-      "bytes": 12508
+      "sha256": "7facfaa8727d17b579dc3e8ac2058d0db4642cde207547ec6d998861c0ca781b",
+      "bytes": 12732
     },
     {
       "path": "labremote/ui/hom_tab.py",
@@ -2184,8 +2184,8 @@
     },
     {
       "path": "labremote/ui/micromotion_tab.py",
-      "bytes": 21297,
-      "sha256": "08df5c514fdeee0f2f5aca2782a09393b32f974af0b8bb365dc39887295faa5e"
+      "bytes": 21467,
+      "sha256": "a5926e453ef7d6b156f2148719dc97b49b53a1e6b3eeabb2002b62e93b36d0bf"
     },
     {
       "path": "tests/test_data_paths.py",
@@ -2294,8 +2294,8 @@
     },
     {
       "path": "labremote/ui/pin_selector.py",
-      "sha256": "641ed43b3a479606a0d14e8c89bf4a08899e3177771be19ef540dec1c30a0249",
-      "bytes": 2517
+      "sha256": "ac00e04291fd3a1257e53444e483bc2d77576063d47e08b8e452c7910b55a170",
+      "bytes": 2459
     },
     {
       "path": "labremote/ui/queue_experiment_parameters.py",
@@ -2304,13 +2304,13 @@
     },
     {
       "path": "labremote/ui/queue_fpga.py",
-      "sha256": "16a0253197cb34d31ae1789754c563a5bca0cf10c1ea665e3fe85a5669d30988",
-      "bytes": 17865
+      "sha256": "2a976e02580af94b7978c88592f0e9c1a7a433febb60634e8e2940b6dd91a2e4",
+      "bytes": 18318
     },
     {
       "path": "tests/test_queue_pin_editor.py",
-      "bytes": 8264,
-      "sha256": "39ccf78bf9665175719308c1a628ee5cded39d070a21f0ee259c4893926ed16c"
+      "bytes": 8428,
+      "sha256": "37e9788d75e35ed85e4364d212896fe53f159e77772866124811de387e8f4d3f"
     },
     {
       "path": "labremote/runtime/workflow_ui.py",
@@ -2514,8 +2514,8 @@
     },
     {
       "path": "labremote/micromotion/secular/config.py",
-      "sha256": "ef99d8a55bf27fae943c1e37aed322e7e781b0a28c5846e0fd97758401f64f29",
-      "bytes": 4899
+      "sha256": "1989c2d9c9ee00922f3909f4df8748374751b40b980581998f57604e28453ff8",
+      "bytes": 5073
     },
     {
       "path": "labremote/micromotion/secular/acquisition.py",
@@ -2534,8 +2534,8 @@
     },
     {
       "path": "labremote/ui/secular_scan_tab.py",
-      "bytes": 12199,
-      "sha256": "57185e098ae4c3f2946fda8a1364bd9c66941cd12078c9d0f61b4131d2e390d4"
+      "bytes": 12482,
+      "sha256": "b5cd3fda045692fb2b834e22b31b7daee2a05b278cad752d9ee7623d17e49e7a"
     },
     {
       "path": "tests/test_secular_scan.py",
@@ -2559,13 +2559,13 @@
     },
     {
       "path": "labremote/devices/fpga/vendor/ArtyS7_v1_03.py",
-      "sha256": "6ea52999c8320bc87266c53eb7488feaf892e68c7b19c1afc26bb95d7db39af5",
-      "bytes": 27388
+      "sha256": "4c2094f18d6034378cb1d6888ca05f0af9243025d7762d4c5fcb6ab512e5a74a",
+      "bytes": 27384
     },
     {
       "path": "labremote/devices/fpga/vendor/HardwareDefinition_v4_05.py",
-      "sha256": "afce686dcaa09a618f1907b2026dc2824bb17f8afd46fb02d31e6bca10643e12",
-      "bytes": 6754
+      "sha256": "58affe8ac5f2aa6021a9caf2c5bc124fcfe3df85f79c0ed4d341bf54432cdc0d",
+      "bytes": 7131
     },
     {
       "path": "labremote/devices/fpga/vendor/SequencerProgram_v1_09.py",
@@ -2629,18 +2629,43 @@
     },
     {
       "path": "tests/test_fpga_v405.py",
-      "sha256": "b29e15821c19ce9874f5e09f8b6f86f1a51b4a9aaf6d64988ae55c4fa83dde88",
-      "bytes": 4755
+      "sha256": "42256a907b4956c815b95aa4519232b0a2d89f847c63754fd7d96af164951ba6",
+      "bytes": 4946
     },
     {
       "path": "tests/test_v6_fpga_driver.py",
-      "sha256": "fd02f9e692712784f134c8fb808e72600c62e6dcda492f34929c86318c2b8522",
-      "bytes": 4076
+      "sha256": "e7aca72ec92042cf6126a6d85884d6907f2fa47906c874a7973673ec8c796e80",
+      "bytes": 4126
     },
     {
       "path": "docs/FPGA_V405.txt",
-      "sha256": "f5f28d69223ed80f953260d780e2b7f3e987664d7eb110700ac23ded30050988",
-      "bytes": 2404
+      "sha256": "687c10b91270561937d9f4486d9034a2c7a7d20fc97cf9dbf2bc35799a7a2e45",
+      "bytes": 2519
+    },
+    {
+      "path": "labremote/ui/pulse_controls.py",
+      "sha256": "d342634f9cb25410fdbb1c0799537bef57a02a8ab5f8cd2783031198ee6d1361",
+      "bytes": 1386
+    },
+    {
+      "path": "tests/test_fpga_signal_mapping.py",
+      "sha256": "c648c2f00a30019b597c03b55c0514a60ab31aba39d28762da46b31ac0e476c9",
+      "bytes": 9794
+    },
+    {
+      "path": "docs/FPGA_SIGNAL_MAPPING.txt",
+      "sha256": "b69bcc9180403cdf92846d8ec26888be894661aff3e6edf454bf232433d13e38",
+      "bytes": 3125
+    },
+    {
+      "path": "tests/test_fpga_seven_inputs.py",
+      "sha256": "7dbce4b8d00755b05470b3d2cb780a1bbf78acdb5dc3d871f93e5ae4c69d058a",
+      "bytes": 2764
+    },
+    {
+      "path": "docs/FPGA_V405R2.txt",
+      "sha256": "bb5db0084d1b38035e3a2c7a995c33ec05b0f3bf716b92a4e12f79a0c0dde552",
+      "bytes": 3673
     }
   ]
 }

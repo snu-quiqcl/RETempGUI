@@ -15,13 +15,11 @@ class PinSelector(W.QComboBox):
         self.refresh()
 
     def _selected(self, index):
-        self._token = self.itemData(index)
+        pin = self.itemData(index)
+        self._token = 'signal:' + self.worker.profile.document()['pins'][pin] if pin else None
 
     def physical_pin(self, token):
-        if token in PINS:return token
-        document = self.worker.profile.document()
-        roles = {**DEFAULT_ROLES, **document['experiments'].get(self.experiment, {})}
-        return roles.get(token, next((pin for pin,name in document['pins'].items() if name==token), None))
+        return self.worker.profile.resolve(token, self.experiment)
 
     def route(self):
         return self._token
@@ -31,7 +29,7 @@ class PinSelector(W.QComboBox):
         index = self.findData(pin)
         if index < 0:raise ValueError('Unknown input/output pin: '+str(token))
         with QtCore.QSignalBlocker(self):self.setCurrentIndex(index)
-        self._token = token
+        self._token = 'signal:' + self.worker.profile.document()['pins'][pin] if pin else token
 
     def refresh(self):
         document = self.worker.profile.document()
@@ -51,4 +49,4 @@ class PinSelector(W.QComboBox):
                 item.setToolTip(kind+(' · '+reason if reason else ''))
         self._document = document
         if token is not None:self.setCurrentText(token)
-        else:self._token = self.currentData()
+        else:self._selected(self.currentIndex())

@@ -1,4 +1,4 @@
-from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import settings_path, signal_token
 from labremote.devices.fpga.mapping import bound_methods
 """Micromotion UI; all hardware work goes through existing FPGA/DAC queues."""
 import json
@@ -41,7 +41,7 @@ class MicromotionPage(W.QWidget):
             box=W.QComboBox()
             for pin in choices:box.addItem(pin+' · '+config.PINS[pin] if pin else 'Select wired counter input',pin)
             self.fields[key]=box;add_field(label,box,(key=='counter_pin')==(mode=='input'))
-        pin_note=W.QLabel('Count the external RF on a wired counter input. ja_2 has no ordinary counter.' if mode=='input' else 'TRG and PMT must be different stopwatch inputs. Cooling outputs remain unchanged.')
+        pin_note=W.QLabel('Count the external RF on a wired counter input. ja_2 supports counter and stopwatch.' if mode=='input' else 'TRG and PMT must be different stopwatch inputs. Cooling outputs remain unchanged.')
         pin_note.setWordWrap(True);form.addRow(pin_note)
         for key,label,lo,hi,decimals in [
             ('rf_mhz','RF frequency (MHz)',1,100,6),('events','Accepted events / batch',10,10000000,0),
@@ -128,7 +128,10 @@ class MicromotionPage(W.QWidget):
         c=dict(schema_version=1,chamber=self.chamber.currentText(),use_ldac=self.ldac.isChecked(),
             **{key:box.currentData() if isinstance(box,W.QComboBox) else box.value() for key,box in self.fields.items()},
             **{key:[box.value() for box in boxes] for key,boxes in self.ranges.items()})
-        return config.validate(c)
+        validated = config.validate(c)
+        for key in ('trg_pin', 'pmt_pin', 'counter_pin'):
+            validated[key] = signal_token(validated[key])
+        return validated
 
     def change_chamber(self,chamber):
         try:self.populate(self.saved_settings(chamber));self.refresh_dacs(prefer=True)

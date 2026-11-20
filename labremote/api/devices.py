@@ -581,9 +581,9 @@ class FPGAAPI(DeviceAPI):
         names = {name: pin for pin, name in document['pins'].items()}
         if any(name not in names for name in roles.values()):
             raise ValueError('Unknown configured FPGA pin name')
-        mapping = dict(document['experiments'].get(experiment, {}))
-        mapping.update({role: names[name] for role, name in roles.items()})
-        document['experiments'][experiment] = mapping
+        mapping = dict(document['role_bindings'].get(experiment, {}))
+        mapping.update(roles)
+        document['role_bindings'][experiment] = mapping
         return scope(Profile(document), experiment)
 
     def run_phase_shifter(self, *, settings, directory=None):

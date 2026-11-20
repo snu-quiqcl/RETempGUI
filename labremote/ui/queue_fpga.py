@@ -25,7 +25,7 @@ class QueueFPGASettings(W.QWidget):
         super().__init__()
         self.job=deepcopy(job);self.target=target;self.provider=bindings_provider
         self.parameters=deepcopy(job['parameters']);self.kind=kind
-        self.documents=deepcopy(job.get('fpga_profiles',{}));self.overrides={}
+        self.documents={k:Profile(v).document() for k,v in job.get('fpga_profiles',{}).items()};self.overrides={}
         self.rows={};self._loading=False
         root=W.QVBoxLayout(self)
         box=W.QGroupBox('실행 FPGA');root.addWidget(box);layout=W.QVBoxLayout(box)
@@ -123,7 +123,8 @@ class QueueFPGASettings(W.QWidget):
                     for key,(role,_,_) in ION_CHANNELS.items()]
         if experiment=='scan':
             from labremote.devices.fpga.mapping import physical
-            pin=next((pin for pin in PINS if getattr(physical,pin+'_counter_result',None)==settings.get('pmt')),None)
+            selected=settings.get('pmt')
+            pin=selected if isinstance(selected,str) else next((pin for pin in PINS if getattr(physical,pin+'_counter_result',None)==selected),None)
             return [(('settings','pmt'),'PMT',experiment,pin)]
         if experiment=='micromotion':
             return [(('settings',key),role,experiment,settings.get(key,'')) for key,role in
@@ -145,17 +146,13 @@ class QueueFPGASettings(W.QWidget):
 
     @staticmethod
     def resolve(token,experiment,document):
-        if token=='':return ''
-        if token in PINS:return token
-        if experiment=='phase_shifter':return next((p for p,n in document['pins'].items() if n==token),None)
-        roles={**DEFAULT_ROLES,**document['experiments'].get(experiment,{})}
-        return roles.get(token,next((p for p,n in document['pins'].items() if n==token),None))
+        return Profile(document).resolve(token, experiment)
 
     def rebuild(self,*_):
         if self._loading:return
         self._loading=True
         try:
-            self.rows={};self.inputs.setRowCount(0);self.outputs.setRowCount(0)
+            self.rows={};self.unused_defaults={};self.inputs.setRowCount(0);self.outputs.setRowCount(0)
             name=self.target.currentData();document=self.documents.get(name)
             experiment=self.experiment_name()
             self.experiment.setVisible(experiment is None);self.experiment_label.setVisible(experiment is None)
@@ -203,12 +200,14 @@ class QueueFPGASettings(W.QWidget):
             combo.model().item(combo.count()-1).setEnabled(allowed)
             combo.setItemData(combo.count()-1,kind,QtCore.Qt.ToolTipRole)
         combo.setCurrentIndex(combo.findData(selected));self.rows[key]=combo
+        if not direct and selected==DEFAULT_ROLES[role] and not compatible(experiment,role,selected):
+            self.unused_defaults[key]=selected
         table.setItem(row,2,W.QTableWidgetItem(capability(selected) if selected in PINS else '미지정'))
         def edit(*_):
             if self._loading:return
             name=self.target.currentData();pin=combo.currentData()
             if direct:self.overrides.setdefault(name,{})[key]=pin
-            else:self.documents[name]['experiments'].setdefault(experiment,{})[role]=pin
+            else:self.documents[name]['role_bindings'].setdefault(experiment,{})[role]=document['pins'][pin] if pin else None
             table.item(row,2).setText(capability(pin) if pin else '사용 안 함');self.update_preview();self.changed.emit()
         combo.currentIndexChanged.connect(edit)
 
@@ -226,20 +225,21 @@ class QueueFPGASettings(W.QWidget):
             for key in path[:-1]:obj=obj[key]
             if self.experiment_name()=='scan':
                 from labremote.devices.fpga.mapping import physical
-                obj[path[-1]]=getattr(physical,pin+'_counter_result')
+                obj[path[-1]]=document['pins'][pin]
             elif self.experiment_name()=='phase_shifter':obj[path[-1]]=document['pins'][pin]
-            else:obj[path[-1]]=pin
+            else:obj[path[-1]]='signal:'+document['pins'][pin] if pin else pin
         if self.experiment_name()=='ion_check':
             chosen={path[-1]:self.overrides.get(name,{}).get(path,self.resolve(token,'ion_check',document))
                     for path,role,exp,token in self.direct_routes()}
             channels=parameters['settings'].setdefault('mapping',{})
-            routes=document['experiments'].setdefault('ion_check',{})
+            routes=document['role_bindings'].setdefault('ion_check',{})
             for key,pin in chosen.items():
                 canonical=ION_CHANNELS[key][1]
                 channels[key]=canonical if pin else None
-                if pin:routes[canonical]=pin
+                if pin:routes[canonical]=document['pins'][pin]
         profile=Profile(deepcopy(document))
-        for combo in self.rows.values():
+        for key,combo in self.rows.items():
+            if key in self.unused_defaults and combo.currentData()==self.unused_defaults[key]:continue
             index=combo.currentIndex()
             if index<0 or not combo.model().item(index).isEnabled():
                 raise ValueError('실험 기능에 맞는 입력·출력 핀을 선택하세요.')

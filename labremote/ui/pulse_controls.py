@@ -14,7 +14,7 @@ def pin_controls(worker, kind, parent):
     roles={}
     for role,label in labels:
         box=PinSelector(worker,kind,input_pin=role=='PMT',fast_only=role!='PMT')
-        box.setToolTip(label+' — 이 실험에서 사용할 실제 FPGA 핀')
+        box.setToolTip(label+' — 이 실험에서 사용할 공통 신호 nickname · 물리 핀은 FPGA JSON에서 연결')
         form.addRow(label,box);roles[role]=box
     note=QtWidgets.QLabel('이 실험의 검출·광 제어·MW 게이트에 사용하는 핀만 표시합니다.' if kind!='initialization' else
                          'MW 펄스는 사용하지 않습니다. 시작·종료 시 MW를 OFF로 만드는 핀은 유지합니다.')

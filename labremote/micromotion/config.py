@@ -1,4 +1,4 @@
-from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import settings_path, resolve_signal, signal_token, role_signal_token
 """Validated settings; physical input pins resolve through the installed bitstream map."""
 import math
 import json
@@ -15,8 +15,8 @@ COUNTER_PINS = tuple(p for p, name in PINS.items() if hasattr(hd, name + '_count
 
 
 def defaults(chamber='EC'):
-    return dict(schema_version=1, chamber=chamber, trg_pin='ja_2',
-                pmt_pin='ja_4' if chamber == 'EC' else 'ja_6', counter_pin='',
+    return dict(schema_version=1, chamber=chamber, trg_pin=role_signal_token('SYNC','micromotion'),
+                pmt_pin=role_signal_token('JA4' if chamber == 'EC' else 'JA6','micromotion'), counter_pin='',
                 rf_mhz=30.6314, events=10000, batches=1, periods=1,
                 timeout_s=30., settle_s=.1, gate_us=100., rf_repeats=500,
                 left=[.690, .710, .001], right=[.265, .285, .001], use_ldac=True)
@@ -38,8 +38,7 @@ def validate(settings):
     c = dict(settings)
     names = {name: pin for pin, name in PINS.items()}
     for key in ('trg_pin', 'pmt_pin', 'counter_pin'):
-        if c.get(key) in names:
-            c[key] = names[c[key]]
+        c[key] = resolve_signal(c.get(key))
     if c.get('schema_version') != 1 or c.get('chamber') not in ('EA', 'EC'):
         raise ValueError('Invalid micromotion schema/chamber')
     for key in ('trg_pin', 'pmt_pin'):

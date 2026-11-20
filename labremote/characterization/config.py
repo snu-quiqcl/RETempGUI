@@ -5,14 +5,15 @@ from copy import deepcopy
 from pathlib import Path
 from labremote.config.paths import CONFIG_ROOT
 from labremote.devices.fpga.controller import hd, INPUTS
-from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, capability
+from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, capability, RouteChoices
 
 ROOT=CONFIG_ROOT/'operations/characterization'
 COUNTER_PINS=tuple(pin for pin in PINS if 'counter' in capability(pin))
 OUTPUT_PINS=tuple(pin for pin in PINS if 'output' in capability(pin))
 FAST_PINS=tuple(pin for pin in PINS if capability(pin)=='fast output')
 PMTS=tuple(name for name,pin in DEFAULT_ROLES.items() if pin in COUNTER_PINS)+COUNTER_PINS
-AOMS=tuple(name for name,pin in DEFAULT_ROLES.items() if pin in OUTPUT_PINS)+OUTPUT_PINS
+AOMS=RouteChoices(tuple(name for name,pin in DEFAULT_ROLES.items() if pin in OUTPUT_PINS)+OUTPUT_PINS, 'output')
+PMTS=RouteChoices(PMTS, 'counter')
 
 
 def read(path):

@@ -3,7 +3,7 @@ import math
 from decimal import Decimal, ROUND_FLOOR
 from pathlib import Path
 import numpy as np
-from labremote.devices.fpga.mapping import hd, settings_path
+from labremote.devices.fpga.mapping import hd, settings_path, resolve_signal, role_signal_token
 from labremote.micromotion.config import PINS, STOPWATCH_PINS, COUNTER_PINS
 from .model import _geometry, _fit_first_event
 
@@ -16,8 +16,8 @@ INTS={'phase_bins':(8,256),'target_events':(64,5000000),'max_attempts':(64,50000
 
 
 def defaults(chamber='EC'):
-    return dict(schema_version=1,chamber=chamber,afg_name='',trg_pin='ja_2',
-        pmt_pin='jb_0' if chamber=='EC' else 'jb_2',start_khz=1000.,stop_khz=2000.,step_khz=10.,
+    return dict(schema_version=1,chamber=chamber,afg_name='',trg_pin=role_signal_token('SYNC','micromotion'),
+        pmt_pin=role_signal_token('PMTA' if chamber=='EC' else 'PMTC','micromotion'),start_khz=1000.,stop_khz=2000.,step_khz=10.,
         amplitude_dbm=-20.,offset_v=0.,settle_s=.05,point_timeout_s=60.,
         phase_bins=64,target_events=50000,max_attempts=5000000,block_attempts=50000,
         count_exposure_us=10000,count_repeats=20,max_background_m=.05,rate_action='stop')
@@ -34,6 +34,7 @@ def frequencies(c):
 
 def validate(settings):
     c=dict(settings)
+    for key in ('trg_pin', 'pmt_pin'):c[key]=resolve_signal(c.get(key))
     if c.get('schema_version')!=1 or c.get('chamber') not in ('EA','EC'):
         raise ValueError('Invalid secular scan schema/chamber')
     for k,(lo,hi) in FLOATS.items():

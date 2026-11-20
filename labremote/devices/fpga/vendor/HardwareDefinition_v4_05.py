@@ -8,7 +8,7 @@ Created on Thu Feb  1 21:08:57 2018
 # mux2 #(16) external_control(.d0(output_ports[0]), .d1(patterns[17:32]), .select(manual_control_on), .y(external_output));
 # assign monitoring_32bits = {external_output, stopped, manual_control_on, {(14-INSTRUCTION_MEMORY_ADDR_WIDTH){1'b0}}, PC[INSTRUCTION_MEMORY_ADDR_WIDTH-1:0]};
 
-HW_VERSION = 'Sequencer v4_05'
+HW_VERSION = 'Seq v4_05r2'
 
 #%%################################################################
 # Input connections to sequencer
@@ -26,9 +26,9 @@ jb_2_stopwatch_result = 7   # assign counters_13_0[7] = jb_2_stopwatch_output;
 ja_4_stopwatch_result = 8   # assign counters_13_0[8] = ja_4_stopwatch_output;
 ja_6_stopwatch_result = 9   # assign counters_13_0[9] = ja_6_stopwatch_output;
 ja_2_stopwatch_result = 10 # assign counters_13_0[10] = ja_2_stopwatch_output; // ja_2 will be used for pulse picker trigger
-# assign counters_13_0[11] = 'd0;
-# assign counters_13_0[12] = 'd0;
-# assign counters_13_0[13] = patterns[1:16];
+jb_4_stopwatch_result = 11
+jb_6_stopwatch_result = 12
+ja_6_counter_result = 13  # replaces sequencer patterns[1:16] readback
 
 Trigger_level = 14                  # Fixed internally inside sequencer
 Remaining_counts_from_wait = 15     # Fixed internally inside sequencer
@@ -51,8 +51,8 @@ ja_2_stopwatch_stopped_TLI = 11   # assign trigger_level_in[11] = ja_2_stopwatch
 
 ####################################################
 # Pulse trigger_out assignment
-jb_0_counter_reset = 15     # assign jb_0_counter_reset = trigger_out[15];
-jb_2_counter_reset = 14     # assign jb_2_counter_reset = trigger_out[14];
+jb_0_counter_reset = 6  # shared with same-pin stopwatch reset
+jb_2_counter_reset = 5  # shared with same-pin stopwatch reset
 jb_4_counter_reset = 13     # assign jb_4_counter_reset = trigger_out[13];
 jb_6_counter_reset = 12     # assign jb_6_counter_reset = trigger_out[12];
 
@@ -119,10 +119,21 @@ jc_0_out = 0		# assign jc_0 = output_ports_2[0];
 
 # Existing FPGA ja_2 counter, now explicitly represented in this definition.
 ja_2_counter_result = 4
-ja_2_counter_reset = 1
+ja_2_counter_reset = 2  # shared with same-pin stopwatch reset
 ja_2_counter_enable = 11
 
-# Physical capabilities: counters and stopwatches no longer share the same pin list.
-COUNTER_PINS = ('jb_0', 'jb_2', 'jb_4', 'jb_6', 'ja_2')
-STOPWATCH_PINS = ('jb_0', 'jb_2', 'ja_4', 'ja_6', 'ja_2')
-# Output port 0 bits 7 and 5 are reserved/unconnected in v4_05.
+# v4_05r2 additions. All seven input pins support both functions.
+ja_4_counter_result = 5
+ja_4_counter_enable = 10
+ja_6_counter_enable = 9
+ja_4_counter_reset = ja_4_stopwatch_reset
+ja_6_counter_reset = ja_6_stopwatch_reset
+jb_4_stopwatch_reset = jb_4_counter_reset
+jb_6_stopwatch_reset = jb_6_counter_reset
+jb_4_stopwatch_start = 15
+jb_6_stopwatch_start = 14
+jb_4_stopwatch_stopped_TLI = 10
+jb_6_stopwatch_stopped_TLI = 9
+COUNTER_PINS = ('jb_0', 'jb_2', 'jb_4', 'jb_6', 'ja_2', 'ja_4', 'ja_6')
+STOPWATCH_PINS = COUNTER_PINS
+# Output port 0 bits 7 and 5 remain reserved/unconnected (ja_4/ja_6 are inputs).
