@@ -2,8 +2,9 @@
 from copy import deepcopy
 from labremote.config.equipment import FAMILY_GROUP, validate
 
-AUTO_FAMILIES = frozenset({'windfreak', 'sg384', 'anapico', 'dds4', 'flip', 'oven_relay'})
+AUTO_FAMILIES = frozenset({'afg2105', 'windfreak', 'sg384', 'anapico', 'dds4', 'flip', 'oven_relay'})
 SERVER_FAMILIES = {
+    'gwinstek_afg2105': 'afg2105',
     'windfreak_synthhd': 'windfreak', 'srs_sg384': 'sg384',
     'anapico_apsyn420': 'anapico', 'dds4_ad9912_vva': 'dds4',
     'rigol_ds1052e': 'ds1052e', 'rigol_mso7054': 'mso7054',

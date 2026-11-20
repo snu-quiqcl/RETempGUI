@@ -40,6 +40,7 @@ def identify_family(driver_class, name='', *, methods=(), submodules=()):
     if 'mso7054' in typ:return 'rigol_mso7054'
     if 'thermotek' in typ or 't257p' in typ:return 'thermotek_t257p'
     if 'keithley' in typ and ('2231' in typ or '2230' in typ):return 'keithley_2231a'
+    if 'afg2105' in typ.replace('-', ''): return 'gwinstek_afg2105'
     if 'sg384' in typ: return 'srs_sg384'
     if 'apsyn420' in typ: return 'anapico_apsyn420'
     if 'ad9912vva4' in typ: return 'dds4_ad9912_vva'
@@ -47,7 +48,7 @@ def identify_family(driver_class, name='', *, methods=(), submodules=()):
 
 
 def plan_dynamic_tabs(devices: list[DeviceDescriptor], existing: set[str]) -> list[DeviceDescriptor]:
-    return [d for d in devices if d.family in ('windfreak_synthhd','srs_sg384','anapico_apsyn420','dds4_ad9912_vva','rigol_ds1052e','rigol_mso7054','thermotek_t257p','keithley_2231a','yokogawa_aq6373','mdt693b') and d.name not in existing]
+    return [d for d in devices if d.family in ('gwinstek_afg2105','windfreak_synthhd','srs_sg384','anapico_apsyn420','dds4_ad9912_vva','rigol_ds1052e','rigol_mso7054','thermotek_t257p','keithley_2231a','yokogawa_aq6373','mdt693b') and d.name not in existing]
 
 
 class DiscoveryWorker(QtCore.QThread):

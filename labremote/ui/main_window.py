@@ -63,7 +63,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self._deferred_discovery = None
         self._server_inventory = None
         self.dynamic_windfreak_tabs = {}
-        self.family_tabs = {"windfreak": self.dynamic_windfreak_tabs, "sg384": {}, "anapico": {}, "dds4": {}, "ds1052e": {}, 'mso7054':{}, 'thermotek':{}, 'keithley':{}, 'osa':{}, 'mdt':{}, 'fpga':{}, 'motors':{}, 'dac':{}}
+        self.family_tabs = {"windfreak": self.dynamic_windfreak_tabs, "sg384": {}, "afg2105": {}, "anapico": {}, "dds4": {}, "ds1052e": {}, 'mso7054':{}, 'thermotek':{}, 'keithley':{}, 'osa':{}, 'mdt':{}, 'fpga':{}, 'motors':{}, 'dac':{}}
         self.setWindowTitle('RETempUI V1.00 | RF + oscillo + local CCD')
         self.resize(1370, 920)
         menu = self.menuBar().addMenu('Operation 기록')
@@ -93,7 +93,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self.device_tabs.addTab(self.oscillo_tabs,'oscillo')
         self.rf_tabs.addTab(self.windfreak_subtabs, 'Windfreak')
         self.family_subtabs = {'windfreak': self.windfreak_subtabs}
-        for family,title in [('sg384','SG384'),('anapico','AnaPico'),('dds4','DDS / AD9912')]:
+        for family,title in [('afg2105','AFG2105'),('sg384','SG384'),('anapico','AnaPico'),('dds4','DDS / AD9912')]:
             tabs=ScrollTabs(); self.family_subtabs[family]=tabs
             self.rf_tabs.addTab(tabs,title)
         self.ds1052e_subtabs=ScrollTabs()
@@ -140,7 +140,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         add.clicked.connect(lambda:self.register_equipment(self.manual_family.currentText(),self.manual_name.text().strip()))
         for name in (*configured_instrument_names('windfreak'), *cfg.get('windfreak_names', [])):
             self._add(name)
-        for family in ('sg384','anapico','dds4','ds1052e','mso7054','thermotek','keithley','osa','mdt','fpga','motors','dac'):
+        for family in ('afg2105','sg384','anapico','dds4','ds1052e','mso7054','thermotek','keithley','osa','mdt','fpga','motors','dac'):
             if family=='fpga':continue  # Manual connection page creates instances.
             for name in (*configured_instrument_names(family), *cfg.get(family+'_names', [])):
                 self._add_family(family,name)
@@ -231,7 +231,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
                 if self.equipment_worker(entry) is None or entry['family']=='oven_relay':
                     self.ensure_equipment(entry)
                 self.profile_errors.pop(key,None)
-                if entry['family'] in ('windfreak','sg384','anapico','dds4'):
+                if entry['family'] in ('windfreak','sg384','anapico','dds4','afg2105'):
                     if entry['name'] not in configured_instrument_names(entry['family']):
                         notes.append(entry['name']+': 공통 기본 설정 사용 · 장비별 출력 제한을 확인하세요.')
             except Exception as exc:

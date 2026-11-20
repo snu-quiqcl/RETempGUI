@@ -180,7 +180,7 @@ class MicromotionPage(W.QWidget):
             and self.candidate is not None and w and w.name==r.get('dac'))
 
     def controls(self):
-        runner=self.worker.micromotion_runner;running=runner.running();w=self.worker
+        runner=self.worker.micromotion_runner;running=runner.running() or self.worker.secular_runner.running();w=self.worker
         busy=w.has_requests() or w.waveform_runner.running() or any(t.running() for t in w._background_tasks)
         connected=w.ps is not None and not w.connection_error and not w._closing
         needs_dac=self.experiment_mode=='scan'
@@ -296,6 +296,9 @@ class MicromotionTab(W.QTabWidget):
         self.worker=worker;self.experiments={}
         for mode,title in [('input','Signal'),('correlation','RF–Photon Correlation'),('scan','2D Scan')]:
             page=MicromotionPage(worker,bindings,mode,self);self.experiments[mode]=page;self.addTab(page,title)
+        from labremote.ui.secular_scan_tab import SecularScanPage
+        page=SecularScanPage(worker,bindings,self)
+        self.experiments['secular']=page;self.addTab(page,'Secular Frequency Scan')
         self.experiments['scan'].verification_requested.connect(lambda:self.setCurrentWidget(self.experiments['correlation']))
 
     def shutdown(self):

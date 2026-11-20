@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Compact Queue archive names and preflight Windows path budgets before execution",
+  "revision_note": "Add fixed-DAC secular frequency scan with AFG2105 and SYNC-PMT first-photon fitting",
   "files": [
     {
       "path": ".gitattributes",
@@ -234,8 +234,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 36883,
-      "sha256": "d657f5271f4a9ed5b0d096a2b2d799d04a1dac2a0322e82e780b586e5ef8d565"
+      "bytes": 38741,
+      "sha256": "1948f205f139033ecfd116bf6449bd46963a11c68b0e7f2296b77fdeed5b1730"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -429,8 +429,8 @@
     },
     {
       "path": "labremote/config/equipment.py",
-      "bytes": 4258,
-      "sha256": "377471e4b2fd48f2d4fae3c3738cf9b63d6f7742512e6a22830b2c102337e35d"
+      "bytes": 4273,
+      "sha256": "050e0cdbf4e13777a4ab692a5fca8144ceffcb5ce258a7a9d0e412ca714e8f34"
     },
     {
       "path": "labremote/config/local_hardware.py",
@@ -664,8 +664,8 @@
     },
     {
       "path": "labremote/config/ui/defaults.json",
-      "bytes": 486,
-      "sha256": "7150aa2f159538f052a3a518fde91d06b25c2188c9b39d7b59cb8eb9495044bf"
+      "bytes": 510,
+      "sha256": "e6ee48105c35ea36310407ee08a9389b67d3c1b75af2327b7c63e7880e4f2b5a"
     },
     {
       "path": "labremote/config/ui/equipment.json",
@@ -939,8 +939,8 @@
     },
     {
       "path": "labremote/devices/fpga/worker.py",
-      "bytes": 9753,
-      "sha256": "e44b47fd129eb0f1dc532e6a036b75dd273e68243efdd10e04e8c21d99f3b9af"
+      "bytes": 10194,
+      "sha256": "48c8f911aaa6eea6ae59b07b22c7d513c60f9de0f773ee53f7cf85fb1d659bcb"
     },
     {
       "path": "labremote/devices/keithley/__init__.py",
@@ -1699,8 +1699,8 @@
     },
     {
       "path": "labremote/runtime/discovery.py",
-      "bytes": 4930,
-      "sha256": "a3e21d8881349c996046013f9791377d0c9fb83a48c1c2fc119812ac982959f4"
+      "bytes": 5018,
+      "sha256": "931574ef1e4b003ccb58e1f8810c1b3fd8a92ee326b9eb4d2f2e953fe18de8f9"
     },
     {
       "path": "labremote/runtime/errors.py",
@@ -1864,8 +1864,8 @@
     },
     {
       "path": "labremote/ui/main_window.py",
-      "bytes": 22889,
-      "sha256": "4af3dd09552593c1988c4fbfdde4a85460c5953fca2c6681d82004df2ddbbf2d"
+      "bytes": 22946,
+      "sha256": "f6c3c197f594aef1db0513d38dbbef43f16f988709a9ff825bb9ba33feef2913"
     },
     {
       "path": "labremote/ui/monitor_dashboard.py",
@@ -1909,8 +1909,8 @@
     },
     {
       "path": "labremote/ui/rf_device_tab.py",
-      "bytes": 18774,
-      "sha256": "ebc38b969c268591ad58bb56c35d80c310af45d1d1066647c405054afd5bdb37"
+      "bytes": 20064,
+      "sha256": "697cdfad2576ad65a23c945e096a7ab420a89a01dd79a0b084ef75a236898c33"
     },
     {
       "path": "labremote/ui/shutter_status.py",
@@ -2184,8 +2184,8 @@
     },
     {
       "path": "labremote/ui/micromotion_tab.py",
-      "bytes": 20908,
-      "sha256": "8e92efed4e3f5bde8bd07046726d514fd46e908b706c1bc517c65e6b3115365a"
+      "bytes": 21297,
+      "sha256": "08df5c514fdeee0f2f5aca2782a09393b32f974af0b8bb365dc39887295faa5e"
     },
     {
       "path": "tests/test_data_paths.py",
@@ -2446,6 +2446,111 @@
       "path": "tests/test_queue_short_paths.py",
       "bytes": 4339,
       "sha256": "471046d123eaffbb7f17b5b281197e38215c89689efe42fc5ed95e3e99e90f83"
+    },
+    {
+      "path": "labremote/ui/discovered_equipment.py",
+      "bytes": 2193,
+      "sha256": "588ab6e890948d3b359b35f40a076ae118561bcae0a3c5f1df649e63ee913bdf"
+    },
+    {
+      "path": "labremote/devices/afg2105/__init__.py",
+      "bytes": 65,
+      "sha256": "72c6e070091b98ab27d271cf7793c592ca625c0b7e6da3bac08a1a9d0a38cf25"
+    },
+    {
+      "path": "labremote/devices/afg2105/worker.py",
+      "bytes": 2162,
+      "sha256": "70698dae335be754c1e0af86a6ef3232cb157de02821973b99e9871837b80bbf"
+    },
+    {
+      "path": "labremote/devices/afg2105/monitor.py",
+      "bytes": 282,
+      "sha256": "118954ca240dc9ccc395053bdab9cfcef4bb93a198ea51372a8e016efd17000d"
+    },
+    {
+      "path": "labremote/operation/afg2105/__init__.py",
+      "bytes": 77,
+      "sha256": "6613a815f525790d14519a42a41b4c7337dcb3c96930b3fa1ed066e4bb467de6"
+    },
+    {
+      "path": "labremote/operation/afg2105/read_snapshot.py",
+      "bytes": 203,
+      "sha256": "d691f5701525166686435f1b4e39a5af646c3cbfce915e0951ed4b98d75ace55"
+    },
+    {
+      "path": "labremote/config/devices/afg2105/device_config.yml",
+      "bytes": 47,
+      "sha256": "a71eaeec32148050428e0774a64fec14f2e39b31d2c75ed3fb257cca8dbd8f1c"
+    },
+    {
+      "path": "labremote/config/operations/afg2105/parameter_registry.yml",
+      "bytes": 966,
+      "sha256": "4d205a6da077355d65f4d3e98d165a10874dc759a777ec2762027ad7dc687962"
+    },
+    {
+      "path": "tests/test_afg2105_ui.py",
+      "bytes": 6961,
+      "sha256": "19f133578686a34ea0fb37e944dcd29a306cb8061e050bd65657f7fb33806354"
+    },
+    {
+      "path": "docs/AFG2105_KO.md",
+      "bytes": 1705,
+      "sha256": "82eae8ddd6fe2685fedc16f95b47e721c8b4317ccc1f7f8cab7c7c3cf98de909"
+    },
+    {
+      "path": "labremote/micromotion/secular/__init__.py",
+      "bytes": 70,
+      "sha256": "3312416fd03f6b93e6d39dbce0284897f83d7719be7529063bee9967a26119bc"
+    },
+    {
+      "path": "labremote/micromotion/secular/model.py",
+      "bytes": 8981,
+      "sha256": "8fbc1522d9794cded0ba663435e9a305c504add58afefbd83d86b03cc3adf583"
+    },
+    {
+      "path": "labremote/micromotion/secular/sequence.py",
+      "bytes": 4763,
+      "sha256": "a6b192483a34faeda8ddebcfaf76b27179fad30524bda3467fe11d0ecc1efbca"
+    },
+    {
+      "path": "labremote/micromotion/secular/config.py",
+      "bytes": 4806,
+      "sha256": "da705867237c722362f6a0b0eebfa8d879b8edd9a7409ec904548e46f932ed7d"
+    },
+    {
+      "path": "labremote/micromotion/secular/acquisition.py",
+      "bytes": 3646,
+      "sha256": "d1c4c4f8e8c703e1cfcbee959d992686f123076ea3ba5d0e3502e385fd7bd61d"
+    },
+    {
+      "path": "labremote/micromotion/secular/runner.py",
+      "bytes": 10583,
+      "sha256": "d78bd231ab9b6fd5d6ac178126b08f22e4eca1b1ce2016f9cbf3199994ced638"
+    },
+    {
+      "path": "labremote/micromotion/secular/plotting.py",
+      "bytes": 2520,
+      "sha256": "3cb2b21dba98a357dec39adad58c1a64414a7a64500d70b5c33635f7e615eb10"
+    },
+    {
+      "path": "labremote/ui/secular_scan_tab.py",
+      "bytes": 12199,
+      "sha256": "57185e098ae4c3f2946fda8a1364bd9c66941cd12078c9d0f61b4131d2e390d4"
+    },
+    {
+      "path": "tests/test_secular_scan.py",
+      "bytes": 15224,
+      "sha256": "f3a1fed43ecdf128546a6fc604cf53784d4a5fdc8f0095d9d4d98961484faefd"
+    },
+    {
+      "path": "tests/test_micromotion.py",
+      "bytes": 19532,
+      "sha256": "143177b0ec92d06087ee5122faedb53a72a33a41301ac032cebbe69caba8311d"
+    },
+    {
+      "path": "docs/SECULAR_SCAN_KO.md",
+      "bytes": 4806,
+      "sha256": "c0ecec7153b514d3d255a77faaabac49638f33f57dfc211069b1e26ed7020c1f"
     }
   ]
 }

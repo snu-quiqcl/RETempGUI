@@ -6,7 +6,7 @@ from labremote.config.ramp import PowerConfig
 from labremote.operation.windfreak.set_power import set_power
 from labremote.config.device_config import load_rf_device_config
 
-SUPPORTED_FAMILIES = frozenset({'windfreak', 'sg384', 'anapico', 'dds4', 'ds1052e', 'mso7054', 'thermotek', 'keithley', 'osa', 'mdt', 'fpga', 'motors', 'ccd', 'dac','flip'})
+SUPPORTED_FAMILIES = frozenset({'afg2105', 'windfreak', 'sg384', 'anapico', 'dds4', 'ds1052e', 'mso7054', 'thermotek', 'keithley', 'osa', 'mdt', 'fpga', 'motors', 'ccd', 'dac','flip'})
 
 class DeviceAPI:
     def __init__(self, worker, channel=None, group=None):
@@ -157,6 +157,9 @@ class Devices:
     def sg384(self, name, *, port='N'):
         return SG384API(self._workers['sg384',name], port, self.group)
 
+    def afg2105(self, name='afg2105'):
+        return AFG2105API(self._resolve_worker('afg2105',name), group=self.group)
+
     def anapico(self, name):
         return AnaPicoAPI(self._workers['anapico',name], group=self.group)
 
@@ -224,8 +227,21 @@ def device_api(worker, family=None, *, channel=None, group=None):
     if family == 'ccd':
         from labremote.devices.ccd.worker import CCDAPI
         return CCDAPI(worker, channel, group)
-    return {'windfreak':WindfreakAPI,'sg384':SG384API,'anapico':AnaPicoAPI,'dds4':DDS4API,'ds1052e':DS1052EAPI,
+    return {'afg2105':AFG2105API,'windfreak':WindfreakAPI,'sg384':SG384API,'anapico':AnaPicoAPI,'dds4':DDS4API,'ds1052e':DS1052EAPI,
             'mso7054':MSO7054API,'thermotek':ThermotekAPI,'keithley':KeithleyAPI,'osa':OSAAPI,'mdt':MDTAPI,'fpga':FPGAAPI,'motors':MotorAPI}[family](worker, channel, group)
+
+
+class AFG2105API(DeviceAPI):
+    def _set(self, path, value):
+        return self._submit('SET '+path, lambda w: Context().assign(getattr(w.ps,path),value),
+                            arguments=dict(parameter=path,value=value))
+
+    def set_frequency(self, hz): return self._set('frequency',hz)
+    def set_amplitude(self, dbm): return self._set('amplitude',dbm)
+    def set_offset(self, volts): return self._set('offset',volts)
+    def set_output(self, enabled): return self._set('output',enabled)
+    def on(self): return self.set_output(True)
+    def off(self): return self.set_output(False)
 
 
 class SG384API(DeviceAPI):
@@ -581,7 +597,14 @@ class FPGAAPI(DeviceAPI):
         return self.worker.micromotion_runner.start(settings=settings,mode=mode,
             dac=getattr(dac,'worker',dac),directory=directory,candidate=candidate,parent=self.group)
 
-    def stop_micromotion(self):return self.worker.micromotion_runner.cancel()
+    def run_secular_scan(self, *, settings, afg, directory=None):
+        return self.worker.secular_runner.start(settings=settings,afg=afg,directory=directory,parent=self.group)
+
+    def stop_secular_scan(self):return self.worker.secular_runner.cancel()
+
+    def stop_micromotion(self):
+        self.worker.secular_runner.cancel()
+        return self.worker.micromotion_runner.cancel()
 
     def run_decay(self,chamber,mode,*,settings=None,settings_file=None,directory=None):
         return self.worker.decay_runner.start(chamber,mode,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)

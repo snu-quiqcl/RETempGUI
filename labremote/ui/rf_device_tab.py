@@ -14,13 +14,14 @@ class RFDeviceTab(QtWidgets.QWidget):
 
     def __init__(self, family, name, host, port, parent=None):
         super().__init__(parent)
+        from labremote.devices.afg2105.worker import AFG2105Worker
         from labremote.devices.sg384.worker import SG384Worker
         from labremote.devices.anapico.worker import AnaPicoWorker
         from labremote.devices.dds4.worker import DDS4Worker
         self.family,self.name,self.endpoint=family,name,(host,port)
         self.connected=False
         self.rows={};self.output_rows={};self.write_buttons=[];self.read_buttons=[]
-        self.worker={'sg384':SG384Worker,'anapico':AnaPicoWorker,'dds4':DDS4Worker}[family]()
+        self.worker={'afg2105':AFG2105Worker,'sg384':SG384Worker,'anapico':AnaPicoWorker,'dds4':DDS4Worker}[family]()
         self.api=device_api(self.worker)
         root=QtWidgets.QVBoxLayout(self)
         connection=QtWidgets.QGroupBox(f'{family.upper()} — {name}')
@@ -38,7 +39,20 @@ class RFDeviceTab(QtWidgets.QWidget):
         self.disconnect_button.clicked.connect(lambda:self._request(self.api.disconnect))
         self.refresh_button.clicked.connect(lambda:self._request(self.api.refresh))
         self.cancel_button.clicked.connect(self.api.cancel)
-        if family=='sg384':
+        if family=='afg2105':
+            grid=self._group(root,'Sine excitation · server-owned AFG2105')
+            self._number(grid,'frequency','Frequency',1e6,'MHz',0.0000001,5,self.api.set_frequency)
+            self._number(grid,'amplitude','Amplitude',1,'dBm',-56.020599,23.9794,self.api.set_amplitude)
+            self._number(grid,'offset','DC offset',1,'V',-5,5,self.api.set_offset)
+            self.rows['frequency']['editor'].setValue(1)
+            self.rows['amplitude']['editor'].setValue(-20)
+            self._output(grid,'output',self.api)
+            grid=self._group(root,'Instrument settings')
+            self._readout(grid,'waveform','Waveform','')
+            self._readout(grid,'amplitude_unit','Instrument amplitude unit','')
+            self._readout(grid,'load_impedance','Load setting','')
+            note='Amplitude is dBm (50 Ω). The server driver enforces its configured power limit and amplitude/offset limits. Connect and Disconnect preserve output; use RF OFF to disable it.'
+        elif family=='sg384':
             grid=self._group(root,'Shared frequency and phase — BNC / N')
             self._number(grid,'frequency','Frequency',1e6,'MHz',0,4050,self.api.set_frequency)
             self._number(grid,'phase','Phase',1,'deg',-360,360,self.api.set_phase)
@@ -128,7 +142,7 @@ class RFDeviceTab(QtWidgets.QWidget):
     def _number(self, grid, path, title, scale, unit, low, high, setter, integer=False):
         row=grid.rowCount();read=QtWidgets.QLabel('— '+unit);read.setMinimumWidth(130)
         editor=QtWidgets.QSpinBox() if integer else QtWidgets.QDoubleSpinBox()
-        if not integer:editor.setDecimals(6)
+        if not integer:editor.setDecimals(7 if self.family=='afg2105' and path=='frequency' else 6)
         low,high=self._input_bounds(path,scale,unit,0 if integer else editor.decimals())
         if integer:low,high=int(low),int(high)
         editor.setRange(low,high);editor.setMinimumWidth(125)
@@ -142,7 +156,7 @@ class RFDeviceTab(QtWidgets.QWidget):
         step.setMaximumWidth(270);input_box.setMaximumWidth(240);apply.setMaximumWidth(100);read_btn.setMaximumWidth(80)
         self.rows[path]=dict(label=read,editor=editor,scale=scale,unit=unit,apply=apply,read=read_btn,step=step,grid_row=row,input_box=input_box,unit_label=unit_label)
         if unit=='MHz':
-            choices=['MHz','kHz','Hz'] if self.family=='sg384' else ['GHz','MHz','kHz','Hz']
+            choices=['MHz','kHz','Hz'] if self.family in ('sg384','afg2105') else ['GHz','MHz','kHz','Hz']
             units=QtWidgets.QComboBox();units.addItems(choices);units.setCurrentText(unit);units.setFixedWidth(60)
             unit_label.hide();input_box.layout().addWidget(units);self.rows[path]['units']=units
             step.enable_frequency_units(choices)
@@ -224,9 +238,10 @@ class RFDeviceTab(QtWidgets.QWidget):
         if self.connected and not self.worker.connection_error:return self.api.auto_monitor()
 
     def _controls(self):
-        busy=self.worker.has_requests();ready=self.connected and not busy
+        reserved=getattr(self.worker,'_scan_owner',None) is not None
+        busy=self.worker.has_requests() or reserved;ready=self.connected and not busy
         self.connect_button.setEnabled(not self.connected and not busy)
-        self.disconnect_button.setEnabled(self.connected)
+        self.disconnect_button.setEnabled(self.connected and not reserved)
         self.refresh_button.setEnabled(ready);self.cancel_button.setEnabled(busy)
         for button in self.write_buttons+self.read_buttons:button.setEnabled(ready)
         if self.family=='dds4':
