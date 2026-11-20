@@ -50,8 +50,23 @@ class RFDeviceTab(QtWidgets.QWidget):
             grid=self._group(root,'Instrument settings')
             self._readout(grid,'waveform','Waveform','')
             self._readout(grid,'amplitude_unit','Instrument amplitude unit','')
+            unit_row=grid.rowCount()
+            self.afg_unit_choice=QtWidgets.QComboBox()
+            self.afg_unit_choice.addItem('Select unit...',None)
+            for label,code in [('dBm','DBM'),('Vpp','VPP'),('Vrms','VRMS')]:
+                self.afg_unit_choice.addItem(label,code)
+            self.afg_unit_apply=QtWidgets.QPushButton('Apply unit')
+            self.afg_unit_read=QtWidgets.QPushButton('Read unit')
+            self.afg_unit_apply.clicked.connect(self._afg_apply_unit)
+            self.afg_unit_read.clicked.connect(lambda:self._request(self.api.acquire,'amplitude_unit'))
+            grid.addWidget(QtWidgets.QLabel('Change instrument unit'),unit_row,0)
+            grid.addWidget(self.afg_unit_choice,unit_row,2)
+            grid.addWidget(self.afg_unit_apply,unit_row,4)
+            grid.addWidget(self.afg_unit_read,unit_row,5)
+            self.write_buttons.append(self.afg_unit_apply);self.read_buttons.append(self.afg_unit_read)
+
             self._readout(grid,'load_impedance','Load setting','')
-            note='Amplitude is dBm (50 Ω). The server driver enforces its configured power limit and amplitude/offset limits. Connect and Disconnect preserve output; use RF OFF to disable it.'
+            note='Amplitude input/readout is dBm (50 Ω); instrument unit is selectable above. Read/Connect do not change units (driver 0.3.0+ required). The server driver enforces its configured power limit and amplitude/offset limits. Connect and Disconnect preserve output; use RF OFF to disable it.'
         elif family=='sg384':
             grid=self._group(root,'Shared frequency and phase — BNC / N')
             self._number(grid,'frequency','Frequency',1e6,'MHz',0,4050,self.api.set_frequency)
@@ -135,6 +150,10 @@ class RFDeviceTab(QtWidgets.QWidget):
         self.worker.busy_changed.connect(lambda _:self._controls())
         self.timer=QtCore.QTimer(self);self.timer.setInterval(60000);self.timer.timeout.connect(self._poll);self.timer.start()
         self._controls();self.worker.start()
+
+    def _afg_apply_unit(self):
+        unit=self.afg_unit_choice.currentData()
+        if unit is not None:return self._request(self.api.set_amplitude_unit,unit)
 
     def _group(self, root, title):
         box=QtWidgets.QGroupBox(title);grid=QtWidgets.QGridLayout(box);grid.setColumnStretch(6,1);root.addWidget(box);return grid

@@ -1,6 +1,6 @@
 {
   "project": "RETempGUI",
-  "revision_note": "Add fixed-DAC secular frequency scan with AFG2105 and SYNC-PMT first-photon fitting",
+  "revision_note": "AFG explicit amplitude unit read and selection; no forced units",
   "files": [
     {
       "path": ".gitattributes",
@@ -234,8 +234,8 @@
     },
     {
       "path": "labremote/api/devices.py",
-      "bytes": 38741,
-      "sha256": "1948f205f139033ecfd116bf6449bd46963a11c68b0e7f2296b77fdeed5b1730"
+      "bytes": 39010,
+      "sha256": "fa8fcf06b585b3c0a35759c38008492aa588368c412ab0711f491ce5fac23148"
     },
     {
       "path": "labremote/characterization/__init__.py",
@@ -1909,8 +1909,8 @@
     },
     {
       "path": "labremote/ui/rf_device_tab.py",
-      "bytes": 20064,
-      "sha256": "697cdfad2576ad65a23c945e096a7ab420a89a01dd79a0b084ef75a236898c33"
+      "bytes": 21318,
+      "sha256": "d291ced5f48948b912ffdd84477960f8d1dbb83d8fa0d82c63d0f9beebe793c5"
     },
     {
       "path": "labremote/ui/shutter_status.py",
@@ -2464,8 +2464,8 @@
     },
     {
       "path": "labremote/devices/afg2105/monitor.py",
-      "bytes": 282,
-      "sha256": "118954ca240dc9ccc395053bdab9cfcef4bb93a198ea51372a8e016efd17000d"
+      "bytes": 291,
+      "sha256": "5854613d00f056583a082465dfe96b80a959924d5f5f05466624d5e9bb396a3c"
     },
     {
       "path": "labremote/operation/afg2105/__init__.py",
@@ -2484,13 +2484,13 @@
     },
     {
       "path": "labremote/config/operations/afg2105/parameter_registry.yml",
-      "bytes": 966,
-      "sha256": "4d205a6da077355d65f4d3e98d165a10874dc759a777ec2762027ad7dc687962"
+      "bytes": 1030,
+      "sha256": "99c85be0daf17689e7db95512e94aa777c24ea798bb90d37ea8307bbf19a9bf0"
     },
     {
       "path": "tests/test_afg2105_ui.py",
-      "bytes": 6961,
-      "sha256": "19f133578686a34ea0fb37e944dcd29a306cb8061e050bd65657f7fb33806354"
+      "bytes": 8580,
+      "sha256": "c7bc82af319918ed1c8a0c24e6540d93b27bb5673ac06204b6f6bacac32a779c"
     },
     {
       "path": "docs/AFG2105_KO.md",

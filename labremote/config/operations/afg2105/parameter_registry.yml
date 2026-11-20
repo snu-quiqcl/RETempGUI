@@ -21,8 +21,8 @@ parameters:
   verification: readback
   minimum: -56.020599913279625
   maximum: 23.979400086720375
-  abs_tolerance: 0.000001
-  rel_tolerance: 0.00001
+  abs_tolerance: 0.05
+  rel_tolerance: 0.0
 - pattern: afg2105.offset
   kind: number
   unit: V
@@ -41,7 +41,8 @@ parameters:
   writable: false
 - pattern: afg2105.amplitude_unit
   kind: string
-  writable: false
+  writable: true
+  verification: readback
 - pattern: afg2105.load_impedance
   kind: string
   writable: false

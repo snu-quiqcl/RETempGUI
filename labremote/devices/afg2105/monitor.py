@@ -1,7 +1,7 @@
 from labremote.runtime.monitor import ParameterMonitor
 
-PATHS = ('frequency', 'amplitude', 'offset', 'output', 'waveform',
-         'amplitude_unit', 'load_impedance')
+PATHS = ('amplitude_unit', 'load_impedance', 'waveform',
+         'frequency', 'amplitude', 'offset', 'output')
 
 
 class AFG2105Monitor(ParameterMonitor):

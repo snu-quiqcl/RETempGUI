@@ -236,6 +236,13 @@ class AFG2105API(DeviceAPI):
         return self._submit('SET '+path, lambda w: Context().assign(getattr(w.ps,path),value),
                             arguments=dict(parameter=path,value=value))
 
+    def set_amplitude_unit(self, unit):
+        def change(w):
+            ctx=Context()
+            ctx.assign(w.ps.amplitude_unit,unit)
+            ctx.acquire(w.ps.amplitude)
+        return self._submit('SET amplitude_unit',change,arguments=dict(unit=unit))
+
     def set_frequency(self, hz): return self._set('frequency',hz)
     def set_amplitude(self, dbm): return self._set('amplitude',dbm)
     def set_offset(self, volts): return self._set('offset',volts)
