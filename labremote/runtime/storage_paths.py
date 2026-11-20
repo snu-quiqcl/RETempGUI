@@ -35,6 +35,11 @@ def check_queue(folder,plan,steps,output_directories):
 
 def compact_run_folder(candidate):
     """Keep standalone names; Queue paths already identify time/group/experiment."""
+    from .queue_archive import allocate
+    allocated=allocate(candidate)
+    if allocated is not None:
+        check_path(allocated,reserve=48,label="실험 결과 폴더")
+        return allocated
     candidate=Path(candidate)
     for parent in candidate.parents:
         if (parent/'queue_manifest.json').is_file():

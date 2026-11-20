@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -35,7 +36,8 @@ class EntanglementRunner(WorkflowTask):
         from .acquisition import run
         started_at=datetime.now().astimezone().isoformat(timespec='milliseconds'); run_clock=time.perf_counter()
         c=self.settings['settings']; folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Entanglement_'+self.handle.request_id[:8])
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder); source=folder/'source'; source.mkdir()
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder); source=folder if queue_archive_active() else folder/'source'
+        if not queue_archive_active():source.mkdir()
         files={p.name:p for p in Path(__file__).parent.glob('*.py')}
         files['entanglement_tab.py']=Path(__file__).resolve().parents[1]/'ui/entanglement_tab.py'
         # Queue archives its own workflow.py; standalone must not require that wrapper.
@@ -45,7 +47,9 @@ class EntanglementRunner(WorkflowTask):
         files['SequencerProgram_v1_08.py']=Path(config.hd.__file__).with_name('SequencerProgram_v1_08.py')
         files['SequencerUtility_v1_03.py']=Path(config.hd.__file__).with_name('SequencerUtility_v1_03.py')
         hashes={}
-        for name,path in files.items():shutil.copyfile(path,source/name); hashes[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+        for name,path in files.items():
+            hashes[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+            if not queue_archive_active():shutil.copyfile(path,source/name)
         metadata=dict(settings=c,resolved_outputs=config.resolved_outputs(c),resolved_inputs=dict(config.hd.input_mapping),phase=config.phase_values(c),cleanup_outputs=config.CLEANUP_LEVELS,mw_source_control="external workflow/manual; no generator commands",run_id=self.handle.request_id,fpga=self.worker.name,source_sha256=hashes,sequencer_clock_ns=10,stopwatch_bin_ns=1.25,
             arrival_histogram_scope='All stopwatch arrivals in [0,120) bins, including before cutoff; FIFO protocol 2. No individual photon-pair records.',
             normalization='Decay counts integrate each channel from its own cutoff through bin 119, divided by actual attempted trials. No SYNC validation. Herald probability = successes / all completed-batch attempts, including exhausted batches. Aborted/failed batches excluded. Bright iff counts > configured per-ion threshold. Geometric distribution uses attempt counts and logarithmic bins, not PC wall time.',
@@ -103,10 +107,11 @@ class EntanglementRunner(WorkflowTask):
             error=exc
         data=acc.data()
         try:
-            from matplotlib.figure import Figure
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            fig=Figure(figsize=(14,15)); FigureCanvasAgg(fig); plot=EntanglementPlot(fig,c); plot.update(data)
-            fits=plot.fits; fig.savefig(folder/'entanglement.png',dpi=150)
+            if not queue_archive_active():
+                from matplotlib.figure import Figure
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                fig=Figure(figsize=(14,15)); FigureCanvasAgg(fig); plot=EntanglementPlot(fig,c); plot.update(data)
+                fits=plot.fits; fig.savefig(folder/'entanglement.png',dpi=150)
         except Exception as exc:error=error or exc
         if self.handle.cancelled() and error is None:error=OperationCancelled('ENTANGLEMENT cancelled')
         report.update(status='cancelled' if isinstance(error,OperationCancelled) else 'failed' if error else 'completed',

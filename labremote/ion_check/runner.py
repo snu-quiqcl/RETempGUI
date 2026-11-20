@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -31,11 +32,13 @@ class IonCheckRunner(WorkflowTask):
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];mode=self.settings['mode']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_ion_check_'+self.handle.request_id[:8])
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
-        source=folder/'source';source.mkdir()
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
+        source=folder if queue_archive_active() else folder/'source'
+        if not queue_archive_active():source.mkdir()
         hashes={}
         for path in [*Path(__file__).parent.glob('*.py'),Path(hd.__file__)]:
-            raw=path.read_bytes();(source/path.name).write_bytes(raw);hashes[path.name]=hashlib.sha256(raw).hexdigest()
+            raw=path.read_bytes();hashes[path.name]=hashlib.sha256(raw).hexdigest()
+            if not queue_archive_active():(source/path.name).write_bytes(raw)
         config.save(folder/'configuration.json',dict(settings=c,mode=mode,fpga=self.worker.name,
                     dac='not_implemented',cleanup_outputs=config.output_levels(c),source_sha256=hashes))
         samples=[];error=None;decision='unmeasured';cleanup_status='unknown'
@@ -46,9 +49,10 @@ class IonCheckRunner(WorkflowTask):
         def cleaned(value):
             nonlocal cleanup_status
             cleanup_status=value
+        sequence_path=Path(__file__).with_name('sequence.py') if queue_archive_active() else source/'sequence.py'
         try:
             decision=self.call(DeviceAPI(self.worker,group=self.group)._submit('ION_CHECK_ACQUIRE',
-                lambda w:run(w.raw_device.controller,c,mode,source/'sequence.py',Cancellation(),sample,cleaned)))
+                lambda w:run(w.raw_device.controller,c,mode,sequence_path,Cancellation(),sample,cleaned)))
         except Exception as exc:error=exc
         if error is None and self.handle.cancelled():error=OperationCancelled('Ion Check cancelled')
         if samples:decision=samples[-1]['decision']

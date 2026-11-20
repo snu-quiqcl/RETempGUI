@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 """A two-dimensional outer loop around the unchanged SPAM PulseRunner."""
 import csv
@@ -128,7 +129,7 @@ class SpamScanRunner(WorkflowTask):
         # Keep nested PulseRunner paths below Windows' usual path limit.
         # The complete UUID remains in configuration/result metadata.
         folder = Path(self.settings['directory']) / (datetime.now().strftime('%Y%m%d_%H%M%S') + '_' + self.handle.request_id[:8])
-        folder=compact_run_folder(folder); folder.mkdir(parents=True, exist_ok=False)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True, exist_ok=queue_archive_active())
         write_snapshot(folder)
         plans = {key:model.axis_plan(c[key]) for key in ('x','y')}
         axes = {key:[row['applied'] for row in plans[key]] for key in plans}
@@ -249,11 +250,12 @@ class SpamScanRunner(WorkflowTask):
                 for p in points:
                     writer.writerow({**{k:v for k,v in p.items() if k != 'metrics'}, **p['metrics']})
             try:
-                from matplotlib.figure import Figure
-                from matplotlib.backends.backend_agg import FigureCanvasAgg
-                figure = Figure(figsize=(9, 6)); FigureCanvasAgg(figure)
-                model.draw_map(figure, c, points, axis_values=axes)
-                figure.savefig(folder / 'heatmap.png', dpi=140)
+                if not queue_archive_active():
+                    from matplotlib.figure import Figure
+                    from matplotlib.backends.backend_agg import FigureCanvasAgg
+                    figure = Figure(figsize=(9, 6)); FigureCanvasAgg(figure)
+                    model.draw_map(figure, c, points, axis_values=axes)
+                    figure.savefig(folder / 'heatmap.png', dpi=140)
             except Exception as exc:
                 # Raw/point records are already durable even if plotting fails.
                 report['plot_error'] = str(exc)

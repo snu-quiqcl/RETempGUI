@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -151,13 +152,14 @@ class MicromotionRunner(WorkflowTask):
     def _execute(self):
         c=self.settings['settings'];mode=self.settings['mode']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+c['chamber']+'_'+self.handle.request_id[:8])
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
-        source=folder/'source';source.mkdir()
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
+        source=folder if queue_archive_active() else folder/'source'
+        if not queue_archive_active():source.mkdir()
         paths=list(Path(__file__).parent.glob('*.py'))+[Path(config.hd.__file__),
             Path(config.hd.__file__).with_name('HardwareDefinition_v4_04.py')]
         hashes={}
         for path in paths:
-            shutil.copyfile(path,source/path.name)
+            if not queue_archive_active():shutil.copyfile(path,source/path.name)
             hashes[path.name]=hashlib.sha256(path.read_bytes()).hexdigest()
         report=dict(schema_version=1,experiment='micromotion',mode=mode,settings=c,
             run_id=self.handle.request_id,fpga=self.worker.name,dac=self.dac.name if self.dac else None,
@@ -226,11 +228,12 @@ class MicromotionRunner(WorkflowTask):
                 error=str(error) if error else '',finished_at=datetime.now().astimezone().isoformat())
             checkpoint(report['status'])
             try:
-                from matplotlib.figure import Figure
-                from matplotlib.backends.backend_agg import FigureCanvasAgg
-                from .plotting import draw
-                figure=Figure(figsize=(12,10));FigureCanvasAgg(figure);draw(figure,report)
-                figure.savefig(folder/'micromotion.png',dpi=150)
+                if not queue_archive_active():
+                    from matplotlib.figure import Figure
+                    from matplotlib.backends.backend_agg import FigureCanvasAgg
+                    from .plotting import draw
+                    figure=Figure(figsize=(12,10));FigureCanvasAgg(figure);draw(figure,report)
+                    figure.savefig(folder/'micromotion.png',dpi=150)
             except Exception as exc:
                 report['plot_export_error']=str(exc);checkpoint(report['status'])
         if error:raise error

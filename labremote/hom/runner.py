@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -35,7 +36,8 @@ class HOMRunner(WorkflowTask):
         from .acquisition import run
         started_at=datetime.now().astimezone().isoformat(timespec='milliseconds'); run_clock=time.perf_counter()
         c=self.settings['settings']; folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_HOM_'+self.handle.request_id[:8])
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder); source=folder/'source'; source.mkdir()
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder); source=folder if queue_archive_active() else folder/'source'
+        if not queue_archive_active():source.mkdir()
         files={p.name:p for p in Path(__file__).parent.glob('*.py')}
         files['decay_fit_source.py']=Path(__file__).resolve().parents[1]/'decay/plotting.py'
         files['hardware_definition.py']=Path(config.hd.__file__)
@@ -43,7 +45,9 @@ class HOMRunner(WorkflowTask):
         files['SequencerProgram_v1_08.py']=Path(config.hd.__file__).with_name('SequencerProgram_v1_08.py')
         files['SequencerUtility_v1_03.py']=Path(config.hd.__file__).with_name('SequencerUtility_v1_03.py')
         hashes={}
-        for name,path in files.items():shutil.copyfile(path,source/name); hashes[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+        for name,path in files.items():
+            hashes[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+            if not queue_archive_active():shutil.copyfile(path,source/name)
         metadata=dict(settings=c,resolved_outputs=config.resolved_outputs(c),run_id=self.handle.request_id,fpga=self.worker.name,source_sha256=hashes,sequencer_clock_ns=10,stopwatch_bin_ns=1.25,
             normalization='Counts / valid SYNC trials. Reference: equal contributions, 50:50 splitter, weak-detection approximation; per-batch cross-correlation / (2 N^2), trial-weighted across batches. Total decay is mean detected counts/trial, not an at-least-one-event probability.',
             timing_note='Timezone-aware PC timestamps; durations use a monotonic clock. Communication timings measure host API calls including software/driver overhead (upload includes encoding); not pure wire latency or FPGA photon event timestamps.')
@@ -95,10 +99,14 @@ class HOMRunner(WorkflowTask):
             error=exc
         data=acc.data()
         try:
-            from matplotlib.figure import Figure
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            fig=Figure(figsize=(14,11)); FigureCanvasAgg(fig); plot=HOMPlot(fig,c); plot.update(data)
-            fits=plot.fits; fig.savefig(folder/'hom.png',dpi=150)
+            if not queue_archive_active():
+                from matplotlib.figure import Figure
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                fig=Figure(figsize=(14,11)); FigureCanvasAgg(fig); plot=HOMPlot(fig,c); plot.update(data)
+                fits=plot.fits; fig.savefig(folder/'hom.png',dpi=150)
+            else:
+                from labremote.runtime.queue_extra_plots import hom_fits
+                fits=hom_fits(data,c)
         except Exception as exc:error=error or exc
         if self.handle.cancelled() and error is None:error=OperationCancelled('HOM cancelled')
         report.update(status='cancelled' if isinstance(error,OperationCancelled) else 'failed' if error else 'completed',

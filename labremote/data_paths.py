@@ -47,6 +47,8 @@ def _experiment_directory(directory, category, *parts):
     return base.joinpath(*parts) if base == data_directory(category) else base
 
 def _dated_experiment_directory(directory, category, *parts):
+    from .runtime.queue_archive import active
+    if active() and directory:return Path(directory).expanduser().resolve()
     """Resolve the date once per run; roll old auto-generated UI paths forward.
 
     Custom destinations and explicit workflow sweep-point folders remain intact.

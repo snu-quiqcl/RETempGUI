@@ -121,7 +121,8 @@ class ResultStore:
         dependencies=set(files)
         for path in files:dependencies.update((path.parent/'configuration.json',path.parent/'analysis.json'))
         if step.get('result_file'):dependencies.add(root/step['result_file'])
-        signature=tuple((str(p),self.stamp(p)) for p in sorted(dependencies))
+        signature=(tuple((str(p),self.stamp(p)) for p in sorted(dependencies)),
+                   settings_key(step['result']['value']) if step.get('result',{}).get('value') is not None else None)
         key=(str(directory),step['step_id'])
         old=self.record_cache.get(key)
         if old is not None and old[0]==signature:return old[1]
@@ -186,9 +187,16 @@ class ResultStore:
                     c={'threshold_'+k:v for k,v in value.get('thresholds',{}).items()}
                     output.append(dict(kind='ion',settings=c,samples=value['history'],status=d['status'],path=str(root/step['result_file'])))
             except Exception as exc:warnings.append(f'{step["step_id"]}: {exc}')
+        if not any(r['kind']=='ion' for r in output):
+            value=step.get('result',{}).get('value')
+            if isinstance(value,dict) and isinstance(value.get('history'),list):
+                c={'threshold_'+k:v for k,v in value.get('thresholds',{}).items()}
+                output.append(dict(kind='ion',settings=c,samples=value['history'],status=step['status'],path=str(directory/'result.json')))
         return output
 
     def snapshot(self,state):
+        from .queue_archive import hydrate
+        state=hydrate(state)
         jobs={j['id']:j for j in workflow_jobs(state.get('plan',{}).get('jobs',[]))}
         from .monitor_config import settings
         monitors={jid:settings(job) for jid,job in jobs.items()}

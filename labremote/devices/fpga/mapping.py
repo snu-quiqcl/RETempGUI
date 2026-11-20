@@ -209,6 +209,8 @@ def settings_path(path):
 
 
 def write_snapshot(folder):
+    from labremote.runtime.queue_archive import active
+    if active():return
     document = snapshot()
     if document is not None:
         path = Path(folder) / 'fpga_mapping.json'

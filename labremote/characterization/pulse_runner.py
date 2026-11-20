@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -31,7 +32,7 @@ class PulseRunner(WorkflowTask):
         from labremote.devices.fpga.adapter import Cancellation
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];chamber=c['chamber'];kind=self.kind
-        folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+'_'+chamber+'_'+self.handle.request_id);folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
+        folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+'_'+chamber+'_'+self.handle.request_id);folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
         names=['pulse_experiment.py',kind+'_sequence.py']+(['spin_echo_analysis.py','ramsey_sequence.py'] if kind=='spin_echo' else ['ramsey_fit.py'] if kind=='ramsey' else ['initialization_analysis.py'] if kind=='initialization' else [])
         config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={n:hashlib.sha256((Path(__file__).parent/n).read_bytes()).hexdigest() for n in names}))
         from .live_pulse import LiveSummary
@@ -60,9 +61,10 @@ class PulseRunner(WorkflowTask):
                     writer.writerow(['time_s','received_shots','bright_shots','population','population_error']);writer.writerows(zip(data['time_s'],data['shot_counts'],data['bright_counts'],data['population'],data['population_error']))
                 else:
                     columns=['condition','N_attempts','N_success','N_received','N_error','success_probability','spam_error','conditional_fidelity'];writer.writerow(columns);writer.writerows([[s[k] for k in columns] for s in data['states']])
-            from matplotlib.figure import Figure
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            figure=Figure(figsize=(9,10));FigureCanvasAgg(figure);model.draw(figure,data);figure.savefig(folder/'analysis.png',dpi=130)
+            if not queue_archive_active():
+                from matplotlib.figure import Figure
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                figure=Figure(figsize=(9,10));FigureCanvasAgg(figure);model.draw(figure,data);figure.savefig(folder/'analysis.png',dpi=130)
         except Exception as exc:error=error or exc;report['analysis_error']=str(exc)
         if self.handle.cancelled() and error is None:error=OperationCancelled(kind+' cancelled')
         report.update(status='cancelled' if isinstance(error,OperationCancelled) else 'failed' if error else 'completed',error=str(error) if error else '')

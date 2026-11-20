@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -42,12 +43,12 @@ class PhaseShifterRunner(WorkflowTask):
         c = self.settings['settings']
         folder = Path(self.settings['directory']) / (
             datetime.now().strftime('%Y%m%d_%H%M%S') + '_phase_' + self.handle.request_id[:8])
-        folder=compact_run_folder(folder); folder.mkdir(parents=True, exist_ok=False); write_snapshot(folder)
-        source = folder/'source'
-        source.mkdir()
+        folder=compact_run_folder(folder); folder.mkdir(parents=True, exist_ok=queue_archive_active()); write_snapshot(folder)
+        source = folder if queue_archive_active() else folder/'source'
+        if not queue_archive_active():source.mkdir()
         for path in Path(__file__).parent.glob('*.py'):
-            shutil.copyfile(path, source/path.name)
-        shutil.copyfile(config.hd.__file__, source/'hardware_definition.py')
+            if not queue_archive_active():shutil.copyfile(path, source/path.name)
+        if not queue_archive_active():shutil.copyfile(config.hd.__file__, source/'hardware_definition.py')
         points = []
         report = dict(schema_version=2, settings=c, codes=self.settings['codes'],
                       scan_points=self.settings['scan_points'], points=points,
@@ -61,7 +62,7 @@ class PhaseShifterRunner(WorkflowTask):
         if c.get('halfpi_calibration'):
             report['experiment']='rabi_corrected_ramsey'
             report['halfpi_conversion']='Linear interpolation of 250/frequency_khz in actual code; first pulse at code 0; quantized to 10 ns'
-            (source/'phase_rabi_result.json').write_text(c['halfpi_calibration']['json'],encoding='utf-8')
+            if not queue_archive_active():(source/'phase_rabi_result.json').write_text(c['halfpi_calibration']['json'],encoding='utf-8')
         if c.get('calibration'):
             report['phase_conversion'] = 'Conditional empirical Ramsey inverse table; applied_angle_deg is model estimate, not measured RF phase'
             is_data = c['calibration'].get('kind') == 'ramsey_data_interpolation'
@@ -69,7 +70,7 @@ class PhaseShifterRunner(WorkflowTask):
                 report['phase_conversion'] = 'Ramsey data interpolation: weighted isotonic cosine inversion; piecewise linear inverse; plateau midpoint; conditional estimate, not measured RF phase'
                 from .calibration import rows
                 report['interpolation_model'] = rows(c['calibration'])
-            (source/('calibration_result.json' if is_data else 'calibration.csv')).write_text(c['calibration']['csv'], encoding='utf-8')
+            if not queue_archive_active():(source/('calibration_result.json' if is_data else 'calibration.csv')).write_text(c['calibration']['csv'], encoding='utf-8')
 
         def checkpoint():
             temporary = folder/'result.tmp'

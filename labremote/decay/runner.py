@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -34,7 +35,7 @@ class DecayRunner(WorkflowTask):
         c=self.settings['settings'];run_id=self.handle.request_id
         started_at=datetime.now().astimezone().isoformat(timespec='milliseconds');run_clock=time.monotonic()
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Decay_'+c['chamber']+'_'+c['mode']+'_'+run_id)
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
         source_paths={name:Path(__file__).parent/name for name in ('config.py','sequence.py','runner.py','plotting.py','storage.py')}
         source_paths.update(operation=Path(__file__).resolve().parents[1]/'operation/fpga/decay.py',
             hardware_definition=Path(hd.__file__),hardware_base=Path(hd.__file__).with_name('HardwareDefinition_v4_04.py'))
@@ -96,11 +97,12 @@ class DecayRunner(WorkflowTask):
         except Exception as exc:error=exc
         data=acc.data()
         try:
-            from matplotlib.figure import Figure
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            fig=Figure(figsize=(14,12));FigureCanvasAgg(fig);plot=DecayPlot(fig,c)
-            plot.update(data)  # Retain fitting in the figure, without serializing fit parameters.
-            fig.savefig(folder/'decay.png',dpi=160)
+            if not queue_archive_active():
+                from matplotlib.figure import Figure
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                fig=Figure(figsize=(14,12));FigureCanvasAgg(fig);plot=DecayPlot(fig,c)
+                plot.update(data)  # Retain fitting in the figure, without serializing fit parameters.
+                fig.savefig(folder/'decay.png',dpi=160)
         except Exception as exc:error=error or exc
         if self.handle.cancelled() and error is None:error=OperationCancelled('Decay cancelled')
         report.update(status='cancelled' if isinstance(error,OperationCancelled) else 'failed' if error else 'completed',

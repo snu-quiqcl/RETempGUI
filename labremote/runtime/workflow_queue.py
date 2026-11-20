@@ -34,7 +34,12 @@ def save(path,value):
         json.dump(serializable(value),f,ensure_ascii=False,indent=2,allow_nan=False);f.write('\n');f.flush();os.fsync(f.fileno())
     os.replace(temp,path)
 
-def read(path):return json.loads(Path(path).read_text(encoding='utf-8-sig'))
+def read(path):
+    value=json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    if isinstance(value,dict) and value.get('storage_layout')=='group_common_v2':
+        from .queue_archive import hydrate
+        value=hydrate(value,Path(path).resolve().parent)
+    return value
 
 def freeze_job(filename,*,name=None,repeat=1,on_failure='stop',parameters=None,monitor=None):
     path=Path(filename).resolve();source=path.read_text(encoding='utf-8-sig');validate_workflow(source,str(path))
@@ -213,7 +218,9 @@ class QueueRunner:
             if not self.stop.is_set():self.state.update(status='running',waiting_reason='');self.commit()
         return False
     def commit(self):
-        self.state['updated_at']=now();save(self.folder/'queue_manifest.json',self.state);self.publish(deepcopy(self.state))
+        self.state['updated_at']=now()
+        from .queue_archive import archive_manifest
+        save(self.folder/'queue_manifest.json',archive_manifest(self.state));self.publish(deepcopy(self.state))
     def run(self):
         with workflow_session(label='Queue'):return self._run()
     def _run(self):
@@ -227,11 +234,14 @@ class QueueRunner:
         check_queue(self.folder,self.plan,steps,output_directories)
         self.folder.mkdir(parents=True,exist_ok=False)
         self.state=dict(schema_version=1,queue_id=self.folder.name,folder=str(self.folder),status='running',started_at=now(),plan=self.plan,steps=steps,error='')
-        self.state['storage_layout']='group_job_repeat_v1'
+        self.state['storage_layout']='group_common_v2'
+        for step in steps:step['planned_directory']=output_directories[step['step_id']]
         self.state['run_uuid']=self._queue_id
         self.commit();jobs={j['id']:j for j in workflow_jobs(self.plan['jobs'])};any_failed=False
         try:
             for step in steps:
+                from .queue_archive import finalize_ready
+                finalize_ready(self.state)
                 if self.stop.is_set():break
                 if step['status']!='pending':continue
                 if self.pause.is_set():
@@ -242,7 +252,6 @@ class QueueRunner:
                 job=jobs[step['job_id']]
                 if not self.wait_for_fpga(job):break
                 folder=self.folder/output_directories[step['step_id']];folder.mkdir(parents=True,exist_ok=False)
-                (folder/'workflow.py').write_text(job['source'],encoding='utf-8');save(folder/'parameters.json',job['parameters'])
                 step.update(status='running',started_at=now(),directory=folder.relative_to(self.folder).as_posix());self.commit()
                 started=time.monotonic();local=CancellationToken()
                 with self.lock:
@@ -254,11 +263,12 @@ class QueueRunner:
                     with load_workflow(job['source'],job['filename']) as workflow:
                         context={k:step[k] for k in ('step_id','iteration','job_repeat','group_id','group_name','group_iteration','group_repeat') if k in step}
                         context['queue_id']=self.state['queue_id']
-                        save(folder/'queue_context.json',context)
                         target=target_fpga(job)
                         bindings={key:(family,bridge) for key,(family,bridge) in self.bindings.items()
                                   if family!='fpga' or bridge.worker.name==target}
-                        result=run_workflow(bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context,fpga_profiles=job.get('fpga_profiles'),fpga_id=target)
+                        from .queue_archive import scope
+                        with scope(folder):
+                            result=run_workflow(bindings,workflow,stop_event=local,parameters=job['parameters'],run_directory=str(folder),queue_context=context,fpga_profiles=job.get('fpga_profiles'),fpga_id=target)
                 except Exception as exc:
                     error_details=traceback.format_exc()
                     with owner.lock:used_workers=tuple(owner.workers)
@@ -268,9 +278,9 @@ class QueueRunner:
                     with self.lock:self.active=None
                 # Final background publication must finish before another workflow starts.
                 payload=serializable(result.to_dict());payload['traceback']=error_details
-                save(folder/'workflow_result.json',payload)
-                summary={k:v for k,v in payload.items() if k not in ('value','traceback')}
-                step.update(status=result.status,finished_at=now(),elapsed_s=time.monotonic()-started,result=summary,result_file=(folder/'workflow_result.json').relative_to(self.folder).as_posix())
+                if folder.exists() and not any(folder.iterdir()):folder.rmdir()
+                summary={k:v for k,v in payload.items() if k!='value' or not payload.get('result_paths')}
+                step.update(status=result.status,finished_at=now(),elapsed_s=time.monotonic()-started,result=summary)
                 any_failed |= result.status=='failed';self.commit()
                 if result.status=='cancelled':self.stop.set();break
                 if result.status=='failed':
@@ -287,7 +297,10 @@ class QueueRunner:
             terminal='cancelled' if self.stop.is_set() else 'failed' if any_failed else 'completed'
             for step in steps:
                 if step['status']=='pending':step.update(status='cancelled',reason='Queue ended before this step')
-            self.state.update(status=terminal,finished_at=now());self.commit();return deepcopy(self.state)
+            self.state.update(status=terminal,finished_at=now())
+            from .queue_archive import finalize_ready
+            finalize_ready(self.state,force=True)
+            self.commit();return deepcopy(self.state)
         except Exception as exc:
             # A manifest/storage failure stops execution, regardless of Skip.
             for step in steps:

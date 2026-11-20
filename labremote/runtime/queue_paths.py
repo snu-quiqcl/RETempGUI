@@ -39,7 +39,7 @@ def directories(plan,steps):
         path=PurePosixPath('groups',group_names[group])
         if plan['repeat']>1:path/=f"queue_repeat_{step['iteration']:04d}"
         path/=name
-        path/=f"repeat_{step.get('group_iteration',step['job_repeat']):04d}"
+        path/=f"{step.get('group_iteration',step['job_repeat']):04d}"
         if group is not None and repeats>1:path/=f"run_{step['job_repeat']:04d}"
         result[step['step_id']]=path.as_posix()
     return result

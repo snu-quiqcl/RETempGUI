@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 """Two-dimensional phase/time acquisition through the owned FPGA queue."""
 import csv
@@ -33,13 +34,15 @@ class PhaseRabiRunner(WorkflowTask):
     def _execute(self):
         c=self.settings['settings']; phases=self.settings['phases']; times=self.settings['times']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_phase_rabi_'+self.handle.request_id[:8])
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False);write_snapshot(folder)
-        source=folder/'source';source.mkdir()
-        for p in Path(__file__).parent.glob('*.py'):shutil.copyfile(p,source/p.name)
-        shutil.copyfile(config.hd.__file__,source/'hardware_definition.py')
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active());write_snapshot(folder)
+        source=folder if queue_archive_active() else folder/'source'
+        if not queue_archive_active():source.mkdir()
+        for p in Path(__file__).parent.glob('*.py'):
+            if not queue_archive_active():shutil.copyfile(p,source/p.name)
+        if not queue_archive_active():shutil.copyfile(config.hd.__file__,source/'hardware_definition.py')
         if c.get('calibration'):
             suffix='json' if c['calibration'].get('kind')=='ramsey_data_interpolation' else 'csv'
-            (source/('calibration.'+suffix)).write_text(c['calibration']['csv'],encoding='utf-8')
+            if not queue_archive_active():(source/('calibration.'+suffix)).write_text(c['calibration']['csv'],encoding='utf-8')
         plan=[dict(p,phase_index=i,time_index=j,pulse_clocks=t) for i,p in enumerate(phases) for j,t in enumerate(times)]
         points=[];fits=[]
         report=dict(schema_version=1,experiment='phase_rabi',settings=c,phases=phases,pulse_clocks=times,

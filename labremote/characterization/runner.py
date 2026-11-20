@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -34,7 +35,7 @@ class FluorescenceRunner(WorkflowTask):
         from labremote.devices.fpga.adapter import Cancellation
         chamber=self.settings['settings']['chamber'];config=self.settings['settings'];route=self.settings['mapping']['routes'][chamber]
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+chamber+'_'+self.handle.request_id)
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
         metadata={**self.settings,'run_id':self.handle.request_id,'fpga':self.worker.name,
                   'analysis_timebase':'Nominal exposure spacing; inter-batch host gaps excluded',
                   'source_sha256':{name:hashlib.sha256((Path(__file__).parent/name).read_bytes()).hexdigest() for name in ('fluorescence.py','config.py')}}
@@ -69,9 +70,10 @@ class FluorescenceRunner(WorkflowTask):
                 np.savetxt(folder/'time_trace.csv',np.column_stack((data['time_ms']*1000,data['counts'])),delimiter=',',header='time_us,counts',comments='')
                 np.savetxt(folder/'histogram.csv',np.column_stack((data['histogram_x'],data['histogram'],data['poisson'])),delimiter=',',header='count,occurrences,poisson_expected',comments='')
                 np.savetxt(folder/'fft.csv',np.column_stack((data['frequency_hz'],data['power'])),delimiter=',',header='frequency_Hz,power',comments='')
-                from matplotlib.figure import Figure
-                from matplotlib.backends.backend_agg import FigureCanvasAgg
-                figure=Figure(figsize=(9,10));FigureCanvasAgg(figure);draw(figure,data);figure.savefig(folder/'analysis.png',dpi=130)
+                if not queue_archive_active():
+                    from matplotlib.figure import Figure
+                    from matplotlib.backends.backend_agg import FigureCanvasAgg
+                    figure=Figure(figsize=(9,10));FigureCanvasAgg(figure);draw(figure,data);figure.savefig(folder/'analysis.png',dpi=130)
         except Exception as exc:
             error=error or exc;report.update(status='failed',error=str(error),analysis_error=str(exc))
         if self.handle.cancelled() and error is None:

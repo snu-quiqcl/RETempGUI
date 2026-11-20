@@ -1,3 +1,4 @@
+from labremote.runtime.queue_archive import active as queue_archive_active
 from labremote.runtime.storage_paths import compact_run_folder
 from labremote.devices.fpga.mapping import write_snapshot
 from labremote.devices.fpga.mapping import bound_methods
@@ -34,7 +35,7 @@ class RabiRunner(WorkflowTask):
         from labremote.devices.fpga.controller import hd
         c=self.settings['settings'];chamber=c['chamber']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Rabi_'+chamber+'_'+self.handle.request_id)
-        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=False); write_snapshot(folder)
+        folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
         config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={name:hashlib.sha256((Path(__file__).parent/name).read_bytes()).hexdigest() for name in ('rabi.py','rabi_sequence.py')}))
         from .live_pulse import LiveSummary
         live=LiveSummary('rabi',c)
@@ -65,9 +66,10 @@ class RabiRunner(WorkflowTask):
                 writer=csv.writer(stream);writer.writerow(['frequency_hz_metadata','nominal_pulse_time_us','bright_population','mean_counts','population_sem'])
                 for curve in data['curves']:
                     writer.writerows(zip([curve['frequency_hz']]*len(curve['time_us']),curve['time_us'],curve['population'],curve['mean_count'],curve['population_sem']))
-            from matplotlib.figure import Figure
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            figure=Figure(figsize=(9,10));FigureCanvasAgg(figure);rabi.draw(figure,data);figure.savefig(folder/'analysis.png',dpi=130)
+            if not queue_archive_active():
+                from matplotlib.figure import Figure
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                figure=Figure(figsize=(9,10));FigureCanvasAgg(figure);rabi.draw(figure,data);figure.savefig(folder/'analysis.png',dpi=130)
         except Exception as exc:error=error or exc;report.update(status='failed',error=str(error),analysis_error=str(exc))
         if self.handle.cancelled() and error is None:
             error=OperationCancelled('Rabi cancelled');report.update(status='cancelled',error=str(error))
