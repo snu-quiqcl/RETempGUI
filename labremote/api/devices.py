@@ -609,7 +609,13 @@ class FPGAAPI(DeviceAPI):
 
     def stop_secular_scan(self):return self.worker.secular_runner.cancel()
 
+    def run_two_rf_compensation(self, *, settings, dac, rf, directory=None):
+        return self.worker.two_rf_runner.start(settings=settings,
+            dac=getattr(dac,'worker',dac),rf=getattr(rf,'worker',rf),
+            directory=directory,parent=self.group)
+
     def stop_micromotion(self):
+        self.worker.two_rf_runner.cancel()
         self.worker.secular_runner.cancel()
         return self.worker.micromotion_runner.cancel()
 

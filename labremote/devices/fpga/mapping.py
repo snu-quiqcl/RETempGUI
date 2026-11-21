@@ -20,16 +20,30 @@ from .vendor import HardwareDefinition_remote_ent_test_ec as legacy
 
 PINS = tuple(f'{bank}_{n}' for bank in ('ja', 'jb', 'jc', 'jd') for n in range(8))
 DEFAULT_ROLES = {**{name: pin for pin, name in legacy.input_mapping.items()}, **legacy.output_mapping}
+# Role requirements are independent of historical physical routing.
+ROLE_KINDS = {**dict.fromkeys(('PMTA','PMTC','PMTFA','PMTFC','SYNC','JA4','JA6'), 'input'),
+              **dict.fromkeys(('TRIG','AOMC','EOM_7GC1','EOM_7GC2','EOM_2GC','AOMA','EOM_7GA1','EOM_7GA2','EOM_2GA','MW_A','MW_C'), 'fast output'),
+              **dict.fromkeys(('AOMB','AOMM','CCD_EC','CCD_EA'), 'slow output')}
 EXPERIMENTS = ('spin_echo', 'fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'decay',
                'hom', 'entanglement', 'ion_check', 'micromotion', 'phase_shifter')
 CURRENT = ContextVar('fpga_mapping', default=None)
+EDITING = ContextVar('fpga_settings_editor', default=False)
+
+@contextmanager
+def editing_settings(enabled=True):
+    token = EDITING.set(enabled)
+    try:
+        yield
+    finally:
+        EDITING.reset(token)
+
 FROZEN = ContextVar('fpga_workflow_profiles', default={})
 ROOT = CONFIG_ROOT / 'devices/fpga'
 
 
 def capability(pin):
     if pin is None:
-        return 'unassigned output'
+        return 'unassigned'
     if pin not in PINS:
         raise ValueError('Unknown FPGA signal: ' + str(pin))
     if hasattr(physical, pin + '_counter_result'):
@@ -41,20 +55,15 @@ def capability(pin):
 
 def compatible(experiment, role, pin):
     if pin is None:
-        return role in ('TRIG', 'MW_C')
+        return True
     if pin not in PINS:
         return False
-    original = DEFAULT_ROLES[role]
-    if original is None:
-        return capability(pin) == 'fast output'
-    if 'input' not in capability(original):
-        if experiment=='ion_check' and role in ('AOMA','AOMB','AOMC'):
-            return hasattr(physical,pin+'_out')
-        if experiment == 'hom' and role == 'AOMB':
+    required = ROLE_KINDS[role]
+    if required != 'input':
+        if experiment == 'ion_check' and role in ('AOMA','AOMB','AOMC') or experiment == 'hom' and role == 'AOMB':
             return hasattr(physical, pin + '_out')
-        # Preserve the reviewed number of port-write instructions and timing.
-        return capability(pin) == capability(original)
-    stopwatch = role == 'SYNC' or not hasattr(physical, original + '_counter_result') or experiment in ('hom', 'decay', 'micromotion') or (experiment == 'entanglement' and role in ('PMTA', 'PMTC'))
+        return capability(pin) == required
+    stopwatch = role == 'SYNC' or experiment in ('hom','decay','micromotion') or experiment == 'entanglement' and role in ('PMTA','PMTC')
     suffix = '_stopwatch_result' if stopwatch else '_counter_result'
     return hasattr(physical, pin + suffix)
 
@@ -98,7 +107,7 @@ def validate(document):
                 raise ValueError(role + ' is incompatible with ' + str(pin))
     if document.get('schema_version') == 1 or 'experiments' in document:
         for experiment in EXPERIMENTS:
-            routes = {**DEFAULT_ROLES, **experiments.get(experiment, {})}
+            routes = experiments.get(experiment, {})
             bindings.setdefault(experiment, {role: result['pins'][pin] if pin else None
                                              for role, pin in routes.items()})
             for role, pin in experiments.get(experiment, {}).items():
@@ -106,8 +115,7 @@ def validate(document):
     if not isinstance(bindings, dict) or set(bindings) - set(EXPERIMENTS):
         raise ValueError('Unknown experiment mapping')
     for experiment in EXPERIMENTS:
-        bindings.setdefault(experiment, {role: result['pins'][pin] if pin else None
-                                         for role, pin in DEFAULT_ROLES.items()})
+        bindings.setdefault(experiment, {})
     for experiment, roles in bindings.items():
         if not isinstance(roles, dict) or set(roles) - set(DEFAULT_ROLES):
             raise ValueError('Unknown experiment role')
@@ -132,19 +140,16 @@ class Profile:
         return {k: v for k, v in self.document().items() if k != 'role_bindings'}
 
     def bindings(self, experiment):
-        defaults = default_document()['pins']
-        pins = self._document['pins']
-        signals = set(pins.values())
-        # Existing common names retain their routing when the JSON moves pins.
-        # Newly added roles fall back to this board's nickname if absent.
-        names = {role: (defaults[pin] if defaults[pin] in signals else pins[pin])
-                 if pin else None for role, pin in DEFAULT_ROLES.items()}
+        names = dict.fromkeys(DEFAULT_ROLES)
         names.update(self._document['role_bindings'].get(experiment, {}))
         return names
 
     def resolve(self, token, experiment=None):
-        if token is None or token == '' or token in PINS:
+        if token is None or token == '':
             return token
+        if not isinstance(token,str):raise ValueError('Select a common FPGA signal nickname')
+        if token in PINS:
+            raise ValueError('Physical pin references are not experiment routes; select a common nickname: ' + token)
         if token.startswith('signal:'):
             token = token[7:]
         elif experiment is not None and token in DEFAULT_ROLES:
@@ -164,15 +169,13 @@ class Profile:
                     names[role] = None if signal is None else next(
                         (p for p, n in self._document['pins'].items() if n == signal), 'missing')
             names.update({'signal:' + n: p for p, n in self._document['pins'].items()})
-            values = {k: v for k, v in vars(physical).items() if not k.startswith('__')}
+            values = {k: v for k, v in vars(physical).items() if not k.startswith('__') and not any(k.startswith(p + '_') for p in PINS)}
             values.update(__name__=legacy.__name__, __file__=legacy.__file__, C1_phase_shifter_port=2, C2_phase_shifter_port=3)
             inputs, outputs = {}, {}
             for name, pin in names.items():
                 if pin == 'missing':
                     continue
                 if pin is None:
-                    outputs[name] = None
-                    values[name + '_out'] = -1 if name == 'TRIG' else -2
                     continue
                 for key, value in vars(physical).items():
                     if key.startswith(pin + '_'):
@@ -293,7 +296,7 @@ def settings_path(path):
             if isinstance(value, dict):
                 return {k: migrate(v, k) for k, v in value.items()} if field != 'roles' else {
                     k: signal_token(v) if isinstance(v, str) and v in PINS else v for k, v in value.items()}
-            if field in ('trg_pin', 'pmt_pin', 'counter_pin') and isinstance(value, str) and value in PINS:
+            if field in ('trg_pin', 'pmt_pin', 'counter_pin', 'pmt') and isinstance(value, str) and value in PINS:
                 return signal_token(value)
             return value
         updated = migrate(original)
@@ -324,10 +327,16 @@ class Hardware:
             role = name[:-4]
             if not compatible(state[1], role, state[0].resolve(role, state[1])):
                 raise AttributeError(role + ': common signal has incompatible output timing/port')
-        # Without a device context preserve the shipped public/default map.
-        source = legacy if state is None else state[0].view(state[1])
-        if name.startswith('signal:') and state is None:
-            source = DEFAULT.view()
+        # Catalog metadata is available without a device; addresses are not.
+        if state is None and name in ('input_mapping', 'output_mapping'):
+            return {}
+        if state is None and any(name.endswith('_' + suffix) for suffix in ('out', 'counter_result', 'counter_reset', 'counter_enable', 'stopwatch_result', 'stopwatch_reset', 'stopwatch_start', 'stopwatch_stopped_TLI')):
+            raise AttributeError('Select an FPGA and map its common signal nickname: ' + name)
+        source = DEFAULT.view() if state is None else state[0].view(state[1])
+        if state and state[1] is not None:
+            for role in DEFAULT_ROLES:
+                if name.startswith(role + '_') and state[0].resolve(role, state[1]) is None:
+                    raise AttributeError(role + ': common signal nickname is unassigned in this experiment')
         return getattr(source, name)
 
 
@@ -339,12 +348,14 @@ class SignalMap(Mapping):
         self.outputs = outputs
 
     def _values(self):
+        if CURRENT.get() is None:return {}
         if self.outputs:
             return {name: (pin, hd.external_slow_port if pin and pin.startswith(('jc_', 'jd_')) else hd.external_control_port, getattr(hd, name + '_out')) for name, pin in hd.output_mapping.items()}
         return {getattr(hd, name + '_counter_result'): (name, pin) for pin, name in hd.input_mapping.items() if hasattr(hd, name + '_counter_result')}
 
     def __getitem__(self, name):
         state = CURRENT.get()
+        if state is None:raise ValueError('Select an FPGA before resolving hardware addresses')
         if self.outputs and state and state[1] is not None and name in DEFAULT_ROLES:
             if not compatible(state[1], name, state[0].resolve(name, state[1])):
                 raise ValueError(name + ': common signal has incompatible output timing/port')
@@ -352,8 +363,14 @@ class SignalMap(Mapping):
             state = CURRENT.get()
             pin = (state[0] if state else DEFAULT).resolve(name)
             return (pin, physical.external_slow_port if pin.startswith(('jc_', 'jd_')) else physical.external_control_port, getattr(physical, pin + '_out'))
-        if self.outputs and name in PINS and 'output' in capability(name):
-            return (name, hd.external_slow_port if name.startswith(('jc_', 'jd_')) else hd.external_control_port, getattr(hd, name+'_out'))
+        if self.outputs and name in PINS:
+            raise ValueError('Select a common signal nickname, not a physical pin: ' + name)
+        if self.outputs:
+            if not isinstance(name,str):raise ValueError('Select a common output nickname')
+            pin = resolve_signal(name)
+            if not pin or not hasattr(physical,pin+'_out'):
+                raise ValueError(str(name) + ': output nickname is unassigned or incompatible')
+            return pin, physical.external_slow_port if pin.startswith(('jc_', 'jd_')) else physical.external_control_port, getattr(physical,pin+'_out')
         return self._values()[name]
     def __iter__(self): return iter(self._values())
     def __len__(self): return len(self._values())
@@ -361,7 +378,11 @@ class SignalMap(Mapping):
 
 class InputNames(Mapping):
     """Physical input IDs mapped to the active board's configured names."""
-    def __getitem__(self, pin): return hd.input_mapping[resolve_signal(pin)]
+    def __getitem__(self, token):
+        state = CURRENT.get()
+        profile = state[0] if state else DEFAULT
+        pin = token if token in PINS else profile.resolve(token, state[1] if state else None)
+        return profile.document()['pins'][pin]
     def __iter__(self): return iter(hd.input_mapping)
     def __len__(self): return len(hd.input_mapping)
 
@@ -379,7 +400,7 @@ def signal_token(pin):
 
 def role_signal_token(role, experiment):
     state = CURRENT.get()
-    name = (state[0] if state else DEFAULT).bindings(experiment)[role]
+    name = (state[0] if state else DEFAULT).bindings(experiment).get(role)
     return 'signal:' + name if name else None
 
 
@@ -397,12 +418,12 @@ class RouteChoices:
         return iter(self.legacy)
 
     def __contains__(self, token):
-        if token in self.legacy and not CURRENT.get():
-            return True
+        if EDITING.get():
+            return token is None or token == '' or isinstance(token, str) and token not in PINS
         try:
             pin = resolve_signal(token)
             if pin is None:
-                return token in ('TRIG', 'MW_C')
+                return False
             kind = capability(pin)
             return kind == 'fast output' if self.feature == 'fast' else self.feature in kind
         except (ValueError, TypeError, AttributeError):
@@ -448,7 +469,7 @@ The same immutable profile is retained by a nested operation until it completes.
                 current = CURRENT.get()
                 if not qt_class and current is not None and current[0].device_id == profile.device_id:
                     profile = current[0]
-                with scope(profile, kind):
+                with scope(profile, kind), editing_settings(qt_class and __name not in ('start', 'begin', 'validate_sequence', 'run_sequence')):
                     result = __fn(self, *args, **kwargs)
                     if editor and __name == '__init__':
                         from labremote.ui.pin_selector import PinSelector

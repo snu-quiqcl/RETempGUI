@@ -88,6 +88,8 @@ def validate(value, single=False):
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or not .1 <= timeout <= 600:
         raise ValueError('Timeout은 0.1..600초 범위여야 합니다.')
     # Same definition and same validation used for actual execution.
+    from labremote.devices.fpga.mapping import EDITING
+    if EDITING.get():return c
     build_program(c, hd).program(show=False)
     if c.get('halfpi_calibration'):
         from .halfpi import apply

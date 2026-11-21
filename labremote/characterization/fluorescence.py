@@ -7,7 +7,7 @@ from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgra
 
 def build_program(settings,route):
     from .config import sequence_hardware
-    mapped=sequence_hardware(route);s=SequencerProgram()
+    mapped=sequence_hardware(route,include_output=False);s=SequencerProgram()
     s.load_immediate(reg[0],0)
     s.repeat_measurement=s.trigger_out([mapped.PMT_counter_reset])
     s.set_output_port(hd.counter_control_port,[(mapped.PMT_counter_enable,1)])

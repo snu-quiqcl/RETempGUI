@@ -1,5 +1,6 @@
 from labremote.devices.fpga.mapping import settings_path
 """Editable experiment parameters; hardware names come only from vendor definitions."""
+from labremote.devices.fpga.mapping import EDITING
 import math
 from copy import deepcopy
 from pathlib import Path
@@ -52,9 +53,10 @@ def resolved_outputs(c=None):
             for name in CLEANUP_LEVELS}
 
 def validate(c):
-    for roles, suffix in [(('PMTA','PMTC','SYNC'),'_stopwatch_result'), (('PMTFA','PMTFC'),'_counter_result')]:
-        if len({getattr(hd, role+suffix) for role in roles}) != len(roles):
-            raise ValueError('Entanglement input roles must resolve to distinct physical inputs')
+    if not EDITING.get():
+        for roles, suffix in [(('PMTA','PMTC','SYNC'),'_stopwatch_result'), (('PMTFA','PMTFC'),'_counter_result')]:
+            if len({getattr(hd, role+suffix) for role in roles}) != len(roles):
+                raise ValueError('Entanglement input roles must resolve to distinct physical inputs')
     if not isinstance(c, dict) or set(c) != set(defaults()) or type(c['schema_version']) is not int or c['schema_version'] != 1:
         raise ValueError('Invalid entanglement settings schema')
     if c['basis'] not in ('zz', 'mw_detuned'):
@@ -69,13 +71,14 @@ def validate(c):
             raise ValueError(f'{k} must be a multiple of {unit}')
     if c['timeout_s'] <= 2*c['mirror_wait_ms']/1000 + c['detection_us']/1e6 + 1:
         raise ValueError('Timeout must exceed mirror waits, detection and communication margin')
-    for name, info in resolved_outputs().items():
-        expected = hd.external_slow_port if name in ('CCD_EC','CCD_EA','AOMB','AOMM') else hd.external_control_port
-        if info['port'] != expected:
-            raise ValueError(name + ' is not on the port used by the reviewed sequence')
-    pairs = [(v['port'],v['bit']) for v in resolved_outputs().values()]
-    if len(set(pairs)) != len(pairs):
-        raise ValueError('Entanglement output roles must use distinct vendor pins')
+    if not EDITING.get():
+        for name, info in resolved_outputs().items():
+            expected = hd.external_slow_port if name in ('CCD_EC','CCD_EA','AOMB','AOMM') else hd.external_control_port
+            if info['port'] != expected:
+                raise ValueError(name + ' is not on the port used by the reviewed sequence')
+        pairs = [(v['port'],v['bit']) for v in resolved_outputs().values()]
+        if len(set(pairs)) != len(pairs):
+            raise ValueError('Entanglement output roles must use distinct vendor pins')
     if c['basis'] == 'mw_detuned':
         if c['detuning_hz'] == 0:
             raise ValueError('Nonzero detuning is required for MW phase-delay mode')

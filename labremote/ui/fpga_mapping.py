@@ -2,7 +2,7 @@ from labremote.ui.responsive import bounded_combo, FlowLayout
 """Board aliases and explicit experiment-role routing; no hardware I/O."""
 import json
 from PyQt5 import QtCore, QtWidgets as W
-from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, Profile, capability, compatible
+from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, ROLE_KINDS, Profile, capability, compatible
 
 ROLES = {
     'fluorescence': ('PMTA','PMTC','PMTFA','PMTFC','AOMA','AOMC'),
@@ -55,9 +55,9 @@ class RoleMapping(W.QGroupBox):
         self._loaded_document=document
         for role, combo in self.choices.items():
             combo.clear()
-            if role in ('TRIG', 'MW_C'):combo.addItem('미지정 — 출력 핀 선택 필요', None)
+            combo.addItem('미지정 — 공통 별칭 선택 필요', None)
             for pin, name in document['pins'].items():
-                if ('input' in capability(pin)) == ('input' in capability(DEFAULT_ROLES[role])):
+                if ('input' in capability(pin)) == (ROLE_KINDS[role] == 'input'):
                     allowed=compatible(self.experiment, role, pin)
                     combo.addItem(f'{name} [{pin}]'+(' · 펌웨어 기능 불일치' if not allowed else ''), name)
                     item=combo.model().item(combo.count()-1);item.setEnabled(allowed)

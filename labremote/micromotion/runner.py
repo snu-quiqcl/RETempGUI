@@ -32,7 +32,7 @@ class MicromotionRunner(WorkflowTask):
 
     def start(self, *, settings, mode='scan', dac=None, directory=None, candidate=None, parent=None):
         from labremote.runtime.characterization_guard import join_completed
-        c=config.validate(settings)
+        c=config.validate(settings, mode=mode)
         if mode not in ('input','correlation','scan','apply'):raise ValueError('Invalid micromotion mode')
         if mode=='input' and not c['counter_pin']:raise ValueError('Select and wire the separate RF counter input first')
         participants=(self.worker,)

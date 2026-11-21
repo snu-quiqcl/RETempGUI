@@ -5,14 +5,14 @@ from copy import deepcopy
 from pathlib import Path
 from labremote.config.paths import CONFIG_ROOT
 from labremote.devices.fpga.controller import hd, INPUTS
-from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, capability, RouteChoices
+from labremote.devices.fpga.mapping import PINS, ROLE_KINDS, capability, RouteChoices
 
 ROOT=CONFIG_ROOT/'operations/characterization'
 COUNTER_PINS=tuple(pin for pin in PINS if 'counter' in capability(pin))
 OUTPUT_PINS=tuple(pin for pin in PINS if 'output' in capability(pin))
 FAST_PINS=tuple(pin for pin in PINS if capability(pin)=='fast output')
-PMTS=tuple(name for name,pin in DEFAULT_ROLES.items() if pin in COUNTER_PINS)+COUNTER_PINS
-AOMS=RouteChoices(tuple(name for name,pin in DEFAULT_ROLES.items() if pin in OUTPUT_PINS)+OUTPUT_PINS, 'output')
+PMTS=tuple(name for name,kind in ROLE_KINDS.items() if kind=='input')
+AOMS=RouteChoices(tuple(name for name,kind in ROLE_KINDS.items() if 'output' in kind), 'output')
 PMTS=RouteChoices(PMTS, 'counter')
 
 
@@ -44,7 +44,7 @@ def validate_settings(value):
 
 
 def validate_route(route):
-    if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or route['AOM'] not in AOMS:
+    if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or (route['AOM'] is not None and route['AOM'] not in AOMS):
         raise ValueError('Select a counter input and an output pin')
     return deepcopy(route)
 
@@ -53,7 +53,7 @@ def validate_roles(value):
     if not isinstance(value,dict) or value.get('schema_version')!=1 or value.get('setup')!='EC':raise ValueError('Expected EC setup mapping schema 1')
     if set(value.get('routes',{}))!={'EA','EC'}:raise ValueError('Both EA and EC mappings are required')
     for route in value['routes'].values():
-        if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or route['AOM'] not in AOMS:raise ValueError('Select a counter input and an output pin')
+        if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or (route['AOM'] is not None and route['AOM'] not in AOMS):raise ValueError('Select a counter input and an output pin')
     return deepcopy(value)
 
 
@@ -71,15 +71,17 @@ def load_roles(path=None):
     return validate_roles(read(path or (local if local.exists() else ROOT/'fpga_roles.json')))
 
 
-def sequence_hardware(route):
+def sequence_hardware(route, *, include_output=True):
     """Resolve sequence aliases without modifying the shared HardwareDefinition."""
     from types import SimpleNamespace
-    if route.get('PMT') not in PMTS or route.get('AOM') not in AOMS:raise ValueError('Invalid sequence role mapping')
-    return SimpleNamespace(PMT_counter_reset=getattr(hd,route['PMT']+'_counter_reset'),
+    if route.get('PMT') not in PMTS or include_output and route.get('AOM') not in AOMS:raise ValueError('Invalid sequence role mapping')
+    h = SimpleNamespace(PMT_counter_reset=getattr(hd,route['PMT']+'_counter_reset'),
         PMT_counter_enable=getattr(hd,route['PMT']+'_counter_enable'),
         PMT_counter_result=getattr(hd,route['PMT']+'_counter_result'),
-        AOM_out=getattr(hd,route['AOM']+'_out'),counter_control_port=hd.counter_control_port,
+        counter_control_port=hd.counter_control_port,
         external_control_port=hd.external_control_port)
+    if include_output:h.AOM_out=getattr(hd,route['AOM']+'_out')
+    return h
 
 
 def prepare(chamber,settings=None,settings_file=None,mapping_file=None):

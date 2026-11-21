@@ -28,8 +28,8 @@ class SecularScanPage(W.QWidget):
         self.source=W.QComboBox();self.source.setObjectName('secular_afg_source');form.addRow('Connected AFG2105',self.source)
         for key,label,pins in [('trg_pin','Modulation SYNC',config.STOPWATCH_PINS),
                                ('pmt_pin','PMT (count + timing)',tuple(p for p in config.STOPWATCH_PINS if p in config.COUNTER_PINS))]:
-            box=W.QComboBox()
-            for pin in pins:box.addItem(pin+' · '+config.PINS[pin],pin)
+            box=W.QComboBox();box.addItem('미지정 — 공통 별칭 선택 필요', None)
+            for pin in pins:box.addItem(config.PINS[pin]+' ['+pin+']',signal_token(pin))
             box.setObjectName('secular_'+key);self.fields[key]=box;form.addRow(label,box)
         for key,label,decimals in [
             ('start_khz','Start frequency (kHz)',3),('stop_khz','Stop frequency (kHz)',3),
@@ -83,7 +83,12 @@ class SecularScanPage(W.QWidget):
         c=config.validate(c)
         self.chamber.blockSignals(True);self.chamber.setCurrentText(c['chamber']);self.chamber.blockSignals(False)
         for key,box in self.fields.items():
-            if isinstance(box,W.QComboBox):box.setCurrentIndex(box.findData(c[key]))
+            if isinstance(box,W.QComboBox):
+                index=box.findData(c[key])
+                if index<0:
+                    box.addItem(str(c[key])+' · 별칭 연결 확인 필요',c[key]);index=box.count()-1
+                    box.model().item(index).setEnabled(False)
+                box.setCurrentIndex(index)
             else:box.setValue(c[key])
         self.preferred_source=c.get('afg_name','');self.refresh_sources()
 
@@ -119,7 +124,7 @@ class SecularScanPage(W.QWidget):
         source=self._sources.get(self.source.currentData())
         ready=source is not None and source.ps is not None and not source.connection_error and not source._closing
         self.run.setEnabled(w.ps is not None and not w.connection_error and not w._closing and not busy and ready)
-        self.stop.setEnabled(running or w.micromotion_runner.running());self.settings_panel.setEnabled(not running)
+        self.stop.setEnabled(running or w.micromotion_runner.running() or w.two_rf_runner.running());self.settings_panel.setEnabled(not running)
         for widget in (self.directory,self.folder_button,self.open_button):widget.setEnabled(not running)
 
     def progress(self,label,state):

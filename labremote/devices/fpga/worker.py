@@ -35,6 +35,8 @@ class FPGAWorker(AcquisitionWorker):
         self.entanglement_runner=EntanglementRunner(self)
         from labremote.micromotion.runner import MicromotionRunner
         self.micromotion_runner=MicromotionRunner(self)
+        from labremote.micromotion.two_rf import TwoRFRunner
+        self.two_rf_runner=TwoRFRunner(self)
         from labremote.micromotion.secular.runner import SecularRunner
         self.secular_runner=SecularRunner(self)
         self.spin_echo_runner=PulseRunner(self,'spin_echo')

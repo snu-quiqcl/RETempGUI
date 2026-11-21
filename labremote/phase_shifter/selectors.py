@@ -75,7 +75,10 @@ class PhaseShifterEtcTab(QtWidgets.QWidget):
                 for name in names:
                     combo.addItem(name, name)
                 index = combo.findData(previous) if previous is not None else 0
-                combo.setCurrentIndex(max(0, index))
+                if index < 0:
+                    combo.addItem(str(previous) + ' · 별칭 연결 확인 필요', previous)
+                    index = combo.count()-1;combo.model().item(index).setEnabled(False)
+                combo.setCurrentIndex(index)
             finally:
                 combo.blockSignals(blocked)
 
@@ -93,6 +96,8 @@ class PhaseShifterEtcTab(QtWidgets.QWidget):
         detector = self.detector_selector.currentData()
         if any(name is None for name in [*selected.values(), *phase, detector]):
             raise ValueError('각 신호와 D0~D11, PMT의 nickname을 모두 선택하세요.')
+        if any(name not in self.hd.output_mapping for name in [*selected.values(),*phase]) or detector not in self.hd.input_mapping.values():
+            raise ValueError('저장된 공통 별칭이 없습니다. 현재 FPGA의 별칭을 다시 선택하세요.')
         pins = [self.hd.output_mapping[name] for name in [*selected.values(), *phase]]
         if len(pins) != len(set(pins)):
             raise ValueError('동일한 실제 출력을 여러 신호에 중복 지정할 수 없습니다.')

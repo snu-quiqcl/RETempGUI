@@ -25,11 +25,15 @@ class PinSelector(W.QComboBox):
         return self._token
 
     def setCurrentText(self, token):
-        pin = self.physical_pin(token)
+        try:pin = self.physical_pin(token)
+        except (ValueError, KeyError):pin = 'missing'
         index = self.findData(pin)
-        if index < 0:raise ValueError('Unknown input/output pin: '+str(token))
+        if index < 0:
+            self.addItem(str(token) + ' · 별칭 연결 확인 필요', 'missing')
+            index = self.count()-1
+            self.model().item(index).setEnabled(False)
         with QtCore.QSignalBlocker(self):self.setCurrentIndex(index)
-        self._token = 'signal:' + self.worker.profile.document()['pins'][pin] if pin else token
+        self._token = ('signal:' + self.worker.profile.document()['pins'][pin]) if pin and pin != 'missing' else (token if pin == 'missing' else None)
 
     def refresh(self):
         document = self.worker.profile.document()
@@ -37,7 +41,7 @@ class PinSelector(W.QComboBox):
         token = self._token
         with QtCore.QSignalBlocker(self):
             self.clear()
-            if not self.input_pin:self.addItem('미지정 — 출력 핀 선택 필요', None)
+            self.addItem('미지정 — 공통 별칭 선택 필요', None)
             for pin in PINS:
                 kind = capability(pin)
                 if ('input' in kind) != self.input_pin:continue

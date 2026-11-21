@@ -5,7 +5,6 @@ All timing values are FPGA clocks (10 ns on the current sequencer).
 phase_outputs contains hardware-definition nicknames in D0 (LSB) .. D11 order.
 No physical pin assignment is made here. No hardware is contacted by this file.
 """
-from importlib import import_module
 
 from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgram, reg
 
@@ -13,7 +12,7 @@ from labremote.devices.fpga.vendor.SequencerProgram_v1_09 import SequencerProgra
 def build_program(parameters, hd=None):
     p = parameters
     if hd is None:
-        hd = import_module(p['hardware_definition_module'])
+        from labremote.devices.fpga.mapping import hd
 
     def integer(key, low, high):
         value = p[key]

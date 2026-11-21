@@ -2,10 +2,10 @@
 from copy import deepcopy
 import json
 from PyQt5 import QtCore, QtWidgets as W
-from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, EXPERIMENTS, Profile, capability, compatible
+from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, ROLE_KINDS, EXPERIMENTS, Profile, capability, compatible
 
 
-KINDS = {'MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi','DecayExperimentTab':'decay',
+KINDS = {'TwoRFCompensationPage':'micromotion','MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi','DecayExperimentTab':'decay',
          'HOMTab':'hom','EntanglementTab':'entanglement','IonCheckTab':'ion_check',
          'MicromotionPage':'micromotion','PhaseShifterTab':'phase_shifter','PhaseHoldTab':'phase_shifter','PhaseRabiTab':'phase_shifter','HalfPiRamseyTab':'phase_shifter'}
 ROLE_LABELS = {'PMT':'검출 입력 (PMT)','AOM':'광 제어 (AOM)','MW':'마이크로파 (MW)',
@@ -66,16 +66,12 @@ class QueueFPGASettings(W.QWidget):
 
     def select_device(self,*_):
         name=self.target.currentData();worker=self.worker()
-        first_selection=name not in self.documents
         if name and name not in self.documents and worker is not None:
             self.documents[name]=worker.profile.document()
         self.status.setText('● 연결됨' if worker is not None else '연결 끊김 · 저장된 매핑 편집' if name in self.documents else 'FPGA를 선택하세요.')
         self.status.setStyleSheet('color:#238636' if worker is not None else 'color:#616161')
         self.reset.setEnabled(worker is not None)
-        from labremote.runtime.workflow_queue import target_fpga
-        original=target_fpga(self.job)
-        if first_selection and worker is not None and original and name!=original:
-            self.load_defaults()
+        # A target change retains selected nicknames; absent names stay unresolved.
         self.rebuild();self.changed.emit()
 
     def experiment_name(self):
@@ -99,7 +95,8 @@ class QueueFPGASettings(W.QWidget):
                     token=default_mapping()[path[-1]]
                 if experiment=='micromotion':
                     from labremote.micromotion.config import defaults
-                    token=defaults(self.parameters['settings'].get('chamber','EC'))[path[-1]]
+                    from labremote.devices.fpga.mapping import scope
+                    with scope(worker.profile):token=defaults(self.parameters['settings'].get('chamber','EC'))[path[-1]]
                 self.overrides[name][path]=self.resolve(token,experiment,self.documents[name])
                 continue
             from labremote.characterization import rabi
@@ -122,9 +119,8 @@ class QueueFPGASettings(W.QWidget):
             return [(('settings','mapping',key),role,experiment,channels.get(key) or '')
                     for key,(role,_,_) in ION_CHANNELS.items()]
         if experiment=='scan':
-            from labremote.devices.fpga.mapping import physical
             selected=settings.get('pmt')
-            pin=selected if isinstance(selected,str) else next((pin for pin in PINS if getattr(physical,pin+'_counter_result',None)==selected),None)
+            pin=selected if isinstance(selected,str) else None
             return [(('settings','pmt'),'PMT',experiment,pin)]
         if experiment=='micromotion':
             return [(('settings',key),role,experiment,settings.get(key,'')) for key,role in
@@ -146,7 +142,8 @@ class QueueFPGASettings(W.QWidget):
 
     @staticmethod
     def resolve(token,experiment,document):
-        return Profile(document).resolve(token, experiment)
+        try:return Profile(document).resolve(token, experiment)
+        except (ValueError,KeyError):return 'missing:' + str(token)
 
     def rebuild(self,*_):
         if self._loading:return
@@ -183,10 +180,10 @@ class QueueFPGASettings(W.QWidget):
         finally:self._loading=False
 
     def add_row(self,key,title,selected,experiment,role,document,*,direct):
-        input_pin=role in ('PMT','TRIGGER','DETECTOR','COUNTER','ION_PMT1','ION_PMT2') if direct else 'input' in capability(DEFAULT_ROLES[role])
+        input_pin=role in ('PMT','TRIGGER','DETECTOR','COUNTER','ION_PMT1','ION_PMT2') if direct else ROLE_KINDS[role] == 'input'
         table=self.inputs if input_pin else self.outputs;row=table.rowCount();table.insertRow(row)
         combo=W.QComboBox();table.setItem(row,0,W.QTableWidgetItem(title));table.setCellWidget(row,1,combo)
-        if not input_pin:combo.addItem('미지정 — 출력 핀 선택 필요', None)
+        combo.addItem('미지정 — 공통 별칭 선택 필요', None)
         if direct and role in ('COUNTER','ION_PMT2'):combo.addItem('사용 안 함','')
         for pin in PINS:
             kind=capability(pin)
@@ -199,9 +196,11 @@ class QueueFPGASettings(W.QWidget):
             combo.addItem(document['pins'][pin]+' ['+pin+']'+(' · 기능 미지원' if not allowed else ''),pin)
             combo.model().item(combo.count()-1).setEnabled(allowed)
             combo.setItemData(combo.count()-1,kind,QtCore.Qt.ToolTipRole)
+        if selected not in (None,'') and combo.findData(selected)<0:
+            combo.addItem(str(selected)+' · 별칭 연결 확인 필요',selected)
+            combo.model().item(combo.count()-1).setEnabled(False)
         combo.setCurrentIndex(combo.findData(selected));self.rows[key]=combo
-        if not direct and selected==DEFAULT_ROLES[role] and not compatible(experiment,role,selected):
-            self.unused_defaults[key]=selected
+
         table.setItem(row,2,W.QTableWidgetItem(capability(selected) if selected in PINS else '미지정'))
         def edit(*_):
             if self._loading:return
@@ -219,14 +218,18 @@ class QueueFPGASettings(W.QWidget):
         name=self.target.currentData();document=deepcopy(self.documents.get(name))
         if document is None:raise ValueError('실행 FPGA를 연결하고 기본 매핑을 불러오세요.')
         parameters=deepcopy(parameters)
+        for combo in self.rows.values():
+            index=combo.currentIndex()
+            if index<0 or not combo.model().item(index).isEnabled():
+                raise ValueError('저장된 별칭 연결을 확인하고 현재 FPGA의 공통 별칭을 선택하세요.')
         for path,pin in self.overrides.get(name,{}).items():
             if self.experiment_name()=='ion_check':continue
             obj=parameters
             for key in path[:-1]:obj=obj[key]
             if self.experiment_name()=='scan':
                 from labremote.devices.fpga.mapping import physical
-                obj[path[-1]]=document['pins'][pin]
-            elif self.experiment_name()=='phase_shifter':obj[path[-1]]=document['pins'][pin]
+                obj[path[-1]]=document['pins'].get(pin) if pin else None
+            elif self.experiment_name()=='phase_shifter':obj[path[-1]]=document['pins'].get(pin) if pin else None
             else:obj[path[-1]]='signal:'+document['pins'][pin] if pin else pin
         if self.experiment_name()=='ion_check':
             chosen={path[-1]:self.overrides.get(name,{}).get(path,self.resolve(token,'ion_check',document))
@@ -239,7 +242,6 @@ class QueueFPGASettings(W.QWidget):
                 if pin:routes[canonical]=document['pins'][pin]
         profile=Profile(deepcopy(document))
         for key,combo in self.rows.items():
-            if key in self.unused_defaults and combo.currentData()==self.unused_defaults[key]:continue
             index=combo.currentIndex()
             if index<0 or not combo.model().item(index).isEnabled():
                 raise ValueError('실험 기능에 맞는 입력·출력 핀을 선택하세요.')
@@ -261,7 +263,11 @@ class QueueFPGASettings(W.QWidget):
                     else:pulse_experiment.validate(experiment,settings)
         elif experiment=='micromotion':
             from labremote.micromotion.config import validate
-            with scope(profile,'micromotion'):validate(parameters['settings'])
+            with scope(profile,'micromotion'):
+                if parameters.get('kind')=='TwoRFCompensationPage':
+                    from labremote.micromotion.two_rf import validate as validate_two_rf
+                    validate_two_rf(parameters['settings'])
+                else:validate(parameters['settings'], mode=parameters.get('mode', 'correlation'))
         elif experiment=='phase_shifter':
             from labremote.phase_shifter import config,hold
             with scope(profile):

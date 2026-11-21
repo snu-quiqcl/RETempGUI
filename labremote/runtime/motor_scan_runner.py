@@ -28,8 +28,12 @@ class MotorScanRunner(WorkflowTask):
         motors=[x_motor,y_motor]+([z_motor] if z_motor is not None else [])
         if any(api.worker.family!='motors' for api in motors):raise ValueError('Select Motor APIs')
         with operation_config():defaults=load_device_config('fpga',self.worker.name)['scan_defaults']
-        defaults={**defaults,'pmt':self.number-1,'scan':self.number};unknown=set(settings)-set(defaults)
+        defaults={**defaults,'pmt':None,'scan':self.number};unknown=set(settings)-set(defaults)
         config={**defaults,**settings}
+        from labremote.devices.fpga.mapping import resolve_signal, physical
+        if not isinstance(config['pmt'],str):raise ValueError('Select a common PMT nickname before scanning')
+        pin=resolve_signal(config['pmt'])
+        if not pin or not hasattr(physical,pin+'_counter_result'):raise ValueError('PMT nickname needs a counter input')
         def run():
             if unknown:raise ValueError('Unknown scan settings: '+str(sorted(unknown)))
             if len({motor_identity(api.worker) for api in motors})!=len(motors):raise ValueError('Select distinct X, Y and Z motors')

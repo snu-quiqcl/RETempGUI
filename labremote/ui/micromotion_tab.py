@@ -38,10 +38,10 @@ class MicromotionPage(W.QWidget):
         for key,label,choices in [('trg_pin','TRG · RF reference',config.STOPWATCH_PINS),
                                   ('pmt_pin','PMT · Photon',config.STOPWATCH_PINS),
                                   ('counter_pin','RF test counter input',('',*config.COUNTER_PINS))]:
-            box=W.QComboBox()
-            for pin in choices:box.addItem(pin+' · '+config.PINS[pin] if pin else 'Select wired counter input',pin)
+            box=W.QComboBox();box.addItem('미지정 — 공통 별칭 선택 필요', None)
+            for pin in choices:box.addItem(config.PINS[pin]+' ['+pin+']' if pin else '사용 안 함',signal_token(pin))
             self.fields[key]=box;add_field(label,box,(key=='counter_pin')==(mode=='input'))
-        pin_note=W.QLabel('Count the external RF on a wired counter input. ja_2 supports counter and stopwatch.' if mode=='input' else 'TRG and PMT must be different stopwatch inputs. Cooling outputs remain unchanged.')
+        pin_note=W.QLabel('Select the common nickname of the wired RF counter input.' if mode=='input' else 'TRG and PMT must be different stopwatch inputs. Cooling outputs remain unchanged.')
         pin_note.setWordWrap(True);form.addRow(pin_note)
         for key,label,lo,hi,decimals in [
             ('rf_mhz','RF frequency (MHz)',1,100,6),('events','Accepted events / batch',10,10000000,0),
@@ -117,7 +117,12 @@ class MicromotionPage(W.QWidget):
     def populate(self,c):
         c=config.validate(c)
         for key,box in self.fields.items():
-            if isinstance(box,W.QComboBox):box.setCurrentIndex(box.findData(c[key]))
+            if isinstance(box,W.QComboBox):
+                index=box.findData(c[key])
+                if index<0:
+                    box.addItem(str(c[key])+' · 별칭 연결 확인 필요',c[key]);index=box.count()-1
+                    box.model().item(index).setEnabled(False)
+                box.setCurrentIndex(index)
             else:box.setValue(c[key])
         for key,boxes in self.ranges.items():
             for box,value in zip(boxes,c[key]):box.setValue(value)
@@ -128,7 +133,7 @@ class MicromotionPage(W.QWidget):
         c=dict(schema_version=1,chamber=self.chamber.currentText(),use_ldac=self.ldac.isChecked(),
             **{key:box.currentData() if isinstance(box,W.QComboBox) else box.value() for key,box in self.fields.items()},
             **{key:[box.value() for box in boxes] for key,boxes in self.ranges.items()})
-        validated = config.validate(c)
+        validated = config.validate(c, mode=self.experiment_mode)
         for key in ('trg_pin', 'pmt_pin', 'counter_pin'):
             validated[key] = signal_token(validated[key])
         return validated
@@ -183,7 +188,7 @@ class MicromotionPage(W.QWidget):
             and self.candidate is not None and w and w.name==r.get('dac'))
 
     def controls(self):
-        runner=self.worker.micromotion_runner;running=runner.running() or self.worker.secular_runner.running();w=self.worker
+        runner=self.worker.micromotion_runner;running=runner.running() or self.worker.secular_runner.running() or self.worker.two_rf_runner.running();w=self.worker
         busy=w.has_requests() or w.waveform_runner.running() or any(t.running() for t in w._background_tasks)
         connected=w.ps is not None and not w.connection_error and not w._closing
         needs_dac=self.experiment_mode=='scan'
@@ -302,6 +307,9 @@ class MicromotionTab(W.QTabWidget):
         from labremote.ui.secular_scan_tab import SecularScanPage
         page=SecularScanPage(worker,bindings,self)
         self.experiments['secular']=page;self.addTab(page,'Secular Frequency Scan')
+        from labremote.ui.two_rf_compensation_tab import TwoRFCompensationPage
+        page=TwoRFCompensationPage(worker,bindings,self)
+        self.experiments['two_rf']=page;self.addTab(page,'Two-RF Compensation')
         self.experiments['scan'].verification_requested.connect(lambda:self.setCurrentWidget(self.experiments['correlation']))
 
     def shutdown(self):

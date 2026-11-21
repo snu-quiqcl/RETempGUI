@@ -32,7 +32,7 @@ def make_job(view,worker,title):
         for key in ('chamber','mode','kind'):
             value=getattr(view,key,None)
             if isinstance(value,str):parameters['experiment_'+key]=value
-        if kind=='MicromotionPage':
+        if kind in ('MicromotionPage','TwoRFCompensationPage'):
             parameters['mode']=view.experiment_mode
             dac=view._dac_workers.get(view.dac.currentData())
             parameters['dac']=dac.name if dac else None
@@ -43,6 +43,9 @@ def make_job(view,worker,title):
 def execute(devices):
     p=devices.parameters;api=devices.fpga(p['fpga']);kind=p['kind'];c=p['settings']
     directory=devices.run_directory
+    if kind=='TwoRFCompensationPage':
+        from labremote.workflow.two_rf_compensation import main
+        return main(devices)
     if kind=='SpamScanTab':
         return api.run_spam_scan(settings=c,workers=devices._workers,directory=directory).wait()
     if kind=='MotorScanTab':

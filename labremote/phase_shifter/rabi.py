@@ -43,7 +43,8 @@ def validate(value):
     phases=config.scan_points(c,skipped)
     if len(ts)*len(phases)>200000:
         raise ValueError('총 측정 지점은 최대 200,000개입니다.')
-    for t in (ts[0],ts[-1]):
+    from labremote.devices.fpga.mapping import EDITING
+    for t in (() if EDITING.get() else (ts[0],ts[-1])):
         build_program(dict(c,pulse_clocks=t),config.hd).program(show=False)
     return c,phases,ts,skipped
 

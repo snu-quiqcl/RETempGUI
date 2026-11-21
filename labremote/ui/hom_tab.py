@@ -35,7 +35,8 @@ class HOMTab(QtWidgets.QWidget):
         self.aomb=QtWidgets.QCheckBox('Control AOMB'); form.addRow(self.aomb)
         for role in ('AOMA','AOMC','TRIG','AOMB'):
             box=QtWidgets.QComboBox()
-            box.addItems([name for name,(_,port,_) in config.OUTPUTS.items() if role=='AOMB' or port==config.hd.external_control_port])
+            from labremote.devices.fpga.mapping import ROLE_KINDS
+            box.addItems([name for name,kind in ROLE_KINDS.items() if kind=='fast output' or role=='AOMB' and kind=='slow output'])
             self.outputs[role]=box; form.addRow(role+' output',box)
         mapping_note=QtWidgets.QLabel('상단 실험 신호 매핑에서 이 FPGA의 핀을 선택합니다.')
         mapping_note.setWordWrap(True); form.addRow(mapping_note)
@@ -72,8 +73,12 @@ class HOMTab(QtWidgets.QWidget):
     def populate(self,c):
         c=config.validate(c)
         for k,b in self.fields.items():b.setValue(c[k]*(config.CLOCK_US if k in config.TIMES else 1))
-        for k,b in self.inputs.items():b.setCurrentText(c['inputs'][k])
-        for k,box in self.outputs.items():box.setCurrentText(c['outputs'][k])
+        for group,boxes in (('inputs',self.inputs),('outputs',self.outputs)):
+            for k,box in boxes.items():
+                name=c[group][k]
+                if box.findText(name)<0:
+                    box.addItem(name);box.model().item(box.count()-1).setEnabled(False)
+                box.setCurrentText(name)
         self.aomb.setChecked(c['aomb_enabled']); self.update_trials()
 
     def value(self):

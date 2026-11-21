@@ -1,5 +1,6 @@
 from labremote.devices.fpga.mapping import settings_path, resolve_signal, signal_token, role_signal_token
 """Validated settings; physical input pins resolve through the installed bitstream map."""
+from labremote.devices.fpga.mapping import EDITING
 import math
 import json
 from pathlib import Path
@@ -8,15 +9,15 @@ from labremote.devices.fpga.mapping import hd
 from labremote.devices.dac.model import atomic_json as save
 
 ROOT = Path(__file__).resolve().parents[1] / 'config/operations/micromotion'
-from labremote.devices.fpga.mapping import InputNames
+from labremote.devices.fpga.mapping import InputNames, PINS as PHYSICAL_PINS, physical
 PINS = InputNames()
-STOPWATCH_PINS = tuple(p for p, name in PINS.items() if hasattr(hd, name + '_stopwatch_result'))
-COUNTER_PINS = tuple(p for p, name in PINS.items() if hasattr(hd, name + '_counter_result'))
+STOPWATCH_PINS = tuple(p for p in PHYSICAL_PINS if hasattr(physical, p + '_stopwatch_result'))
+COUNTER_PINS = tuple(p for p in PHYSICAL_PINS if hasattr(physical, p + '_counter_result'))
 
 
 def defaults(chamber='EC'):
     return dict(schema_version=1, chamber=chamber, trg_pin=role_signal_token('SYNC','micromotion'),
-                pmt_pin=role_signal_token('JA4' if chamber == 'EC' else 'JA6','micromotion'), counter_pin='',
+                pmt_pin=None, counter_pin='',
                 rf_mhz=30.6314, events=10000, batches=1, periods=1,
                 timeout_s=30., settle_s=.1, gate_us=100., rf_repeats=500,
                 left=[.690, .710, .001], right=[.265, .285, .001], use_ldac=True)
@@ -34,20 +35,19 @@ def grid(spec):
     return np.linspace(lo, hi, round(count)+1)
 
 
-def validate(settings):
+def validate(settings, mode=None):
     c = dict(settings)
-    names = {name: pin for pin, name in PINS.items()}
-    for key in ('trg_pin', 'pmt_pin', 'counter_pin'):
-        c[key] = resolve_signal(c.get(key))
     if c.get('schema_version') != 1 or c.get('chamber') not in ('EA', 'EC'):
         raise ValueError('Invalid micromotion schema/chamber')
-    for key in ('trg_pin', 'pmt_pin'):
-        if c.get(key) not in STOPWATCH_PINS:
-            raise ValueError(f'{key}: select a stopwatch-capable input')
-    if c['trg_pin'] == c['pmt_pin']:
-        raise ValueError('TRG and PMT must use distinct physical inputs')
-    if c.get('counter_pin') not in ('', *COUNTER_PINS):
-        raise ValueError('RF test needs a counter-capable input')
+    if not EDITING.get():
+        pins = {key: resolve_signal(c.get(key)) for key in ('trg_pin','pmt_pin','counter_pin')}
+        for key in (() if mode == 'input' else ('trg_pin', 'pmt_pin')):
+            if pins[key] not in STOPWATCH_PINS:
+                raise ValueError(key + ': select a common nickname for a stopwatch input')
+        if mode != 'input' and pins['trg_pin'] == pins['pmt_pin']:
+            raise ValueError('TRG and PMT must use distinct inputs')
+        if pins['counter_pin'] not in (COUNTER_PINS if mode == 'input' else (None, '', *COUNTER_PINS)):
+            raise ValueError('RF test needs a counter-capable common nickname')
     for key, low, high in [('rf_mhz', 1., 100.), ('timeout_s', 1., 3600.),
                           ('settle_s', 0., 60.), ('gate_us', .1, 500.)]:
         value = float(c[key])

@@ -1,4 +1,5 @@
 import json
+from labremote.devices.fpga.mapping import EDITING
 import math
 from decimal import Decimal, ROUND_FLOOR
 from pathlib import Path
@@ -34,7 +35,6 @@ def frequencies(c):
 
 def validate(settings):
     c=dict(settings)
-    for key in ('trg_pin', 'pmt_pin'):c[key]=resolve_signal(c.get(key))
     if c.get('schema_version')!=1 or c.get('chamber') not in ('EA','EC'):
         raise ValueError('Invalid secular scan schema/chamber')
     for k,(lo,hi) in FLOATS.items():
@@ -45,10 +45,12 @@ def validate(settings):
         if type(c.get(k)) is not int or not lo<=c[k]<=hi:raise ValueError(f'{k}: expected integer {lo}..{hi}')
     if c.get('rate_action') not in ('stop','warn'):raise ValueError('Unknown rate limit action')
     if not isinstance(c.get('afg_name',''),str):raise ValueError('Invalid source name')
-    if c.get('trg_pin') not in STOPWATCH_PINS or c.get('pmt_pin') not in STOPWATCH_PINS:
-        raise ValueError('SYNC and PMT require stopwatch inputs')
-    if c['trg_pin']==c['pmt_pin']:raise ValueError('SYNC and PMT must be different inputs')
-    if c['pmt_pin'] not in COUNTER_PINS:raise ValueError('PMT input must support count AND stopwatch')
+    if not EDITING.get():
+        pins = {k: resolve_signal(c.get(k)) for k in ('trg_pin','pmt_pin')}
+        if pins['trg_pin'] not in STOPWATCH_PINS or pins['pmt_pin'] not in STOPWATCH_PINS:
+            raise ValueError('SYNC and PMT require stopwatch inputs')
+        if pins['trg_pin']==pins['pmt_pin']:raise ValueError('SYNC and PMT must be different inputs')
+        if pins['pmt_pin'] not in COUNTER_PINS:raise ValueError('PMT input must support count AND stopwatch')
     if c['target_events']>c['max_attempts']:raise ValueError('Target events must not exceed maximum attempts')
     if c['target_events']<c['phase_bins']:raise ValueError('Target events must be at least the phase-bin count')
     _geometry(max(frequencies(c)),c['phase_bins'])

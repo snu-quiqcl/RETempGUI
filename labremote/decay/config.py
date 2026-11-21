@@ -1,4 +1,4 @@
-from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import settings_path, EDITING
 import math
 from copy import deepcopy
 from types import SimpleNamespace
@@ -30,9 +30,10 @@ def time_from_display(key,value):
 
 MODES=('171_single','174_single','171_dual','174_dual')
 LABELS={'171_single':'171','174_single':'174','171_dual':'171 Interferometer','174_dual':'174 Interferometer'}
-INPUTS=tuple(n for n in hd.input_mapping.values() if hasattr(hd,n+'_stopwatch_result'))
-FAST=tuple(n for n,(_,port,_) in OUTPUTS.items() if port==hd.external_control_port)
-SLOW=('',)+tuple(n for n in ('AOMM','AOMB') if n in OUTPUTS)
+from labremote.devices.fpga.mapping import ROLE_KINDS
+INPUTS=tuple(n for n,kind in ROLE_KINDS.items() if kind=='input')
+FAST=tuple(n for n,kind in ROLE_KINDS.items() if kind=='fast output')
+SLOW=('', 'AOMM', 'AOMB')
 CHOICES={'PMT1':INPUTS,'PMT2':INPUTS,'SYNC':INPUTS,'AOM':FAST,'TRIG':FAST,'EOM_7G1':FAST,'EOM_7G2':FAST,'EOM_2G':FAST,'AUX1':SLOW,'AUX2':SLOW}
 FIELDS=[('TIME_COOL','Cooling (10 ns clocks)',0,65535),('TIME_INIT','Initialization / 174 AOM hold (clocks)',5,65535),
  ('waiting_time_for_AOM_off','AOM off wait (clocks)',3,65535),('waiting_time_for_AOM_on','AOM on wait (clocks; single only)',3,65535),
@@ -71,10 +72,10 @@ def validate(c):
     if not isinstance(r,dict) or set(r)!=set(CHOICES) or any(r[k] not in choices for k,choices in CHOICES.items()):raise ValueError('Invalid FPGA role mapping')
     inputs=[r['SYNC'],r['PMT1']]+([r['PMT2']] if c['mode'].endswith('dual') else [])
     if len(set(inputs))!=len(inputs):raise ValueError('PMT and SYNC inputs must be distinct')
-    if len({getattr(hd, name+'_stopwatch_result') for name in inputs}) != len(inputs):raise ValueError('Decay input roles resolve to duplicate physical pins')
+    if not EDITING.get() and len({getattr(hd, name+'_stopwatch_result') for name in inputs}) != len(inputs):raise ValueError('Decay input roles resolve to duplicate physical pins')
     outputs=[r['AOM'],r['TRIG']]+([r[k] for k in ('EOM_7G1','EOM_7G2','EOM_2G')] if c['mode'].startswith('171') else [])+[r[k] for k in ('AUX1','AUX2') if r[k]]
     if len(set(outputs))!=len(outputs):raise ValueError('Active output roles must be distinct')
-    if len({OUTPUTS[name][1:] for name in outputs}) != len(outputs):raise ValueError('Decay output roles resolve to duplicate physical pins')
+    if not EDITING.get() and len({OUTPUTS[name][1:] for name in outputs}) != len(outputs):raise ValueError('Decay output roles resolve to duplicate physical pins')
     return deepcopy(c)
 
 def load(chamber,mode,path=None):

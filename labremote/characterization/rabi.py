@@ -8,7 +8,7 @@ from scipy.optimize import curve_fit
 from . import config
 from labremote.devices.fpga.controller import hd,OUTPUTS
 
-FAST_OUTPUTS=tuple(name for name,pin in config.DEFAULT_ROLES.items() if pin in config.FAST_PINS or pin is None)+config.FAST_PINS
+FAST_OUTPUTS=tuple(name for name,kind in config.ROLE_KINDS.items() if kind=='fast output')
 FAST_OUTPUTS=config.RouteChoices(FAST_OUTPUTS, 'fast')
 ROLE_CHOICES={role:config.PMTS if role=='PMT' else FAST_OUTPUTS for role in ('PMT','AOM','MW','EOM_7G_1','EOM_7G_2','EOM_2G')}
 TIMES=('T_cool','WAIT_AOM','T_init','T_det','T_mw_step')
@@ -42,7 +42,8 @@ def validate(value):
         if isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) or not lo<=v<=hi:raise ValueError('Invalid '+k)
     routes=value['roles']
     if not isinstance(routes,dict) or set(routes)!=set(ROLE_CHOICES) or any(routes[r] not in choices for r,choices in ROLE_CHOICES.items()):raise ValueError('Invalid Rabi hardware roles')
-    if len({OUTPUTS[routes[r]][2] for r in ROLE_CHOICES if r!='PMT'})!=5:raise ValueError('Rabi output roles must use distinct pins')
+    from labremote.devices.fpga.mapping import EDITING
+    if not EDITING.get() and len({OUTPUTS[routes[r]][2] for r in ROLE_CHOICES if r!='PMT'})!=5:raise ValueError('Rabi output roles must use distinct pins')
     n=value['N_qubit_control']*value['N_average']
     if n>2000000:raise ValueError('Maximum 2,000,000 Rabi shots')
     duration=(value['T_cool']*value['T_cool_repeat']+value['T_init']+value['WAIT_AOM']+value['T_det']+value['T_mw_step']*(value['N_qubit_control']-1)+100)*1e-8*value['N_average']

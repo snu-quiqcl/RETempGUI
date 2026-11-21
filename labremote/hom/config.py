@@ -10,7 +10,8 @@ from labremote.devices.fpga.controller import hd, OUTPUTS
 ROOT = CONFIG_ROOT / 'operations/hom'
 CLOCK_US = .01
 BIN_NS = 1.25
-INPUTS = tuple(n for n in hd.input_mapping.values() if hasattr(hd, n+'_stopwatch_result'))
+from labremote.devices.fpga.mapping import ROLE_KINDS, EDITING
+INPUTS = tuple(n for n,kind in ROLE_KINDS.items() if kind=='input')
 TIMES = {'TIME_1US', 'waiting_time_for_AOM_off', 'waiting_time_for_stopwatch'}
 FIELDS = [
  ('TIME_1US','Group cooling (µs)',5,65535),
@@ -70,6 +71,7 @@ def validate(c):
     if m%3 or 4*m>1024:raise ValueError('M must be a multiple of 3, maximum 255')
     if max(c['THRESHOLD_A'],c['THRESHOLD_C'])>=m:raise ValueError('PMT lower bins must be smaller than M')
     if type(c['aomb_enabled']) is not bool:raise ValueError('AOMB enabled must be boolean')
+    if EDITING.get():return deepcopy(c)
     r=c['inputs']
     if not isinstance(r,dict) or set(r)!={'PMTA','PMTC','SYNC'} or any(v not in INPUTS for v in r.values()) or len(set(r.values()))!=3:
         raise ValueError('Choose three distinct stopwatch inputs')
