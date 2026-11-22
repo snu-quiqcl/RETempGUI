@@ -1,3 +1,4 @@
+from labremote.configuration.preset_paths import experiment_preset_path
 """Independent SPAM 2D Scan editor and live result viewer."""
 from pathlib import Path
 import numpy as np
@@ -315,7 +316,7 @@ class SpamScanTab(W.QWidget):
     def save(self):
         try:
             c = self.value()
-            path, _ = W.QFileDialog.getSaveFileName(self, 'Save SPAM 2D settings', f'spam_2d_{self.chamber}.json', 'JSON (*.json)')
+            path, _ = W.QFileDialog.getSaveFileName(self, 'Save SPAM 2D settings', str(experiment_preset_path('characterization',f'spam_2d_{self.chamber}.local.json')), 'JSON (*.json)')
             if path: config.save(path, c); self.status.setText('저장됨: ' + path)
         except Exception as exc: self.status.setText(str(exc))
 

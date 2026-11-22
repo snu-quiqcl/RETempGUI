@@ -6,11 +6,8 @@ from labremote.devices.fpga.controller import hd
 from .sequence import build_program
 from .calibration import resolve
 
-DEFAULTS = dict(phase_angle_deg=90., N_average=100, half_pi_time=5000,
-    phase_zero_settle_clocks=1000, phase_settle_clocks=1000,
-    T_cool=50000, T_cool_repeat=2, T_init=50000, T_det=50000,
-    T_det_repeat=2, T_wait_for_aom_off=1000,
-    scan_start_deg=0., scan_stop_deg=360., scan_step_deg=15., threshold=5, timeout_s=30.)
+from labremote.configuration.default_profiles import read_default
+DEFAULTS=read_default('phase_ramsey')
 
 DEGREES_PER_CODE = 360 / 4096
 

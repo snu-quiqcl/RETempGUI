@@ -45,7 +45,7 @@ class WorkflowTab(QtWidgets.QWidget):
         self.filename = None
         self.workflow_root = Path(__file__).resolve().parents[1] / 'workflow'
         layout = QtWidgets.QVBoxLayout(self)
-        self.fpga_selector=QtWidgets.QComboBox();self.fpga_selector.setProperty('persistInput',False)
+        self.fpga_selector=QtWidgets.QComboBox()
         self.fpga_selector.addItem('FPGA 미사용',None);layout.addWidget(self.fpga_selector)
         self.fixed_fpga=None
         self.target_timer=QtCore.QTimer(self);self.target_timer.setInterval(300)

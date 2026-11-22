@@ -220,5 +220,5 @@ class QueueTab(QtWidgets.QWidget):
         for b in (self.pause_button,self.resume_button,self.stop_button):b.setEnabled(active)
     def confirm_close(self):
         if not self.dirty:return True
-        answer=QtWidgets.QMessageBox.question(self,'Queue','수정한 Queue 구성을 저장할까요?',QtWidgets.QMessageBox.Save|QtWidgets.QMessageBox.Discard|QtWidgets.QMessageBox.Cancel)
+        answer=QtWidgets.QMessageBox.question(self,'Queue','현재 Queue는 로컬 초안에 자동 보관됩니다. 별도 Queue 파일로도 저장할까요?',QtWidgets.QMessageBox.Save|QtWidgets.QMessageBox.Discard|QtWidgets.QMessageBox.Cancel)
         return self.save_plan() if answer==QtWidgets.QMessageBox.Save else answer==QtWidgets.QMessageBox.Discard

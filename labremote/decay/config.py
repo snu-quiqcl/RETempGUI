@@ -45,20 +45,8 @@ FIELDS=[('TIME_COOL','Cooling (10 ns clocks)',0,65535),('TIME_INIT','Initializat
  ('aux1_start','AUX1 start level',0,1),('aux1_end','AUX1 cleanup level',0,1),('aux2_start','AUX2 start level',0,1),('aux2_end','AUX2 cleanup level',0,1)]
 
 def defaults(chamber,mode):
-    if chamber not in ('EA','EC') or mode not in MODES:raise ValueError('Invalid decay chamber/mode')
-    dual=mode.endswith('dual');is171=mode.startswith('171');suffix='A' if chamber=='EA' else 'C'
-    c=dict(schema_version=1,chamber=chamber,mode=mode,MAX_TIME_DIFFERENCE=102 if mode=='171_single' else 120,
-        waiting_time_for_stopwatch=21 if dual else 20,waiting_time_for_AOM_off=30 if mode=='171_dual' else 20 if dual else 100 if is171 else 150,
-        run_number=50000,outer_loop_in_fpga=2 if mode=='171_single' else 1,wo_cooling_number=10 if is171 else 1,
-        outer_loop=500 if mode=='171_single' else 1000 if mode=='171_dual' else 100,
-        TIME_COOL=500 if mode=='171_single' else 100 if mode=='174_dual' else 1000,
-        TIME_INIT=100 if mode=='171_single' else 150 if is171 else 5 if dual else 50,
-        SIGNAL_THRESHOLD=82 if mode=='171_dual' else 86 if mode=='174_dual' else 70,
-        DECAY_THRESHOLD=85 if mode=='171_dual' else 86 if mode=='174_dual' else 70,
-        timeout_s=120.,reference_tau_ns=8.12,aux1_start=1,aux1_end=1,aux2_start=1,aux2_end=1)
-    c['waiting_time_for_AOM_on']=c['waiting_time_for_AOM_off']
-    c['roles']=dict(PMT1='PMTA',PMT2='PMTC',SYNC='SYNC',AOM='AOM'+suffix,TRIG='TRIG',EOM_7G1='EOM_7G'+suffix+'1',EOM_7G2='EOM_7G'+suffix+'2',EOM_2G='EOM_2G'+suffix,AUX1='AOMM',AUX2='AOMB' if mode=='171_single' else '')
-    return c
+    from labremote.configuration.default_profiles import read_default
+    return read_default('decay_'+chamber+'_'+mode)
 
 def validate(c):
     if not isinstance(c,dict) or c.get('chamber') not in ('EA','EC') or c.get('mode') not in MODES:raise ValueError('Invalid decay profile')

@@ -7,7 +7,8 @@ from scipy.optimize import curve_fit
 from . import config
 from .rabi_sequence import build_program
 
-DEFAULTS = dict(config.DEFAULTS, pulse_start_us=0., pulse_stop_us=100., pulse_step_us=2.)
+from labremote.configuration.default_profiles import read_default
+DEFAULTS=read_default('phase_rabi')
 
 def times(c):
     if 'pulse_points' in c:

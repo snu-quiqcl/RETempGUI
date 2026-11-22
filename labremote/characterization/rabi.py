@@ -14,11 +14,8 @@ ROLE_CHOICES={role:config.PMTS if role=='PMT' else FAST_OUTPUTS for role in ('PM
 TIMES=('T_cool','WAIT_AOM','T_init','T_det','T_mw_step')
 
 def defaults(chamber):
-    a=chamber=='EA';suffix='A' if a else 'C'
-    return dict(schema_version=2,chamber=chamber,timeout_s=30.,T_cool=50000,T_cool_repeat=2,WAIT_AOM=100,T_init=1000,T_det=6000,
-        N_average=500,N_qubit_control=10,T_mw_step=1000,N_threshold=2,
-        roles=dict(PMT='PMTF'+suffix,AOM='AOM'+suffix,MW='MW_'+suffix,
-                   EOM_7G_1='EOM_7G'+suffix+'1',EOM_7G_2='EOM_7G'+suffix+'2',EOM_2G='EOM_2G'+suffix))
+    from labremote.configuration.default_profiles import read_default
+    return read_default('rabi_'+chamber)
 
 def validate_frequency(value):
     if value is not None and (isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or value<=0):

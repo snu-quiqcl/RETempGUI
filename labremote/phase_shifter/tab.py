@@ -1,3 +1,4 @@
+from labremote.configuration.preset_paths import experiment_preset_path
 from labremote.ui.responsive import ScrollTabs
 from labremote.devices.fpga.mapping import bound_methods
 """FPGA / etc: phase-shifter Ramsey setup, execution and live results."""
@@ -272,8 +273,9 @@ class PhaseShifterTab(QtWidgets.QWidget):
     def save(self):
         try:
             value = config.validate(self.value())
-            path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '설정 저장', 'phase_shifter.json', 'JSON (*.json)')
+            path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '설정 저장', str(experiment_preset_path('phase_shifter','ramsey_calibrated.local.json' if hasattr(self,'halfpi_source') else 'ramsey.local.json')), 'JSON (*.json)')
             if path:
+                Path(path).parent.mkdir(parents=True,exist_ok=True)
                 Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf-8')
                 self.status.setText('설정 저장: ' + path)
         except Exception as exc:

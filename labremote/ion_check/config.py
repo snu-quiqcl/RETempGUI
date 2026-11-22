@@ -33,9 +33,8 @@ def output_levels(c,a=1,b=0,d=1):
             'EOM_2GA':0,'EOM_2GC':0,'MW_A':0,'MW_C':0}
 
 def defaults():
-    return dict(schema_version=2,mapping=default_mapping(),exposure_us=1000,settle_us=100,
-                threshold_a=None,threshold_b=None,threshold_c=None,
-                max_attempts=3,retry_delay_s=.1,timeout_s=5.)
+    from labremote.configuration.default_profiles import read_default
+    return read_default('ion_check')
 
 def validate(value,require_thresholds=False):
     value=deepcopy(value)

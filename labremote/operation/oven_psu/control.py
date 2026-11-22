@@ -1,9 +1,16 @@
 import time
+import math
 from labremote.runtime.io import Context
 
-OFF_CURRENT_TIMEOUT_S = 5.
-RAMP_STEP_A = .15
-RAMP_INTERVAL_S = .4
+from labremote.configuration.default_profiles import read_default
+_POLICY=read_default('oven_power')
+for _key in ('off_current_timeout_s','ramp_step_a','ramp_interval_s','off_current_tolerance_a','off_poll_s'):
+    _value=_POLICY[_key]
+    if type(_value) not in (int,float) or not math.isfinite(_value) or _value<=0:
+        raise ValueError(f'oven_power: {_key} must be positive and finite')
+OFF_CURRENT_TIMEOUT_S = _POLICY['off_current_timeout_s']
+RAMP_STEP_A = _POLICY['ramp_step_a']
+RAMP_INTERVAL_S = _POLICY['ramp_interval_s']
 
 
 def set_current(p, current):
@@ -30,11 +37,11 @@ def off(p):
     deadline = time.monotonic() + OFF_CURRENT_TIMEOUT_S
     while True:
         currents = [ctx.acquire(getattr(p, f'ch{ch}_measured_current')) for ch in (1, 2, 3)]
-        if all(abs(value) <= .02 for value in currents):
+        if all(abs(value) <= _POLICY['off_current_tolerance_a'] for value in currents):
             return {'output': 'OFF', 'currents': currents}
         if time.monotonic() >= deadline:
-            raise RuntimeError('PSU OFF but measured current is not below 20 mA; relay switching blocked')
-        ctx.wait(.1)
+            raise RuntimeError(f"PSU OFF but measured current exceeds {_POLICY['off_current_tolerance_a']:g} A; relay switching blocked")
+        ctx.wait(_POLICY['off_poll_s'])
 
 
 def configure(p, voltage, current):

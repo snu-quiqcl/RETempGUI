@@ -4,10 +4,10 @@ from pathlib import Path
 
 from labremote.configuration.paths import CONFIG_ROOT
 LOCAL = CONFIG_ROOT/'operations/oven.local.json'
-PROFILES = {'EA_174': (5., .75), 'EA_171': (5., .75),
-            'EC_174': (5., 1.4), 'EC_171': (5., 1.30)}
-DEFAULTS = {'chamber': 'EC', 'psu_name': 'oven_psu', 'relay_name': 'oven_relays',
-            'shutter': 'shutter_1', 'photoionization_shutter': 'shutter_1', 'timeout_s':600}
+from labremote.configuration.default_profiles import read_default
+_DEFAULT=read_default('oven')
+PROFILES=_DEFAULT.pop('profiles')
+DEFAULTS=_DEFAULT
 
 
 def load_settings():

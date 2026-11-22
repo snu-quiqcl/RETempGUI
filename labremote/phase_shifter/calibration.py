@@ -120,9 +120,8 @@ class CalibrationSelector(QtWidgets.QGroupBox):
         if snapshot is not None:
             rows(snapshot)
         self.snapshot = snapshot
-        self.mode.blockSignals(True)
-        self.mode.setCurrentIndex(int(snapshot is not None))
-        self.mode.blockSignals(False)
+        with QtCore.QSignalBlocker(self.mode):
+            self.mode.setCurrentIndex(int(snapshot is not None))
         self.info.setText(Path(snapshot['path']).name + '\nSHA256: ' + snapshot['sha256'][:16] if snapshot else '보정표 미선택')
         if snapshot and snapshot.get('kind') == 'ramsey_data_interpolation':
             self.info.setText(self.info.text() + '\n실험 데이터 보간 활성 · 0~360° 전체 범위 (조건부 추정)')

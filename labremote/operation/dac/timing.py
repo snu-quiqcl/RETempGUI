@@ -1,6 +1,8 @@
 """Validated transmission settings; independent of electrode mapping files."""
 from dataclasses import asdict, dataclass
 import math
+from labremote.configuration.default_profiles import read_default
+_DEFAULTS=read_default("dac_timing")
 
 
 def milliseconds(value, name, maximum=1000):
@@ -17,9 +19,9 @@ def milliseconds(value, name, maximum=1000):
 
 @dataclass(frozen=True)
 class ManualTiming:
-    command_gap_ms: float = 5.0
-    pre_ldac_ms: float = 10.0
-    cooldown_ms: float = 100.0
+    command_gap_ms: float = _DEFAULTS["command_gap_ms"]
+    pre_ldac_ms: float = _DEFAULTS["pre_ldac_ms"]
+    cooldown_ms: float = _DEFAULTS["cooldown_ms"]
 
     def validate(self):
         return ManualTiming(milliseconds(self.command_gap_ms, 'Command gap'),
@@ -42,7 +44,7 @@ class ManualTiming:
 @dataclass(frozen=True)
 class SequenceOptions:
     reuse_spi_config: bool = True
-    pre_ldac_ms: float = 1.0
+    pre_ldac_ms: float = _DEFAULTS["sequence_pre_ldac_ms"]
 
     def validate(self):
         if type(self.reuse_spi_config) is not bool:
@@ -58,4 +60,4 @@ class SequenceOptions:
         if not isinstance(data, dict):
             return cls()
         return cls(data.get('reuse_spi_config', True),
-                   milliseconds(data.get('pre_ldac_ms', 1.0), 'Sequence LDAC wait')).validate()
+                   milliseconds(data.get('pre_ldac_ms', _DEFAULTS['sequence_pre_ldac_ms']), 'Sequence LDAC wait')).validate()

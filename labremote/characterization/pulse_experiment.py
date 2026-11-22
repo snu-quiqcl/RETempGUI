@@ -9,19 +9,8 @@ from .ramsey_fit import fit_ramsey,population_and_error
 KINDS=('ramsey','spam','initialization','spin_echo')
 def title(kind):return {'spin_echo':'Spin Echo','ramsey':'Ramsey','spam':'SPAM','initialization':'Initialization'}[kind]
 def defaults(kind,chamber):
-    if kind not in KINDS or chamber not in ('EA','EC'):raise ValueError('Unknown experiment/chamber')
-    if kind=='spin_echo':
-        c=defaults('ramsey',chamber);c['experiment']=kind
-        c.pop('fit_low_hz');c.pop('fit_high_hz');return c
-    if kind=='initialization':
-        return dict(schema_version=1,experiment=kind,chamber=chamber,roles=rabi.defaults(chamber)['roles'],T_cool=50000,T_cool_repeat=6,T_init_step=20,T_det=8000,T_det_repeat=1,WAIT_AOM=100,N_average=500,N_init_control=21,N_threshold=4,timeout_s=120.)
-    c=dict(schema_version=1,experiment=kind,chamber=chamber,roles=rabi.defaults(chamber)['roles'],
-           T_cool=40000 if kind=='ramsey' else 50000,T_cool_repeat=10 if kind=='ramsey' else 2,
-           T_init=1000 if kind=='ramsey' else 150,T_det=5000 if kind=='ramsey' else 8000,
-           N_average=100 if kind=='ramsey' else 500,N_threshold=2,timeout_s=120. if kind=='ramsey' else 30.)
-    if kind=='ramsey':c.update(T_det_repeat=1,T_wait_for_aom_off=100,half_pi_time=2948,precession_time=50000,max_precession_count=20,fit_low_hz=0.,fit_high_hz=0.)
-    else:c.update(WAIT_AOM=50,T_PI=7677 if chamber=='EA' else 5996,N_repeat=10)
-    return c
+    from labremote.configuration.default_profiles import read_default
+    return read_default(kind+'_'+chamber)
 
 def times(kind):
     if kind=='spin_echo':return times('ramsey')

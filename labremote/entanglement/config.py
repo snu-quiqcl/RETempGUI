@@ -37,13 +37,8 @@ CLEANUP_LEVELS = dict(CCD_EC=1, CCD_EA=0, MW_A=0, MW_C=0,
     EOM_7GC1=1, EOM_7GC2=1, EOM_2GA=0, EOM_2GC=0, TRIG=0)
 
 def defaults():
-    return dict(schema_version=1, basis='mw_detuned', batches=100,
-        groups_per_loop=50000, inner_trials=10, fpga_loops=10,
-        cooling_us=5., initialization_us=1., aom_off_us=.30, stopwatch_wait_us=.21,
-        decay_lower_a=86, decay_lower_c=86, coincidence_half_window_bins=10,
-        mirror_wait_ms=600., detection_us=100., threshold_ea=2, threshold_ec=2,
-        pi_ea_us=81.10, pi_ec_us=70.58, detuning_hz=-2000.,
-        phase_magnitude_deg=175., timeout_s=120.)
+    from labremote.configuration.default_profiles import read_default
+    return read_default('entanglement')
 
 def nominal_trials(c):
     return c['groups_per_loop'] * c['inner_trials'] * c['fpga_loops']

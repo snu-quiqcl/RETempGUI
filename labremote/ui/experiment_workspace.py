@@ -4,7 +4,6 @@ from labremote.ui.responsive import ScrollTabs
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets as W
 from labremote.devices.fpga.mapping import scope
-from .input_state import INPUTS, value_of, apply_value
 from .fpga_mapping import RoleMapping
 
 
@@ -16,26 +15,6 @@ def busy(worker):
     return (getattr(worker,'_fpga_owner',None) is not None or worker.has_requests()
             or worker.waveform_runner.running() or any(t.running() for t in worker._background_tasks))
 
-
-def fields(root):
-    """Attribute paths survive reparenting and have no dependence on pin names."""
-    result={};seen=set()
-    def walk(value,key):
-        if isinstance(value,W.QWidget):
-            if id(value) in seen or (value is not root and not root.isAncestorOf(value)):return
-            seen.add(id(value))
-            if isinstance(value,RoleMapping):return
-            if isinstance(value,INPUTS):
-                if value_of(value) is not None and not key.endswith('/source'):result[key]=value
-                return
-            for attr,child in vars(value).items():
-                if not attr.startswith('_') and attr not in ('host','owner','parent'):walk(child,key+'/'+attr)
-        elif isinstance(value,dict):
-            for name,child in value.items():walk(child,key+'/'+str(name))
-        elif isinstance(value,(list,tuple)):
-            for i,child in enumerate(value):walk(child,key+'/'+str(i))
-    walk(root,'')
-    return result
 
 
 class ExperimentSlot(W.QWidget):
@@ -76,7 +55,7 @@ class ExperimentSlot(W.QWidget):
         w=self.worker();active=w is not None and busy(w)
         self.choice.setEnabled(not active)
         ready=w is not None and connected(w)
-        if ready and self.current is not None and not active and self._pin_signatures.get(self.selected)!=w.profile.document()['pins']:
+        if ready and not active and not self._selection_error and (self.current is None or self._pin_signatures.get(self.selected)!=w.profile.document()['pins']):
             self.choose(force=True)
             return
         self.queue_button.setEnabled(ready and self.current is not None and not self.host.queue_tab.still_running())
@@ -84,7 +63,7 @@ class ExperimentSlot(W.QWidget):
         if self._selection_error:self.info.setText(self._selection_error)
         elif w is None:self.info.setText('연결된 장비만 선택할 수 있습니다.')
         else:self.info.setText(('연결됨' if ready else '연결 끊김 · 재연결 후 실행하세요.')+
-                              (' · 장비 사용 중' if active else '')+'\nFPGA 전환 시 실험 조건은 유지됩니다.')
+                              (' · 장비 사용 중' if active else '')+'\n각 FPGA의 저장된 실험 조건을 사용합니다.')
         if self.current is not None:
             for mapping in self.current.findChildren(RoleMapping):
                 if not mapping.dirty() and mapping._loaded_document!=mapping.worker.profile.document():mapping.refresh()
@@ -114,10 +93,6 @@ class ExperimentSlot(W.QWidget):
         if (old is not None and busy(old)) or not self.confirm_mapping():
             with QtCore.QSignalBlocker(self.choice):self.choice.setCurrentIndex(self.choice.findData(self.selected))
             return
-        settings={k:value_of(w) for k,w in fields(self.current).items()} if self.current is not None else {}
-        # Device names/routes and auto-generated data paths belong to the target.
-        routing=('inputs','outputs','roles','selectors','mapping','mapping_fields','channel','pmt_pin','trg_pin','trigger_pin','counter_pin','directory','file_picker')
-        settings={k:v for k,v in settings.items() if not any(part in routing or 'selector' in part for part in k.split('/'))}
         previous=self.current
         try:
             if name is not None:
@@ -139,8 +114,9 @@ class ExperimentSlot(W.QWidget):
                     self._pin_signatures[name]=worker.profile.document()['pins']
                     # Source files remain explicitly saved by the workflow editor.
                 target=self.views[name]
-                for key,widget in fields(target).items():
-                    if key in settings:apply_value(widget,settings[key])
+                # Per-FPGA values come from its own config; never copy another FPGA's controls.
+                persistence=getattr(self.host,'input_state',None)
+                if persistence is not None:persistence.restore()
             else:target=None
             self.selection.setParent(self);self.root.insertWidget(0,self.selection)
             if previous is not None:self.root.removeWidget(previous);previous.hide()
@@ -211,12 +187,12 @@ class ExperimentWorkspace(ScrollTabs):
         from .micromotion_tab import MicromotionTab
         from labremote.phase_shifter.hold_tab import EtcTab
         def group(title):
-            tabs=ScrollTabs();self.addTab(tabs,title);return tabs
+            tabs=ScrollTabs();tabs.settings_group=title;self.addTab(tabs,title);return tabs
         scan=group('Scan')
         for n,(title,axes) in enumerate(SCAN_TABS,1):self.add_slot(scan,title,lambda w,b,n=n:MotorScanTab(w,b,n,host))
         daily=group('Daily characterization')
         for chamber in ('EA','EC'):
-            pages=ScrollTabs();daily.addTab(pages,chamber)
+            pages=ScrollTabs();pages.settings_group='characterization/'+chamber;daily.addTab(pages,chamber)
             self.add_slot(pages,'Fluorescence',lambda w,b,c=chamber:FluorescenceTab(w,c,host))
             self.add_slot(pages,'Rabi',lambda w,b,c=chamber:RabiTab(w,c,b,host))
             for kind in ('initialization','ramsey','spin_echo','spam'):
@@ -224,7 +200,7 @@ class ExperimentWorkspace(ScrollTabs):
             self.add_slot(pages,'SPAM 2D Scan',lambda w,b,c=chamber:SpamScanTab(w,c,b,host))
         decay=group('Decay')
         for chamber in ('EA','EC'):
-            pages=ScrollTabs();decay.addTab(pages,chamber)
+            pages=ScrollTabs();pages.settings_group='decay/'+chamber;decay.addTab(pages,chamber)
             for mode in MODES:self.add_slot(pages,LABELS[mode],lambda w,b,c=chamber,m=mode:DecayExperimentTab(w,c,m,host))
         self.add_slot(self,'HOM',lambda w,b:HOMTab(w,host))
         self.add_slot(self,'Entanglement',lambda w,b:EntanglementTab(w,host))
@@ -241,7 +217,9 @@ class ExperimentWorkspace(ScrollTabs):
         self.timer=QtCore.QTimer(self);self.timer.setInterval(300);self.timer.timeout.connect(self.refresh);self.timer.start()
 
     def add_slot(self,tabs,title,factory):
-        slot=ExperimentSlot(self.host,title,factory,self);self.slots.append(slot);tabs.addTab(slot,title)
+        slot=ExperimentSlot(self.host,title,factory,self)
+        slot.settings_id=getattr(tabs,'settings_group','')+'/'+title
+        self.slots.append(slot);tabs.addTab(slot,title)
     def refresh(self):
         for slot in self.slots:slot.refresh()
     def still_running(self):

@@ -27,12 +27,8 @@ FIELDS = [
  ('aomb_start','AOMB acquisition level',0,1), ('aomb_end','AOMB cleanup level',0,1)]
 
 def defaults():
-    return dict(schema_version=2,TIME_1US=150,waiting_time_for_AOM_off=25,
-        waiting_time_for_stopwatch=25,THRESHOLD_A=86,THRESHOLD_C=86,MAX_TIME_DIFFERENCE=120,
-        run_number=50000,inner_loop_number=2,outer_loop_in_fpga=100,batches=500,
-        timeout_s=120.,aomb_enabled=True,aomb_start=1,aomb_end=1,
-        inputs=dict(PMTA='PMTA',PMTC='PMTC',SYNC='SYNC'),
-        outputs={name:name for name in ('AOMA','AOMC','TRIG','AOMB')})
+    from labremote.configuration.default_profiles import read_default
+    return read_default('hom')
 
 
 def nominal_trials(c):

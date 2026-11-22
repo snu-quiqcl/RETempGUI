@@ -8,7 +8,8 @@ import numpy as np
 from labremote.devices.fpga.mapping import hd
 from labremote.devices.dac.model import atomic_json as save
 
-ROOT = Path(__file__).resolve().parents[1] / 'config/operations/micromotion'
+from labremote.configuration.paths import CONFIG_ROOT
+ROOT=CONFIG_ROOT/'operations/micromotion'
 from labremote.devices.fpga.mapping import InputNames, PINS as PHYSICAL_PINS, physical
 PINS = InputNames()
 STOPWATCH_PINS = tuple(p for p in PHYSICAL_PINS if hasattr(physical, p + '_stopwatch_result'))
@@ -16,11 +17,8 @@ COUNTER_PINS = tuple(p for p in PHYSICAL_PINS if hasattr(physical, p + '_counter
 
 
 def defaults(chamber='EC'):
-    return dict(schema_version=1, chamber=chamber, trg_pin=role_signal_token('SYNC','micromotion'),
-                pmt_pin=None, counter_pin='',
-                rf_mhz=30.6314, events=10000, batches=1, periods=1,
-                timeout_s=30., settle_s=.1, gate_us=100., rf_repeats=500,
-                left=[.690, .710, .001], right=[.265, .285, .001], use_ldac=True)
+    from labremote.configuration.default_profiles import read_default
+    return read_default('micromotion_'+chamber)
 
 
 def grid(spec):

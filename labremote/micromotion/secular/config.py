@@ -8,7 +8,8 @@ from labremote.devices.fpga.mapping import hd, settings_path, resolve_signal, ro
 from labremote.micromotion.config import PINS, STOPWATCH_PINS, COUNTER_PINS
 from .model import _geometry, _fit_first_event
 
-ROOT=Path(__file__).resolve().parents[2]/'config/operations/micromotion'
+from labremote.configuration.paths import CONFIG_ROOT
+ROOT=CONFIG_ROOT/'operations/micromotion'
 FLOATS={'start_khz':(50,5000),'stop_khz':(50,5000),'step_khz':(.001,4950),
         'amplitude_dbm':(-56.020599,23.9794),'offset_v':(-5,5),'settle_s':(0,60),
         'point_timeout_s':(1,3600),'max_background_m':(0,1)}
@@ -17,11 +18,8 @@ INTS={'phase_bins':(8,256),'target_events':(64,5000000),'max_attempts':(64,50000
 
 
 def defaults(chamber='EC'):
-    return dict(schema_version=1,chamber=chamber,afg_name='',trg_pin=role_signal_token('SYNC','micromotion'),
-        pmt_pin=role_signal_token('PMTA' if chamber=='EC' else 'PMTC','micromotion'),start_khz=1000.,stop_khz=2000.,step_khz=10.,
-        amplitude_dbm=-20.,offset_v=0.,settle_s=.05,point_timeout_s=60.,
-        phase_bins=64,target_events=50000,max_attempts=5000000,block_attempts=50000,
-        count_exposure_us=10000,count_repeats=20,max_background_m=.05,rate_action='stop')
+    from labremote.configuration.default_profiles import read_default
+    return read_default('secular_'+chamber)
 
 
 def frequencies(c):

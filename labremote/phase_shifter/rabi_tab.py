@@ -1,3 +1,4 @@
+from labremote.configuration.preset_paths import experiment_preset_path
 """Phase/time Rabi scan setup and live plots."""
 import json
 from pathlib import Path
@@ -129,9 +130,10 @@ class PhaseRabiTab(W.QWidget):
 
     def save(self):
         try:
-            c,*_=rabi.validate(self.value());path,_=W.QFileDialog.getSaveFileName(self,'설정 저장','phase_rabi.json','JSON (*.json)')
+            c,*_=rabi.validate(self.value());path,_=W.QFileDialog.getSaveFileName(self,'설정 저장',str(experiment_preset_path('phase_shifter','rabi.local.json')),'JSON (*.json)')
             if path:
                 c.update(experiment='phase_rabi',settings_version=2)
+                Path(path).parent.mkdir(parents=True,exist_ok=True)
                 Path(path).write_text(json.dumps(c,ensure_ascii=False,indent=2),encoding='utf-8')
                 self.status.setText('위상별 Rabi 전용 설정 저장: '+path)
         except Exception as exc:self.status.setText(str(exc))
