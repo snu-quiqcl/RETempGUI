@@ -20,10 +20,16 @@ from .vendor import HardwareDefinition_remote_ent_test_ec as legacy
 
 PINS = tuple(f'{bank}_{n}' for bank in ('ja', 'jb', 'jc', 'jd') for n in range(8))
 DEFAULT_ROLES = {**{name: pin for pin, name in legacy.input_mapping.items()}, **legacy.output_mapping}
-# Role requirements are independent of historical physical routing.
-ROLE_KINDS = {**dict.fromkeys(('PMTA','PMTC','PMTFA','PMTFC','SYNC','JA4','JA6'), 'input'),
+# Input role names come from the sequencer vocabulary, not the board's UI
+# nicknames. Both vocabularies occur in saved profiles; keep each saved route
+# independent and leave absent routes unassigned rather than guessing a pin.
+_INPUT_ROLES = tuple(dict.fromkeys((*legacy.input_mapping.values(),
+                                    'JA4', 'JA6', 'UPMT1', 'UMPT2')))
+ROLE_KINDS = {**dict.fromkeys(_INPUT_ROLES, 'input'),
               **dict.fromkeys(('TRIG','AOMC','EOM_7GC1','EOM_7GC2','EOM_2GC','AOMA','EOM_7GA1','EOM_7GA2','EOM_2GA','MW_A','MW_C'), 'fast output'),
               **dict.fromkeys(('AOMB','AOMM','CCD_EC','CCD_EA'), 'slow output')}
+for _role in _INPUT_ROLES:
+    DEFAULT_ROLES.setdefault(_role, None)
 EXPERIMENTS = ('spin_echo', 'fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'decay',
                'hom', 'entanglement', 'ion_check', 'micromotion', 'phase_shifter')
 CURRENT = ContextVar('fpga_mapping', default=None)
