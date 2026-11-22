@@ -28,7 +28,7 @@ def build_program(config,hd):
     control_free_precession_R = reg[11]
     max_count_R = reg[12]
     s = SequencerProgram()
-    s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 0)])
+    s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 0)])
     s.load_immediate(number_of_runs_R, 0, 'number_of_runs_R is the number of runs done')
     s.load_immediate(control_free_precession_R, 0, 'count_initalization_R will be used to count the loop of initialization timer')
     s.repeat_run = s.load_immediate(count_measured_PMT_R, 0, 'count_measured_PMT_R will be used to count the measured result of PMT')
@@ -46,29 +46,29 @@ def build_program(config,hd):
     s.wait_n_clocks(T_wait_for_aom_off, 'Wait for the AOM completely off')
     s.set_output_port(hd.external_control_port, [(EOM_2_1GHz, 0)], 'End Initialization')
     s.branch_if_equal('zero_echo', control_free_precession_R, 0)
-    s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 1)])
+    s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 1)])
     delay_clocks(s, half_pi_time-1, 'first_pulse_chunk')
     for side in ('left', 'right'):
-        s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 0)])
+        s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 0)])
         delay_clocks(s, precession_time//2-4, side+'_first_chunk')
         s.add(count_free_precession_R, count_free_precession_R, 1)
         s.branch_if_equal(side+'_pulse', count_free_precession_R, control_free_precession_R)
         setattr(s, side+'_repeat', delay_clocks(s, precession_time//2-3, side+'_repeat_chunk'))
         s.add(count_free_precession_R, count_free_precession_R, 1)
         s.branch_if_less_than(side+'_repeat', count_free_precession_R, control_free_precession_R)
-        setattr(s, side+'_pulse', s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 1)]))
+        setattr(s, side+'_pulse', s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 1)]))
         if side=='left':
             # Reset the next gap counter during the central pi pulse.
             s.load_immediate(count_free_precession_R, 0)
             delay_clocks(s, 2*half_pi_time-2, 'pi_pulse_chunk')
         else:
             delay_clocks(s, half_pi_time-1, 'last_pulse_chunk')
-    s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 0)])
+    s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 0)])
     s.jump('echo_detection')
     # Zero free evolution: contiguous same-phase pi/2 + pi + pi/2 = 2pi.
-    s.zero_echo = s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 1)])
+    s.zero_echo = s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 1)])
     delay_clocks(s, 4*half_pi_time-1, 'zero_pulse_chunk')
-    s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 0)])
+    s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 0)])
     s.echo_detection = s.set_output_port(hd.external_control_port, [(AOM_on_off, 1)], 'Start Detection')
     s.trigger_out([hd.PMT_counter_reset], 'Reset single counter')
     s.nop()

@@ -2,10 +2,10 @@
 from copy import deepcopy
 import json
 from PyQt5 import QtCore, QtWidgets as W
-from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, ROLE_KINDS, EXPERIMENTS, Profile, capability, compatible
+from labremote.devices.fpga.mapping import editing_settings, PINS, DEFAULT_ROLES, ROLE_KINDS, EXPERIMENTS, Profile, capability, compatible
 
 
-KINDS = {'TwoRFCompensationPage':'micromotion','MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi','DecayExperimentTab':'decay',
+KINDS = {'SpamScanTab':'spam','SecularScanPage':'secular','TwoRFCompensationPage':'micromotion','MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi','DecayExperimentTab':'decay',
          'HOMTab':'hom','EntanglementTab':'entanglement','IonCheckTab':'ion_check',
          'MicromotionPage':'micromotion','PhaseShifterTab':'phase_shifter','PhaseHoldTab':'phase_shifter','PhaseRabiTab':'phase_shifter','HalfPiRamseyTab':'phase_shifter'}
 ROLE_LABELS = {'PMT':'검출 입력 (PMT)','AOM':'광 제어 (AOM)','MW':'마이크로파 (MW)',
@@ -89,19 +89,23 @@ class QueueFPGASettings(W.QWidget):
         # A direct route is initialized from the experiment's default logical role,
         # resolved through the selected board's stored experiment mapping.
         for path,role,experiment,token in self.direct_routes():
-            if experiment not in ('fluorescence','rabi','ramsey','initialization','spam'):
+            if experiment not in ('fluorescence','rabi','ramsey','initialization','spin_echo','spam'):
                 if experiment=='ion_check':
                     from labremote.ion_check.config import default_mapping
                     token=default_mapping()[path[-1]]
-                if experiment=='micromotion':
+                if experiment in ('micromotion','secular'):
                     from labremote.micromotion.config import defaults
                     from labremote.devices.fpga.mapping import scope
+                    if experiment=='secular':
+                        from labremote.micromotion.secular.config import defaults
                     with scope(worker.profile):token=defaults(self.parameters['settings'].get('chamber','EC'))[path[-1]]
                 self.overrides[name][path]=self.resolve(token,experiment,self.documents[name])
                 continue
             from labremote.characterization import rabi
             chamber='EC' if 'EC' in path else self.parameters.get('experiment_chamber','EA')
             settings=self.parameters.get('settings',{})
+            for part in path[1:-2]:
+                settings=settings.get(part,{}) if isinstance(settings,dict) else {}
             if isinstance(settings,dict):chamber=settings.get('chamber',chamber)
             defaults=rabi.defaults(chamber)['roles']
             if experiment=='fluorescence':defaults={'PMT':'PMTFA' if chamber=='EA' else 'PMTFC','AOM':'AOMA' if chamber=='EA' else 'AOMC'}
@@ -122,9 +126,10 @@ class QueueFPGASettings(W.QWidget):
             selected=settings.get('pmt')
             pin=selected if isinstance(selected,str) else None
             return [(('settings','pmt'),'PMT',experiment,pin)]
-        if experiment=='micromotion':
+        if experiment in ('micromotion','secular'):
             return [(('settings',key),role,experiment,settings.get(key,'')) for key,role in
-                    (('trg_pin','TRIGGER'),('pmt_pin','DETECTOR'),('counter_pin','COUNTER'))]
+                    (('trg_pin','TRIGGER'),('pmt_pin','DETECTOR'),('counter_pin','COUNTER'))
+                    if key!='counter_pin' or experiment!='secular']
         if experiment=='phase_shifter':
             result=[(('settings','phase_outputs',i),'PHASE D'+str(i),experiment,token)
                     for i,token in enumerate(settings.get('phase_outputs',[]))]
@@ -134,15 +139,16 @@ class QueueFPGASettings(W.QWidget):
         groups=[(('settings',),settings)]
         if self.kind=='spam' and set(settings)=={'EA','EC'}:
             groups=[(('settings',ch),settings[ch]) for ch in ('EA','EC')]
+        if p.get('kind')=='SpamScanTab':groups=[(('settings','spam'),settings.get('spam',{}))]
         for prefix,c in groups:
             roles=c.get('roles') if isinstance(c,dict) else None
-            if experiment in ('fluorescence','rabi','initialization','ramsey','spam') and isinstance(roles,dict):
+            if experiment in ('fluorescence','rabi','initialization','ramsey','spin_echo','spam') and isinstance(roles,dict):
                 result.extend((prefix+('roles',role),role,experiment,token) for role,token in roles.items())
         return result
 
     @staticmethod
     def resolve(token,experiment,document):
-        try:return Profile(document).resolve(token, experiment)
+        try:return Profile(document).resolve(token, None if experiment in ('phase_shifter','scan','micromotion','secular') else experiment)
         except (ValueError,KeyError):return 'missing:' + str(token)
 
     def rebuild(self,*_):
@@ -164,7 +170,7 @@ class QueueFPGASettings(W.QWidget):
             if direct:
                 for path,role,exp,token in direct:
                     pin=self.overrides.get(name,{}).get(path,self.resolve(token,exp,document))
-                    title=(' / '.join(path[1:-2])+' · ' if len(path)>3 else '')+ROLE_LABELS.get(role,role)
+                    title=(' / '.join(str(part) for part in path[1:-2])+' · ' if len(path)>3 else '')+ROLE_LABELS.get(role,role)
                     self.add_row(path,title,pin,exp,role,document,direct=True)
                 if experiment=='ion_check':
                     for role in ION_FIXED:self.add_row(('ion_check',role),role,self.resolve(role,experiment,document),experiment,role,document,direct=False)
@@ -189,10 +195,11 @@ class QueueFPGASettings(W.QWidget):
             kind=capability(pin)
             if ('input' in kind)!=input_pin:continue
             allowed=(('counter' in kind) if input_pin else experiment=='fluorescence' or kind=='fast output') if direct else compatible(experiment,role,pin)
-            if direct and experiment=='micromotion' and role!='COUNTER':allowed='stopwatch' in kind
+            if direct and experiment in ('micromotion','secular') and role!='COUNTER':allowed='stopwatch' in kind
+            if direct and role=='MW':allowed=kind=='slow output'
             if direct and experiment=='ion_check' and not input_pin:allowed='output' in kind
             if direct and experiment=='phase_shifter' and not input_pin:
-                allowed=kind=='slow output' if role.startswith('PHASE ') else kind=='fast output' if role=='microwave' else 'output' in kind
+                allowed=kind=='slow output' if role.startswith('PHASE ') else kind=='slow output' if role=='microwave' else 'output' in kind
             combo.addItem(document['pins'][pin]+' ['+pin+']'+(' · 기능 미지원' if not allowed else ''),pin)
             combo.model().item(combo.count()-1).setEnabled(allowed)
             combo.setItemData(combo.count()-1,kind,QtCore.Qt.ToolTipRole)
@@ -205,6 +212,7 @@ class QueueFPGASettings(W.QWidget):
         def edit(*_):
             if self._loading:return
             name=self.target.currentData();pin=combo.currentData()
+            if pin not in (None,'') and pin not in PINS:return
             if direct:self.overrides.setdefault(name,{})[key]=pin
             else:self.documents[name]['role_bindings'].setdefault(experiment,{})[role]=document['pins'][pin] if pin else None
             table.item(row,2).setText(capability(pin) if pin else '사용 안 함');self.update_preview();self.changed.emit()
@@ -214,6 +222,7 @@ class QueueFPGASettings(W.QWidget):
         name=self.target.currentData()
         self.preview.setPlainText(json.dumps(self.documents.get(name,{}),ensure_ascii=False,indent=2))
 
+    @editing_settings(False)
     def value(self,parameters):
         name=self.target.currentData();document=deepcopy(self.documents.get(name))
         if document is None:raise ValueError('실행 FPGA를 연결하고 기본 매핑을 불러오세요.')
@@ -237,7 +246,7 @@ class QueueFPGASettings(W.QWidget):
             channels=parameters['settings'].setdefault('mapping',{})
             routes=document['role_bindings'].setdefault('ion_check',{})
             for key,pin in chosen.items():
-                canonical=ION_CHANNELS[key][1]
+                canonical=channels.get(key) or ION_CHANNELS[key][1]
                 channels[key]=canonical if pin else None
                 if pin:routes[canonical]=document['pins'][pin]
         profile=Profile(deepcopy(document))
@@ -253,17 +262,24 @@ class QueueFPGASettings(W.QWidget):
                 config.validate(parameters['settings'],require_thresholds=True)
                 used=[profile.view('ion_check').output_mapping[role] for role in config.output_levels(parameters['settings'])]
                 if len(set(used))!=len(used):raise ValueError('Ion Check의 레이저·EOM·MW 출력은 서로 다른 핀을 사용해야 합니다.')
-        elif self.direct_routes() and experiment in ('fluorescence','rabi','initialization','ramsey','spam'):
+        elif self.direct_routes() and experiment in ('fluorescence','rabi','initialization','ramsey','spin_echo','spam'):
             from labremote.characterization import config, rabi, pulse_experiment
             groups=parameters['settings'].values() if self.kind=='spam' and set(parameters['settings'])=={'EA','EC'} else [parameters['settings']]
+            if parameters.get('kind')=='SpamScanTab':groups=[parameters['settings']['spam']]
             with scope(profile,experiment):
                 for settings in groups:
                     if experiment=='fluorescence':config.validate_settings(settings)
                     elif experiment=='rabi':rabi.validate(settings)
                     else:pulse_experiment.validate(experiment,settings)
+                if parameters.get('kind')=='SpamScanTab':
+                    from labremote.characterization.spam_scan import validate
+                    validate(parameters['settings'])
+        elif experiment=='secular':
+            from labremote.micromotion.secular.config import validate
+            with scope(profile):validate(parameters['settings'])
         elif experiment=='micromotion':
             from labremote.micromotion.config import validate
-            with scope(profile,'micromotion'):
+            with scope(profile):
                 if parameters.get('kind')=='TwoRFCompensationPage':
                     from labremote.micromotion.two_rf import validate as validate_two_rf
                     validate_two_rf(parameters['settings'])
@@ -277,4 +293,8 @@ class QueueFPGASettings(W.QWidget):
                     from labremote.phase_shifter.rabi import validate
                     validate(c)
                 else:config.validate(c)
+        elif experiment in ('hom','entanglement','decay'):
+            from importlib import import_module
+            model=import_module('labremote.'+experiment+'.config')
+            with scope(profile,experiment):model.validate(parameters['settings'])
         return parameters,profile.document()

@@ -26,7 +26,7 @@ def setup_rabi_program(qubit_control_index, config, hd):
     run_counter_R = reg[8]
     transfer1_R = reg[12]
     s = SequencerProgram()
-    s.set_output_port(hd.external_control_port, [(MW_12G, 0)])
+    s.set_output_port(hd.MW_port, [(MW_12G, 0)])
     s.set_output_port(hd.external_control_port, [(EOM_14G_1, 1), (EOM_14G_2, 1), (AOM, 1)], 'laser setup')
     s.load_immediate(temp_R, 0)
     s.load_immediate(memory_pointer_R, 0)
@@ -50,11 +50,11 @@ def setup_rabi_program(qubit_control_index, config, hd):
     s.wait_n_clocks(WAIT_AOM, 'Wait for the AOM completely off')
     s.set_output_port(hd.external_control_port, [(EOM_2G, 0)], 'End Initialization')
     s.branch_if_equal('start_detection', qubit_control_time_R, 0, 'Microwave is off when reg[6] is 0')
-    s.set_output_port(hd.external_control_port, [(MW_12G, 1)], 'Start pi pulse')
+    s.set_output_port(hd.MW_port, [(MW_12G, 1)], 'Start pi pulse')
     s.repeat_microwave = s.wait_n_clocks(T_mw_step - 7, '1US=')
     s.add(count_microwave_R, count_microwave_R, 1, 'count_microwave_R++')
     s.branch_if_less_than('repeat_microwave', count_microwave_R, qubit_control_time_R, 'Repeat until microwave is on for wanted time')
-    s.set_output_port(hd.external_control_port, [(MW_12G, 0)], 'Stop pi pulse')
+    s.set_output_port(hd.MW_port, [(MW_12G, 0)], 'Stop pi pulse')
     s.start_detection = s.trigger_out([hd.PMT_counter_reset], 'Reset single counter')
     s.set_output_port(hd.counter_control_port, [(hd.PMT_counter_enable, 1)], 'Start counter')
     s.set_output_port(hd.external_control_port, [(EOM_14G_1, 0), (EOM_14G_2, 0), (AOM, 1)], 'Start Detection')

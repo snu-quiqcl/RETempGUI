@@ -41,8 +41,8 @@ def build_program(parameters, hd=None):
                for role in ('microwave', 'aom', 'eom_7g_1', 'eom_7g_2', 'eom_2g')}
     if len(set(outputs.values())) != len(outputs) or set(phase) & set(outputs.values()):
         raise ValueError('Experiment outputs and phase bits must not overlap')
-    if outputs['microwave'][0] != hd.external_control_port:
-        raise ValueError('Microwave pulse gate requires a fast output')
+    if outputs['microwave'][0] != hd.external_slow_port:
+        raise ValueError('Microwave pulse gate requires a slow output')
 
     code = integer('phase_code', 0, 4095)
     averages = integer('N_average', 1, 65535)

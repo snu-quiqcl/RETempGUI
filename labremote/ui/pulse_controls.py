@@ -13,7 +13,7 @@ def pin_controls(worker, kind, parent):
             ('EOM_7G_1','EOM 7G · 1'),('EOM_7G_2','EOM 7G · 2'),('EOM_2G','EOM 2G · 초기화'))
     roles={}
     for role,label in labels:
-        box=PinSelector(worker,kind,input_pin=role=='PMT',fast_only=role!='PMT')
+        box=PinSelector(worker,kind,input_pin=role=='PMT',fast_only=role not in ('PMT','MW'),slow_only=role=='MW')
         box.setToolTip(label+' — 이 실험에서 사용할 공통 신호 nickname · 물리 핀은 FPGA JSON에서 연결')
         form.addRow(label,box);roles[role]=box
     note=QtWidgets.QLabel('이 실험의 검출·광 제어·MW 게이트에 사용하는 핀만 표시합니다.' if kind!='initialization' else

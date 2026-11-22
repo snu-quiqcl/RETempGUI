@@ -5,10 +5,10 @@ from labremote.devices.fpga.mapping import PINS, DEFAULT_ROLES, capability
 
 
 class PinSelector(W.QComboBox):
-    def __init__(self, worker, experiment, *, input_pin=False, fast_only=False):
+    def __init__(self, worker, experiment, *, input_pin=False, fast_only=False, slow_only=False):
         super().__init__();bounded_combo(self)
         self.worker, self.experiment = worker, experiment
-        self.input_pin, self.fast_only = input_pin, fast_only
+        self.input_pin, self.fast_only, self.slow_only = input_pin, fast_only, slow_only
         self._token = None
         self._document = None
         self.currentIndexChanged.connect(self._selected)
@@ -16,7 +16,10 @@ class PinSelector(W.QComboBox):
 
     def _selected(self, index):
         pin = self.itemData(index)
-        self._token = 'signal:' + self.worker.profile.document()['pins'][pin] if pin else None
+        if pin in PINS:
+            self._token = 'signal:' + self.worker.profile.document()['pins'][pin]
+        elif pin is None:
+            self._token = None
 
     def physical_pin(self, token):
         return self.worker.profile.resolve(token, self.experiment)
@@ -46,7 +49,8 @@ class PinSelector(W.QComboBox):
                 kind = capability(pin)
                 if ('input' in kind) != self.input_pin:continue
                 reason = ('카운터 미지원' if self.input_pin and 'counter' not in kind else
-                          '이 시퀀스는 fast output 필요' if self.fast_only and kind!='fast output' else '')
+                          '이 시퀀스는 fast output 필요' if self.fast_only and kind!='fast output' else
+                          'MW는 slow output 필요' if self.slow_only and kind!='slow output' else '')
                 self.addItem(document['pins'][pin]+' ['+pin+']'+(' · '+reason if reason else ''), pin)
                 item = self.model().item(self.count()-1)
                 item.setEnabled(not reason)

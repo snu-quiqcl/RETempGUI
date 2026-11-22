@@ -11,7 +11,8 @@ def cleanup(controller,roles):
     if d is None:raise RuntimeError('FPGA disconnected; Rabi cleanup not confirmed')
     h=hardware(roles);d.stop_sequencer();s=SequencerProgram()
     s.set_output_port(h.counter_control_port,[(h.PMT_counter_enable,0)])
-    s.set_output_port(h.external_control_port,[(h.MW_out,0),(h.EOM_2G_out,0),(h.EOM_7G_1_out,1),(h.EOM_7G_2_out,1),(h.AOM_out,1)])
+    s.set_output_port(h.MW_port,[(h.MW_out,0)])
+    s.set_output_port(h.external_control_port,[(h.EOM_2G_out,0),(h.EOM_7G_1_out,1),(h.EOM_7G_2_out,1),(h.AOM_out,1)])
     s.stop();d.auto_mode();controller._run(s,0,threading.Event())
 
 def acquire(controller,c,index,cancelled,on_rows):

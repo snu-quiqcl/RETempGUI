@@ -26,8 +26,8 @@ DEFAULT_ROLES = {**{name: pin for pin, name in legacy.input_mapping.items()}, **
 _INPUT_ROLES = tuple(dict.fromkeys((*legacy.input_mapping.values(),
                                     'JA4', 'JA6', 'UPMT1', 'UMPT2')))
 ROLE_KINDS = {**dict.fromkeys(_INPUT_ROLES, 'input'),
-              **dict.fromkeys(('TRIG','AOMC','EOM_7GC1','EOM_7GC2','EOM_2GC','AOMA','EOM_7GA1','EOM_7GA2','EOM_2GA','MW_A','MW_C'), 'fast output'),
-              **dict.fromkeys(('AOMB','AOMM','CCD_EC','CCD_EA'), 'slow output')}
+              **dict.fromkeys(('TRIG','AOMC','EOM_7GC1','EOM_7GC2','EOM_2GC','AOMA','EOM_7GA1','EOM_7GA2','EOM_2GA'), 'fast output'),
+              **dict.fromkeys(('AOMB','AOMM','CCD_EC','CCD_EA','MW_A','MW_C'), 'slow output')}
 for _role in _INPUT_ROLES:
     DEFAULT_ROLES.setdefault(_role, None)
 EXPERIMENTS = ('spin_echo', 'fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'decay',
@@ -64,7 +64,9 @@ def compatible(experiment, role, pin):
         return True
     if pin not in PINS:
         return False
-    required = ROLE_KINDS[role]
+    required = ROLE_KINDS.get(role)
+    if required is None:
+        raise ValueError('Unknown sequencer role: ' + str(role))
     if required != 'input':
         if experiment == 'ion_check' and role in ('AOMA','AOMB','AOMC') or experiment == 'hom' and role == 'AOMB':
             return hasattr(physical, pin + '_out')

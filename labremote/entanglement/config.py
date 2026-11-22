@@ -68,7 +68,7 @@ def validate(c):
         raise ValueError('Timeout must exceed mirror waits, detection and communication margin')
     if not EDITING.get():
         for name, info in resolved_outputs().items():
-            expected = hd.external_slow_port if name in ('CCD_EC','CCD_EA','AOMB','AOMM') else hd.external_control_port
+            expected = hd.external_slow_port if name in ('CCD_EC','CCD_EA','AOMB','AOMM','MW_A','MW_C') else hd.external_control_port
             if info['port'] != expected:
                 raise ValueError(name + ' is not on the port used by the reviewed sequence')
         pairs = [(v['port'],v['bit']) for v in resolved_outputs().values()]

@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import editing_settings
 from labremote.ui.responsive import ScrollTabs
 """EA/EC Queue forms share the standalone SPAM field definitions and validation."""
 from copy import deepcopy
@@ -6,8 +7,9 @@ from labremote.characterization import pulse_experiment as model,rabi,config
 
 
 class SpamParameters(QtWidgets.QWidget):
+    @editing_settings()
     def __init__(self):
-        super().__init__();self.fields={};self.roles={}
+        super().__init__();self.fields={};self.roles={};self.route_values={}
         layout=QtWidgets.QVBoxLayout(self);form=QtWidgets.QFormLayout();layout.addLayout(form)
         self.fpga=QtWidgets.QLineEdit('fpga_local');form.addRow('FPGA 장비',self.fpga)
         note=QtWidgets.QLabel('Workflow 1회: EA SPAM → EC SPAM. 각 챔버 설정을 이 Queue 항목에 저장합니다.\nMW 주파수·출력은 외부에서 설정합니다. 시간 입력 단위는 µs입니다.');note.setWordWrap(True);layout.addWidget(note)
@@ -21,7 +23,7 @@ class SpamParameters(QtWidgets.QWidget):
             scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);body.addWidget(scroll)
             contents=QtWidgets.QWidget();scroll.setWidget(contents);grid=QtWidgets.QHBoxLayout(contents)
             measurement=QtWidgets.QGroupBox('측정 조건');inputs=QtWidgets.QFormLayout(measurement);grid.addWidget(measurement)
-            mapping=QtWidgets.QGroupBox('FPGA 역할 매핑');mapped=QtWidgets.QFormLayout(mapping);grid.addWidget(mapping)
+            mapping=QtWidgets.QGroupBox('FPGA 역할 매핑');mapped=QtWidgets.QFormLayout(mapping);grid.addWidget(mapping);mapping.hide()
             self.fields[chamber]={};self.roles[chamber]={}
             for key,title,lo,hi,dec,step in model.fields('spam'):
                 field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
@@ -34,9 +36,11 @@ class SpamParameters(QtWidgets.QWidget):
         self.info=QtWidgets.QLabel('불러오기는 Queue 편집값만 바꾸며, 기존 실험 설정 파일은 덮어쓰지 않습니다.');self.info.setWordWrap(True);layout.addWidget(self.info)
 
     @staticmethod
+    @editing_settings()
     def defaults():return dict(fpga='fpga_local',settings={ch:model.load('spam',ch) for ch in ('EA','EC')})
 
     @staticmethod
+    @editing_settings()
     def validate_parameters(parameters):
         if not isinstance(parameters,dict):raise ValueError('Parameters must be an object')
         name=parameters.get('fpga','fpga_local')
@@ -48,20 +52,23 @@ class SpamParameters(QtWidgets.QWidget):
             if c['chamber']!=ch:raise ValueError(ch+' SPAM chamber/settings mismatch')
         return deepcopy(parameters)
 
+    @editing_settings()
     def populate_chamber(self,chamber,c):
         c=model.validate('spam',c)
         if c['chamber']!=chamber:raise ValueError(chamber+'용 설정 파일을 선택하세요.')
         for key,field in self.fields[chamber].items():field.setValue(c[key]/100 if key in model.times('spam') else c[key])
-        for role,box in self.roles[chamber].items():box.setCurrentText(c['roles'][role])
+        self.route_values[chamber]=deepcopy(c['roles'])
 
+    @editing_settings()
     def populate(self,parameters):
         self.validate_parameters(parameters);self.fpga.setText(parameters.get('fpga','fpga_local'))
         for ch in ('EA','EC'):self.populate_chamber(ch,parameters['settings'][ch])
 
+    @editing_settings()
     def parameters(self,base,validate=True):
         p=deepcopy(base);p['fpga']=self.fpga.text().strip();p['settings']={}
         for ch in ('EA','EC'):
-            c=dict(schema_version=1,experiment='spam',chamber=ch,roles={k:b.currentText() for k,b in self.roles[ch].items()})
+            c=dict(schema_version=1,experiment='spam',chamber=ch,roles=deepcopy(self.route_values[ch]))
             for key,field in self.fields[ch].items():c[key]=round(field.value()*100) if key in model.times('spam') else field.value()
             p['settings'][ch]=c
         return self.validate_parameters(p) if validate else p
@@ -70,6 +77,7 @@ class SpamParameters(QtWidgets.QWidget):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,chamber+' SPAM 설정 불러오기',str(config.ROOT),'JSON (*.json)')
         if path:self.load_chamber(chamber,path)
 
+    @editing_settings()
     def load_chamber(self,chamber,path=None):
         try:
             self.populate_chamber(chamber,model.load('spam',chamber,path))

@@ -1,3 +1,4 @@
+from labremote.devices.fpga.mapping import editing_settings
 from labremote.ui.responsive import ScrollTabs
 """Queue-only parameter editor. Editing never connects to an instrument."""
 import json
@@ -9,6 +10,7 @@ from labremote.runtime.workflow_queue import freeze_job, validate_plan
 
 
 class EntanglementParameters(QtWidgets.QWidget):
+    @editing_settings()
     def __init__(self, parent=None):
         super().__init__(parent)
         layout=QtWidgets.QVBoxLayout(self)
@@ -50,6 +52,7 @@ class EntanglementParameters(QtWidgets.QWidget):
         for field in self.fields.values():field.valueChanged.connect(self.update_summary)
         self.populate({'fpga':'fpga_local','settings':config.defaults()})
 
+    @editing_settings()
     def populate(self,parameters):
         if not isinstance(parameters,dict):raise ValueError('Parameters must be a JSON object')
         settings=config.validate(parameters['settings'])
@@ -63,6 +66,7 @@ class EntanglementParameters(QtWidgets.QWidget):
         del blockers
         self.update_summary()
 
+    @editing_settings()
     def parameters(self,base,validate=True):
         value=deepcopy(base)
         value['fpga']=self.fpga.text().strip()
@@ -74,6 +78,7 @@ class EntanglementParameters(QtWidgets.QWidget):
         value['settings']=settings
         return value
 
+    @editing_settings()
     def update_summary(self):
         mw=self.basis.currentData()=='mw_detuned'
         for key in ('detuning_hz','phase_magnitude_deg','pi_ea_us','pi_ec_us'):self.fields[key].setEnabled(mw)
@@ -90,6 +95,7 @@ class EntanglementParameters(QtWidgets.QWidget):
 
 class IonCheckParameters(QtWidgets.QWidget):
     """Queue settings using the same channel choices and validation as IonCheckTab."""
+    @editing_settings()
     def __init__(self):
         super().__init__()
         from labremote.ion_check import config as ion
@@ -114,6 +120,7 @@ class IonCheckParameters(QtWidgets.QWidget):
         note=QtWidgets.QLabel('두 PMT 선택 시 count를 합산합니다. 밝음: count ≥ threshold.\n정상 확인 시 즉시 종료합니다. DAC swap 없이 재측정만 수행합니다.\n종료 상태: 선택한 A/C 및 7GA/7GC ON, B OFF.');note.setWordWrap(True);form.addRow(note)
         self.populate({'settings':ion.defaults()})
 
+    @editing_settings()
     def populate(self,parameters):
         from labremote.ion_check import config as ion
         c=ion.validate(parameters['settings']);name=parameters.get('fpga','fpga_local')
@@ -122,6 +129,7 @@ class IonCheckParameters(QtWidgets.QWidget):
         for key,box in self.fields.items():box.setValue(c[key] if c[key] is not None else 0)
         for key,box in self.mapping_fields.items():box.setCurrentIndex(box.findData(c['mapping'][key]))
 
+    @editing_settings()
     def parameters(self,base,validate=True):
         from labremote.ion_check import config as ion
         value=deepcopy(base);value['fpga']=self.fpga.text().strip()
@@ -155,6 +163,7 @@ class MonitorSettings(QtWidgets.QWidget):
 
 
 class WorkflowJobDialog(QtWidgets.QDialog):
+    @editing_settings()
     def __init__(self,job,parent=None,*,bindings_provider=None):
         super().__init__(parent)
         self.job=deepcopy(job);self.base=deepcopy(job['parameters']);self.previous_tab=0
@@ -293,6 +302,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         json.dumps(value,allow_nan=False)
         return value
 
+    @editing_settings()
     def switch_tab(self,index):
         if self.editor is None:
             try:self.base=self.read_json();self.pin_settings.set_parameters(self.base);self.previous_tab=index;self.error.clear()
@@ -317,6 +327,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'실험 설정 불러오기',str(self.settings_config.ROOT),'JSON (*.json)')
         if path:self.load_settings(path)
 
+    @editing_settings()
     def load_settings(self,path):
         try:
             settings=self.settings_config.load(path)
@@ -353,8 +364,10 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                     validate(parameters)
                 elif isinstance(self.editor,SpamParameters):self.editor.validate_parameters(parameters)
                 else:
-                    if isinstance(self.editor,IonCheckParameters):self.settings_config.validate(parameters['settings'],require_thresholds=True)
-                    else:self.settings_config.validate(parameters['settings'])
+                    # pin_settings.value() already checked the selected FPGA snapshot.
+                    with editing_settings():
+                        if isinstance(self.editor,IonCheckParameters):self.settings_config.validate(parameters['settings'],require_thresholds=True)
+                        else:self.settings_config.validate(parameters['settings'])
                     if not isinstance(parameters.get('fpga'),str) or not parameters['fpga'].strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
             job=deepcopy(self.job)
             if self.reload.isChecked():

@@ -41,7 +41,7 @@ def validate(kind,value):
     if kind=='spin_echo':
         value=deepcopy(value);value['precession_time']+=value['precession_time']%2
     roles=value['roles']
-    if not isinstance(roles,dict) or set(roles)!=set(rabi.ROLE_CHOICES) or any(roles[k] not in names for k,names in rabi.ROLE_CHOICES.items()):raise ValueError('Invalid FPGA roles')
+    rabi.validate_roles(roles)
     shots=value['N_average']*(value['N_init_control'] if kind=='initialization' else value['max_precession_count'] if kind in ('ramsey','spin_echo') else 2*value['N_repeat'])
     if shots>2000000:raise ValueError('Maximum 2,000,000 attempts')
     c=value

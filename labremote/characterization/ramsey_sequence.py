@@ -52,7 +52,7 @@ def build_program(config,hd):
     control_free_precession_R = reg[11]
     max_count_R = reg[12]
     s = SequencerProgram()
-    s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 0)])
+    s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 0)])
     s.load_immediate(number_of_runs_R, 0, 'number_of_runs_R is the number of runs done')
     s.load_immediate(control_free_precession_R, 0, 'count_initalization_R will be used to count the loop of initialization timer')
     s.repeat_run = s.load_immediate(count_measured_PMT_R, 0, 'count_measured_PMT_R will be used to count the measured result of PMT')
@@ -69,10 +69,10 @@ def build_program(config,hd):
     s.set_output_port(hd.external_control_port, [(AOM_on_off, 0)], 'End Initialization')
     s.wait_n_clocks(T_wait_for_aom_off, 'Wait for the AOM completely off')
     s.set_output_port(hd.external_control_port, [(EOM_2_1GHz, 0)], 'End Initialization')
-    s.first_microwave = s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 1)], 'Start half pi control')
+    s.first_microwave = s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 1)], 'Start half pi control')
     s.wait_n_clocks(half_pi_time - 2, 'Interval for 5000 * 10 ns = 50 us')
     s.branch_if_equal('second_microwave', control_free_precession_R, 0, 'Microwave is off when counter is 0')
-    s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 0)], 'Free precession')
+    s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 0)], 'Free precession')
     # First interval includes the MW-off instruction (1 clock), add (1),
     # and equality branch (2). Later intervals include add + branch (3).
     # This makes the MW OFF-to-ON interval exactly point * precession_time.
@@ -82,9 +82,9 @@ def build_program(config,hd):
     s.free_precession = delay_clocks(s, precession_time - 3, 'repeat_delay_chunk')
     s.add(count_free_precession_R, count_free_precession_R, 1)
     s.branch_if_less_than('free_precession', count_free_precession_R, control_free_precession_R)
-    s.second_microwave = s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 1)], 'Another half time')
+    s.second_microwave = s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 1)], 'Another half time')
     s.wait_n_clocks(half_pi_time - 7, 'Interval for 5000 * 10 ns = 50 us')
-    s.set_output_port(hd.external_control_port, [(Microwave_12_6GHz, 0)], 'Another half time')
+    s.set_output_port(hd.MW_port, [(Microwave_12_6GHz, 0)], 'Another half time')
     s.set_output_port(hd.external_control_port, [(AOM_on_off, 1)], 'Start Detection')
     s.trigger_out([hd.PMT_counter_reset], 'Reset single counter')
     s.nop()

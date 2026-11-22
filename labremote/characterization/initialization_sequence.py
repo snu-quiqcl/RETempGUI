@@ -22,6 +22,7 @@ def build_program(config, hd):
     run_counter_R = reg[12]
     initialization_counter_R = reg[13]
     s = SequencerProgram()
+    s.set_output_port(hd.MW_port, [(hd.MW_out, 0)], 'MW OFF before initialization')
     s.load_immediate(init_time_index_R, 0, 'initialization-time index')
     s.load_immediate(run_counter_R, 0, 'number of completed trials')
     s.repeat_run = s.load_immediate(measured_PMT_R, 0)

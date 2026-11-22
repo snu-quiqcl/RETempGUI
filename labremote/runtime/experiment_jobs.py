@@ -51,15 +51,21 @@ def execute(devices):
     if kind=='MotorScanTab':
         c=dict(c,directory=directory)
         return api.start_scan(devices.motor(p['x']),devices.motor(p['y']),c,z_motor=devices.motor(p['z']) if p.get('z') else None).wait()
+    if kind=='SecularScanPage':
+        name=c.get('afg_name')
+        if not name:raise ValueError('Select an AFG2105 for the secular scan')
+        return api.run_secular_scan(settings=c,afg=devices.afg2105(name).worker,directory=directory).wait()
     if kind=='MicromotionPage':
         return api.run_micromotion(settings=c,mode=p['mode'],dac=devices.dac(p['dac']) if p.get('dac') else None,directory=directory).wait()
     if kind=='PhaseShifterTab':return api.run_phase_shifter(settings=c,directory=directory).wait()
     if kind=='HalfPiRamseyTab':return api.run_phase_shifter(settings=c,directory=directory).wait()
     if kind=='PhaseRabiTab':return api.run_phase_rabi(settings=c,directory=directory).wait()
     if kind=='PhaseHoldTab':return api.hold_phase(**c).wait()
-    method={'HOMTab':'run_hom','EntanglementTab':'run_entanglement','IonCheckTab':'run_ion_check',
+    methods={'HOMTab':'run_hom','EntanglementTab':'run_entanglement','IonCheckTab':'run_ion_check',
             'FluorescenceTab':'run_fluorescence','RabiTab':'run_rabi','DecayExperimentTab':'run_decay',
-            'PulseExperimentTab':'run_'+p.get('experiment_kind','ramsey')}[kind]
+            'PulseExperimentTab':'run_'+p.get('experiment_kind','ramsey')}
+    if kind not in methods:raise ValueError('Unsupported Queue experiment: '+str(kind))
+    method=methods[kind]
     args=[]
     if kind in ('FluorescenceTab','RabiTab','PulseExperimentTab','DecayExperimentTab'):args.append(p['experiment_chamber'])
     if kind=='DecayExperimentTab':args.append(p['experiment_mode'])

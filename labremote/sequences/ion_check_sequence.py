@@ -29,13 +29,12 @@ def build_program(parameters):
             (hd.PMTA_counter_enable, enabled), (hd.PMTC_counter_enable, enabled)])
 
     def lasers(a=0, b=0, c=0):
-        s.set_output_port(hd.external_slow_port, [(hd.AOMB_out, 0)])
+        s.set_output_port(hd.external_slow_port, [(hd.AOMB_out, 0), (hd.MW_A_out, 0), (hd.MW_C_out, 0)])
         s.set_output_port(hd.external_control_port, [
             (hd.AOMA_out, a), (hd.AOMC_out, c),
             (hd.EOM_7GA1_out, a), (hd.EOM_7GA2_out, a),
             (hd.EOM_7GC1_out, c), (hd.EOM_7GC2_out, c),
-            (hd.EOM_2GA_out, 0), (hd.EOM_2GC_out, 0),
-            (hd.MW_A_out, 0), (hd.MW_C_out, 0)])
+            (hd.EOM_2GA_out, 0), (hd.EOM_2GC_out, 0)])
         if b:
             s.set_output_port(hd.external_slow_port, [(hd.AOMB_out, 1)])
 

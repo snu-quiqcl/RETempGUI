@@ -83,7 +83,7 @@ class PhaseShifterEtcTab(QtWidgets.QWidget):
                 combo.blockSignals(blocked)
 
         for role, combo in self.output_selectors.items():
-            fill(combo, fast if role == 'microwave' else outputs)
+            fill(combo, slow if role == 'microwave' else outputs)
         for combo in self.phase_selectors:
             fill(combo, slow)
         fill(self.detector_selector, detectors)

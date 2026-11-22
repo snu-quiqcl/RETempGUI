@@ -157,7 +157,7 @@ def build_sequence(basis='mw_detuned', *, half_pi_ea_us=40.55, half_pi_ec_us=35.
     #sequencer code
     s = SequencerProgram()
     # First FPGA instruction for every basis: clear MW before memory initialization.
-    s.set_output_port(hd.external_control_port,
+    s.set_output_port(hd.external_slow_port,
                       [(hd.MW_A_out, 0), (hd.MW_C_out, 0)], 'Force MW OFF at entry')
     s.load_immediate(reg[26], 0)  # Histogram saturation flag.
 
@@ -207,7 +207,7 @@ def build_sequence(basis='mw_detuned', *, half_pi_ea_us=40.55, half_pi_ec_us=35.
 
     #Address
     s.load_immediate(state_add_R, STATEA_BIAS)
-    s.set_output_port(hd.external_control_port,
+    s.set_output_port(hd.external_slow_port,
                       [(hd.MW_A_out, 0), (hd.MW_C_out, 0)], 'MW OFF at batch start')
     s.set_output_port(hd.counter_control_port,
                       [(hd.PMTFA_counter_enable, 0), (hd.PMTFC_counter_enable, 0)])
@@ -311,11 +311,11 @@ def build_sequence(basis='mw_detuned', *, half_pi_ea_us=40.55, half_pi_ec_us=35.
     # Herald: AOMA/AOMC are already OFF; keep AOMB OFF through readout.
     s.herald_analysis = s.set_output_port(
         hd.external_slow_port, [(hd.AOMB_out, 0), (hd.AOMM_out, 0)], 'Herald')
-    s.set_output_port(hd.external_control_port,
+    s.set_output_port(hd.external_slow_port,
                       [(hd.MW_A_out, 0), (hd.MW_C_out, 0)], 'Force MW OFF before analysis')
     s.wait_n_clocks(waiting_time_for_AOM_off, 'Wait for AOM extinction')
     if basis == 'mw_detuned':
-        emit_mw_events(s, hd.external_control_port, MW_EVENTS)
+        emit_mw_events(s, hd.external_slow_port, MW_EVENTS)
 
     # Analyze BEFORE the mechanical wait; ZZ skips MW entirely.
     s.set_output_port(hd.external_slow_port,
@@ -324,9 +324,9 @@ def build_sequence(basis='mw_detuned', *, half_pi_ea_us=40.55, half_pi_ec_us=35.
 
     # Reference flip-mirror readout: both ions simultaneously, dedicated PMTFA/FC.
     # Both bases read fluorescence with MW gates explicitly OFF.
-    detection_outputs = [(hd.AOMA_out, 1), (hd.AOMC_out, 1),
-                         (hd.MW_A_out, 0), (hd.MW_C_out, 0)]
-    s.detect = s.set_output_port(hd.external_control_port, detection_outputs)
+    s.detect = s.set_output_port(hd.external_slow_port,
+                                 [(hd.MW_A_out, 0), (hd.MW_C_out, 0)])
+    s.set_output_port(hd.external_control_port, [(hd.AOMA_out, 1), (hd.AOMC_out, 1)])
     s.trigger_out([hd.PMTFA_counter_reset, hd.PMTFC_counter_reset])
     s.nop()
     s.set_output_port(hd.counter_control_port,
