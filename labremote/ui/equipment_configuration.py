@@ -1,6 +1,6 @@
 """Table-based editor for equipment membership, not hardware parameters."""
 from PyQt5 import QtCore,QtWidgets
-from labremote.config.equipment import GROUPS,FAMILY_GROUP,validate,display_config
+from labremote.configuration.equipment import GROUPS,FAMILY_GROUP,validate,display_config
 
 class EquipmentConfigurationDialog(QtWidgets.QDialog):
     def __init__(self,document,candidates,parent=None):

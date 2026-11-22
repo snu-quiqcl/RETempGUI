@@ -4,7 +4,7 @@ from labremote.runtime.parameters import LIBRARY
 from labremote.runtime.device_worker import DeviceWorker
 from labremote.runtime.io import acquire
 from labremote.runtime.network import configure_client_timeout
-from labremote.config.device_config import load_device_config
+from labremote.configuration.device_config import load_device_config
 
 
 class MotorWorker(DeviceWorker):

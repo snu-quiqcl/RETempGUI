@@ -5,7 +5,7 @@ import time
 from copy import deepcopy
 from collections import deque
 from labremote.runtime.workflow_runner import WorkflowTask
-from labremote.config.device_config import load_device_config,operation_config
+from labremote.configuration.device_config import load_device_config,operation_config
 
 class InvalidSpectrum(ValueError):pass
 

@@ -8,7 +8,7 @@ from dataclasses import dataclass, replace
 from decimal import Decimal
 from datetime import datetime
 from pathlib import Path
-from labremote.config.dac import DeviceConfig, number, read_json, voltage_code
+from labremote.configuration.dac import DeviceConfig, number, read_json, voltage_code
 
 
 def default_set_name(device, now=None):

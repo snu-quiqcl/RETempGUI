@@ -167,7 +167,7 @@ wait()는 완료까지 기다리고 실패·취소를 예외로 전달합니다.
 
 ## 설정·workflow·모니터 책임
 
-- `labremote/config/ramp.py`: ramp 설정 자료형. 실제 값은 operation 시작 시 고정한 장비 config에서 가져옵니다.
+- `labremote/configuration/ramp.py`: ramp 설정 자료형. 실제 값은 operation 시작 시 고정한 장비 config에서 가져옵니다.
 - `labremote/runtime/errors.py`: 일반 취소와 ramp 취소 예외.
 - `labremote/runtime/workflow_runner.py`: 공통 API를 이용한 workflow 실행·완료 대기·오류 및 취소 처리.
 - `labremote/devices/windfreak/monitor.py`: 관측할 항목 등록, 초기 미확인 상태, 60초 경과 항목 조회 예약과 모니터 요청 중복 방지. Worker는 예약된 operation의 큐 실행을 담당합니다. 초기 등록은 장비 I/O를 발생시키지 않으며 기존 관측값을 덮어쓰지 않습니다.

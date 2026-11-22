@@ -3,7 +3,7 @@ import json
 import math
 from copy import deepcopy
 from pathlib import Path
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 from labremote.devices.fpga.controller import hd, INPUTS
 from labremote.devices.fpga.mapping import PINS, ROLE_KINDS, capability, RouteChoices
 

@@ -5,7 +5,7 @@ from collections import deque
 import time
 from PyQt5 import QtCore, QtWidgets
 from labremote.api.devices import device_api
-from labremote.config.device_config import load_device_config
+from labremote.configuration.device_config import load_device_config
 from labremote.runtime.parameters import LIBRARY
 
 

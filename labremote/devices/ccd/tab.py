@@ -157,7 +157,7 @@ class CCDTab(QtWidgets.QWidget):
 
         from labremote.devices.oven.panel import OvenPanel
         if endpoint is None:
-            from labremote.config.settings import load_settings
+            from labremote.configuration.settings import load_settings
             endpoint = lambda: (load_settings()['server_host'], load_settings()['server_port'])
         self.oven_panel = OvenPanel(self, endpoint, self)
         self.oven_panel.log_message.connect(self.log_message.emit)
@@ -295,7 +295,7 @@ class CCDTab(QtWidgets.QWidget):
         self._detection_feedback()
 
     def apply_display_config(self, options):
-        from labremote.config.equipment import display_config
+        from labremote.configuration.equipment import display_config
         cfg = display_config(options)
         for name in ('auto_levels','flip_h','flip_v','markers_enabled'):
             getattr(self,name).setChecked(cfg[name])

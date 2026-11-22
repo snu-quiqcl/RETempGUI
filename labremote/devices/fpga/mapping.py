@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 from .vendor import HardwareDefinition_v4_05 as physical
 from .vendor import HardwareDefinition_remote_ent_test_ec as legacy
 

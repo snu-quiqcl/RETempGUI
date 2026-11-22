@@ -4,7 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import DeviceAPI
-from labremote.config import equipment
+from labremote.configuration import equipment
 from .detail_window import DetailWindow
 from .equipment_configuration import EquipmentConfigurationDialog
 

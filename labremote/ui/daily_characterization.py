@@ -146,8 +146,7 @@ class DailyCharacterization(QtWidgets.QTabWidget):
         self.workflow=WorkflowTab(bindings,self);self.addTab(self.workflow,'Workflow')
         template=self.workflow.workflow_root/'daily_fluorescence.py'
         if worker.profile.device_id != 'fpga_local':
-            from labremote.devices.fpga.mapping import ROOT
-            destination=ROOT/'workflows.local'/worker.profile.device_id/'daily_fluorescence.py'
+            destination=self.workflow.workflow_root/'local'/worker.profile.device_id/'daily_fluorescence.py'
             if not destination.exists():
                 destination.parent.mkdir(parents=True,exist_ok=True)
                 if template.exists():

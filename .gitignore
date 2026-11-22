@@ -87,3 +87,10 @@ instrumentserver-remote_entanglement/
 # Per-FPGA private presets and generated workflow editors
 /labremote/config/devices/fpga/settings.local/
 /labremote/config/devices/fpga/workflows.local/
+
+# Every machine owns its complete settings and generated data.
+/labremote/config/
+/labremote/data/
+/logs/
+/data/
+/*_actual.png

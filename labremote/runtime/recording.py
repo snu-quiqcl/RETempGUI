@@ -9,7 +9,8 @@ from uuid import uuid4
 
 from labremote.runtime.errors import OperationCancelled
 
-DEFAULT_RUNS = Path(__file__).resolve().parents[2] / 'logs' / 'operations'
+from labremote.data_paths import DATA_ROOT
+DEFAULT_RUNS = DATA_ROOT / 'logs' / 'operations'
 _lock = threading.Lock()
 _detailed = False
 

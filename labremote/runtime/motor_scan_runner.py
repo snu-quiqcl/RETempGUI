@@ -13,7 +13,7 @@ from uuid import uuid4
 import numpy as np
 from labremote.runtime.workflow_runner import WorkflowTask,motor_identity
 from labremote.runtime.errors import OperationCancelled
-from labremote.config.device_config import load_device_config,operation_config
+from labremote.configuration.device_config import load_device_config,operation_config
 from labremote.devices.fpga.scan_model import axis_points,fit_profiles
 
 

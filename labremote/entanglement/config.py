@@ -5,7 +5,7 @@ import math
 from copy import deepcopy
 from pathlib import Path
 from labremote.characterization.config import read, save
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 from labremote.devices.fpga.controller import hd, OUTPUTS
 
 ROOT = CONFIG_ROOT / 'operations/entanglement'

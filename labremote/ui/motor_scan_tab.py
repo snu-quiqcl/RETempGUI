@@ -9,11 +9,11 @@ import numpy as np
 from labremote.runtime.parameters import LIBRARY
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api,Devices
-from labremote.config.device_config import load_device_config
+from labremote.configuration.device_config import load_device_config
 from labremote.devices.fpga.controller import INPUTS
 
 
-from labremote.config.roles import scan_roles
+from labremote.configuration.roles import scan_roles
 SCAN_ROLES = scan_roles()
 SCAN_TABS = tuple((r['title'],tuple(r['axes'])) for r in SCAN_ROLES)
 
@@ -309,7 +309,7 @@ class MotorScanTab(QtWidgets.QWidget):
                 task=WorkflowTask(apis[axes[0]].worker,'MOTOR_GOTO_MAX');self.goto_task=task
                 native={a:target[a]/self.scan_scales[a+'_um_per_unit'] for a in axes}
                 def execute():
-                    from labremote.config.device_config import load_device_config
+                    from labremote.configuration.device_config import load_device_config
                     # Validate every target and motor before moving the first axis.
                     for a in axes:
                         limits=load_device_config('motors',apis[a].worker.name)['limits']

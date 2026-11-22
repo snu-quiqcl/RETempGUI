@@ -2,9 +2,9 @@
 from labremote.runtime.jobs import ExecutionHandle
 from labremote.runtime.io import Context, acquire
 from labremote.operation import windfreak
-from labremote.config.ramp import PowerConfig
+from labremote.configuration.ramp import PowerConfig
 from labremote.operation.windfreak.set_power import set_power
-from labremote.config.device_config import load_rf_device_config
+from labremote.configuration.device_config import load_rf_device_config
 
 SUPPORTED_FAMILIES = frozenset({'afg2105', 'windfreak', 'sg384', 'anapico', 'dds4', 'ds1052e', 'mso7054', 'thermotek', 'keithley', 'osa', 'mdt', 'fpga', 'motors', 'ccd', 'dac','flip'})
 

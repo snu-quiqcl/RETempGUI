@@ -1,3 +1,4 @@
+from labremote.configuration.paths import CONFIG_ROOT
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -179,13 +180,13 @@ class QueueTab(QtWidgets.QWidget):
             self.refresh((ref[0],other) if ref[1] is not None else other)
     def plan(self):return validate_plan(dict(schema_version=2 if any(is_group(j) for j in self.jobs) else 1,repeat=self.repeat.value(),jobs=self.jobs))
     def save_plan(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save Queue','queue.local.json','JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save Queue',str(CONFIG_ROOT/'queues'/'queue.local.json'),'JSON (*.json)')
         if not path:return False
         try:save(path,self.plan());self.dirty=False;self.status.setText(path);return True
         except Exception as exc:self.status.setText(str(exc));return False
     def load_plan(self):
         if self.still_running() or not self.confirm_close():return
-        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load Queue','','JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load Queue',str(CONFIG_ROOT/'queues'),'JSON (*.json)')
         if path:
             try:
                 p=validate_plan(read(path));self.jobs=p['jobs'];self.repeat.setValue(p['repeat']);self.dirty=False;self.refresh();self.status.setText(path)

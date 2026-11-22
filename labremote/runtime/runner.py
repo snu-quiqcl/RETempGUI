@@ -13,7 +13,7 @@ class OperationRunner:
     @staticmethod
     def execute(worker, handle):
         self = worker
-        from labremote.config.device_config import operation_config
+        from labremote.configuration.device_config import operation_config
         error = None
         result = None
         session = None
@@ -37,7 +37,7 @@ class OperationRunner:
             with operation_config():
                 if not handle.action.startswith('MONITOR'):
                     from labremote.runtime.recording import RunRecord, CURRENT_RECORD, log_value
-                    from labremote.config.device_config import load_device_config
+                    from labremote.configuration.device_config import load_device_config
                     record = RunRecord(handle.action, {'request_id':handle.request_id, 'device':str(self._execution_device), 'config':load_device_config(self.family, self.name or ''), 'parameters':log_value(handle.arguments)})
                     record_token = CURRENT_RECORD.set((record, lambda message: self.failure.emit('LOG', message)))
                 identity = self._execution_device or ('unconnected', id(self))

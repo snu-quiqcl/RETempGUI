@@ -1,7 +1,7 @@
 """Local presentation metadata only; never selects hardware or changes routes."""
 import json
 from pathlib import Path
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 
 DEFAULT = CONFIG_ROOT/'ui/flipper_display.json'
 LOCAL = CONFIG_ROOT/'ui/flipper_display.local.json'

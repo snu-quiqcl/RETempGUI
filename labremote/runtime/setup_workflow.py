@@ -3,7 +3,7 @@ from copy import deepcopy
 import math
 from dataclasses import dataclass,replace
 from labremote.runtime.parameters import ParameterRegistry
-from labremote.config.paths import registry_paths
+from labremote.configuration.paths import registry_paths
 
 
 @dataclass(frozen=True)

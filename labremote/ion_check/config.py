@@ -1,7 +1,7 @@
 from labremote.devices.fpga.mapping import settings_path
 from copy import deepcopy
 import math
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 from labremote.characterization.config import read, save
 from labremote.devices.fpga.controller import hd,OUTPUTS
 

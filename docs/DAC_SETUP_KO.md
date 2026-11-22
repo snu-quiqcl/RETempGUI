@@ -15,7 +15,7 @@
 클라이언트는 이를 import하지 않습니다.
 
 InstrumentServer 환경에서 `python -m pip install /ABSOLUTE/DAC81416` 실행 후
-`docs/examples/dac_server.example.yml`을 기존 instruments 설정에 합칩니다.
+`labremote/config/examples/dac_server.example.yml`을 기존 instruments 설정에 합칩니다.
 기존 init의 config_path, data_root, lease_seconds는 제거합니다.
 QCoDeS와 pyserial이 필요합니다. GUI는 서버에 필요하지 않습니다.
 internal_reference는 실제 보드 배선에 맞춰 서버 생성 인자로 지정합니다.

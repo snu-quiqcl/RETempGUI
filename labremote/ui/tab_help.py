@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 
 class TabHelp(QtCore.QObject):
     def __init__(self, owner, config_root=None):

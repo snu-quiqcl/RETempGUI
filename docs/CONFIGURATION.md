@@ -1,5 +1,7 @@
 # 설정 구조
 
+현재 설정 실행 코드는 `labremote/configuration`에 있으며, `labremote/config`에는 실제 설정만 둡니다. [최종 저장 구조와 이전 절차](configuration/LOCAL_STORAGE.md)를 참고하세요.
+
 설정은 `labremote/config` 아래 세 종류로 구분합니다. Python 로더는 config 루트에 남습니다.
 
 | 위치 | 역할 |
@@ -7,7 +9,7 @@
 | `devices/<장비종류>/device_config.yml` | 장비 연결 기본값, 출력 제한, 장비별 preset |
 | `devices/connections.local.json` | 서버/모터 서버의 개인 네트워크 주소. 미설정 시 공개 `connections.json`의 빈 설정과 기존 localhost 기본값 사용 |
 | `devices/fpga/ports.local.json` | FPGA별 마지막 성공 USB 포트 |
-| `ui/defaults.json` | UI의 공개 초기값 |
+| `ui/defaults.json` | UI의 로컬 초기값 |
 | `ui/equipment.json` | 신규 실험 구성의 기본 항목. 장비 YAML의 이름과 기존 UI의 추가 이름을 함께 반영 |
 | `ui/equipment.local.json` | 실제 사용할 장비, 그룹, 활성화 여부. 메인 Configuration에서 편집 |
 | `ui/client_settings.local.json` | 마지막 UI 상태와 선택한 구성 파일 경로. 앱이 저장 |
@@ -15,13 +17,13 @@
 | `operations/<장비종류>/parameter_registry.yml` | operation 파라미터의 읽기/쓰기/검증 정책 |
 | `operations/<장비종류>/operation_config.yml` | RF ramp 또는 FPGA scan 기본값. 장비 설정과 합쳐 기존 API에 제공 |
 | `operations/scan_roles.json` | 네 scan 탭 제목, X/Y/Z 모터 이름, PMT 선택 인덱스 |
-| `operations/flipper_routes.json` | flipper 경로의 공개 기본값. 기본 자동 이동은 비활성 |
+| `operations/flipper_routes.json` | flipper 경로의 로컬 기본값. 기본 자동 이동은 비활성 |
 | `operations/flipper_routes.local.json` | 실제 서버 이름별 EA/EC 목표 위치와 자동 경로 사용 여부 |
 | `operations/oven.local.json` | 기존 oven PSU/relay/shutter 선택값. 파일이 없으면 기존 기본값 사용 |
 
-기존 example JSON 네 개는 실제로 읽는 공개 기본 파일로 통합했습니다. 동일 역할의 example을 별도로 유지하지 않습니다. 현재 메인 Configuration 편집기는 장비 사용 목록을 편집합니다. operation 경로 및 YAML은 파일로 편집하고 UI를 재시작하세요. CCD 촬영/검출/영상 전송은 변경하지 않았습니다.
+기존 example JSON 네 개는 실제로 읽는 로컬 기본 파일로 통합했습니다. 동일 역할의 example을 별도로 유지하지 않습니다. 현재 메인 Configuration 편집기는 장비 사용 목록을 편집합니다. operation 경로 및 YAML은 파일로 편집하고 UI를 재시작하세요. CCD 촬영/검출/영상 전송은 변경하지 않았습니다.
 
-네트워크 로컬 파일은 `server_host`, `server_port`, `motor_host`, `motor_port`만 받습니다. 실제 주소는 공개 기본 파일 대신 `connections.local.json`에 기록하세요.
+네트워크 로컬 파일은 `server_host`, `server_port`, `motor_host`, `motor_port`만 받습니다. 실제 주소는 로컬 기본 파일 대신 `connections.local.json`에 기록하세요.
 
 ## Flipper 역할 설정
 
@@ -55,7 +57,7 @@
 - `flip.local.json` → `operations/flipper_routes.local.json`
 - `oven.local.json` → `operations/oven.local.json`
 
-다른 PC에는 필요한 `*.local.json`을 새 상대경로 그대로 직접 복사합니다. 모두 기존 Git ignore 규칙으로 제외됩니다. 새 checkout에는 공개 기본값만 들어갑니다. 직접 선택한 외부 구성 파일의 경로는 계속 사용하므로 다른 PC에서 메인 Configuration의 불러오기로 다시 지정하세요.
+다른 PC에는 해당 PC의 **config 전체**를 보존·복원합니다. 기본 JSON/YAML과 예제를 포함한 모든 설정이 Git에서 제외되며, 새 checkout에는 설정 파일이 없습니다. [최신 백업·업데이트 절차](configuration/LOCAL_STORAGE.md)를 먼저 따르세요. 직접 선택한 외부 구성 파일의 경로는 계속 사용하므로 다른 PC에서 메인 Configuration의 불러오기로 다시 지정하세요.
 
 ## FPGA 출력 표시
 

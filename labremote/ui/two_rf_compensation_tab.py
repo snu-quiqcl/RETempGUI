@@ -4,7 +4,8 @@ from pathlib import Path
 import numpy as np
 from PyQt5 import QtWidgets as W
 from labremote.devices.fpga.mapping import bound_methods
-from labremote.micromotion.two_rf import RF_PATHS, RF_PRESETS
+from labremote.micromotion.two_rf import RF_PATHS
+from labremote.configuration.micromotion import two_rf_settings, two_rf_settings_path
 from .micromotion_tab import MicromotionPage
 
 
@@ -50,7 +51,7 @@ class TwoRFCompensationPage(MicromotionPage):
         self.two_fields['rf_final'].setEnabled(False)
         form.insertRow(6,self.final_initial)
         note = W.QLabel(
-            'SG384 · EA: Low 0.16 / High 0.9 Vpp · EC: Low 0.1 / High 0.19 Vpp.\n'
+            'SG384 · EA/EC 기본값: config/operations/micromotion/*.two_rf.local.json\n'
             '검증: visibility + 1.96 × SE ≤ 설정 한계. 중단·실패 시 초기 RF/DAC 복원.\n'
             '기존 SG384 Vpp ramp와 출력 제한을 적용합니다.')
         note.setWordWrap(True);form.insertRow(11, note)
@@ -59,13 +60,19 @@ class TwoRFCompensationPage(MicromotionPage):
         self.settings_toggle.settings_scroll.setMinimumWidth(430)
         self.settings_toggle.expanded_width=430
         self.settings_toggle.setChecked(True)
-        self.refresh_dacs();self.refresh_sources();self.render();self.controls()
+        self.refresh_dacs();self.refresh_sources();self.change_chamber(self.chamber.currentText());self.render();self.controls()
 
     def change_chamber(self,chamber):
         super().change_chamber(chamber)
         if hasattr(self,'two_fields'):
-            for key,value in RF_PRESETS[chamber].items():self.two_fields[key].setValue(value)
-            self.two_fields['rf_final'].setValue(RF_PRESETS[chamber]['rf_high'])
+            try:
+                saved=two_rf_settings(chamber)
+                self._rf_settings_error=None
+                for key,box in self.two_fields.items():
+                    if key in saved:box.setValue(saved[key])
+                self.two_fields['rf_final'].setValue(saved.get('rf_final',saved['rf_high']))
+            except (OSError,ValueError) as exc:
+                self._rf_settings_error=str(exc);self.status.setText(str(exc))
 
     def refresh_sources(self):
         if not hasattr(self, 'rf_source'):return
@@ -102,6 +109,7 @@ class TwoRFCompensationPage(MicromotionPage):
 
     def start(self):
         try:
+            if getattr(self,'_rf_settings_error',None):raise ValueError(self._rf_settings_error)
             if not self.directory.text().strip():raise ValueError('Choose a result directory')
             c = self.value()
             handle = self.api.run_two_rf_compensation(settings=c,
@@ -117,7 +125,7 @@ class TwoRFCompensationPage(MicromotionPage):
         running = w.two_rf_runner.running()
         busy = w.has_requests() or any(t.running() for t in w._background_tasks)
         ready = w.ps is not None and not w.connection_error and not w._closing
-        self.run.setEnabled(ready and not busy and bool(self._dac_workers) and self.rf_source.currentData() is not None)
+        self.run.setEnabled(not getattr(self,'_rf_settings_error',None) and ready and not busy and bool(self._dac_workers) and self.rf_source.currentData() is not None)
         self.stop.setEnabled(running);self.settings_panel.setEnabled(not running)
         for widget in (self.directory,self.folder_button,self.open_button):widget.setEnabled(not running)
 
@@ -178,22 +186,27 @@ class TwoRFCompensationPage(MicromotionPage):
 
     def save_settings(self):
         from labremote.devices.dac.model import atomic_json
-        path,_ = W.QFileDialog.getSaveFileName(self,'Save Two-RF settings',self.directory.text(),'JSON (*.json)')
+        path,_ = W.QFileDialog.getSaveFileName(self,'Save Two-RF settings',str(two_rf_settings_path(self.chamber.currentText())),'JSON (*.json)')
         if path:
             try:atomic_json(path,self.value())
             except Exception as exc:self.status.setText(str(exc))
 
     def load_settings(self):
-        path,_ = W.QFileDialog.getOpenFileName(self,'Load Two-RF settings',self.directory.text(),'JSON (*.json)')
+        path,_ = W.QFileDialog.getOpenFileName(self,'Load Two-RF settings',str(two_rf_settings_path(self.chamber.currentText())),'JSON (*.json)')
         if not path:return
         try:
             c = json.loads(Path(path).read_text(encoding='utf-8'))
-            self.populate(c);self.refresh_sources()
-            self.mode.setCurrentIndex(self.mode.findData(c['two_rf_mode']))
-            self.rf_source.setCurrentIndex(self.rf_source.findData(c['rf_family'] + ':' + c['rf_name']))
-            self.source_changed();self.rf_path.setCurrentIndex(self.rf_path.findData(c['rf_path']))
-            for key,box in self.two_fields.items():box.setValue(c[key])
+            if 'two_rf_mode' in c:
+                self.populate(c);self.refresh_sources()
+                self.mode.setCurrentIndex(self.mode.findData(c['two_rf_mode']))
+                self.rf_source.setCurrentIndex(self.rf_source.findData(c['rf_family'] + ':' + c['rf_name']))
+                self.source_changed();self.rf_path.setCurrentIndex(self.rf_path.findData(c['rf_path']))
+            elif c.get('chamber') in ('EA','EC'):
+                self.chamber.setCurrentText(c['chamber'])
+            for key,box in self.two_fields.items():
+                if key in c:box.setValue(c[key])
             self.final_initial.setChecked(c.get('rf_final_initial',True))
+            self._rf_settings_error=None
         except Exception as exc:self.status.setText(str(exc))
 
     def open_result(self):

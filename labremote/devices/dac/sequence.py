@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from labremote.config.dac import DeviceConfig, number, read_json
+from labremote.configuration.dac import DeviceConfig, number, read_json
 from .model import VoltageSet, atomic_json, atomic_text
 
 MAX_ROWS = 10000

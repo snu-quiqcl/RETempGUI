@@ -9,7 +9,7 @@ from PyQt5 import QtCore, QtWidgets
 from labremote.ui.widgets.step_control import StepControl, FREQUENCY_SCALES, FREQUENCY_DECIMALS
 from labremote.ui.widgets.rf_layout import align_rf_grid, value_with_unit
 from labremote.devices.windfreak.worker import WindfreakWorker
-from labremote.config.device_config import load_rf_device_config, optional_number
+from labremote.configuration.device_config import load_rf_device_config, optional_number
 
 RF_INACTIVE_STYLE = '''QPushButton {background-color:#42464d; color:#d1d5db; border-color:#60656e;}
 QPushButton:hover {background-color:#535860; border-color:#818791;}

@@ -1,4 +1,5 @@
 """Explicit, frozen empirical inverse table; no extrapolation or unsafe fallback."""
+from labremote.data_paths import DATA_ROOT
 import csv
 import io
 import hashlib
@@ -128,7 +129,7 @@ class CalibrationSelector(QtWidgets.QGroupBox):
         self.changed.emit()
 
     def open(self):
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, '실험 데이터 / 보정표 선택', str(Path(__file__).parent/'calibrations'), 'Ramsey 실험 데이터 (*.json);;기존 보정표 (*.csv)')
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, '실험 데이터 / 보정표 선택', str(DATA_ROOT/'calibration'/'phase_shifter'), 'Ramsey 실험 데이터 (*.json);;기존 보정표 (*.csv)')
         if path:
             try:
                 self.set_table(load(path))

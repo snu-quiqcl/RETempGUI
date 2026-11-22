@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 
 PUBLIC = CONFIG_ROOT/'ui/monitor.json'
 LOCAL = CONFIG_ROOT/'ui/monitor.local.json'

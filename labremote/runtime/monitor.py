@@ -21,7 +21,7 @@ class ParameterMonitor:
         worker = self.worker
         with worker._lock:
             if worker._closing or worker.connection_error or worker.ps is None: return []
-            from labremote.config.paths import registry_paths
+            from labremote.configuration.paths import registry_paths
             from labremote.runtime.parameters import ParameterRegistry
             policy = ParameterRegistry(registry_paths())
             states = LIBRARY.snapshot()

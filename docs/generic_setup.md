@@ -8,8 +8,8 @@ Queue에서 Workflow 추가 → `labremote/workflow/setup.py`를 선택한다.
 
 이름을 `re_setup`으로 저장한 뒤 같은 setup.py를 다시 추가하여 이름을 `spam_setup`으로 지정하면 된다.
 두 항목은 같은 Python 소스를 사용하지만 parameters의 설정 목록은 서로 독립적이다.
-`docs/examples/setup_paths.queue.json`에는 이 두 항목이 들어 있다.
-`docs/examples/re_ion_spam.queue.json`의 setup 항목도 범용 setup.py로 갱신했다.
+`labremote/config/examples/setup_paths.queue.json`에는 이 두 항목이 들어 있다.
+`labremote/config/examples/re_ion_spam.queue.json`의 setup 항목도 범용 setup.py로 갱신했다.
 예제는 장비 이름을 확인한 뒤 사용하며, 실험 threshold 등은 사용자가 정한다.
 
 ## 동작

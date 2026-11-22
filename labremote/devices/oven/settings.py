@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 LOCAL = CONFIG_ROOT/'operations/oven.local.json'
 PROFILES = {'EA_174': (5., .75), 'EA_171': (5., .75),
             'EC_174': (5., 1.4), 'EC_171': (5., 1.30)}

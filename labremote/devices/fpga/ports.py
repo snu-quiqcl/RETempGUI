@@ -2,7 +2,7 @@
 import json
 import os
 from PyQt5 import QtCore
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 
 LOCAL = CONFIG_ROOT / 'devices/fpga/ports.local.json'
 

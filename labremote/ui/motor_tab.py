@@ -1,7 +1,7 @@
 """Twelve motor rows, one InstrumentServer endpoint; common device APIs."""
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api
-from labremote.config.device_config import load_device_config
+from labremote.configuration.device_config import load_device_config
 from labremote.runtime.parameters import LIBRARY
 from labremote.devices.motors.worker import MotorWorker
 
@@ -106,7 +106,7 @@ class MotorTab(QtWidgets.QWidget):
     def __init__(self,parent=None,*,endpoint=None):
         super().__init__(parent);self.rows={};self.connecting=False;self.batch=None
         if endpoint is None:
-            from labremote.config.settings import load_settings
+            from labremote.configuration.settings import load_settings
             endpoint=lambda:(load_settings()['server_host'],load_settings()['server_port'])
         self.endpoint=endpoint
         root=QtWidgets.QVBoxLayout(self);line=QtWidgets.QHBoxLayout();root.addLayout(line)

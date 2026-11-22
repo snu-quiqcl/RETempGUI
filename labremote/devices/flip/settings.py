@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 LOCAL=CONFIG_ROOT/'operations/flipper_routes.local.json'
 
 

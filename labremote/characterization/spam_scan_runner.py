@@ -71,7 +71,7 @@ class SpamScanRunner(WorkflowTask):
 
     def validate_device(self, axis):
         from labremote.runtime.parameters import registry
-        from labremote.config.device_config import load_rf_device_config, optional_number, sg_power_cap_dbm
+        from labremote.configuration.device_config import load_rf_device_config, optional_number, sg_power_cap_dbm
         p = model.spec(axis)
         policy = registry().get(axis['family'], model.path(axis))
         for row in model.axis_plan(axis):

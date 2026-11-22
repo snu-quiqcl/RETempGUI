@@ -8,7 +8,7 @@ from labremote.runtime.monitor import ParameterMonitor
 from labremote.runtime.errors import OperationCancelled
 from labremote.runtime.network import configure_client_timeout
 from labremote.api.devices import DeviceAPI
-from labremote.config.dac import DeviceConfig, load_config, DEFAULT_CONFIG_DIR, resolve_configuration_path
+from labremote.configuration.dac import DeviceConfig, load_config, DEFAULT_CONFIG_DIR, resolve_configuration_path
 from labremote.devices.dac.model import load_preset, atomic_json
 from labremote.devices.dac.sequence import load_sequence, save_sequence
 

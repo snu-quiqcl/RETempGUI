@@ -57,7 +57,7 @@ def main():
     for stage in ('a', 'b', 'c'):
         parser.add_argument(f'--threshold-{stage}', type=int)
     parser.add_argument('--output', type=Path,
-                        default=ROOT / 'docs/examples/ion_spam_entanglement_sweep.queue.json')
+                        default=ROOT / 'labremote/config/queues/ion_spam_entanglement_sweep.queue.json')
     args = parser.parse_args()
     thresholds = (args.threshold_a, args.threshold_b, args.threshold_c)
     plan = build_plan(repeat=args.repeat, thresholds=thresholds, max_attempts=args.max_attempts)

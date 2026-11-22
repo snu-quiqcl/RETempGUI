@@ -3,7 +3,7 @@ import time
 from collections import deque
 from PyQt5 import QtCore,QtWidgets
 from labremote.api.devices import device_api,Devices
-from labremote.config.device_config import load_device_config
+from labremote.configuration.device_config import load_device_config
 
 
 class PIDTab(QtWidgets.QWidget):

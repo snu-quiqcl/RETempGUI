@@ -8,7 +8,7 @@ Queue에서 아래 파일을 순서대로 추가하고 **다섯 항목 전체를
 4. `labremote/workflow/spam_setup.py`
 5. `labremote/workflow/spam.py`
 
-`docs/examples/re_ion_spam.queue.json`을 Queue 불러오기에서 열어도 됩니다. 기본 예제는 ZZ, 그룹 1회입니다. 원하는 반복 횟수로 바꾸세요. 각도별 그룹 생성도 새 re.py를 인식합니다.
+`labremote/config/examples/re_ion_spam.queue.json`을 Queue 불러오기에서 열어도 됩니다. 기본 예제는 ZZ, 그룹 1회입니다. 원하는 반복 횟수로 바꾸세요. 각도별 그룹 생성도 새 re.py를 인식합니다.
 
 ## 설정
 

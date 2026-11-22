@@ -68,7 +68,7 @@ python -c "from instrumentserver.client import Client; print('Remote client impo
 
 ### 3. PC별 실행 설정
 
-먼저 [로컬 설정 전달 안내](docs/LOCAL_SETUP_KO.md)에 따라 `labremote/config/devices/connections.local.json`을 직접 복사하세요. 실제 IP와 모터 시리얼은 GitHub에 포함하지 않습니다. 새 checkout에는 loopback 기본값만 있으며 실제 연결에는 로컬 설정이 필요합니다.
+먼저 [로컬 설정 전달 안내](docs/LOCAL_SETUP_KO.md)에 따라 `labremote/config/devices/connections.local.json`을 직접 복사하세요. 실제 IP와 모터 시리얼은 GitHub에 포함하지 않습니다. 새 checkout에는 config가 없으므로 이 PC의 설정 묶음 전체를 별도로 복원해야 합니다. [백업·업데이트 절차](docs/configuration/LOCAL_STORAGE.md)를 먼저 확인하세요.
 
 Conda 환경을 활성화한 뒤 저장소 루트에서 실행합니다. 기본 네트워크 설정은 `labremote/config/devices/connections.local.json`에서 읽습니다.
 
@@ -143,9 +143,9 @@ python -m pip install -r requirements.txt
 start_lab_remote_gui.bat
 ```
 
-수정된 추적 파일이 있다면 먼저 commit 또는 stash로 보존한 후 pull하세요. `labremote/config/devices/*/*.yml` 및 `labremote/config/operations/*/*.yml`은 장비 이름·단위·출력 제한을 포함하는 **공유 설정**으로 추적합니다. 환경별 변경이 필요하면 이 파일의 변경도 함께 관리해야 합니다.
+`labremote/config/`, `labremote/data/`, 로그는 모두 Git 추적에서 제외합니다. YAML 장비 정책·기본값·예제 설정도 PC별로 보존합니다. 이 변경을 처음 받는 PC는 pull **전에** [전체 로컬 파일 백업 및 복원 절차](docs/configuration/LOCAL_STORAGE.md)를 수행하세요. 일반 코드 수정은 별도로 보존해야 합니다.
 
-`labremote/config/ui/client_settings.local.json`은 앱 종료 시 생성되는 PC별 UI 설정이며 Git에서 제외합니다. 공개 기본값은 `labremote/config/ui/defaults.json`에서 읽습니다. 새 checkout에서도 장비 기본 목록은 각 장비의 YAML 설정에서 불러옵니다.
+`labremote/config/ui/client_settings.local.json`은 앱 종료 시 생성되는 PC별 UI 설정이며 Git에서 제외합니다. 로컬 기본값은 `labremote/config/ui/defaults.json`에서 읽습니다. 장비 목록에 필요한 YAML도 config 백업에 포함해야 합니다.
 
 ## 폴더 구조
 
@@ -160,15 +160,17 @@ RETempUI_V1_00/
 │  ├─ devices/                     # 장비 worker 및 로컬 CCD/FPGA
 │  ├─ operation/                   # 장비별 동작
 │  ├─ runtime/                     # 큐·취소·기록·workflow 실행
-│  ├─ config/                      # 장비 설정·검증 규칙
+│  ├─ configuration/               # 설정 읽기·검증 코드 (Git 추적)
+│  ├─ config/                      # 실제 설정 전체 (Git 제외)
+│  ├─ data/                        # 실험 결과·보정 데이터·로그 (Git 제외)
 │  ├─ ui/                          # 기존 장비 화면
 │  └─ workflow/                    # 실행 가능한 workflow 예제
-├─ tests/                          # 로컬 전용 회귀 테스트 (Git 제외)
+├─ tests/                          # 기존 테스트는 로컬 유지; 저장 경로 회귀 테스트는 추적
 ├─ server_deploy_latest/           # 로컬 전용 서버 드라이버 (Git 제외)
 └─ docs/                           # 장비·CCD·검토 문서
 ```
 
-위 구조는 개발 PC 기준입니다. `tests/`와 `server_deploy_latest/`는 기존 위치에 보존하지만 Git에서 제외하므로 새 clone에는 없습니다. UI 실행에는 필요하지 않습니다. 서버 드라이버나 회귀 테스트가 필요한 PC에만 두 폴더를 직접 전달하세요. 서버 드라이버는 자동 배포하지 않으며 로컬 폴더의 `server_deploy_latest/README.md`를 참고합니다.
+위 구조는 개발 PC 기준입니다. `tests/`의 기존 로컬 테스트와 `server_deploy_latest/`는 Git에서 제외합니다. 새 `tests/test_local_storage.py`는 설정 이전 검증을 위해 추적합니다. UI 실행에는 필요하지 않습니다. 서버 드라이버나 회귀 테스트가 필요한 PC에만 두 폴더를 직접 전달하세요. 서버 드라이버는 자동 배포하지 않으며 로컬 폴더의 `server_deploy_latest/README.md`를 참고합니다.
 
 ## 제외한 자료
 
@@ -214,7 +216,7 @@ Workflow API와 장비별 설정, operation 실행 방식은 기존 그대로입
 
 `Configuration`에서 전체 장비 구성을 불러오고 표에서 편집한 뒤 저장할 수 있습니다.
 `labremote/config/ui/equipment.local.json`의 사용 체크는 그룹/전체 연결 대상을 지정합니다.
-개인 파일은 Git에서 제외되며, 공개 형식은 [equipment.json](labremote/config/ui/equipment.json)입니다.
+장비 구성 기본 파일과 개인 override 모두 Git에서 제외됩니다. 형식은 로컬 `labremote/config/ui/equipment.json`을 참고하세요.
 수동으로 연결한 장비는 기존처럼 workflow에서 사용할 수 있습니다.
 자세한 사용법과 연결/종료 동작은 [실험 UI 안내](docs/EXPERIMENT_UI_KO.md)를 참고하세요.
 
@@ -224,7 +226,7 @@ FPGA 포트 검색·기억, 화면 영역 기반 CCD 연속 검출, Configuratio
 
 ## 설정 파일 역할 분리
 
-[설정 구조 및 이전 안내](docs/CONFIGURATION.md)를 참고하세요. 공개 기본값과 PC별 `*.local.json`을 구분하고, 장비 / 메인 UI / operation 설정을 각 폴더에서 관리합니다. 메인의 중복 상세 제어창 버튼은 제거했으며 상단 **장비** 메뉴에서 기존 상세 창을 엽니다.
+[설정 구조 및 이전 안내](docs/CONFIGURATION.md)를 참고하세요. 기본 설정과 `*.local.json`의 우선순위는 유지하되 둘 다 Git에서 제외하고, 장비 / 메인 UI / operation 설정을 각 폴더에서 관리합니다. 메인의 중복 상세 제어창 버튼은 제거했으며 상단 **장비** 메뉴에서 기존 상세 창을 엽니다.
 
 CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](docs/FLIP_DISPLAY_KO.md)를 참고하세요.
 

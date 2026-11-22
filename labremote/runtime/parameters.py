@@ -178,7 +178,7 @@ class ParameterRegistry:
     def __init__(self, path):
         paths = (path,) if isinstance(path, (str, Path)) else tuple(path)
         document = {'parameters': []}
-        from labremote.config.paths import read_yaml_document
+        from labremote.configuration.paths import read_yaml_document
         for policy_path in paths:
             policy = read_yaml_document(policy_path)
             if not isinstance(policy, dict) or policy.get('schema_version') != 1:
@@ -283,7 +283,7 @@ def registry():
     if snapshot is not None: return snapshot
     global _registry
     if _registry is None:
-        from labremote.config.paths import registry_paths
+        from labremote.configuration.paths import registry_paths
         _registry = ParameterRegistry(registry_paths())
     return _registry
 
@@ -314,19 +314,19 @@ class ManagedParameter:
         self.key = (identity, path)
         self.spec = spec or registry().get(family, path)
         if spec is None and family == 'windfreak' and path.endswith('power_dbm'):
-            from labremote.config.device_config import load_rf_device_config, optional_number
+            from labremote.configuration.device_config import load_rf_device_config, optional_number
             config = load_rf_device_config(family, identity[-1])
             cap = optional_number(config, 'channels', path.split('.')[0].removeprefix('channel_'),
                                   'limits', 'max_power_dbm')
             if cap is not None:
                 self.spec = replace(self.spec, maximum=min(cap, self.spec.maximum) if self.spec.maximum is not None else cap)
         if spec is None and family == 'sg384' and path in ('bnc_power_dbm', 'n_power_dbm'):
-            from labremote.config.device_config import load_rf_device_config, sg_power_cap_dbm
+            from labremote.configuration.device_config import load_rf_device_config, sg_power_cap_dbm
             cap = sg_power_cap_dbm(load_rf_device_config(family, identity[-1]), path.split('_')[0].upper())
             if cap is not None:
                 self.spec = replace(self.spec, maximum=min(cap, self.spec.maximum))
         if spec is None and family=='keithley' and path.endswith(('.target_voltage','.target_current','.voltage_limit')):
-            from labremote.config.device_config import load_rf_device_config,optional_number
+            from labremote.configuration.device_config import load_rf_device_config,optional_number
             config=load_rf_device_config(family,identity[-1])
             key='max_current_a' if path.endswith('target_current') else 'max_voltage_v'
             cap=optional_number(config,'channels',path.split('.')[0].upper(),'limits',key)
@@ -413,7 +413,7 @@ class ManagedParameter:
             ParameterSpec(kind='number',minimum=0).validate(tolerance,request=True)
             self.spec=replace(self.spec,abs_tolerance=min(self.spec.abs_tolerance,tolerance))
         if self.family=='mdt' and self.device is not None and self.path.endswith('.voltage'):
-            from labremote.config.device_config import load_device_config
+            from labremote.configuration.device_config import load_device_config
             p=DeviceProxy(self.device,self.identity,self.family)
             axis=getattr(p,self.path.split('.')[0]);limits=load_device_config('mdt',self.identity[-1])['limits']
             lower=max(limits['min_voltage'],axis.minimum.acquire(),p.software_minimum.acquire())
@@ -432,7 +432,7 @@ class ManagedParameter:
             from labremote.devices.fpga.controller import INPUTS
             ParameterSpec(kind='int',choices=tuple(INPUTS)).validate(value,request=True)
         if self.family=='motors' and self.path=='position':
-            from labremote.config.device_config import load_device_config
+            from labremote.configuration.device_config import load_device_config
             limits=load_device_config('motors',self.identity[-1])['limits']
             ParameterSpec(kind='number',minimum=limits['min_position'],maximum=limits['max_position']).validate(value,request=True)
         if self.family=='thermotek' and self.device is not None and (self.path=='temperature_setpoint' or self.path=='run_request' and value is True):
@@ -447,7 +447,7 @@ class ManagedParameter:
             scale = getattr(p,'ch'+source[-1]+'_scale').acquire()
             ParameterSpec(kind='number',minimum=-6*scale,maximum=6*scale).validate(value,request=True)
         if self.family == 'anapico' and self.path == 'output' and value is True:
-            from labremote.config.device_config import load_rf_device_config, optional_number
+            from labremote.configuration.device_config import load_rf_device_config, optional_number
             config = load_rf_device_config(self.family, self.identity[-1])
             cap = optional_number(config, 'output', 'max_allowed_power_dbm')
             expected = optional_number(config, 'output', 'expected_fixed_power_dbm')
@@ -455,7 +455,7 @@ class ManagedParameter:
                 raise ValueError('Fixed RF output power is unknown or above the configured maximum')
         if self.family == 'sg384' and self.device is not None:
             p = DeviceProxy(self.device, self.identity, self.family)
-            from labremote.config.device_config import load_rf_device_config
+            from labremote.configuration.device_config import load_rf_device_config
             config = load_rf_device_config(self.family,self.identity[-1])
             bands = {port.lower(): (limits['frequency_min_hz'],limits['frequency_max_hz'])
                      for port in ('BNC','N') for limits in (config['outputs'][port]['limits'],)}

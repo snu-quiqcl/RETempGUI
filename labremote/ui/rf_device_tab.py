@@ -96,7 +96,7 @@ class RFDeviceTab(QtWidgets.QWidget):
                 step_units.currentTextChanged.connect(units.setCurrentText)
                 units.currentTextChanged.connect(step_units.setCurrentText)
                 self._readout(grid,prefix+'_power_vpp','Voltage (from dBm)','Vpp')
-                from labremote.config.device_config import load_rf_device_config,sg_power_cap_dbm,dbm_to_vpp
+                from labremote.configuration.device_config import load_rf_device_config,sg_power_cap_dbm,dbm_to_vpp
                 config=load_rf_device_config('sg384',name)
                 cap=sg_power_cap_dbm(config,port)
                 limit=QtWidgets.QLabel('Configured limit: none (instrument bounds still apply)' if cap is None else
@@ -160,13 +160,13 @@ class RFDeviceTab(QtWidgets.QWidget):
         self._controls();self.worker.start()
 
     def _afg_apply_amplitude(self):
-        from labremote.config.device_config import dbm_to_vpp
+        from labremote.configuration.device_config import dbm_to_vpp
         row=self.rows['amplitude'];value=row['editor'].value()
         if row['unit']=='dBm':value=dbm_to_vpp(value)
         return self._request(self.api.set_amplitude,value)
 
     def _afg_amplitude_unit(self,unit):
-        from labremote.config.device_config import dbm_to_vpp,vpp_to_dbm
+        from labremote.configuration.device_config import dbm_to_vpp,vpp_to_dbm
         row=self.rows['amplitude'];editor=row['editor']
         if unit==row['unit']:return
         value=dbm_to_vpp(editor.value()) if unit=='Vpp' else vpp_to_dbm(editor.value())
@@ -221,11 +221,11 @@ class RFDeviceTab(QtWidgets.QWidget):
 
     def _input_bounds(self,path,scale,unit,decimals):
         from labremote.runtime.parameters import registry
-        from labremote.config.device_config import load_rf_device_config,sg_power_cap_dbm,dbm_to_vpp
+        from labremote.configuration.device_config import load_rf_device_config,sg_power_cap_dbm,dbm_to_vpp
         spec=registry().get(self.family,path)
         low,high=spec.minimum,spec.maximum
         if self.family=='afg2105' and path=='amplitude' and unit=='dBm':
-            from labremote.config.device_config import vpp_to_dbm
+            from labremote.configuration.device_config import vpp_to_dbm
             low,high=vpp_to_dbm(low),vpp_to_dbm(high)
 
         if self.family=='sg384' and path.endswith('_power_dbm'):
@@ -239,7 +239,7 @@ class RFDeviceTab(QtWidgets.QWidget):
         return low,high
 
     def _sg_power_unit(self,path,unit):
-        from labremote.config.device_config import dbm_to_vpp,vpp_to_dbm
+        from labremote.configuration.device_config import dbm_to_vpp,vpp_to_dbm
         row=self.rows[path];editor=row['editor'];old=row['unit']
         if unit==old:return
         value=dbm_to_vpp(editor.value()) if unit=='Vpp' else vpp_to_dbm(editor.value())
@@ -306,15 +306,15 @@ class RFDeviceTab(QtWidgets.QWidget):
             state=states.get(path)
             value=state.observed if valid(state) else None
             if self.family=='afg2105' and path=='amplitude' and row['unit']=='dBm' and value is not None:
-                from labremote.config.device_config import vpp_to_dbm
+                from labremote.configuration.device_config import vpp_to_dbm
                 try:value=vpp_to_dbm(value)
                 except ValueError:value=None
             if self.family=='sg384' and path.endswith('_power_vpp'):
-                from labremote.config.device_config import dbm_to_vpp
+                from labremote.configuration.device_config import dbm_to_vpp
                 state=states.get(path.replace('_power_vpp','_power_dbm'))
                 value=dbm_to_vpp(state.observed) if valid(state) else None
             elif self.family=='sg384' and path.endswith('_power_dbm') and row['unit']=='Vpp' and value is not None:
-                from labremote.config.device_config import dbm_to_vpp
+                from labremote.configuration.device_config import dbm_to_vpp
                 value=dbm_to_vpp(value)
             if value is None:text='— '+row['unit']
             elif isinstance(value,(int,float)) and not isinstance(value,bool):text=f"{value/row['scale']:.9g} {row['unit']}"

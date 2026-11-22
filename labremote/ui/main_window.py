@@ -4,8 +4,8 @@ import argparse
 import sys
 from PyQt5 import QtCore, QtWidgets
 from labremote.ui.theme import apply_theme
-from labremote.config.settings import load_settings, save_settings
-from labremote.config.device_config import configured_instrument_names
+from labremote.configuration.settings import load_settings, save_settings
+from labremote.configuration.device_config import configured_instrument_names
 from labremote.devices.windfreak.tab import WindfreakTab
 from labremote.ui.workflow_tab import WorkflowTab
 from labremote.ui.rf_device_tab import RFDeviceTab
@@ -217,7 +217,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         if document!=self.equipment_profile:
             self.equipment_profile=document;self.profile_dirty=True
         self.flip_tab.accept_server_devices(endpoint,devices)
-        from labremote.config.device_config import configured_instrument_names
+        from labremote.configuration.device_config import configured_instrument_names
         from .discovered_equipment import AUTO_FAMILIES
         found=self._server_inventory[1]
         for entry in self.selected_equipment():

@@ -4,7 +4,7 @@ import math
 from copy import deepcopy
 from types import SimpleNamespace
 from labremote.characterization.config import read, save
-from labremote.config.paths import CONFIG_ROOT
+from labremote.configuration.paths import CONFIG_ROOT
 from labremote.devices.fpga.controller import hd, OUTPUTS
 
 ROOT = CONFIG_ROOT / 'operations/hom'

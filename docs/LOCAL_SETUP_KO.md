@@ -1,5 +1,7 @@
 # GitHub와 분리한 로컬 장비 설정
 
+**현재 정책:** `labremote/config` 전체(기본값·YAML·예제 포함)가 Git에서 제외됩니다. 새 checkout에는 설정이 없습니다. 다른 PC 업데이트 전에는 [설정·데이터 백업 및 복원 절차](configuration/LOCAL_STORAGE.md)를 먼저 수행하세요.
+
 실제 IP·모터 시리얼은 소스 코드에 입력하지 않습니다. 아래 로컬 파일은 `.gitignore`로 제외됩니다. 파일을 직접 전달할 때도 GitHub의 파일 업로드, Issue, PR, 공개 첨부에 넣지 마세요.
 
 ## 직접 옮길 파일
@@ -27,7 +29,7 @@
 - 로컬 파일이 없는 새 clone은 IP가 loopback으로 표시됩니다. 모터 시리얼은 추정하지 않으며 실제 번호 없이 장비를 등록하면 오류가 납니다. JSON 형식 오류도 명확하게 실패합니다.
 - UI 모양, workflow, CCD 처리, 모터 이동과 USB 동작은 변경하지 않습니다.
 
-새 환경을 수동 설정하려면 Git에 포함된 `labremote/config/devices/connections.json`을 사용하세요. 모터용 `serials.example.json`은 Git에서 제외된 로컬 `server_deploy_latest/KDC101/`에 있으며, 서버 드라이버 폴더를 직접 전달받아 사용합니다. 각각 해당 로컬 파일 이름으로 복사한 뒤 값을 입력하세요. 예제 파일에는 실제 값을 넣지 마세요.
+새 환경을 수동 설정하려면 별도로 보존한 로컬 설정 묶음의 `labremote/config/devices/connections.json`을 사용하세요. 모터용 `serials.example.json`은 Git에서 제외된 로컬 `server_deploy_latest/KDC101/`에 있으며, 서버 드라이버 폴더를 직접 전달받아 사용합니다. 각각 해당 로컬 파일 이름으로 복사한 뒤 값을 입력하세요. 예제 파일에는 실제 값을 넣지 마세요.
 
 ## 업로드 전 확인
 

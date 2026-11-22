@@ -5,8 +5,8 @@ import math
 import os
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets as W
-from labremote.config.paths import CONFIG_ROOT
-from labremote.config.input_defaults import DEFAULT_INPUTS, load_input_defaults, resolve_default
+from labremote.configuration.paths import CONFIG_ROOT
+from labremote.configuration.input_defaults import DEFAULT_INPUTS, load_input_defaults, resolve_default
 
 LOG=logging.getLogger(__name__)
 INPUTS=(W.QLineEdit,W.QAbstractSpinBox,W.QComboBox,W.QCheckBox,W.QRadioButton,W.QPlainTextEdit,W.QTextEdit,W.QSlider)

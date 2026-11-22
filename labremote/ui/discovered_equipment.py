@@ -1,6 +1,6 @@
 """Merge discovered membership without changing hardware settings or existing choices."""
 from copy import deepcopy
-from labremote.config.equipment import FAMILY_GROUP, validate
+from labremote.configuration.equipment import FAMILY_GROUP, validate
 
 AUTO_FAMILIES = frozenset({'afg2105', 'windfreak', 'sg384', 'anapico', 'dds4', 'flip', 'oven_relay'})
 SERVER_FAMILIES = {

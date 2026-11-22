@@ -15,7 +15,7 @@ from labremote.runtime.bindings import managed_parameter
 from labremote.devices.dac.model import atomic_json
 from labremote.devices.fpga.mapping import bound_methods, write_snapshot
 from labremote.data_paths import tab_data_directory
-from labremote.config.device_config import vpp_to_dbm, dbm_to_vpp
+from labremote.configuration.device_config import vpp_to_dbm, dbm_to_vpp
 from .runner import MicromotionRunner
 from . import config, analysis
 from .two_rf_analysis import intersection
@@ -25,7 +25,6 @@ from .two_rf_analysis import intersection
 RF_PATHS = {
     'sg384': {'n_power_dbm': 'N output (Vpp)', 'bnc_power_dbm': 'BNC output (Vpp)'},
 }
-RF_PRESETS = {'EA': {'rf_low': .16, 'rf_high': .9}, 'EC': {'rf_low': .1, 'rf_high': .19}}
 
 
 def validate(settings):

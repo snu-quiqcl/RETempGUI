@@ -1,13 +1,14 @@
 """EA/EC chip-trap controls. UI never opens USB or calculates DAC codes."""
+from labremote.configuration.dac import resolve_configuration_path
+from labremote.configuration.paths import CONFIG_ROOT
 from dataclasses import replace
 from pathlib import Path
 import time
 from PyQt5 import QtCore, QtGui, QtWidgets as W
-from labremote.config.dac import DeviceConfig, configuration_path_setting
+from labremote.configuration.dac import DeviceConfig, configuration_path_setting
 from labremote.devices.dac.model import VoltageSet, example, load_preset, atomic_json, suggested_filename
 from labremote.devices.dac.sequence import VoltageSequence, SequenceRow, load_sequence, save_sequence, parse_rows
 from labremote.operation.dac.timing import ManualTiming, SequenceOptions
-from labremote.data_paths import DATA_ROOT
 from .worker import DACWorker, DACAPI
 
 
@@ -73,7 +74,7 @@ class DACPanel(W.QWidget):
             # Empty UI placeholder only, never assigned to the hardware worker.
             chamber='EA' if 'ea' in name.lower() else 'EC'
             self.config=DeviceConfig(chamber,'',(),((0.0,)*16,(0.0,)*16))
-        self.folder=DATA_ROOT/'dac'/self.config.device/'presets';self.sequence_folder=DATA_ROOT/'dac'/self.config.device/'sequences'
+        self.folder=CONFIG_ROOT/'presets'/'dac'/self.config.device;self.sequence_folder=CONFIG_ROOT/'sequences'/'dac'/self.config.device
         self.manual_timing=ManualTiming();self.options=SequenceOptions()
         root=W.QVBoxLayout(self);connection=W.QHBoxLayout();root.addLayout(connection)
         self.connection_label=W.QLabel(name+' · disconnected');connection.addWidget(self.connection_label,1)
@@ -165,7 +166,7 @@ class DACPanel(W.QWidget):
         new=DeviceConfig.from_dict(info['configuration'])
         if new!=self.config:
             old=self.config;draft=self.draft() if getattr(self,'editors',None) else None
-            self.config=new;self.folder=DATA_ROOT/'dac'/new.device/'presets';self.sequence_folder=DATA_ROOT/'dac'/new.device/'sequences'
+            self.config=new;self.folder=CONFIG_ROOT/'presets'/'dac'/new.device;self.sequence_folder=CONFIG_ROOT/'sequences'/'dac'/new.device
             self.rebuild()
             if draft and old.wiring()==new.wiring():
                 try:self.set_draft(VoltageSet.from_values(new,draft.by_id,name=draft.name,notes=draft.notes))
@@ -328,7 +329,7 @@ class DACPanel(W.QWidget):
             for eid,w in self.sent_labels.items():w.setText(f'{self.last_sent[eid]:.5f}')
 
     def settings_path(self):
-        from labremote.config.paths import CONFIG_ROOT
+        from labremote.configuration.paths import CONFIG_ROOT
         if not self.name.isidentifier():raise ValueError('Invalid DAC instrument name')
         return CONFIG_ROOT/'ui'/('dac_'+self.name+'.local.json')
 
@@ -342,8 +343,8 @@ class DACPanel(W.QWidget):
                 cfg=self.worker.load_configuration(doc['configuration_path'])
                 self.accept_state(dict(configuration=cfg.as_dict(),connected=False,ready=False,last_sent=None))
             self.manual_timing=ManualTiming.from_dict(doc.get('manual_timing',{}))
-            self.folder=Path(doc.get('preset_folder',str(self.folder)))
-            self.sequence_folder=Path(doc.get('sequence_folder',str(self.sequence_folder)))
+            self.folder=resolve_configuration_path(doc.get('preset_folder',str(self.folder)))
+            self.sequence_folder=resolve_configuration_path(doc.get('sequence_folder',str(self.sequence_folder)))
             options=SequenceOptions.from_dict(doc.get('sequence_options',{}))
             self.sequence_tab.reuse.setChecked(options.reuse_spi_config)
             self.sequence_tab.pre_ldac.setValue(options.pre_ldac_ms)
@@ -354,7 +355,7 @@ class DACPanel(W.QWidget):
         except Exception as exc:self.report('Local DAC settings not restored: '+str(exc))
 
     def save_local_settings(self):
-        doc=dict(configuration_path=configuration_path_setting(self.worker.config_path),manual_timing=self.manual_timing.as_dict(),preset_folder=str(self.folder),sequence_folder=str(self.sequence_folder),
+        doc=dict(configuration_path=configuration_path_setting(self.worker.config_path),manual_timing=self.manual_timing.as_dict(),preset_folder=configuration_path_setting(self.folder),sequence_folder=configuration_path_setting(self.sequence_folder),
             sequence_options=dict(reuse_spi_config=self.sequence_tab.reuse.isChecked(),pre_ldac_ms=self.sequence_tab.pre_ldac.value()))
         if self.sequence_tab.table.rowCount():
             try:doc['sequence']=self.sequence_tab.sequence().as_dict()
