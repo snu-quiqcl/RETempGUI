@@ -48,7 +48,7 @@ def validate(value):
     return deepcopy(value)
 
 def load(chamber,path=None):
-    local=settings_path(config.ROOT/f'rabi_{chamber}.local.json');public=config.ROOT/f'rabi_{chamber}.json'
+    local=settings_path(config.ROOT/f'rabi_{chamber}.json');public=config.ROOT/f'rabi_{chamber}.json'
     value=validate(config.read(path or (local if local.exists() else public)))
     if value['chamber']!=chamber:raise ValueError('Settings chamber does not match tab')
     return value

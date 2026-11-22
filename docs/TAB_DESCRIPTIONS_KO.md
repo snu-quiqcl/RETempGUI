@@ -1,7 +1,7 @@
 # 탭 마우스 설명
 
 공통 설정: `labremote/config/ui/tab_descriptions.json` (Git 공유)
-PC별 추가/덮어쓰기: `labremote/config/ui/tab_descriptions.local.json` (Git 제외)
+PC별 추가/덮어쓰기: `labremote/config/ui/tab_descriptions.json` (Git 제외)
 
 ```json
 {

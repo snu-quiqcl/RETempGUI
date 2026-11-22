@@ -7,14 +7,14 @@ def two_rf_settings_path(chamber):
     if chamber not in ('EA', 'EC'):
         raise ValueError('Invalid chamber')
     from labremote.devices.fpga.mapping import settings_path
-    return settings_path(CONFIG_ROOT / 'operations' / 'micromotion' / (chamber + '.two_rf.local.json'))
+    return settings_path(CONFIG_ROOT / 'operations' / 'micromotion' / (chamber + '.two_rf.json'))
 
 def two_rf_settings(chamber):
     path = two_rf_settings_path(chamber)
     try:
         value = json.loads(path.read_text(encoding='utf-8-sig'))
     except FileNotFoundError as exc:
-        original=CONFIG_ROOT/'operations'/'micromotion'/(chamber+'.two_rf.local.json')
+        original=CONFIG_ROOT/'operations'/'micromotion'/(chamber+'.two_rf.json')
         if path!=original and original.exists():
             value=json.loads(original.read_text(encoding='utf-8-sig'))
         else:

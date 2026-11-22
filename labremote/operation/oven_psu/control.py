@@ -2,8 +2,8 @@ import time
 import math
 from labremote.runtime.io import Context
 
-from labremote.configuration.default_profiles import read_default
-_POLICY=read_default('oven_power')
+from labremote.devices.oven.settings import load_settings
+_POLICY=load_settings()['power']
 for _key in ('off_current_timeout_s','ramp_step_a','ramp_interval_s','off_current_tolerance_a','off_poll_s'):
     _value=_POLICY[_key]
     if type(_value) not in (int,float) or not math.isfinite(_value) or _value<=0:

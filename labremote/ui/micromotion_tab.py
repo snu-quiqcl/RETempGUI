@@ -143,7 +143,7 @@ class MicromotionPage(W.QWidget):
         except Exception as exc:self.status.setText(str(exc))
 
     def saved_settings(self,chamber):
-        path=settings_path(config.ROOT/(chamber+'.'+self.experiment_mode+'.local.json'))
+        path=settings_path(config.ROOT/(chamber+'.'+self.experiment_mode+'.json'))
         return config.load(path,chamber=chamber) if path.exists() else config.load(chamber=chamber)
 
     def refresh_dacs(self,prefer=False):
@@ -276,7 +276,7 @@ class MicromotionPage(W.QWidget):
 
     def save_settings(self):
         try:
-            c=self.value();config.save(settings_path(config.ROOT/(c['chamber']+'.'+self.experiment_mode+'.local.json')),c)
+            c=self.value();config.save(settings_path(config.ROOT/(c['chamber']+'.'+self.experiment_mode+'.json')),c)
             self.status.setText('Settings saved for '+c['chamber']+' / '+self.experiment_mode)
         except Exception as exc:self.status.setText(str(exc))
 

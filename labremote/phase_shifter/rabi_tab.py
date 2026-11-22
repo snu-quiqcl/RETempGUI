@@ -130,7 +130,7 @@ class PhaseRabiTab(W.QWidget):
 
     def save(self):
         try:
-            c,*_=rabi.validate(self.value());path,_=W.QFileDialog.getSaveFileName(self,'설정 저장',str(experiment_preset_path('phase_shifter','rabi.local.json')),'JSON (*.json)')
+            c,*_=rabi.validate(self.value());path,_=W.QFileDialog.getSaveFileName(self,'설정 저장',str(experiment_preset_path('phase_shifter','rabi.json')),'JSON (*.json)')
             if path:
                 c.update(experiment='phase_rabi',settings_version=2)
                 Path(path).parent.mkdir(parents=True,exist_ok=True)

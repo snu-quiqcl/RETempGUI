@@ -13,7 +13,7 @@ class TabHelp(QtCore.QObject):
         self.signature=None;self.mapping={};self.error=None
 
     def reload(self):
-        paths=[self.root/'tab_descriptions.json',self.root/'tab_descriptions.local.json']
+        paths=[self.root/'tab_descriptions.json']
         try:
             signature=tuple((p.stat().st_mtime_ns,p.stat().st_size) if p.exists() else None for p in paths)
             if signature==self.signature:return

@@ -30,9 +30,9 @@ page while the completed scan and compensation line remain on the 2D Scan page.
    completed point. The scan is always 2D. Unmeasured cells remain masked.
 
 Each chamber and page has separately saveable settings under
-`labremote/config/operations/micromotion/`, for example `EC.input.local.json`,
-`EC.correlation.local.json`, and `EC.scan.local.json` (likewise for EA).
-The former `EA.local.json` / `EC.local.json` remain fallbacks until page settings
+`labremote/config/operations/micromotion/`, for example `EC.input.json`,
+`EC.correlation.json`, and `EC.scan.json` (likewise for EA).
+The former `EA.json` / `EC.json` remain fallbacks until page settings
 are saved. Changing one page's parameters does not overwrite another page's
 settings; check RF frequency and physical pin selections on each page.
 Initial ranges/frequency are examples from the supplied EC script, not detected

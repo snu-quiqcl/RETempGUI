@@ -146,10 +146,10 @@ class BoardMapping(W.QDialog):
     def export(self):
         try:
             profile=self.value()
-            path,_=W.QFileDialog.getSaveFileName(self,'Save FPGA Configuration','fpga.local.json','Local JSON (*.local.json)')
+            path,_=W.QFileDialog.getSaveFileName(self,'Save FPGA Configuration','fpga.json','JSON (*.json)')
             if path:
                 from pathlib import Path
-                if not path.endswith('.local.json'):path += '.local.json'
+                if not path.endswith('.json'):path += '.json'
                 Path(path).write_text(json.dumps(profile.board_document(),ensure_ascii=False,indent=2),encoding='utf-8')
         except Exception as exc:self.status.setText(str(exc))
 

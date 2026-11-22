@@ -17,7 +17,7 @@ EA는 AOMA/EOM_7GA1/2/EOM_2GA, EC는 AOMC/EOM_7GC1/2/EOM_2GC를 기본으로 사
 
 ## 설정과 실행
 
-기본 JSON은 `labremote/config/operations/decay/EA_171_single.json` 등의 8개 파일입니다. `Save settings / mapping`은 같은 이름의 `.local.json`에 저장합니다. `Load settings / mapping`, `Save as`로 실험 조건을 재사용할 수 있습니다.
+기본 JSON은 `labremote/config/operations/decay/EA_171_single.json` 등의 8개 파일입니다. `Save settings / mapping`은 같은 이름의 `.json`에 저장합니다. `Load settings / mapping`, `Save as`로 실험 조건을 재사용할 수 있습니다.
 
 1. 기존 FPGA Local에서 연결합니다.
 2. Decay에서 EA/EC 및 isotope/PMT 모드를 고릅니다.

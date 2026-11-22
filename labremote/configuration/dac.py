@@ -178,8 +178,8 @@ def resolve_configuration_path(path):
     candidate = Path(path)
     parts = str(path).replace('\\', '/').split('/')
     if (len(parts) >= 3 and parts[-3:-1] == ['trap_dac', 'configs']
-            and parts[-1] in ('EA.local.json', 'EC.local.json', 'EA.example.json', 'EC.example.json')):
-        return DEFAULT_CONFIG_DIR / parts[-1]
+            and parts[-1].replace('.local.', '.') in ('EA.json', 'EC.json', 'EA.example.json', 'EC.example.json')):
+        return DEFAULT_CONFIG_DIR / parts[-1].replace('.local.', '.')
     if not candidate.is_absolute():
         from .paths import CONFIG_ROOT
         return CONFIG_ROOT / candidate

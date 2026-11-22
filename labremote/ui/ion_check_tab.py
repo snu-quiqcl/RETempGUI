@@ -105,7 +105,7 @@ class IonCheckTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
     def save(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Ion Check 설정 저장',str(settings_path(config.ROOT/'ion_check.local.json')),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Ion Check 설정 저장',str(settings_path(config.ROOT/'ion_check.json')),'JSON (*.json)')
         if path:
             try:config.save(path,self.value());self.status.setText('설정 저장: '+path)
             except Exception as exc:self.status.setText(str(exc))

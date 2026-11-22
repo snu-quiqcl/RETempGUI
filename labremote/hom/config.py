@@ -85,7 +85,7 @@ def validate(c):
     return deepcopy(c)
 
 def load(path=None):
-    p=path or settings_path(ROOT/'hom.local.json')
+    p=path or settings_path(ROOT/'hom.json')
     from pathlib import Path
     return validate(read(p)) if Path(p).exists() else (validate(defaults()) if path is None else read(p))
 

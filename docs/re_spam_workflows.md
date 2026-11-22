@@ -12,7 +12,7 @@ Queue에서 아래 파일을 순서대로 추가하고 **다섯 항목 전체를
 
 ## 설정
 
-새 workflow를 추가하면 편집 창의 parameters에 저장된 실험 설정 사본이 채워집니다. Ion Check는 `ion_check.local.json`(없으면 기본값), RE는 저장된 Entanglement 설정, SPAM은 EA/EC 저장된 SPAM 설정을 읽습니다. 편집 창에서 적용해야 Queue 항목에 저장됩니다. 실행 중 다른 설정 파일의 변경을 따라가지 않습니다. re.py는 기존 얽힘 설정 폼을 사용합니다. 다른 네 파일은 JSON 편집을 사용합니다.
+새 workflow를 추가하면 편집 창의 parameters에 저장된 실험 설정 사본이 채워집니다. Ion Check는 `ion_check.json`(없으면 기본값), RE는 저장된 Entanglement 설정, SPAM은 EA/EC 저장된 SPAM 설정을 읽습니다. 편집 창에서 적용해야 Queue 항목에 저장됩니다. 실행 중 다른 설정 파일의 변경을 따라가지 않습니다. re.py는 기존 얽힘 설정 폼을 사용합니다. 다른 네 파일은 JSON 편집을 사용합니다.
 
 Ion Check의 threshold_a/b/c는 반드시 실제 측정으로 정한 값으로 지정하세요. 미설정이면 측정 전에 실패하며 RE로 넘어가지 않습니다. mapping은 FPGA 이름(PMTA/PMTC/PMTFA/PMTFC, AOMA/AOMB/AOMC/AOMM)을 사용합니다. Ion Check 탭의 드롭다운에서도 jb/jc 핀 번호는 표시하지 않습니다. Queue의 설정 사본은 탭을 수정한다고 자동 변경되지 않습니다.
 

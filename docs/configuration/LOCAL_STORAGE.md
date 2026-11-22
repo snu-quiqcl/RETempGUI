@@ -1,5 +1,7 @@
 # PC별 설정·데이터 보존과 업데이트
 
+현재 설정 파일 이름과 .local 통합 절차는 [설정 안내](../CONFIGURATION.md)를 기준으로 합니다. 아래 과거 이전 기록과 구분하세요.
+
 ## 저장 위치와 Git
 
 저장소 기준 상대 경로:
@@ -9,7 +11,7 @@ labremote/
   configuration/                   # Git 추적: 설정 읽기/검증/명시적 이전 코드
   config/                          # 전체 Git 제외: 이 PC의 실제 설정
     devices/                       # 연결 주소, 장비 정책, DAC map
-    operations/micromotion/        # EA.two_rf.local.json / EC.two_rf.local.json
+    operations/micromotion/        # EA.two_rf.json / EC.two_rf.json
     ui/                            # UI 기본값·입력 상태·장비 구성
     presets/dac/{EA,EC}/
     sequences/dac/{EA,EC}/
@@ -67,7 +69,7 @@ GUI와 실행 중인 실험을 종료한다. 아래 작업은 **업데이트할 
    다른 PC의 절대 경로나 임의 외부 폴더는 자동 추측하지 않으므로 필요하면 로컬 설정에서 직접 선택한다.
    아주 오래된 config 루트 파일은 `configuration.migration.migrate`에 남아 있는 명시적 이전 함수를
    검토한 뒤 별도 실행할 수 있다. import 시 자동 실행되지는 않는다.
-6. `operations/micromotion/EA.two_rf.local.json`, `EC.two_rf.local.json`이 없는 PC는
+6. `operations/micromotion/EA.two_rf.json`, `EC.two_rf.json`이 없는 PC는
    기존에 저장한 Two-RF 설정을 옮기거나 아래 값을 **새 파일에만** 작성한다.
    기존 설정 파일이 있으면 전압을 덮어쓰지 않는다.
 
@@ -81,7 +83,7 @@ GUI와 실행 중인 실험을 종료한다. 아래 작업은 **업데이트할 
 
    ```powershell
    git ls-files -- labremote/config labremote/data logs data labremote/phase_shifter/calibrations
-   git check-ignore labremote/config/ui/defaults.json labremote/data/calibration/phase_shifter/ramsey_data_20261110.json
+   git check-ignore labremote/config/ui/client_settings.json labremote/data/calibration/phase_shifter/ramsey_data_20261110.json
    ```
 
    장비 연결 전에 해당 PC의 주소·핀 매핑·DAC preset·EA/EC RF 값을 확인한다.

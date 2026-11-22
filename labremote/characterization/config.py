@@ -59,7 +59,7 @@ def validate_roles(value):
 
 def load_settings(chamber,path=None):
     if chamber not in ('EA','EC'):raise ValueError('Select EA or EC')
-    local=settings_path(ROOT/f'fluorescence_{chamber}.local.json')
+    local=settings_path(ROOT/f'fluorescence_{chamber}.json')
     value=validate_settings(read(path or (local if local.exists() else ROOT/f'fluorescence_{chamber}.json')))
     if value['chamber']!=chamber:raise ValueError('Settings chamber does not match this tab')
     if 'roles' not in value:value['roles']=load_roles()['routes'][chamber]
@@ -67,7 +67,7 @@ def load_settings(chamber,path=None):
 
 
 def load_roles(path=None):
-    local=settings_path(ROOT/'fpga_roles.local.json')
+    local=settings_path(ROOT/'fpga_roles.json')
     return validate_roles(read(path or (local if local.exists() else ROOT/'fpga_roles.json')))
 
 

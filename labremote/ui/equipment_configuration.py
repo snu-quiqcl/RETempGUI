@@ -36,7 +36,11 @@ class EquipmentConfigurationDialog(QtWidgets.QDialog):
         row=self.table.rowCount();self.table.insertRow(row)
         check=QtWidgets.QTableWidgetItem();check.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsUserCheckable);check.setCheckState(QtCore.Qt.Checked if item['enabled'] else QtCore.Qt.Unchecked);self.table.setItem(row,0,check)
         family=QtWidgets.QComboBox();family.addItems(list(FAMILY_GROUP));family.setCurrentText(item['family']);self.table.setCellWidget(row,1,family)
-        self.table.setItem(row,2,QtWidgets.QTableWidgetItem(item['name']))
+        name_item=QtWidgets.QTableWidgetItem(item['name'])
+        if item['family'] in ('oven_psu','oven_relay'):
+            name_item.setFlags(name_item.flags() & ~QtCore.Qt.ItemIsEditable)
+            name_item.setToolTip('연결 장비명은 config/operations/oven.json에서 수정합니다.')
+        self.table.setItem(row,2,name_item)
         group=QtWidgets.QComboBox();group.addItems(GROUPS);group.setCurrentText(item['group']);self.table.setCellWidget(row,3,group)
     def document(self):
         data=dict(schema_version=1,name=self.name.text().strip(),devices=[dict(family=self.table.cellWidget(r,1).currentText(),name=self.table.item(r,2).text().strip(),group=self.table.cellWidget(r,3).currentText(),enabled=self.table.item(r,0).checkState()==QtCore.Qt.Checked) for r in range(self.table.rowCount())])

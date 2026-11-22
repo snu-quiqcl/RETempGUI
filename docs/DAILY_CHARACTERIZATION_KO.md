@@ -18,7 +18,7 @@ FPGA 창에서 `fpga_local` 옆의 `Daily characterization`을 엽니다. FPGA�
 - `rabi_EA.json`, `rabi_EC.json`
 - `fpga_roles.json`: 이전 Fluorescence 설정을 읽기 위한 호환 기본값
 
-GUI의 저장은 각 실험의 `fluorescence_EA.local.json`, `fluorescence_EC.local.json`, `rabi_EA.local.json`, `rabi_EC.local.json`을 생성합니다. 각 파일에 조건과 `roles` 매핑이 함께 들어갑니다. 이전 Fluorescence 파일에 roles가 없으면 기존 `fpga_roles.local.json`을 읽어 초기화하고, 탭에서 저장하면 독립 설정으로 전환됩니다. 이전 파일과 기존 mapping_file API는 호환성을 위해 유지합니다. 로컬 파일이 있으면 기본값보다 우선하며 Git에서 제외됩니다. 다른 PC에서는 이 로컬 파일들을 별도로 복사하세요.
+GUI의 저장은 각 실험의 `fluorescence_EA.json`, `fluorescence_EC.json`, `rabi_EA.json`, `rabi_EC.json`을 생성합니다. 각 파일에 조건과 `roles` 매핑이 함께 들어갑니다. 이전 Fluorescence 파일에 roles가 없으면 기존 `fpga_roles.json`을 읽어 초기화하고, 탭에서 저장하면 독립 설정으로 전환됩니다. 이전 파일과 기존 mapping_file API는 호환성을 위해 유지합니다. 로컬 파일이 있으면 기본값보다 우선하며 Git에서 제외됩니다. 다른 PC에서는 이 로컬 파일들을 별도로 복사하세요.
 
 ```json
 {
@@ -62,7 +62,7 @@ def main(devices):
 ```python
 result = fpga.run_fluorescence(
     "EA",
-    settings_file="D:/lab/fluorescence_EA.local.json",
+    settings_file="D:/lab/fluorescence_EA.json",
     directory="D:/lab/data/daily",
 ).wait()
 ```
@@ -109,7 +109,7 @@ operation이 실행되는 동안 외부 제어자는 microwave 주파수와 출�
 
 ### 설정 파일 이전
 
-`rabi_EA.json`, `rabi_EC.json`과 저장되는 `rabi_EA.local.json`, `rabi_EC.local.json`은 schema_version 2입니다. 조건과 `roles`를 함께 저장하며 microwave 장비명·주파수 scan·정착 설정은 포함하지 않습니다.
+`rabi_EA.json`, `rabi_EC.json`과 저장되는 `rabi_EA.json`, `rabi_EC.json`은 schema_version 2입니다. 조건과 `roles`를 함께 저장하며 microwave 장비명·주파수 scan·정착 설정은 포함하지 않습니다.
 
 이전 schema 1 파일은 frequency start=end인 경우 나머지 조건/매핑을 유지하여 읽습니다. 이전 microwave 관련 필드는 제거되며 저장 시 schema 2가 됩니다. 이전 주파수 값은 실제 장비의 현재 값이라고 간주하지 않고 결과에도 자동 기록하지 않습니다. start≠end인 파일은 조용히 단일 주파수로 바꾸지 않고 외부 workflow로 옮기라는 오류를 표시합니다. 원본 파일은 GUI에서 저장하기 전까지 수정하지 않습니다.
 
@@ -136,7 +136,7 @@ result = devices.fpga("fpga_local").run_rabi("EA").wait()
 
 ## EA/EC Ramsey와 SPAM
 
-Daily characterization에 EA Ramsey, EC Ramsey, EA SPAM, EC SPAM 탭을 추가했습니다. 각 탭에서 측정 조건과 PMT/AOM/MW/EOM 역할을 함께 저장·불러오고, 개별 Run/Stop 및 이전 결과 열기를 사용할 수 있습니다. 저장 파일은 `labremote/config/operations/characterization/ramsey_EA.local.json`, `ramsey_EC.local.json`, `spam_EA.local.json`, `spam_EC.local.json`입니다. 공개 기본값은 같은 이름의 `.json` 파일입니다. 이 네 로컬 파일도 다른 PC에 별도로 복사하세요.
+Daily characterization에 EA Ramsey, EC Ramsey, EA SPAM, EC SPAM 탭을 추가했습니다. 각 탭에서 측정 조건과 PMT/AOM/MW/EOM 역할을 함께 저장·불러오고, 개별 Run/Stop 및 이전 결과 열기를 사용할 수 있습니다. 저장 파일은 `labremote/config/operations/characterization/ramsey_EA.json`, `ramsey_EC.json`, `spam_EA.json`, `spam_EC.json`입니다. 공개 기본값은 같은 이름의 `.json` 파일입니다. 이 네 로컬 파일도 다른 PC에 별도로 복사하세요.
 
 역할 기본값은 Rabi와 동일하게 EA=PMTFA/AOMA/MW_A/EA EOM, EC=PMTFC/AOMC/MW_C/EC EOM입니다. 각 실험 파일은 서로 독립적이며, 한 탭의 매핑 변경이 다른 실험에 적용되지 않습니다.
 
@@ -189,7 +189,7 @@ Daily Characterization에 EA Initialization과 EC Initialization 탭을 추가�
 
 ```python
 result = devices.fpga('fpga_local').run_initialization(
-    'EA', settings_file='labremote/config/operations/characterization/initialization_EA.local.json',
+    'EA', settings_file='labremote/config/operations/characterization/initialization_EA.json',
     directory='D:/ExperimentData'
 ).wait()
 ```

@@ -25,7 +25,8 @@ def mappings(root):
         ('data', 'labremote/data'),
         ('labremote/phase_shifter/calibrations', 'labremote/data/calibration/phase_shifter'),
         ('labremote/config/devices/fpga/workflows.local', 'labremote/workflow/local'),
-        ('queue.local.json', 'labremote/config/queues/queue.local.json'),
+        ('labremote/config/devices/fpga/workflows', 'labremote/workflow/local'),
+        ('queue.local.json', 'labremote/config/queues/queue.json'),
     ]
     for chamber in ('EA', 'EC'):
         for kind in ('presets', 'sequences'):

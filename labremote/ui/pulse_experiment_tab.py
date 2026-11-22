@@ -72,11 +72,11 @@ class PulseExperimentTab(QtWidgets.QWidget):
 
     def save(self):
         try:
-            path=settings_path(config.ROOT/f'{self.kind}_{self.chamber}.local.json');config.save(path,self.value());self.config_valid=True;self.status.setText('저장됨: '+str(path))
+            path=settings_path(config.ROOT/f'{self.kind}_{self.chamber}.json');config.save(path,self.value());self.config_valid=True;self.status.setText('저장됨: '+str(path))
         except Exception as exc:self.status.setText(str(exc))
 
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save '+model.title(self.kind)+' settings',str(settings_path(config.ROOT/f'{self.kind}_{self.chamber}.local.json')),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save '+model.title(self.kind)+' settings',str(settings_path(config.ROOT/f'{self.kind}_{self.chamber}.json')),'JSON (*.json)')
         if path:
             try:config.save(path,self.value());self.status.setText('저장됨: '+path)
             except Exception as exc:self.status.setText(str(exc))

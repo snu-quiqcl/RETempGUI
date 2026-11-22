@@ -17,15 +17,15 @@ with tempfile.TemporaryDirectory(prefix='retemp-endpoint-') as temporary:
     paths.CONFIG_ROOT=config
     from labremote import data_paths
     data_paths.DATA_ROOT=Path(temporary)/'data'
-    local=config/'devices/connections.local.json';document=json.loads(local.read_text(encoding='utf8'))
+    local=config/'devices/connections.json';document=json.loads(local.read_text(encoding='utf8'))
     # Deliberately create all stale sources that previously defeated the real IP.
-    for name in ('ui/defaults.json','ui/client_settings.local.json'):
+    for name in ('ui/client_settings.json',):
         path=config/name;data=json.loads(path.read_text(encoding='utf8')) if path.exists() else {}
         data.update(server_host='127.0.0.1',server_port=1);path.write_text(json.dumps(data))
     bad_key='connection_settings_window/qt/QScrollArea[0]/qt_scrollarea_viewport/QGroupBox[0]/QLineEdit[0]'
-    for name in ('ui/input_defaults.json','ui/input_state.local.json'):
+    for name in ('ui/input_defaults.json','ui/input_state.json'):
         path=config/name;data=json.loads(path.read_text(encoding='utf8'));data.setdefault('inputs',{})[bad_key]={'kind':'text','value':'127.0.0.1'};path.write_text(json.dumps(data))
-    modern=config/'ui/tabs/common/connection_settings_window.local.json';modern.parent.mkdir(parents=True,exist_ok=True)
+    modern=config/'ui/tabs/common/connection_settings_window.json';modern.parent.mkdir(parents=True,exist_ok=True)
     modern.write_text(json.dumps(dict(schema_version=1,inputs={bad_key:dict(kind='text',value='127.0.0.1')},models={})))
     from PyQt5 import QtWidgets as W,QtCore
     app=W.QApplication.instance() or W.QApplication([])
@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory(prefix='retemp-endpoint-') as temporary:
     scans=[]
     def no_io(*a,**k):raise AssertionError('Device connection forbidden')
     def make(override=None):
-        cfg=load_settings();cfg['equipment_configuration']=str(config/'ui/equipment.local.json')
+        cfg=load_settings();cfg['equipment_configuration']=str(config/'ui/equipment.json')
         if override:cfg.update(server_host=override[0],server_port=override[1])
         window=Window(cfg);window.input_state.restore();app.processEvents();return window
     def close(w):
@@ -70,7 +70,7 @@ with tempfile.TemporaryDirectory(prefix='retemp-endpoint-') as temporary:
         try:assert w._endpoint()==cli;assert scans[-1]==cli
         finally:close(w)
         assert local.read_bytes()==before,'CLI override unexpectedly persisted'
-    client=json.loads((config/'ui/client_settings.local.json').read_text())
+    client=json.loads((config/'ui/client_settings.json').read_text())
     assert 'server_host' not in client and 'server_port' not in client
 assert all(p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest()==h for p,h in originals.items()),'Test changed real config or tracked source'
 print(json.dumps(dict(stale_localhost_ignored=True,initial_endpoint=initial,ui_edit_survives_restart=True,cli_override_session_only=True,motor_values_preserved=True,actual_discovery_calls=scans,real_config_and_tracked_hashes_unchanged=True),indent=2))

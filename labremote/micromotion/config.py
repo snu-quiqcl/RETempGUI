@@ -80,5 +80,5 @@ def fit_indices(c):
 
 
 def load(path=None, chamber='EC'):
-    path = Path(path or settings_path(ROOT / (chamber+'.local.json')))
+    path = Path(path or settings_path(ROOT / (chamber+'.json')))
     return validate(json.loads(path.read_text(encoding='utf-8'))) if path.exists() else defaults(chamber)

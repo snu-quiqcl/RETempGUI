@@ -273,7 +273,7 @@ class PhaseShifterTab(QtWidgets.QWidget):
     def save(self):
         try:
             value = config.validate(self.value())
-            path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '설정 저장', str(experiment_preset_path('phase_shifter','ramsey_calibrated.local.json' if hasattr(self,'halfpi_source') else 'ramsey.local.json')), 'JSON (*.json)')
+            path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '설정 저장', str(experiment_preset_path('phase_shifter','ramsey_calibrated.json' if hasattr(self,'halfpi_source') else 'ramsey.json')), 'JSON (*.json)')
             if path:
                 Path(path).parent.mkdir(parents=True,exist_ok=True)
                 Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf-8')

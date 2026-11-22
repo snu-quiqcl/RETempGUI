@@ -1,32 +1,35 @@
 # 탭 설정 저장·복원 및 다른 PC 업데이트
 
+현재 설정 파일 이름과 .local 통합 절차는 [설정 안내](../CONFIGURATION.md)를 기준으로 합니다. 아래 과거 이전 기록과 구분하세요.
+
 ## 실제 저장 위치
 
 모든 경로는 RETempGUI 저장소 기준이다. `labremote/config`, `labremote/data`, 로그 폴더는 Git에서 제외한다.
 
 | 내용 | 경로 |
 | --- | --- |
-| 장비 탭의 마지막 편집값 | `labremote/config/ui/tabs/<family>/<device_id>.local.json` |
-| 실험 탭의 마지막 편집값 | `labremote/config/ui/tabs/experiments/<group>/<page>/<fpga_id>.local.json` |
-| CCD·Workflow·Queue·Monitor·Flipper·공통 화면 | `labremote/config/ui/tabs/common/<root>.local.json` |
-| 기존 공통 저장값 | `labremote/config/ui/input_state.local.json` — 읽기 전용 이전 원본 |
+| 장비 탭의 마지막 편집값 | `labremote/config/ui/tabs/<family>/<device_id>.json` |
+| 실험 탭의 마지막 편집값 | `labremote/config/ui/tabs/experiments/<group>/<page>/<fpga_id>.json` |
+| CCD·Workflow·Queue·Monitor·Flipper·공통 화면 | `labremote/config/ui/tabs/common/<root>.json` |
+| 기존 공통 저장값 | `labremote/config/ui/input_state.json` — 읽기 전용 이전 원본 |
 | 처음 사용하는 입력의 기본값 | `labremote/config/ui/input_defaults.json` |
-| 코드에서 추출한 실험·Oven·DAC 타이밍 기본값 | `labremote/config/operations/defaults/*.json` |
-| 명시적으로 저장한 실험 preset | 기존 `labremote/config/operations/...` 및 `devices/fpga/settings.local/<fpga_id>/...` |
-| Two-RF preset | 기본 FPGA: `operations/micromotion/<EA\|EC>.two_rf.local.json`; 추가 FPGA: `devices/fpga/settings.local/<fpga_id>/micromotion/...` |
+| 실험·DAC 타이밍 기본값 | `labremote/config/operations/defaults/*.json` |
+| Oven 선택·전압·전류·ramp/OFF 설정 | `labremote/config/operations/oven.json` |
+| 명시적으로 저장한 실험 preset | 기존 `labremote/config/operations/...` 및 `devices/fpga/settings/<fpga_id>/...` |
+| Two-RF preset | 기본 FPGA: `operations/micromotion/<EA\|EC>.two_rf.json`; 추가 FPGA: `devices/fpga/settings/<fpga_id>/micromotion/...` |
 | DAC preset·시퀀스 파일 | `labremote/config/presets/dac/`, `labremote/config/sequences/dac/` |
 | 저장한 Queue plan | `labremote/config/queues/` |
 | 보정 원본 및 복원용 불변 사본 | `labremote/data/calibration/`, `labremote/data/calibration/ui_snapshots/` |
 | 실행 결과·로그 | 기존 `labremote/data/` 하위 |
 
-보고서의 제안 경로를 모두 새로운 운전 파일로 중복 생성하지 않고, **마지막 편집 상태**와 **사용자가 저장한 재사용 preset**을 구분했다. Queue의 자동 draft는 `ui/tabs/common/queue_tab.local.json`의 models에 저장된다. CCD의 acquisition/detection/view도 같은 방식으로 `ccd_tab.local.json`에 모인다. 기존 전문 preset 파일은 그대로 남고 Load/Save 기능도 유지한다. Phase Hold/Rabi/Ramsey/SPAM 2D의 Save 기본 경로도 선택한 FPGA로 분리하며, 보정 Ramsey는 `ramsey_calibrated.local.json`을 사용한다.
+보고서의 제안 경로를 모두 새로운 운전 파일로 중복 생성하지 않고, **마지막 편집 상태**와 **사용자가 저장한 재사용 preset**을 구분했다. Queue의 자동 draft는 `ui/tabs/common/queue_tab.json`의 models에 저장된다. CCD의 acquisition/detection/view도 같은 방식으로 `ccd_tab.json`에 모인다. 기존 전문 preset 파일은 그대로 남고 Load/Save 기능도 유지한다. Phase Hold/Rabi/Ramsey/SPAM 2D의 Save 기본 경로도 선택한 FPGA로 분리하며, 보정 Ramsey는 `ramsey_calibrated.json`을 사용한다.
 
 숫자·문자열·선택·단위·체크박스·편집 가능한 표를 저장한다. 큐의 작업/그룹/반복/parameters/동결된 소스와 핀 매핑, DAC 시퀀스 행, 보정표 선택과 사용 여부, π/2 보정 결과 참조, CCD 보기 영역, 페이지별 FPGA 선택을 함께 저장한다. 탭 자동복원용 보정 원본은 data에 보존하고 config에는 경로와 SHA256을 기록한다. 기존 수동 preset과 Queue의 동결된 실행 조건은 재현성을 위해 기존 형식을 유지한다. 결과 표, 로그, 비밀번호, Python 소스 편집기는 일반 입력 저장 대상에서 제외한다. 소스 편집은 기존 Save/Cancel 절차를 유지한다. 장비·핀 매핑 편집 대화상자도 기존 Save/Cancel이 적용된다.
 
 ## 우선순위와 보존
 
 1. 해당 탭의 마지막 편집값이 있으면 복원한다.
-2. 없으면 기존 `input_state.local.json`의 값을 읽는다. 숫자 슬롯 키도 새 페이지 식별자로 연결한다.
+2. 없으면 기존 `input_state.json`의 값을 읽는다. 숫자 슬롯 키도 새 페이지 식별자로 연결한다.
 3. 둘 다 없으면 로컬 `input_defaults.json` 및 해당 장비/실험의 로컬 기본값을 사용한다.
 4. 사용자가 preset을 Load하면 그 값이 현재 편집 상태가 되고 다음 저장에 반영된다.
 
@@ -54,7 +57,7 @@
 
    ```powershell
    git ls-files -- labremote/config labremote/data data logs
-   git check-ignore labremote/config/ui/input_state.local.json labremote/data/calibration/ui_snapshots/probe.json
+   git check-ignore labremote/config/ui/input_state.json labremote/data/calibration/ui_snapshots/probe.json
    ```
 
 6. 앱을 시작해 저장값을 확인하고 일부 설정 변경 후 종료한다. `git status --short`를 이전 상태와 비교한다. config가 바뀌어도 Git 추적 파일은 새로 변경되면 안 된다. 기존의 실제 코드 수정은 별도로 남을 수 있다.
@@ -90,11 +93,11 @@ python -B checks/verify_update_preservation.py
 
 ## 서버 IP의 기준과 localhost 재복원 수정 (2026-11-22 후속)
 
-InstrumentServer 접속 주소의 기준 파일은 `labremote/config/devices/connections.local.json`이다. `server_host`에는 InstrumentServer가 실행되는 PC의 IP/호스트명, `server_port`에는 해당 포트를 지정한다. `127.0.0.1`은 클라이언트 자신이므로 서버도 같은 PC에서 실행할 때만 사용한다.
+InstrumentServer 접속 주소의 기준 파일은 `labremote/config/devices/connections.json`이다. `server_host`에는 InstrumentServer가 실행되는 PC의 IP/호스트명, `server_port`에는 해당 포트를 지정한다. `127.0.0.1`은 클라이언트 자신이므로 서버도 같은 PC에서 실행할 때만 사용한다.
 
 - 로컬 파일이 없을 때만 `devices/connections.json`의 명시된 주소를 읽는다. 활성 파일에 host/port가 없으면 설정 오류를 표시하며 임의의 localhost 기본값으로 연결하지 않는다.
 - UI에서는 **연결 설정 → Host / Port**를 편집한 뒤 Enter 또는 다른 입력칸으로 이동하면 같은 연결 파일에 저장한다. Rescan과 정상 종료 때도 미저장 변경을 반영한다. 기존 motor 설정은 유지한다.
-- `ui/defaults.json`, `ui/client_settings.local.json`, `ui/input_defaults.json`, `ui/input_state.local.json`, `ui/tabs`의 값은 서버 주소를 덮어쓸 수 없다. 이 PC의 오래된 중복 서버 키는 아래 백업 후 제거했다. 다른 PC에 중복 키가 남아 있어도 새 코드에서는 접속 입력칸의 일반 UI 복원을 비활성화하므로 무시한다.
+- `ui/client_settings.json`, `ui/client_settings.json`, `ui/input_defaults.json`, `ui/input_state.json`, `ui/tabs`의 값은 서버 주소를 덮어쓸 수 없다. 이 PC의 오래된 중복 서버 키는 아래 백업 후 제거했다. 다른 PC에 중복 키가 남아 있어도 새 코드에서는 접속 입력칸의 일반 UI 복원을 비활성화하므로 무시한다.
 - 명령줄 `--host` / `--port`는 해당 실행의 명시적 override다. UI에서 추가로 편집하지 않고 종료하면 연결 파일에 저장되지 않는다. 포트 범위 오류는 입력 위젯에 의해 다른 값으로 바뀌기 전에 거부한다.
 - 파일을 직접 편집했다면 앱을 다시 시작한다. 다른 창이나 외부 편집과 충돌하면 기존 파일을 덮어쓰지 않고 저장 오류를 표시한다.
 - 현재 통합 GUI의 Motor 연결도 공통 InstrumentServer 주소를 사용한다. 기존 `motor_host` / `motor_port`는 호환 설정으로 보존하며 이 GUI의 서버 Host를 바꾸는 항목이 아니다.

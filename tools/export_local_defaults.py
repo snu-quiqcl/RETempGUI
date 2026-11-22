@@ -44,10 +44,12 @@ def main():
         if len(tolerances)!=1 or len(polls)!=1:raise ValueError('Cannot identify this PC oven tolerance/poll; export manually before pull')
         profiles['oven_power']=dict(off_current_timeout_s=power.OFF_CURRENT_TIMEOUT_S,ramp_step_a=power.RAMP_STEP_A,ramp_interval_s=power.RAMP_INTERVAL_S,off_current_tolerance_a=tolerances[0],off_poll_s=polls[0])
     folder=root/'labremote/config/operations/defaults';folder.mkdir(parents=True,exist_ok=True)
+    profiles['oven']['power']=profiles['oven_power']
     created=[];retained=[]
     payloads={name:json.dumps(value,ensure_ascii=False,indent=2,allow_nan=False)+'\n' for name,value in profiles.items()}
     for name,payload in payloads.items():
-        path=folder/(name+'.json')
+        path=(root/'labremote/config/operations/oven.json') if name=='oven' else folder/(name+'.json')
+        if name=='oven_power':continue
         try:
             with path.open('x',encoding='utf8') as stream:stream.write(payload)
             created.append(name)

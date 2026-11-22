@@ -6,7 +6,7 @@
 - 기존 테스트 105개: 모터 QCoDeS 15, architecture 19, review regressions 32, runtime 19, workflow editor 11, CCD 9.
 - 합계 112개 테스트 통과. Dummy CCD GUI에서 휠/가운데 드래그 확대, 라이브 확대 유지, 숨긴 탭 이온 대기, 종료 검사 통과.
 - 최초 CCD 저장 테스트는 샌드박스 임시 디렉터리 접근 거부, GUI는 프로세스 종료 오류가 발생했습니다. 같은 코드를 권한 제한 밖에서 다시 실행해 CCD 9개 및 GUI 검사가 통과했습니다.
-- 실제 장비에는 연결하지 않았습니다. 새 모터 드라이버를 서버에 배포할 때 serials.local.json을 함께 복사해야 합니다.
+- 실제 장비에는 연결하지 않았습니다. 새 모터 드라이버를 서버에 배포할 때 serials.json을 함께 복사해야 합니다.
 
 전달 파일과 적용 순서는 [로컬 설정 안내](LOCAL_SETUP_KO.md)를 참고하세요. GitHub Desktop에서 commit 전 `python check_public_files.py`로 현재 업로드 후보를 검사할 수 있습니다. 검사와 .gitignore는 모든 개인정보 유출을 방지하는 보증이 아닙니다.
 

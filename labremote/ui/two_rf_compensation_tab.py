@@ -51,7 +51,7 @@ class TwoRFCompensationPage(MicromotionPage):
         self.two_fields['rf_final'].setEnabled(False)
         form.insertRow(6,self.final_initial)
         note = W.QLabel(
-            'SG384 · EA/EC 기본값: config/operations/micromotion/*.two_rf.local.json\n'
+            'SG384 · EA/EC 기본값: config/operations/micromotion/*.two_rf.json\n'
             '검증: visibility + 1.96 × SE ≤ 설정 한계. 중단·실패 시 초기 RF/DAC 복원.\n'
             '기존 SG384 Vpp ramp와 출력 제한을 적용합니다.')
         note.setWordWrap(True);form.insertRow(11, note)

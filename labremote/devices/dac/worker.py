@@ -32,7 +32,7 @@ class DACWorker(DeviceWorker):
             path=self.config_path
         if path is None:
             chamber='EA' if 'ea' in self.name.lower() else 'EC'
-            path=DEFAULT_CONFIG_DIR/(chamber+'.local.json')
+            path=DEFAULT_CONFIG_DIR/(chamber+'.json')
         path=resolve_configuration_path(path)
         config=load_config(path)
         self.config_path=Path(path)

@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from .paths import CONFIG_ROOT
 
-LOCAL=CONFIG_ROOT/'ui/equipment.local.json'
+LOCAL=CONFIG_ROOT/'ui/equipment.json'
 GROUPS=('RF','미라','CCD','FPGA','오실로스코프','기타','DAC')
 FAMILY_GROUP={'afg2105':'RF','dac':'DAC','windfreak':'RF','sg384':'RF','anapico':'RF','dds4':'RF','thermotek':'미라','osa':'미라','mdt':'미라','ccd':'CCD','fpga':'FPGA','ds1052e':'오실로스코프','mso7054':'오실로스코프','keithley':'기타','motors':'기타','flip':'기타','oven_psu':'기타','oven_relay':'기타'}
 SINGLETONS={'ccd','oven_psu','oven_relay'}
@@ -36,8 +36,8 @@ def load(path):
 
 def save(path,document):
     data=validate(document);path=Path(path)
-    if not path.name.endswith('.local.json'):
-        raise ValueError('Save personal equipment configurations as *.local.json (excluded from Git)')
+    if not path.name.endswith('.json'):
+        raise ValueError('Save equipment configurations as JSON under labremote/config')
     temp=path.with_suffix('.tmp')
     temp.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');os.replace(temp,path)
 

@@ -120,7 +120,7 @@ Queue의 Workflow 추가에서 `labremote/workflow/phase_hold.py`를 불러온�
 
 ## 로컬 설정
 
-FPGA 별명·핀 이름·실험 매핑은 기존 `config/devices/fpga/<ID>.local.json`에 저장한다.
+FPGA 별명·핀 이름·실험 매핑은 기존 `config/devices/fpga/<ID>.json`에 저장한다.
 USB serial 식별, serial 없는 장비의 순차 ID, 기존 기본 핀 배치는 변경하지 않는다.
 실험별 UI 입력은 로컬 input state에 장비별로 보존하며 Git에 포함되지 않는다.
 실험 결과에는 실행 시 사용한 매핑 스냅샷을 기록한다.

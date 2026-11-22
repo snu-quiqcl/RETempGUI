@@ -41,7 +41,7 @@ class TabSettingsTests(unittest.TestCase):
 
     def test_corrupt_file_is_never_overwritten(self):
         with tempfile.TemporaryDirectory() as folder:
-            path=Path(folder)/'input_state.local.json';path.write_text('{broken')
+            path=Path(folder)/'input_state.json';path.write_text('{broken')
             w=W.QMainWindow();w.value=W.QSpinBox(w)
             with self.assertLogs('labremote.ui.input_state',level='WARNING'):state=InputState(w,path)
             state.restore();self.assertFalse(state.save());self.assertEqual(path.read_text(),'{broken')
@@ -63,7 +63,7 @@ class TabSettingsTests(unittest.TestCase):
     def test_legacy_migration_and_unknown_keys_are_lossless(self):
         with tempfile.TemporaryDirectory() as folder:
             config=Path(folder);(config/'ui').mkdir()
-            legacy=config/'ui/input_state.local.json'
+            legacy=config/'ui/input_state.json'
             legacy.write_text(json.dumps(dict(schema_version=1,inputs={'main/value':dict(kind='number',value=8),'unopened/tab':dict(kind='text',value='retain')},future={'a':1})))
             original=legacy.read_bytes()
             with patch('labremote.ui.input_state.CONFIG_ROOT',config):
@@ -77,10 +77,10 @@ class TabSettingsTests(unittest.TestCase):
         from labremote.configuration import micromotion
         with tempfile.TemporaryDirectory() as folder:
             config=Path(folder);base=config/'operations/micromotion';base.mkdir(parents=True)
-            (base/'EA.two_rf.local.json').write_text(json.dumps(dict(rf_low=.9,rf_high=.16)))
-            with patch.object(micromotion,'CONFIG_ROOT',config),patch.object(micromotion,'two_rf_settings_path',return_value=config/'isolated.local.json'):
+            (base/'EA.two_rf.json').write_text(json.dumps(dict(rf_low=.9,rf_high=.16)))
+            with patch.object(micromotion,'CONFIG_ROOT',config),patch.object(micromotion,'two_rf_settings_path',return_value=config/'isolated.json'):
                 with self.assertRaises(ValueError):micromotion.two_rf_settings('EA')
-                (base/'EA.two_rf.local.json').write_text(json.dumps(dict(rf_low=.16,rf_high=.9)))
+                (base/'EA.two_rf.json').write_text(json.dumps(dict(rf_low=.16,rf_high=.9)))
                 self.assertEqual(micromotion.two_rf_settings('EA')['rf_high'],.9)
 
     def test_manual_presets_are_scoped_per_fpga(self):
@@ -91,8 +91,8 @@ class TabSettingsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             config=Path(folder)
             with patch.object(preset_paths,'CONFIG_ROOT',config),patch.object(mapping,'CONFIG_ROOT',config),patch.object(mapping,'ROOT',config/'devices/fpga'):
-                with mapping.scope(first):a=preset_paths.experiment_preset_path('phase_shifter','ramsey.local.json')
-                with mapping.scope(second):b=preset_paths.experiment_preset_path('phase_shifter','ramsey.local.json')
+                with mapping.scope(first):a=preset_paths.experiment_preset_path('phase_shifter','ramsey.json')
+                with mapping.scope(second):b=preset_paths.experiment_preset_path('phase_shifter','ramsey.json')
                 self.assertNotEqual(a,b);self.assertTrue(a.parent.exists() and b.parent.exists())
                 self.assertTrue(a.is_relative_to(config) and b.is_relative_to(config))
 
@@ -110,7 +110,7 @@ class TabSettingsTests(unittest.TestCase):
     def test_atomic_files_keep_extension_and_no_temp_remains(self):
         with tempfile.TemporaryDirectory() as folder:
             store=TabStateStore(folder);store.load();store.save({'device/rf/trap.a/f':1},{},{'device/rf/trap.a':None})
-            path=Path(folder)/'rf/trap.a.local.json'
+            path=Path(folder)/'rf/trap.a.json'
             self.assertTrue(path.exists());self.assertEqual(list(Path(folder).rglob('*.tmp')),[])
 
 if __name__=='__main__':unittest.main()

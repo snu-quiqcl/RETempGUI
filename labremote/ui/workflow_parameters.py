@@ -197,7 +197,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         self.tabs=ScrollTabs();layout.addWidget(self.tabs,1)
         if migration_note:
             notice=QtWidgets.QLabel(migration_note);notice.setWordWrap(True);layout.insertWidget(1,notice)
-        self.editor=None;self.settings_config=config;self.settings_filename='entanglement.local.json'
+        self.editor=None;self.settings_config=config;self.settings_filename='entanglement.json'
         if kind=='phase_hold':
             from .phase_hold_parameters import PhaseHoldParameters
             self.editor=PhaseHoldParameters();self.tabs.addTab(self.editor,'실험 조건')
@@ -216,7 +216,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             layout.insertLayout(1,load_bar)
         elif kind=='ion':
             from labremote.ion_check import config as ion
-            self.settings_config=ion;self.settings_filename='ion_check.local.json'
+            self.settings_config=ion;self.settings_filename='ion_check.json'
             self.editor=IonCheckParameters();self.tabs.addTab(self.editor,'Ion Check 설정 · devices.parameters')
         elif kind=='spam':
             from .spam_parameters import SpamParameters

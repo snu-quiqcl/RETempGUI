@@ -81,11 +81,11 @@ def main(devices):
 
 ## 저장과 Git
 
-- `labremote/config/devices/fpga/<장비 ID>.local.json`: 별명, 32개 핀 이름, 실험 매핑.
-- `registry.local.json`: USB 식별과 순차 장비 ID.
-- `ports.local.json`: 기존 성공 연결 포트 기록.
-- `settings.local/<장비 ID>/...`: 장비별 실험 변수 설정.
-- `workflows.local/<장비 ID>/...`: 장비별 기본 workflow 사본.
+- `labremote/config/devices/fpga/<장비 ID>.json`: 별명, 32개 핀 이름, 실험 매핑.
+- `registry.json`: USB 식별과 순차 장비 ID.
+- `ports.json`: 기존 성공 연결 포트 기록.
+- `settings/<장비 ID>/...`: 장비별 실험 변수 설정.
+- `workflows/<장비 ID>/...`: 장비별 기본 workflow 사본.
 
 위 로컬 파일/폴더는 `.gitignore`로 제외한다. 기존 `fpga_local`의 실험 변수 파일은
 호환성을 위해 기존 위치를 유지한다. 공개 기본 설정과 로컬 설정을 구분한다.

@@ -16,7 +16,7 @@ GUI 재시작 후 Experiment Queue → Queue 불러오기에서
 - SPAM은 저장된 spam_EA.json / spam_EC.json 설정을 사본으로 포함합니다.
   PMT 역할도 기존 PMTFA/PMTFC 설정을 유지합니다. 이온 체크의 PMTA+PMTC 합산과는
   별도 측정 코드입니다. SPAM 검출 경로가 현재 셋업과 맞는지 확인하세요.
-- 얽힘은 저장된 entanglement.local.json이 있으면 사용하고, 없으면 프로젝트 기본값을
+- 얽힘은 저장된 entanglement.json이 있으면 사용하고, 없으면 프로젝트 기본값을
   사용합니다. 각 그룹에서 basis와 phase_magnitude_deg만 변경합니다.
   기본값을 사용하는 경우 batches=100, detuning_hz=-2000 등도 그대로 포함됩니다.
   그룹 N은 이 내부 측정 횟수와 다릅니다.

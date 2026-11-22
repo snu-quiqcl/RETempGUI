@@ -5,7 +5,7 @@ from .mapping import ROOT, default_document, Profile, save_profile
 
 LOCK = threading.RLock()
 CLAIMS = {}
-LOCAL = ROOT / 'registry.local.json'
+LOCAL = ROOT / 'registry.json'
 
 
 def claim_port(port, worker):
@@ -44,7 +44,7 @@ def identify(info, ports, alias=None):
                 if entry.get('usb_identity') == identity:
                     return name, True
         number = 1
-        while 'fpga_' + str(number) in document['devices'] or (ROOT / ('fpga_' + str(number) + '.local.json')).exists():
+        while 'fpga_' + str(number) in document['devices'] or (ROOT / ('fpga_' + str(number) + '.json')).exists():
             number += 1
         name = 'fpga_' + str(number)
         profile = default_document(name)

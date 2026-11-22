@@ -57,10 +57,10 @@ def validate(value,require_thresholds=False):
     return deepcopy(value)
 
 def load(path=None):
-    path=path or settings_path(ROOT/'ion_check.local.json')
+    path=path or settings_path(ROOT/'ion_check.json')
     from pathlib import Path
     if not Path(path).exists():
-        if Path(path)==settings_path(ROOT/'ion_check.local.json'):return defaults()
+        if Path(path)==settings_path(ROOT/'ion_check.json'):return defaults()
         raise FileNotFoundError(path)
     return validate(read(path))
 

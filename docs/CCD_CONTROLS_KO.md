@@ -7,7 +7,7 @@
 FPGA Manual 화면의 **포트 검색**은 운영체제의 serial port 목록을 조회합니다.
 포트 이름, 장치 설명, USB serial을 표시하며 포트를 열거나 출력 명령을 보내지 않습니다.
 목록에서 선택하거나 포트 이름을 직접 입력한 뒤 Connect를 누릅니다.
-연결에 성공한 포트만 `labremote/config/devices/fpga/ports.local.json`에 장비 이름별로 저장합니다.
+연결에 성공한 포트만 `labremote/config/devices/fpga/ports.json`에 장비 이름별로 저장합니다.
 다음 실행 때 복원하며 USB serial/VID/PID가 유일하게 일치하면 변경된 COM 번호를 따라갑니다.
 USB serial이 없거나 중복이면 추측하지 않으므로 목록에서 직접 선택하세요.
 이 파일은 Git에서 제외되며 PC마다 포트 번호가 다를 수 있습니다.
@@ -52,7 +52,7 @@ CCD의 PSU instrument / Relay instrument 입력란은 제거했습니다.
 구성에 오븐 항목이 없으면 임의의 이름으로 연결하지 않습니다.
 
 CCD Display는 메인 **Configuration → 편집 → CCD Display**에서 설정·저장합니다.
-`equipment.local.json`의 선택 항목 `ccd_display`에 자동 레벨, Min/Max, Flip H/V,
+`equipment.json`의 선택 항목 `ccd_display`에 자동 레벨, Min/Max, Flip H/V,
 Ion markers, 배색을 저장합니다. 기존 구성 파일에는 이 항목이 없어도 기본값으로 동작합니다.
 Fit image 버튼은 제거했으며 카메라 연결 시 자동으로 전체 센서 영역을 맞춥니다.
 

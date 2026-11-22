@@ -76,7 +76,7 @@ class ExperimentShellMixin:
         self.monitor_tab=MonitorDashboard(lambda:self.family_tabs,self)
         self.device_tabs.addTab(self.monitor_tab,'Monitor');self.device_tabs.setCurrentWidget(self.home)
         self.equipment_timer=QtCore.QTimer(self);self.equipment_timer.setInterval(200);self.equipment_timer.timeout.connect(self.refresh_experiment_home);self.equipment_timer.start()
-        self.ccd_tab.oven_panel.psu_name.clear();self.ccd_tab.oven_panel.relay_name.clear()
+        self._bind_oven_names(self.equipment_profile)
         for entry in self.equipment_profile['devices']:
             if entry['enabled'] or entry['family'] in ('oven_psu','oven_relay'):self.ensure_equipment(entry)
         self.device_menu=self.menuBar().addMenu('장비')
@@ -147,13 +147,21 @@ class ExperimentShellMixin:
         if not hasattr(self,'equipment_profile'):return True
         return any(e['family']==family and e['name']==name for e in self.selected_equipment())
 
+    def _bind_oven_names(self,document):
+        oven=self.ccd_tab.oven_panel
+        names={'oven_psu':oven.psu_name.text().strip(),'oven_relay':oven.relay_name.text().strip()}
+        for entry in document['devices']:
+            if entry['family'] in names:entry['name']=names[entry['family']]
+
     def ensure_equipment(self,entry):
         family,name=entry['family'],entry['name']
         if family=='fpga':return  # Registering a saved profile never connects USB.
         if family in self.family_tabs:self._add_family(family,name)
         elif family=='flip':self.flip_tab._add_worker(name)
-        elif family=='oven_psu':self.ccd_tab.oven_panel.psu_name.setText(name)
-        elif family=='oven_relay':self.ccd_tab.oven_panel.relay_name.setText(name)
+        elif family in ('oven_psu','oven_relay'):
+            oven=self.ccd_tab.oven_panel
+            configured=oven.psu_name.text().strip() if family=='oven_psu' else oven.relay_name.text().strip()
+            if name!=configured:raise ValueError('Oven instrument name must match config/operations/oven.json')
 
     def equipment_worker(self,entry):
         family,name=entry['family'],entry['name']
@@ -196,7 +204,7 @@ class ExperimentShellMixin:
         validated=equipment.validate(document)
         if not self.selection_editable():raise RuntimeError('구성 변경 전 작업을 종료하고 장비 연결을 해제하세요.')
         # Validate the entire file before modifying any selection.
-        self.ccd_tab.oven_panel.psu_name.clear();self.ccd_tab.oven_panel.relay_name.clear()
+        self._bind_oven_names(validated)
         for entry in validated['devices']:
             if entry['enabled'] or entry['family'] in ('oven_psu','oven_relay'):self.ensure_equipment(entry)
         self.ccd_tab.apply_display_config(validated.get('ccd_display',{}))
@@ -221,11 +229,11 @@ class ExperimentShellMixin:
 
     def save_equipment(self,save_as=False):
         path=self.profile_path
-        if save_as or path is None or not path.name.endswith('.local.json'):
-            chosen,_=QtWidgets.QFileDialog.getSaveFileName(self,'장비 구성 저장',str(path.with_name(path.stem+'.local.json') if path and not path.name.endswith('.local.json') else path or equipment.LOCAL),'Local configuration (*.local.json)')
+        if save_as or path is None or not path.name.endswith('.json'):
+            chosen,_=QtWidgets.QFileDialog.getSaveFileName(self,'장비 구성 저장',str(path.with_name(path.stem+'.json') if path and not path.name.endswith('.json') else path or equipment.LOCAL),'Equipment configuration (*.json)')
             if not chosen:return False
             path=Path(chosen)
-            if not path.name.endswith('.local.json'):path=path.with_name(path.stem+'.local.json')
+            if not path.name.endswith('.json'):path=path.with_name(path.stem+'.json')
         try:
             equipment.save(path,self.equipment_profile);self.profile_path=path;self.cfg['equipment_configuration']=str(path);self.profile_dirty=False
             self.shell_message.setText('구성 저장 완료');self.refresh_experiment_home();return True

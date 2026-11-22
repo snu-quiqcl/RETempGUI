@@ -8,8 +8,9 @@ class ConnectionSettingsTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name);(self.root/'devices').mkdir()
-        self.local=self.root/'devices/connections.local.json'
+        self.local=self.root/'devices/connections.json'
         self.base=self.root/'devices/connections.json';self.base.write_text('{}')
+        (self.root/'client.json').write_text('{}')
         for target,name,value in ((hardware,'CONFIG_ROOT',self.root),(hardware,'LOCAL_HARDWARE',self.local),(settings,'SETTINGS',self.root/'client.json')):
             p=patch.object(target,name,value);p.start();self.addCleanup(p.stop)
     def seed(self,**values):

@@ -35,6 +35,7 @@ class OvenPanel(QtWidgets.QGroupBox):
         grid = QtWidgets.QGridLayout(self)
         self.psu_name = QtWidgets.QLineEdit(config['psu_name'])
         self.relay_name = QtWidgets.QLineEdit(config['relay_name'])
+        self.psu_name.setProperty('persistInput',False);self.relay_name.setProperty('persistInput',False)
         self.psu_name.setParent(self);self.psu_name.hide()
         self.relay_name.setParent(self);self.relay_name.hide()
         self.connect_button = QtWidgets.QPushButton('Connect oven devices')

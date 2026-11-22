@@ -67,7 +67,7 @@ def validate(c):
     return deepcopy(c)
 
 def load(chamber,mode,path=None):
-    local=settings_path(ROOT/f'{chamber}_{mode}.local.json')
+    local=settings_path(ROOT/f'{chamber}_{mode}.json')
     c=validate(read(path or (local if local.exists() else ROOT/f'{chamber}_{mode}.json')))
     if (c['chamber'],c['mode'])!=(chamber,mode):raise ValueError('Profile differs from this tab')
     return c

@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix='retemp-update-check-') as temporary:
         config=checkout/'labremote/config'
         shutil.copytree(ROOT/'labremote/config',config,ignore=lambda path,names:{'defaults'} if Path(path)==ROOT/'labremote/config/operations' else {'__pycache__'})
         # Distinct local file and legacy Python-only defaults on each PC.
-        (config/'pc_marker.local.json').write_text(json.dumps(dict(pc=pc,voltage=voltage)))
+        (config/'pc_marker.json').write_text(json.dumps(dict(pc=pc,voltage=voltage)))
         power=checkout/'labremote/operation/oven_psu/control.py'
         old=power.read_text(encoding='utf8')
         if 'RAMP_STEP_A = .15' not in old:raise AssertionError('Run this check against the pre-migration HEAD')

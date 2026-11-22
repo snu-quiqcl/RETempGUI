@@ -11,7 +11,7 @@
 ## UI에서 주파수 스캔 실행
 
 1. FPGA와 `apsyn420_mw`를 연결합니다. MW power·reference·출력 ON은 기존 장비 창에서 설정합니다.
-2. `rabi_frequency_sweep.json`을 같은 디렉토리에 `rabi_frequency_sweep.local.json`으로 복사합니다. 예제 주파수는 실제 실험에 맞게 변경하세요.
+2. 예제 `rabi_frequency_sweep.json`을 `labremote/config/recipes/rabi_frequency_sweep.json`으로 복사합니다. 예제 주파수는 실제 실험에 맞게 변경하세요.
 3. `frequencies_hz`, `settle_s`, 저장 `directory`, 장비 이름, `external_conditions`를 수정합니다. 저장 경로는 절대 경로를 권장합니다.
 4. EA/EC Rabi 탭에서 저장한 JSON 객체 전체를 recipe의 `rabi_settings`에 넣습니다. `chamber`와 역할 매핑도 그 객체에 포함됩니다. 별도 조건 파일을 연결하려면 아래 Python 예제처럼 로드하세요.
 5. 메인 또는 Daily Characterization의 Workflow에서 `labremote/workflow/rabi_frequency_archive.py`를 열어 실행합니다.
@@ -52,8 +52,8 @@ from labremote.characterization import config, rabi
 from labremote.workflow.rabi_frequency_archive import execute
 
 def main(devices):
-    recipe = config.read(config.ROOT / 'rabi_frequency_sweep.local.json')
-    recipe['rabi_settings'] = rabi.load('EA', config.ROOT / 'rabi_EA.local.json')
+    recipe = config.read(config.ROOT / 'rabi_frequency_sweep.json')
+    recipe['rabi_settings'] = rabi.load('EA', config.ROOT / 'rabi_EA.json')
     execute(devices, recipe, workflow_file=__file__)
 ```
 

@@ -3,8 +3,7 @@ import json
 from .paths import CONFIG_ROOT
 
 def scan_roles():
-    path=CONFIG_ROOT/'operations/scan_roles.local.json'
-    if not path.exists():path=CONFIG_ROOT/'operations/scan_roles.json'
+    path=CONFIG_ROOT/'operations/scan_roles.json'
     rows=json.loads(path.read_text(encoding='utf-8-sig'))
     if not isinstance(rows,list) or len(rows)!=4:raise ValueError('Exactly four scan roles are required')
     for row in rows:

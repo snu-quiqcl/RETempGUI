@@ -180,7 +180,7 @@ class PhaseHoldTab(QtWidgets.QWidget):
     def save(self):
         try:
             hold.request(self.angle.value(), self.names(), calibration=self.calibration.active())
-            path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '위상 고정 설정 저장', str(experiment_preset_path('phase_shifter','hold.local.json')), 'JSON (*.json)')
+            path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '위상 고정 설정 저장', str(experiment_preset_path('phase_shifter','hold.json')), 'JSON (*.json)')
             if path:
                 Path(path).parent.mkdir(parents=True,exist_ok=True)
                 Path(path).write_text(json.dumps(dict(phase_angle_deg=self.angle.value(), phase_outputs=self.names(), calibration=self.calibration.active()), indent=2), encoding='utf-8')

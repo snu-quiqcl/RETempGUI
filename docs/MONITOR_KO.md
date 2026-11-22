@@ -11,7 +11,7 @@
 
 모니터를 열거나 체크박스를 바꿔도 장비 연결, 새 조회, 측정 시작, 출력 변경은 일어나지 않습니다. 각 상세 창 또는 workflow에서 기존 측정을 시작해야 값이 갱신됩니다. 원본이 측정을 멈추고 마지막 그래프를 유지하면 모니터도 같은 그래프를 유지합니다. 상세 창을 숨겨도 원본 UI가 받는 갱신은 모니터에 반영됩니다. 모니터는 표시 중에만 0.5초 간격으로 UI 내용을 반영하며 장비 통신 주기는 바꾸지 않습니다.
 
-공개 기본 설정은 `labremote/config/ui/monitor.json`입니다. 체크박스/열 수 변경은 Git에서 제외되는 `labremote/config/ui/monitor.local.json`에 자동 저장합니다. 다른 PC에는 로컬 파일을 별도로 복사하세요.
+공개 기본 설정은 `labremote/config/ui/monitor.json`입니다. 체크박스/열 수 변경은 Git에서 제외되는 `labremote/config/ui/monitor.json`에 자동 저장합니다. 다른 PC에는 로컬 파일을 별도로 복사하세요.
 
 ```json
 {

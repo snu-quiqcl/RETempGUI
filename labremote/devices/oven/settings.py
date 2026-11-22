@@ -1,43 +1,49 @@
-import json
-import os
-from pathlib import Path
-
+"""One oven document: chamber, instrument names, profiles and power timing."""
+from copy import deepcopy
+import math
 from labremote.configuration.paths import CONFIG_ROOT
-LOCAL = CONFIG_ROOT/'operations/oven.local.json'
-from labremote.configuration.default_profiles import read_default
-_DEFAULT=read_default('oven')
-PROFILES=_DEFAULT.pop('profiles')
-DEFAULTS=_DEFAULT
+from labremote.runtime.json_storage import read_json, save_json
 
-
-def load_settings():
-    if not LOCAL.exists(): return dict(DEFAULTS)
-    data = json.loads(LOCAL.read_text(encoding='utf-8-sig'))
-    if not isinstance(data, dict): raise ValueError('oven.local.json must be an object')
-    result = dict(DEFAULTS)
-    result.update({key: value for key, value in data.items() if key in DEFAULTS})
-    if 'photoionization_shutter' not in data and 'shutter' in data:
-        result['photoionization_shutter']=data['shutter']
-    result['shutter']=result['photoionization_shutter']  # Legacy read alias.
-    validate_chamber(result['chamber'])
-    if result['photoionization_shutter'] not in ('shutter_1','shutter_2'):
-        raise ValueError('Select shutter_1 or shutter_2 for the 399 shutter')
-    if result['shutter'] not in ('shutter_1', 'shutter_2'):
-        raise ValueError('Select shutter_1 or shutter_2 in oven.local.json')
-    if type(result['timeout_s']) is not int or not 1<=result['timeout_s']<=599999:raise ValueError('Oven timeout must be 1..599999 seconds')
-    return result
-
+LOCAL = CONFIG_ROOT / 'operations/oven.json'
 
 def validate_chamber(chamber):
-    if chamber not in ('EA','EC'):raise ValueError('Oven chamber must be EA or EC in operations/oven.local.json')
+    if chamber not in ('EA', 'EC'):
+        raise ValueError('Oven chamber must be EA or EC in operations/oven.json')
     return chamber
 
+def validate_settings(data):
+    if not isinstance(data, dict): raise ValueError('oven.json must be an object')
+    result = deepcopy(data)
+    validate_chamber(result['chamber'])
+    for key in ('psu_name', 'relay_name'):
+        if not isinstance(result[key], str) or not result[key].strip():
+            raise ValueError(f'oven.json: {key} must be a server instrument name')
+    if result['psu_name'] == result['relay_name']: raise ValueError('Use distinct PSU and relay names')
+    if result['photoionization_shutter'] not in ('shutter_1', 'shutter_2'):
+        raise ValueError('Select shutter_1 or shutter_2 in oven.json')
+    result['shutter'] = result['photoionization_shutter']
+    if type(result['timeout_s']) is not int or not 1 <= result['timeout_s'] <= 599999:
+        raise ValueError('Oven timeout must be 1..599999 seconds')
+    profiles = result['profiles']
+    if not isinstance(profiles, dict): raise ValueError('oven.json: profiles must be an object')
+    for name in ('EA_171', 'EA_174', 'EC_171', 'EC_174'):
+        values = profiles.get(name)
+        if not isinstance(values, (tuple, list)) or len(values) != 2 or any(type(v) not in (int,float) or not math.isfinite(v) or v <= 0 for v in values):
+            raise ValueError(f'oven.json: {name} must contain positive [voltage V, current A]')
+    for key in ('off_current_timeout_s','ramp_step_a','ramp_interval_s','off_current_tolerance_a','off_poll_s'):
+        value = result['power'][key]
+        if type(value) not in (int,float) or not math.isfinite(value) or value <= 0:
+            raise ValueError(f'oven.json: power.{key} must be positive and finite')
+    return result
+
+def load_settings():
+    return validate_settings(read_json(LOCAL))
 
 def save_settings(data):
-    validate_chamber(data.get('chamber','EC'))
-    if data.get('photoionization_shutter','shutter_1') not in ('shutter_1','shutter_2'):raise ValueError('Invalid 399 shutter')
-    duration=data.get("timeout_s",600)
-    if type(duration) is not int or not 1<=duration<=599999:raise ValueError("Timeout must be at least 0분 1초")
-    temp = LOCAL.with_suffix('.tmp')
-    temp.write_text(json.dumps(data, indent=2)+'\n', encoding='utf-8')
-    os.replace(temp, LOCAL)
+    # UI saves a subset: retain profiles, power policy and future fields.
+    current = read_json(LOCAL)
+    current.update(deepcopy(data))
+    save_json(LOCAL, validate_settings(current))
+
+DEFAULTS = load_settings()
+PROFILES = deepcopy(DEFAULTS['profiles'])

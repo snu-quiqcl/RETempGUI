@@ -3,12 +3,11 @@ import json
 from pathlib import Path
 from labremote.configuration.paths import CONFIG_ROOT
 
-DEFAULT = CONFIG_ROOT/'ui/flipper_display.json'
-LOCAL = CONFIG_ROOT/'ui/flipper_display.local.json'
+LOCAL = CONFIG_ROOT/'ui/flipper_display.json'
 
 def load_display():
     result={}
-    for path in (DEFAULT,LOCAL):
+    for path in (LOCAL,):
         if not path.exists():continue
         data=json.loads(path.read_text(encoding='utf-8-sig'))
         if not isinstance(data,dict):raise ValueError('Flipper display must map server names to positions')

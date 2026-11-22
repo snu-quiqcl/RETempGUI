@@ -5,7 +5,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from labremote.configuration.paths import CONFIG_ROOT
 
 PUBLIC = CONFIG_ROOT/'ui/monitor.json'
-LOCAL = CONFIG_ROOT/'ui/monitor.local.json'
+LOCAL = CONFIG_ROOT/'ui/monitor.json'
 FAMILIES = ('ds1052e', 'mso7054', 'osa', 'thermotek', 'mdt')
 
 

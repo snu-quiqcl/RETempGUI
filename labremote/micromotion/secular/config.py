@@ -86,7 +86,7 @@ def fit(histogram,frequency_khz,rate,sem):
     return clean(result)
 
 
-def settings_file(chamber):return settings_path(ROOT/(chamber+'.secular.local.json'))
+def settings_file(chamber):return settings_path(ROOT/(chamber+'.secular.json'))
 
 
 def load(chamber):

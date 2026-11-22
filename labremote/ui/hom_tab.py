@@ -92,14 +92,14 @@ class HOMTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
 
     def save(self):
-        self.save_to(settings_path(config.ROOT/'hom.local.json'))
+        self.save_to(settings_path(config.ROOT/'hom.json'))
 
     def save_to(self,path):
         try:config.save(path,self.value()); self.status.setText(str(path))
         except Exception as exc:self.status.setText(str(exc))
 
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save HOM settings',str(settings_path(config.ROOT/'hom.local.json')),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save HOM settings',str(settings_path(config.ROOT/'hom.json')),'JSON (*.json)')
         if path:self.save_to(path)
 
     def choose_folder(self):

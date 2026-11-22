@@ -71,10 +71,10 @@ class DecayExperimentTab(QtWidgets.QWidget):
             except Exception as exc:self.status.setText(str(exc))
     def save(self):
         try:
-            path=settings_path(config.ROOT/f'{self.chamber}_{self.mode}.local.json');config.save(path,self.value());self.status.setText(str(path))
+            path=settings_path(config.ROOT/f'{self.chamber}_{self.mode}.json');config.save(path,self.value());self.status.setText(str(path))
         except Exception as exc:self.status.setText(str(exc))
     def save_as(self):
-        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save decay settings',str(settings_path(config.ROOT/f'{self.chamber}_{self.mode}.local.json')),'JSON (*.json)')
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save decay settings',str(settings_path(config.ROOT/f'{self.chamber}_{self.mode}.json')),'JSON (*.json)')
         if path:
             try:config.save(path,self.value());self.status.setText(path)
             except Exception as exc:self.status.setText(str(exc))

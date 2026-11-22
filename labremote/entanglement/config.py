@@ -108,7 +108,7 @@ def save_settings(path, c):
 
 
 def load(path=None):
-    p = Path(path or settings_path(ROOT/'entanglement.local.json'))
+    p = Path(path or settings_path(ROOT/'entanglement.json'))
     if not p.exists() and path is None:
         return validate(defaults())
     document = read(p)

@@ -153,7 +153,7 @@ wait()는 완료까지 기다리고 실패·취소를 예외로 전달합니다.
 
 ## 설정 위치
 
-- `labremote/config/ui/client_settings.local.json`: 서버 주소, 화면 설정, 장비 목록.
+- `labremote/config/ui/client_settings.json`: 서버 주소, 화면 설정, 장비 목록.
 - `labremote/config/devices/windfreak/device_config.yml`: Windfreak 기본값과 장비 이름별 override.
 - `labremote/config/operations/windfreak/parameter_registry.yml`: Windfreak 전체 파라미터 검증/readback 정책.
 
@@ -278,7 +278,7 @@ others → Motor의 한 화면에 12개 모터를 표시합니다. 공통 Host/P
 
 Actual/Target은 µm, 서버 position과 workflow move()/acquire('position')는 mm입니다. 12000 µm = 12 mm이며 입력 범위는 유지합니다. Read와 Read all positions는 status 파라미터를 새로 acquire하며 조회 실패는 Unknown으로 표시합니다. 60초 모니터링도 같은 API를 사용합니다.
 
-서버 배치 파일은 로컬 전용 server_deploy_latest/KDC101/입니다. Git clone에는 없으므로 필요하면 별도로 직접 전달받으세요. 드라이버 옆 serials.local.json에 실제 시리얼 번호를 보관하고 serverConfig.example.yml의 항목을 서버의 기존 instruments 아래에 합친 뒤 해당 initialize를 true로 변경하세요. serials.local.json은 Git에서 제외되며 서버 PC로 직접 복사합니다. 시리얼 번호는 UI에 저장하지 않습니다. 자세한 설치 및 단위 설정은 같은 폴더의 README_KO.md를 참고하세요.
+서버 배치 파일은 로컬 전용 server_deploy_latest/KDC101/입니다. Git clone에는 없으므로 필요하면 별도로 직접 전달받으세요. 드라이버 옆 serials.json에 실제 시리얼 번호를 보관하고 serverConfig.example.yml의 항목을 서버의 기존 instruments 아래에 합친 뒤 해당 initialize를 true로 변경하세요. serials.json은 Git에서 제외되며 서버 PC로 직접 복사합니다. 시리얼 번호는 UI에 저장하지 않습니다. 자세한 설치 및 단위 설정은 같은 폴더의 README_KO.md를 참고하세요.
 
 Connect는 서버 파라미터에 연결하며 USB를 자동 Open/Home/Move하지 않습니다. 최초 사용은 Open을 누르세요. UI Disconnect와 앱 종료는 클라이언트 소켓만 닫으며 USB 모터를 Close하거나 위치를 바꾸지 않습니다. Close 버튼은 USB 핸들을 닫고, 서버 종료의 드라이버 정리도 USB 핸들을 닫습니다.
 

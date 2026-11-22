@@ -17,7 +17,7 @@ class TabStateStore:
 
     def load(self):
         inputs={};models={}
-        for path in sorted(self.root.rglob('*.local.json')):
+        for path in sorted(self.root.rglob('*.json')):
             raw=path.read_bytes();doc=json.loads(raw.decode('utf-8-sig'))
             if doc.get('schema_version')!=1:raise ValueError(f'Invalid tab state schema: {path}')
             for section,target in (('inputs',inputs),('models',models)):
@@ -36,7 +36,7 @@ class TabStateStore:
         elif scope.startswith('experiment/'):
             parts=['experiments']+[p for p in scope.split('/')[1:] if p]
         else:parts=['common',scope]
-        return Path(str(self.root.joinpath(*(component(p) for p in parts)))+'.local.json')
+        return Path(str(self.root.joinpath(*(component(p) for p in parts)))+'.json')
 
     def save(self,inputs,models,roots):
         docs={p:dict(d,inputs=dict(d.get('inputs',{})),models=dict(d.get('models',{}))) for p,d in self.documents.items()}

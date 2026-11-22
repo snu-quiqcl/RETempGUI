@@ -197,7 +197,7 @@ DEFAULT = Profile(default_document())
 def profile_path(name):
     if not isinstance(name, str) or not name.isidentifier():
         raise ValueError('Invalid FPGA device ID')
-    return ROOT / (name + '.local.json')
+    return ROOT / (name + '.json')
 
 
 def load_profile(name):
@@ -219,14 +219,14 @@ def load_profile(name):
 
 def role_settings_path(name):
     profile_path(name)
-    return ROOT / 'settings.local' / name / 'role_bindings.local.json'
+    return ROOT / 'settings' / name / 'role_bindings.json'
 
 
 def save_profile(profile):
     path = profile_path(profile.device_id)
     path.parent.mkdir(parents=True, exist_ok=True)
-    for other in ROOT.glob('*.local.json'):
-        if other == path or other.name in ('ports.local.json', 'registry.local.json'):
+    for other in ROOT.glob('*.json'):
+        if other == path or other.name in ('ports.json', 'registry.json'):
             continue
         document = json.loads(other.read_text(encoding='utf-8-sig'))
         if isinstance(document, dict) and document.get('device_id') and str(document.get('alias', '')).casefold() == profile.alias.casefold():
@@ -282,14 +282,14 @@ def settings_path(path):
     """Keep first-device legacy settings; isolate subsequent device presets."""
     path = Path(path)
     state = CURRENT.get()
-    if state is None or not path.name.endswith('.local.json'):
+    if state is None or not path.name.endswith('.json'):
         return path
     try:
         relative = path.relative_to(CONFIG_ROOT / 'operations')
     except ValueError:
         return path
     if state[0].device_id != 'fpga_local':
-        path = ROOT / 'settings.local' / state[0].device_id / relative
+        path = ROOT / 'settings' / state[0].device_id / relative
     if path.exists():
         original = json.loads(path.read_text(encoding='utf-8-sig'))
         def migrate(value, field=None):

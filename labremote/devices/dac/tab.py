@@ -331,7 +331,7 @@ class DACPanel(W.QWidget):
     def settings_path(self):
         from labremote.configuration.paths import CONFIG_ROOT
         if not self.name.isidentifier():raise ValueError('Invalid DAC instrument name')
-        return CONFIG_ROOT/'ui'/('dac_'+self.name+'.local.json')
+        return CONFIG_ROOT/'ui'/('dac_'+self.name+'.json')
 
     def restore_local_settings(self):
         import json

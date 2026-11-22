@@ -31,7 +31,7 @@ from labremote.runtime.discovery import DiscoveryWorker
 from labremote.devices.fpga.ports import PortScanner
 
 cfg=deepcopy(DEFAULTS)
-cfg['equipment_configuration']=str(cfgroot/'ui/equipment.local.json')
+cfg['equipment_configuration']=str(cfgroot/'ui/equipment.json')
 def deny(*a,**k):raise AssertionError('Hardware I/O forbidden in persistence verification')
 
 def make():

@@ -74,7 +74,7 @@ def apply_value(widget, saved):
 class InputState(QtCore.QObject):
     def __init__(self,owner,path=None,defaults_path=None):
         super().__init__(owner);self.owner=owner
-        self.path=Path(path) if path else CONFIG_ROOT/'ui/input_state.local.json'
+        self.path=Path(path) if path else CONFIG_ROOT/'ui/input_state.json'
         self.saved={};self.seen={};self.pending={};self.active=True;self._reported=set()
         self.store=None;self._generation=0;self._field_cache=None;self._cache_signature=None
         if path is None:

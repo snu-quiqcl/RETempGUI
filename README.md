@@ -68,9 +68,9 @@ python -c "from instrumentserver.client import Client; print('Remote client impo
 
 ### 3. PC별 실행 설정
 
-먼저 [로컬 설정 전달 안내](docs/LOCAL_SETUP_KO.md)에 따라 `labremote/config/devices/connections.local.json`을 직접 복사하세요. 실제 IP와 모터 시리얼은 GitHub에 포함하지 않습니다. 새 checkout에는 config가 없으므로 이 PC의 설정 묶음 전체를 별도로 복원해야 합니다. [백업·업데이트 절차](docs/configuration/LOCAL_STORAGE.md)를 먼저 확인하세요.
+먼저 [로컬 설정 전달 안내](docs/LOCAL_SETUP_KO.md)에 따라 `labremote/config/devices/connections.json`을 직접 복사하세요. 실제 IP와 모터 시리얼은 GitHub에 포함하지 않습니다. 새 checkout에는 config가 없으므로 이 PC의 설정 묶음 전체를 별도로 복원해야 합니다. [백업·업데이트 절차](docs/configuration/LOCAL_STORAGE.md)를 먼저 확인하세요.
 
-Conda 환경을 활성화한 뒤 저장소 루트에서 실행합니다. 기본 네트워크 설정은 `labremote/config/devices/connections.local.json`에서 읽습니다.
+Conda 환경을 활성화한 뒤 저장소 루트에서 실행합니다. 기본 네트워크 설정은 `labremote/config/devices/connections.json`에서 읽습니다.
 
 ```bat
 conda activate uniqcon
@@ -84,7 +84,7 @@ python lab_remote_gui.py
 ### 4. 실제 CCD
 
 - ThorCam 프로그램, 카메라 드라이버, Thorlabs .NET SDK를 해당 PC에 설치합니다. 이 저장소에 제조사 DLL을 포함하지 않았습니다.
-- CCD 탭에서는 `Thorcam`을 선택합니다. 카메라 serial과 DLL 입력칸은 표시하지 않으며, 필요한 경우 로컬 `labremote/config/ui/client_settings.local.json`의 `ccd_options.serial`과 `ccd_options.dll_path`로 지정합니다. 기본 경로는 `C:/Program Files/Thorlabs/Scientific Imaging/ThorCam/`입니다.
+- CCD 탭에서는 `Thorcam`을 선택합니다. 카메라 serial과 DLL 입력칸은 표시하지 않으며, 필요한 경우 로컬 `labremote/config/ui/client_settings.json`의 `ccd_options.serial`과 `ccd_options.dll_path`로 지정합니다. 기본 경로는 `C:/Program Files/Thorlabs/Scientific Imaging/ThorCam/`입니다.
 - `Dummy`는 SDK/실제 카메라 없이 밝은 영역 3개를 생성합니다.
 - CCD는 로컬로 연결되며 **flip mirror·오븐·셔터가 없어도 동작**합니다. 일반 CCD Wait for ions는 장비를 끄지 않습니다. EC oven 로딩 작업을 시작한 경우에만 해당 작업이 PSU OFF와 셔터 닫기를 처리합니다.
 - 단색 16bit 영상이 대상입니다. EMCCD·컬러 카메라·하드웨어 TTL 트리거는 현재 통합 범위가 아닙니다.
@@ -145,7 +145,7 @@ start_lab_remote_gui.bat
 
 `labremote/config/`, `labremote/data/`, 로그는 모두 Git 추적에서 제외합니다. YAML 장비 정책·기본값·예제 설정도 PC별로 보존합니다. 이 변경을 처음 받는 PC는 pull **전에** [전체 로컬 파일 백업 및 복원 절차](docs/configuration/LOCAL_STORAGE.md)를 수행하세요. 일반 코드 수정은 별도로 보존해야 합니다.
 
-`labremote/config/ui/client_settings.local.json`은 앱 종료 시 생성되는 PC별 UI 설정이며 Git에서 제외합니다. 로컬 기본값은 `labremote/config/ui/defaults.json`에서 읽습니다. 장비 목록에 필요한 YAML도 config 백업에 포함해야 합니다.
+`labremote/config/ui/client_settings.json` 하나에서 PC별 UI 설정을 읽고 같은 파일에 저장합니다. config 전체는 Git에서 제외합니다. 장비 목록에 필요한 YAML도 config 백업에 포함해야 합니다.
 
 ## 폴더 구조
 
@@ -183,7 +183,7 @@ RETempUI_V1_00/
 Flipper는 메인 창 상단 QCoDeS InstrumentServer 주소를 공유합니다.
 상단 `Rescan server devices` 또는 `others → flip`의 `서버 flipper 목록 불러오기`로 실제 서버 이름을 조회하고,
 각 장비의 연결·Position 1/2 버튼으로 제어하거나 `Flipper 전체 연결`을 사용합니다.
-EA/EC 경로 버튼은 제거했으며 기존 `labremote/config/operations/flipper_routes.local.json` 자동 매핑은 유지합니다.
+EA/EC 경로 버튼은 제거했으며 기존 `labremote/config/operations/flipper_routes.json` 자동 매핑은 유지합니다.
 메인 상단 `장비` 메뉴와 창 동작, CCD 수신 범위는 [장비 창 안내](docs/FLIP_WINDOWS_KO.md)를 참고하세요.
 
 기존 oven_relays.shutter_2를 함께 제어합니다. Linux 서버 드라이버/YAML,
@@ -201,7 +201,7 @@ USB 포트 확인, EA/EC 매핑 설정은 [설치 안내](docs/FLIP_SETUP_KO.md)
 
 - Fixed scan tabs: Scan EA collection (`EA_px/py/pz`), Scan EA excitation (`EA_sx/sy/sz`), Scan EC collection (`EC_px/py/pz`), Scan EC excitation (`EC_sx/sy/sz`). Existing default PMT associations are preserved (0, 3, 1, 2 in this tab order).
 - Current motor positions are displayed in micrometres. Conversion factors remain in `scan_defaults`; the conversion editors have been removed from the UI. Idle visible tabs read status through the operation queue; active scans reuse move readbacks. `(last)` marks a readback older than three seconds.
-- `Load last scan settings` restores ranges, steps, exposure, average, settle time, PMT, Z-scan enable and save directory from the last scan started in that tab. Settings are stored in ignored `labremote/config/ui/scan_EA_px.local.json`, `scan_EA_sx.local.json`, `scan_EC_px.local.json`, and `scan_EC_sx.local.json`. Copy these privately only if you want to transfer previous settings.
+- `Load last scan settings` restores ranges, steps, exposure, average, settle time, PMT, Z-scan enable and save directory from the last scan started in that tab. Settings are stored in ignored `labremote/config/ui/scan_EA_px.json`, `scan_EA_sx.json`, `scan_EC_px.json`, and `scan_EC_sx.json`. Copy these privately only if you want to transfer previous settings.
 - `Move Z` moves to an absolute Z target without enabling Z scan or connecting the FPGA. The Z motor must be connected and free of active workflows.
 - XYZ scans show MFD X and MFD Y versus Z below the image, updated after each completed XY plane. Failed or unavailable fits are gaps, not zero-width measurements. Individual Start/Stop controls remain; the FPGA-wide Start/Stop all scan buttons were removed.
 - DS1052E/MSO7054 waveform refresh reuses axes and line objects, while preserving physical V/div, fit-to-data and manual-limit modes.
@@ -215,7 +215,7 @@ USB 포트 확인, EA/EC 매핑 설정은 [설치 안내](docs/FLIP_SETUP_KO.md)
 Workflow API와 장비별 설정, operation 실행 방식은 기존 그대로입니다.
 
 `Configuration`에서 전체 장비 구성을 불러오고 표에서 편집한 뒤 저장할 수 있습니다.
-`labremote/config/ui/equipment.local.json`의 사용 체크는 그룹/전체 연결 대상을 지정합니다.
+`labremote/config/ui/equipment.json`의 사용 체크는 그룹/전체 연결 대상을 지정합니다.
 장비 구성 기본 파일과 개인 override 모두 Git에서 제외됩니다. 형식은 로컬 `labremote/config/ui/equipment.json`을 참고하세요.
 수동으로 연결한 장비는 기존처럼 workflow에서 사용할 수 있습니다.
 자세한 사용법과 연결/종료 동작은 [실험 UI 안내](docs/EXPERIMENT_UI_KO.md)를 참고하세요.
@@ -226,7 +226,7 @@ FPGA 포트 검색·기억, 화면 영역 기반 CCD 연속 검출, Configuratio
 
 ## 설정 파일 역할 분리
 
-[설정 구조 및 이전 안내](docs/CONFIGURATION.md)를 참고하세요. 기본 설정과 `*.local.json`의 우선순위는 유지하되 둘 다 Git에서 제외하고, 장비 / 메인 UI / operation 설정을 각 폴더에서 관리합니다. 메인의 중복 상세 제어창 버튼은 제거했으며 상단 **장비** 메뉴에서 기존 상세 창을 엽니다.
+[설정 구조 및 이전 안내](docs/CONFIGURATION.md)를 참고하세요. 기능별 설정 파일 하나를 사용하며 config 전체를 Git에서 제외하고, 장비 / 메인 UI / operation 설정을 각 폴더에서 관리합니다. 메인의 중복 상세 제어창 버튼은 제거했으며 상단 **장비** 메뉴에서 기존 상세 창을 엽니다.
 
 CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](docs/FLIP_DISPLAY_KO.md)를 참고하세요.
 
@@ -250,7 +250,7 @@ CCD 밝기 조절과 flipper 위치 별명·이미지는 [표시 설정 안내](
 
 Server-owned USB DAC81416 control is available from the DAC equipment window.
 See [DAC installation, initialization, workflow and storage](docs/DAC_SETUP_KO.md).
-DAC API v2: deploy only `server_deploy_latest/DAC81416` to the InstrumentServer PC. Keep `labremote/config/devices/dac/EA.local.json` and `EC.local.json` on the client; Initialize sends offsets. Sequences execute on the client.
+DAC API v2: deploy only `server_deploy_latest/DAC81416` to the InstrumentServer PC. Keep `labremote/config/devices/dac/EA.json` and `EC.json` on the client; Initialize sends offsets. Sequences execute on the client.
 Connect never initializes outputs; UI lease loss stops an active sequence after the current row.
 
 
