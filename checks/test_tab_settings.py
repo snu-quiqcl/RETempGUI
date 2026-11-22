@@ -96,6 +96,17 @@ class TabSettingsTests(unittest.TestCase):
                 self.assertNotEqual(a,b);self.assertTrue(a.parent.exists() and b.parent.exists())
                 self.assertTrue(a.is_relative_to(config) and b.is_relative_to(config))
 
+    def test_empty_queue_does_not_block_other_settings(self):
+        from labremote.ui.queue_tab import QueueTab
+        with tempfile.TemporaryDirectory() as folder:
+            w=W.QMainWindow();w.queue_tab=QueueTab(lambda:{},w);w.value=W.QSpinBox(w);w.value.setValue(23)
+            path=Path(folder)/'state.json';state=InputState(w,path);state.restore()
+            self.assertTrue(state.save());state.stop();w.value.setValue(1)
+            restored=InputState(w,path);restored.restore()
+            self.assertEqual(w.value.value(),23);self.assertEqual(w.queue_tab.jobs,[])
+            self.assertFalse(restored.model_pending);self.assertTrue(restored.save())
+            restored.stop();w.deleteLater()
+
     def test_atomic_files_keep_extension_and_no_temp_remains(self):
         with tempfile.TemporaryDirectory() as folder:
             store=TabStateStore(folder);store.load();store.save({'device/rf/trap.a/f':1},{},{'device/rf/trap.a':None})

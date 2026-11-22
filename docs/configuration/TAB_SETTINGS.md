@@ -86,3 +86,30 @@ python -B checks/verify_update_preservation.py
 ```
 
 마지막 스크립트의 이전 코드 기준은 현재 변경 전 HEAD다. 이번 변경을 나중에 커밋한 뒤에는 이전 revision fixture를 별도로 지정하도록 갱신해야 한다. `tests/`의 기존 검사는 일부 로컬 보관 파일이므로 다른 PC에 없을 수 있다. 이번에 추가한 `checks/`와 `tools/`는 Git에 포함할 수 있는 코드이며 실제 설정 파일은 포함하지 않는다.
+
+
+## 서버 IP의 기준과 localhost 재복원 수정 (2026-11-22 후속)
+
+InstrumentServer 접속 주소의 기준 파일은 `labremote/config/devices/connections.local.json`이다. `server_host`에는 InstrumentServer가 실행되는 PC의 IP/호스트명, `server_port`에는 해당 포트를 지정한다. `127.0.0.1`은 클라이언트 자신이므로 서버도 같은 PC에서 실행할 때만 사용한다.
+
+- 로컬 파일이 없을 때만 `devices/connections.json`의 명시된 주소를 읽는다. 활성 파일에 host/port가 없으면 설정 오류를 표시하며 임의의 localhost 기본값으로 연결하지 않는다.
+- UI에서는 **연결 설정 → Host / Port**를 편집한 뒤 Enter 또는 다른 입력칸으로 이동하면 같은 연결 파일에 저장한다. Rescan과 정상 종료 때도 미저장 변경을 반영한다. 기존 motor 설정은 유지한다.
+- `ui/defaults.json`, `ui/client_settings.local.json`, `ui/input_defaults.json`, `ui/input_state.local.json`, `ui/tabs`의 값은 서버 주소를 덮어쓸 수 없다. 이 PC의 오래된 중복 서버 키는 아래 백업 후 제거했다. 다른 PC에 중복 키가 남아 있어도 새 코드에서는 접속 입력칸의 일반 UI 복원을 비활성화하므로 무시한다.
+- 명령줄 `--host` / `--port`는 해당 실행의 명시적 override다. UI에서 추가로 편집하지 않고 종료하면 연결 파일에 저장되지 않는다. 포트 범위 오류는 입력 위젯에 의해 다른 값으로 바뀌기 전에 거부한다.
+- 파일을 직접 편집했다면 앱을 다시 시작한다. 다른 창이나 외부 편집과 충돌하면 기존 파일을 덮어쓰지 않고 저장 오류를 표시한다.
+- 현재 통합 GUI의 Motor 연결도 공통 InstrumentServer 주소를 사용한다. 기존 `motor_host` / `motor_port`는 호환 설정으로 보존하며 이 GUI의 서버 Host를 바꾸는 항목이 아니다.
+
+문제 원인: 올바른 연결 파일을 읽어 Host를 만든 다음, 일반 입력 상태 복원이 옛 `127.0.0.1`을 Host 입력칸에 다시 썼다. 실제 접속 함수는 이 입력칸을 읽어 잘못된 주소로 검색했다. 단순 값 round-trip 검증만으로는 이 우선순위 오류를 발견하지 못했다.
+
+추가 검증에서 빈 Queue의 실행용 plan 검증이 공통 UI 저장을 막는 문제도 발견했다. 실행 가능한 Queue 검증은 그대로 유지하면서 빈 목록을 저장 가능한 초안으로 처리하도록 수정했다.
+
+백업: `D:\coding\QCODES\RETempGUI-local-backups\server-endpoint-20261122-160049`.
+실제 연결 파일(서버/모터 주소 포함)은 수정 전과 SHA256이 같다. 이번에 바뀐 로컬 값은 오래된 UI 중복 서버 키의 제거뿐이다.
+관련 회귀 검사 29개 통과. 실제 Window 생성·종료를 세 번 수행해 stale localhost 무시, 편집값의 재시작 복원, 일회성 CLI override, 실제 검색 요청에 전달되는 endpoint, 빈 Queue 저장을 확인했다. 장비 연결은 차단했고 테스트 전후 실제 config 및 Git 추적 파일 해시는 동일했다.
+
+```powershell
+python -B -m unittest checks.test_connection_settings checks.test_tab_settings tests.test_ui_input_state tests.test_input_defaults
+python -B checks/verify_connection_restart.py
+```
+
+다른 PC에서는 이번 **코드 변경도 반영한 뒤 앱을 재시작**해야 한다. 구버전 코드에서는 연결 파일만 바꿔도 옛 UI 상태가 다시 덮어쓸 수 있다.

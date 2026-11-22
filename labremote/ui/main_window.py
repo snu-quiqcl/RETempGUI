@@ -5,6 +5,7 @@ import sys
 from PyQt5 import QtCore, QtWidgets
 from labremote.ui.theme import apply_theme
 from labremote.configuration.settings import load_settings, save_settings
+from labremote.configuration.local_hardware import server_endpoint, save_server_endpoint, validate_server_endpoint, LOCAL_HARDWARE
 from labremote.configuration.device_config import configured_instrument_names
 from labremote.devices.windfreak.tab import WindfreakTab
 from labremote.ui.workflow_tab import WorkflowTab
@@ -56,7 +57,11 @@ from labremote.ui.detail_window import MainTabs
 class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
     def __init__(self, cfg):
         super().__init__()
+        host,port=validate_server_endpoint(cfg['server_host'],cfg['server_port'])
+        cfg=dict(cfg,server_host=host,server_port=port)
         self.cfg = cfg
+        self._saved_server_endpoint=(cfg['server_host'],cfg['server_port'])
+        self._source_server_endpoint=server_endpoint()
         self._closing = False
         self._workers_shutdown = False
         self._discovery_pending = True
@@ -79,6 +84,10 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         self.discovery_host = QtWidgets.QLineEdit(cfg['server_host'])
         self.discovery_port = QtWidgets.QSpinBox(); self.discovery_port.setRange(1,65535)
         self.discovery_port.setValue(cfg['server_port'])
+        for widget in (self.discovery_host,self.discovery_port):
+            widget.setProperty('persistInput',False)
+            widget.setToolTip('Host/Port 편집 완료 시 이 PC에 저장: '+str(LOCAL_HARDWARE))
+            widget.editingFinished.connect(self._save_server_endpoint)
         self.rescan_btn = QtWidgets.QPushButton('Rescan server devices')
         self.manual_name = QtWidgets.QLineEdit(); self.manual_name.setPlaceholderText('Instrument name')
         self.manual_family = QtWidgets.QComboBox(); self.manual_family.addItems(list(self.family_tabs))
@@ -160,6 +169,22 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
 
     def _endpoint(self): return self.discovery_host.text().strip(), self.discovery_port.value()
 
+    def _save_server_endpoint(self):
+        endpoint=self._endpoint()
+        if endpoint==self._saved_server_endpoint:return True
+        try:
+            save_server_endpoint(*endpoint,expected=self._source_server_endpoint)
+        except (OSError,ValueError) as exc:
+            message='서버 주소 저장 실패: '+str(exc)
+            self.log.appendPlainText(message)
+            if hasattr(self,'shell_message'):self.shell_message.setText(message)
+            return False
+        self._saved_server_endpoint=self._source_server_endpoint=endpoint
+        self.cfg.update(server_host=endpoint[0],server_port=endpoint[1])
+        self.log.appendPlainText(f'서버 주소 저장: {endpoint[0]}:{endpoint[1]}')
+        return True
+
+
     def _discovery_busy(self):
         return (self.workflows_running() or bool(self.active_experiment_tasks())
                 or bool(self.connection_queue) or self.connection_handle is not None
@@ -170,6 +195,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
         if self._closing or not self.rescan_btn.isEnabled():return
         if self._discovery_busy():
             self.shell_message.setText('작업과 연결이 끝난 뒤 서버 목록을 다시 조회하세요.');return
+        if not self._save_server_endpoint():return
         self._discovery_pending=True
         from .connection_status import connection_color
         connection_color(self.rescan_btn,'pending')
@@ -328,6 +354,7 @@ class Window(ExperimentShellMixin,QtWidgets.QMainWindow):
             if not self.experiment_workspace.confirm_close() or not self.workflow_tab.confirm_close() or not self.queue_tab.confirm_close():
                 event.ignore()
                 return
+            if not self._save_server_endpoint():event.ignore();return
             self.input_state.save()
             self.input_state.stop()
             self._closing = True
@@ -379,8 +406,10 @@ def main():
     parser.add_argument('--host'); parser.add_argument('--port',type=int)
     args=parser.parse_args()
     cfg=load_settings()
-    if args.host: cfg['server_host']=args.host
-    if args.port: cfg['server_port']=args.port
+    if args.host is not None: cfg['server_host']=args.host
+    if args.port is not None: cfg['server_port']=args.port
+    try:cfg['server_host'],cfg['server_port']=validate_server_endpoint(cfg['server_host'],cfg['server_port'])
+    except ValueError as exc:parser.error(str(exc))
     app=QtWidgets.QApplication(sys.argv)
     apply_theme(app)
     window=Window(cfg); window.show()

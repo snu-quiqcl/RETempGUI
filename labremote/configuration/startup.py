@@ -2,9 +2,11 @@
 from .paths import CONFIG_ROOT
 
 def require_local_configuration():
-    required = ('ui/defaults.json', 'ui/equipment.json', 'devices/connections.json',
+    required = ('ui/defaults.json', 'ui/equipment.json',
                 'ui/input_defaults.json')
     missing = [name for name in required if not (CONFIG_ROOT / name).is_file()]
+    if not any((CONFIG_ROOT/'devices'/name).is_file() for name in ('connections.local.json','connections.json')):
+        missing.append('devices/connections.local.json')
     if not list(CONFIG_ROOT.glob('operations/*/parameter_registry.yml')):
         missing.append('operations/*/parameter_registry.yml')
     profiles=('phase_ramsey','phase_rabi','oven','oven_power','dac_timing','hom','entanglement','ion_check')
@@ -16,3 +18,6 @@ def require_local_configuration():
             'Local configuration is missing. Restore this PC\'s config backup to '
             + str(CONFIG_ROOT) + '\nMissing: ' + ', '.join(missing)
             + '\nSee docs/configuration/TAB_SETTINGS.md (export the old PC defaults before updating). No device connection was started.')
+
+    from .local_hardware import server_endpoint
+    server_endpoint()

@@ -4,7 +4,7 @@ def main():
     from labremote.configuration.startup import require_local_configuration
     try:
         require_local_configuration()
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         from PyQt5.QtWidgets import QApplication, QMessageBox
         app = QApplication.instance() or QApplication([])
         QMessageBox.critical(None, 'Restore local configuration', str(exc))

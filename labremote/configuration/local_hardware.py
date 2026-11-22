@@ -1,5 +1,6 @@
 """Private network endpoints; this module never connects to hardware."""
 import json
+import os
 from pathlib import Path
 
 from .paths import CONFIG_ROOT
@@ -32,3 +33,35 @@ def apply_local_connection(family, config):
             if 'motor_' + field in local:
                 connection[field] = local['motor_' + field]
     return config
+
+
+def server_endpoint():
+    """The connection document is the sole persisted InstrumentServer endpoint."""
+    local=load_local_hardware()
+    if not {'server_host','server_port'} <= local.keys():
+        raise ValueError(
+            f'Set server_host and server_port in {LOCAL_HARDWARE}. '
+            'Use the IP of the PC running InstrumentServer; there is no automatic localhost fallback.')
+    return local['server_host'],local['server_port']
+
+
+def save_server_endpoint(host,port,*,expected=None):
+    """Persist a user edit, retaining motor settings and detecting another writer."""
+    host,port=validate_server_endpoint(host,port)
+    local=load_local_hardware()
+    if expected is not None and (local.get('server_host'),local.get('server_port'))!=tuple(expected):
+        raise ValueError('Server configuration changed outside this window. Reload the application before saving.')
+    local.update(server_host=host,server_port=port)
+    payload=(json.dumps(local,ensure_ascii=False,indent=2)+'\n').encode('utf8')
+    if LOCAL_HARDWARE.exists() and LOCAL_HARDWARE.read_bytes()==payload:return
+    LOCAL_HARDWARE.parent.mkdir(parents=True,exist_ok=True)
+    temporary=LOCAL_HARDWARE.with_name(LOCAL_HARDWARE.name+'.tmp')
+    temporary.write_bytes(payload);os.replace(temporary,LOCAL_HARDWARE)
+
+
+def validate_server_endpoint(host,port):
+    if not isinstance(host,str):raise ValueError('Server Host must be a non-empty hostname or IP address')
+    host=host.strip()
+    if not host or any(c.isspace() for c in host):raise ValueError('Server Host must be a non-empty hostname or IP address')
+    if type(port) is not int or not 1<=port<=65535:raise ValueError('Server Port must be 1..65535')
+    return host,port

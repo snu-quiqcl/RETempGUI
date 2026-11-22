@@ -40,7 +40,9 @@ def capture(widget):
     if name=='CalibrationSelector':
         return {'type':name,'snapshot':archive(widget.snapshot,'csv'),'enabled':bool(widget.mode.currentIndex())}
     if name=='QueueTab':
-        return {'type':name,'plan':deepcopy(widget.plan()),'directory':widget.directory.text()}
+        # An empty queue is a valid saved draft, but not a runnable plan.
+        plan=widget.plan() if widget.jobs else dict(schema_version=1,repeat=widget.repeat.value(),jobs=[])
+        return {'type':name,'plan':deepcopy(plan),'directory':widget.directory.text()}
     if hasattr(widget,'halfpi_source'):
         return {'type':'halfpi','source':archive(widget.halfpi_source,'json')}
     if name=='CCDTab':
@@ -70,7 +72,11 @@ def restore(widget,value):
             widget.mode.setCurrentIndex(int(value['enabled']))
     elif kind=='QueueTab':
         from labremote.runtime.workflow_queue import validate_plan
-        plan=validate_plan(deepcopy(value['plan']))
+        plan=deepcopy(value['plan'])
+        if isinstance(plan,dict) and plan.get('jobs')==[]:
+            if plan.get('schema_version') not in (1,2) or type(plan.get('repeat')) is not int or not 1<=plan['repeat']<=10000:
+                raise ValueError('Invalid empty queue draft')
+        else:plan=validate_plan(plan)
         with QtCore.QSignalBlocker(widget),QtCore.QSignalBlocker(widget.repeat):
             widget.jobs=plan['jobs'];widget.repeat.setValue(plan['repeat'])
             widget.directory.setText(value['directory']);widget.refresh();widget.dirty=False
