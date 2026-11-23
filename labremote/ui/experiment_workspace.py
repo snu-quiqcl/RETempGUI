@@ -4,7 +4,7 @@ from labremote.ui.responsive import ScrollTabs
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets as W
 from labremote.devices.fpga.mapping import scope
-from .fpga_mapping import RoleMapping
+from .experiment_mapping import MappingEditor
 
 
 def connected(worker):
@@ -65,8 +65,7 @@ class ExperimentSlot(W.QWidget):
         else:self.info.setText(('연결됨' if ready else '연결 끊김 · 재연결 후 실행하세요.')+
                               (' · 장비 사용 중' if active else '')+'\n각 FPGA의 저장된 실험 조건을 사용합니다.')
         if self.current is not None:
-            for mapping in self.current.findChildren(RoleMapping):
-                if not mapping.dirty() and mapping._loaded_document!=mapping.worker.profile.document():mapping.refresh()
+            for mapping in self.current.findChildren(MappingEditor):
                 mapping.setEnabled(not active)
             # Keep the selector usable after unplugging; never strand it under
             # a disabled settings panel owned by the disconnected view.
@@ -77,13 +76,6 @@ class ExperimentSlot(W.QWidget):
 
     def confirm_mapping(self):
         if self.current is None:return True
-        for mapping in self.current.findChildren(RoleMapping):
-            if not mapping.dirty():continue
-            answer=W.QMessageBox.question(self,'핀 매핑','변경한 핀 매핑을 저장할까요?',W.QMessageBox.Save|W.QMessageBox.Discard|W.QMessageBox.Cancel)
-            if answer==W.QMessageBox.Cancel:return False
-            if answer==W.QMessageBox.Save:
-                if not mapping.apply():return False
-            else:mapping.refresh()
         return True
 
     def choose(self,unused=None,*,force=False):
@@ -124,7 +116,6 @@ class ExperimentSlot(W.QWidget):
             self.empty.setVisible(target is None)
             if target is not None:
                 self.root.addWidget(target);target.show();self.dock_selector(target)
-                for mapping in target.findChildren(RoleMapping):mapping.refresh()
         except Exception as exc:
             self._selection_error=f'{name} · 실험 설정 불러오기 실패: {type(exc).__name__}: {exc}'
             with QtCore.QSignalBlocker(self.choice):self.choice.setCurrentIndex(self.choice.findData(self.selected))

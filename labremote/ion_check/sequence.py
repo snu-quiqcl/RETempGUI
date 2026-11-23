@@ -36,7 +36,7 @@ def build_program(parameters):
     def lasers(a=0, b=0, c=0):
         mapping=validate_mapping(parameters.get('mapping',default_mapping()))
         # Break before make, including when a role is assigned to the slow port.
-        for levels in ({mapping['laser_'+key]:0 for key in 'abc'},output_levels({'mapping':mapping},a,b,c)):
+        for levels in ({mapping['laser_'+key]:0 for key in 'abc'},output_levels(dict(parameters,mapping=mapping),a,b,c)):
             ports={}
             for name,value in levels.items():
                 _,port,bit=OUTPUTS[name];ports.setdefault(port,[]).append((bit,value))

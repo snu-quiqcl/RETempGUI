@@ -20,14 +20,10 @@ class FluorescenceTab(QtWidgets.QWidget):
         split=QtWidgets.QSplitter(QtCore.Qt.Horizontal);split.setChildrenCollapsible(False);root.addWidget(split,1)
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(330);split.addWidget(scroll)
         self.settings_panel=QtWidgets.QWidget();scroll.setWidget(self.settings_panel);left=QtWidgets.QVBoxLayout(self.settings_panel)
-        mapping=QtWidgets.QGroupBox('이 실험의 FPGA 역할 매핑');left.addWidget(mapping)
-        mapping_form=QtWidgets.QFormLayout(mapping)
-        self.roles={'PMT':PinSelector(worker,'fluorescence',input_pin=True),
-                    'AOM':PinSelector(worker,'fluorescence')}
-        mapping_form.addRow('검출 입력 (PMT)',self.roles['PMT'])
-        # Keep legacy settings round-trippable; fluorescence never drives AOM.
-        self.roles['AOM'].setParent(self);self.roles['AOM'].hide()
-        self.mapping_label=QtWidgets.QLabel();self.mapping_label.setWordWrap(True);mapping_form.addRow(self.mapping_label)
+        from .experiment_mapping import MappingEditor
+        self.mapping=MappingEditor(worker,'fluorescence',dict(roles={}),parent=self);left.addWidget(self.mapping)
+        self.roles={'PMT':self.mapping.choices[('roles','PMT')]}
+        self.mapping_label=QtWidgets.QLabel();self.mapping_label.setWordWrap(True);left.addWidget(self.mapping_label)
         parameters=QtWidgets.QGroupBox('변수 설정');left.addWidget(parameters)
         row=QtWidgets.QFormLayout(parameters);row.setRowWrapPolicy(QtWidgets.QFormLayout.WrapLongRows)
         for key,title,lo,hi in (('exposure_ms','Exposure (ms)',.1,6000),('num_average','Samples / batch',1,65535),('num_repeat','Batches',1,65535),('timeout_s','Timeout / batch (s)',.1,3600)):
@@ -65,10 +61,10 @@ class FluorescenceTab(QtWidgets.QWidget):
     def populate(self,value):
         for key,field in self.fields.items():field.setValue(value[key])
         route=value.get('roles') or config.load_roles()['routes'][self.chamber]
-        for role,box in self.roles.items():box.setCurrentText(route[role])
+        self.mapping.set_settings(dict(value,roles=route));self.roles={'PMT':self.mapping.choices[('roles','PMT')]}
 
     def value(self):
-        return config.validate_settings(dict(schema_version=1,chamber=self.chamber,roles={r:b.route() for r,b in self.roles.items()},**{key:field.value() for key,field in self.fields.items()}))
+        return config.validate_settings(self.mapping.apply(dict(schema_version=1,chamber=self.chamber,**{key:field.value() for key,field in self.fields.items()})))
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load fluorescence settings',str(config.ROOT),'JSON (*.json)')

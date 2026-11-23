@@ -1,63 +1,31 @@
-"""Queue-local FPGA routing editor. Never writes a worker or a config file."""
+"""Queue uses the same used-signal table as standalone experiments."""
 from copy import deepcopy
 import json
-from PyQt5 import QtCore, QtWidgets as W
-from labremote.devices.fpga.mapping import editing_settings, PINS, DEFAULT_ROLES, ROLE_KINDS, EXPERIMENTS, Profile, capability, compatible
-
+from types import SimpleNamespace
+from PyQt5 import QtCore,QtWidgets as W
+from labremote.devices.fpga.mapping import editing_settings,Profile,scope,OUTPUTS
+from labremote.devices.fpga import routing
+from .experiment_mapping import MappingEditor
 
 KINDS = {'SpamScanTab':'spam','SecularScanPage':'secular','TwoRFCompensationPage':'micromotion','MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi','DecayExperimentTab':'decay',
          'HOMTab':'hom','EntanglementTab':'entanglement','IonCheckTab':'ion_check',
          'MicromotionPage':'micromotion','PhaseShifterTab':'phase_shifter','PhaseHoldTab':'phase_shifter','PhaseRabiTab':'phase_shifter','HalfPiRamseyTab':'phase_shifter'}
-ROLE_LABELS = {'PMT':'검출 입력 (PMT)','AOM':'광 제어 (AOM)','MW':'마이크로파 (MW)',
-               'EOM_7G_1':'EOM 7G-1','EOM_7G_2':'EOM 7G-2','EOM_2G':'EOM 2G',
-               'TRIGGER':'트리거 입력','DETECTOR':'검출 입력','COUNTER':'추가 Counter 입력'}
-ION_CHANNELS={'pmt_1':('ION_PMT1','PMTA','검출 입력 1'),'pmt_2':('ION_PMT2','PMTC','검출 입력 2'),
-              'laser_a':('ION_A','AOMA','Laser A (EA)'),'laser_b':('ION_B','AOMB','Laser B (170)'),
-              'laser_c':('ION_C','AOMC','Laser C (EC)')}
-ROLE_LABELS.update({role:title for role,_,title in ION_CHANNELS.values()})
-ION_FIXED=('EOM_7GA1','EOM_7GA2','EOM_7GC1','EOM_7GC2','EOM_2GA','EOM_2GC','MW_A','MW_C')
-
-
 class QueueFPGASettings(W.QWidget):
     changed=QtCore.pyqtSignal()
-
-    def __init__(self, job, target, bindings_provider, kind=None):
-        super().__init__()
-        self.job=deepcopy(job);self.target=target;self.provider=bindings_provider
-        self.parameters=deepcopy(job['parameters']);self.kind=kind
-        self.documents={k:Profile(v).document() for k,v in job.get('fpga_profiles',{}).items()};self.overrides={}
-        self.rows={};self._loading=False
-        root=W.QVBoxLayout(self)
-        box=W.QGroupBox('실행 FPGA');root.addWidget(box);layout=W.QVBoxLayout(box)
-        row=self.target_row=W.QHBoxLayout();layout.addLayout(row);row.addWidget(target,2)
-        self.status=W.QLabel();row.addWidget(self.status,1)
-        self.reset=W.QPushButton('FPGA 기본 매핑 불러오기');row.addWidget(self.reset)
-        layout.addWidget(W.QLabel('이 Queue 항목은 선택한 FPGA 한 대를 사용합니다.'))
-        self.experiment=W.QComboBox()
-        for name in EXPERIMENTS:self.experiment.addItem(name,name)
-        self.experiment.currentIndexChanged.connect(self.rebuild)
-        self.experiment_label=W.QLabel('사용자 Workflow의 실험별 역할 매핑')
-        layout.addWidget(self.experiment_label);layout.addWidget(self.experiment)
-        scroll=W.QScrollArea();scroll.setWidgetResizable(True);root.addWidget(scroll,1)
-        body=W.QWidget();scroll.setWidget(body);body_layout=W.QVBoxLayout(body)
-        self.inputs=self.table(body_layout,'입력 핀')
-        self.outputs=self.table(body_layout,'출력 핀')
-        body_layout.addStretch()
-        note=W.QLabel('변경한 매핑은 이 Queue 항목에만 저장됩니다.\nFPGA 공통 핀 이름과 다른 실험의 설정은 변경하지 않습니다.\n입력·출력 방향 및 펌웨어 기능에 맞는 핀을 선택합니다.')
-        note.setWordWrap(True);note.setStyleSheet('background:#e8f2fc; padding:12px;');root.addWidget(note)
-        self.preview=W.QPlainTextEdit(self);self.preview.setReadOnly(True);self.preview.hide()
-        target.currentIndexChanged.connect(self.select_device);self.reset.clicked.connect(self.load_defaults)
+    def __init__(self,job,target,bindings_provider,kind=None):
+        super().__init__();self.job=deepcopy(job);self.target=target;self.provider=bindings_provider;self.kind=kind
+        self.parameters=deepcopy(job['parameters']);self.documents={k:Profile(v).document() for k,v in job.get('fpga_profiles',{}).items()}
+        self.editors=[];self.rows={};self._loading=False
+        root=W.QVBoxLayout(self);self.target_row=W.QHBoxLayout();root.addLayout(self.target_row)
+        self.target_row.addWidget(target);self.status=W.QLabel();self.target_row.addWidget(self.status)
+        self.reset=W.QPushButton('현재 FPGA 설정 다시 읽기');self.target_row.addWidget(self.reset)
+        self.reset.clicked.connect(self.load_defaults);target.currentIndexChanged.connect(self.select_device)
+        scroll=W.QScrollArea();scroll.setWidgetResizable(True);root.addWidget(scroll)
+        body=W.QWidget();scroll.setWidget(body);self.layout_rows=W.QVBoxLayout(body)
+        self.note=W.QLabel('이 항목의 매핑은 Queue 계획에만 저장됩니다. 탭 설정과 물리 배선은 바뀌지 않습니다.')
+        self.note.setWordWrap(True);root.addWidget(self.note)
+        self.preview=W.QPlainTextEdit(self);self.preview.hide()
         self.select_device()
-
-    @staticmethod
-    def table(layout,title):
-        group=W.QGroupBox(title);layout.addWidget(group);form=W.QVBoxLayout(group)
-        table=W.QTableWidget(0,3);table.setHorizontalHeaderLabels(['실험에서의 역할','FPGA 핀 선택','기능'])
-        table.setEditTriggers(W.QAbstractItemView.NoEditTriggers)
-        table.horizontalHeader().setSectionResizeMode(0,W.QHeaderView.ResizeToContents)
-        table.horizontalHeader().setSectionResizeMode(1,W.QHeaderView.Stretch)
-        table.horizontalHeader().setSectionResizeMode(2,W.QHeaderView.ResizeToContents)
-        table.verticalHeader().hide();form.addWidget(table);return table
 
     def worker(self):
         if self.provider is None:return None
@@ -65,202 +33,90 @@ class QueueFPGASettings(W.QWidget):
                      and b.worker.ps is not None and not b.worker.connection_error and not b.worker._closing),None)
 
     def select_device(self,*_):
+        self.capture()
         name=self.target.currentData();worker=self.worker()
-        if name and name not in self.documents and worker is not None:
-            self.documents[name]=worker.profile.document()
-        self.status.setText('● 연결됨' if worker is not None else '연결 끊김 · 저장된 매핑 편집' if name in self.documents else 'FPGA를 선택하세요.')
-        self.status.setStyleSheet('color:#238636' if worker is not None else 'color:#616161')
-        self.reset.setEnabled(worker is not None)
-        # A target change retains selected nicknames; absent names stay unresolved.
-        self.rebuild();self.changed.emit()
+        if name and name not in self.documents and worker is not None:self.documents[name]=worker.profile.document()
+        self.status.setText('연결됨' if worker else '저장된 설정 편집' if name in self.documents else 'FPGA 선택 필요')
+        self.reset.setEnabled(worker is not None);self.rebuild();self.changed.emit()
 
     def experiment_name(self):
         p=self.parameters
         if p.get('kind')=='PulseExperimentTab':return p.get('experiment_kind','ramsey')
         return KINDS.get(p.get('kind')) or {'ion':'ion_check','spam':'spam','entanglement':'entanglement','phase_hold':'phase_shifter','setup':'setup'}.get(self.kind)
 
-    def set_parameters(self,parameters):
-        self.parameters=deepcopy(parameters);self.rebuild()
+    def groups(self):
+        p=self.parameters;c=p.get('settings',{});exp=self.experiment_name()
+        if self.kind=='spam' and set(c)=={'EA','EC'}:return [(('settings',ch),c[ch],exp,None) for ch in ('EA','EC')]
+        if p.get('kind')=='SpamScanTab':return [(('settings','spam'),c.get('spam',{}),'spam',None)]
+        if exp and exp!='setup':return [(('settings',),c,exp,p.get('mode',p.get('experiment_mode')))]
+        # Custom workflows must declare their experiment settings explicitly.
+        return [(('mapping_experiments',i,'settings'),v['settings'],v['experiment'],v.get('mode'))
+                for i,v in enumerate(p.get('mapping_experiments',[]))
+                if isinstance(v,dict) and isinstance(v.get('settings'),dict)]
+
+    def capture(self):
+        for path,editor in self.editors:
+            routing.put(self.parameters,path,editor.apply(routing.get(self.parameters,path,{})))
+
+    def set_parameters(self,parameters,*,replace_mapping=False):
+        self.capture();new=deepcopy(parameters)
+        # The conditions form does not own pin fields.
+        if not replace_mapping:
+            for path,editor in self.editors:
+                routing.put(new,path,editor.apply(routing.get(new,path,{})))
+        self.parameters=new;self.rebuild()
 
     def load_defaults(self,*_):
         worker=self.worker()
         if worker is None:return
-        name=self.target.currentData();self.documents[name]=worker.profile.document();self.overrides[name]={}
-        # A direct route is initialized from the experiment's default logical role,
-        # resolved through the selected board's stored experiment mapping.
-        for path,role,experiment,token in self.direct_routes():
-            if experiment not in ('fluorescence','rabi','ramsey','initialization','spin_echo','spam'):
-                if experiment=='ion_check':
-                    from labremote.ion_check.config import default_mapping
-                    token=default_mapping()[path[-1]]
-                if experiment in ('micromotion','secular'):
-                    from labremote.micromotion.config import defaults
-                    from labremote.devices.fpga.mapping import scope
-                    if experiment=='secular':
-                        from labremote.micromotion.secular.config import defaults
-                    with scope(worker.profile):token=defaults(self.parameters['settings'].get('chamber','EC'))[path[-1]]
-                self.overrides[name][path]=self.resolve(token,experiment,self.documents[name])
-                continue
-            from labremote.characterization import rabi
-            chamber='EC' if 'EC' in path else self.parameters.get('experiment_chamber','EA')
-            settings=self.parameters.get('settings',{})
-            for part in path[1:-2]:
-                settings=settings.get(part,{}) if isinstance(settings,dict) else {}
-            if isinstance(settings,dict):chamber=settings.get('chamber',chamber)
-            defaults=rabi.defaults(chamber)['roles']
-            if experiment=='fluorescence':defaults={'PMT':'PMTFA' if chamber=='EA' else 'PMTFC','AOM':'AOMA' if chamber=='EA' else 'AOMC'}
-            pin=self.resolve(defaults.get(role,token),experiment,self.documents[name])
-            self.overrides[name][path]=pin
-        self.rebuild();self.changed.emit()
+        self.capture();self.documents[worker.name]=worker.profile.document();self.rebuild();self.changed.emit()
 
     def direct_routes(self):
-        p=self.parameters;settings=p.get('settings',{});experiment=self.experiment_name()
-        if not isinstance(settings,dict):return []
-        result=[]
-        if experiment=='ion_check':
-            from labremote.ion_check.config import default_mapping
-            channels=settings.get('mapping',default_mapping())
-            return [(('settings','mapping',key),role,experiment,channels.get(key) or '')
-                    for key,(role,_,_) in ION_CHANNELS.items()]
-        if experiment=='scan':
-            selected=settings.get('pmt')
-            pin=selected if isinstance(selected,str) else None
-            return [(('settings','pmt'),'PMT',experiment,pin)]
-        if experiment in ('micromotion','secular'):
-            return [(('settings',key),role,experiment,settings.get(key,'')) for key,role in
-                    (('trg_pin','TRIGGER'),('pmt_pin','DETECTOR'),('counter_pin','COUNTER'))
-                    if key!='counter_pin' or experiment!='secular']
-        if experiment=='phase_shifter':
-            result=[(('settings','phase_outputs',i),'PHASE D'+str(i),experiment,token)
-                    for i,token in enumerate(settings.get('phase_outputs',[]))]
-            result.extend((('settings','outputs',role),role,experiment,token) for role,token in settings.get('outputs',{}).items())
-            if 'detector_nickname' in settings:result.append((('settings','detector_nickname'),'PMT',experiment,settings['detector_nickname']))
-            return result
-        groups=[(('settings',),settings)]
-        if self.kind=='spam' and set(settings)=={'EA','EC'}:
-            groups=[(('settings',ch),settings[ch]) for ch in ('EA','EC')]
-        if p.get('kind')=='SpamScanTab':groups=[(('settings','spam'),settings.get('spam',{}))]
-        for prefix,c in groups:
-            roles=c.get('roles') if isinstance(c,dict) else None
-            if experiment in ('fluorescence','rabi','initialization','ramsey','spin_echo','spam') and isinstance(roles,dict):
-                result.extend((prefix+('roles',role),role,experiment,token) for role,token in roles.items())
-        return result
+        return [(prefix+r.path,r.role,exp,routing.get(c,r.path)) for prefix,c,exp,mode in self.groups() for r in routing.routes(exp,c,mode)]
 
     @staticmethod
     def resolve(token,experiment,document):
-        try:return Profile(document).resolve(token, None if experiment in ('phase_shifter','scan','micromotion','secular') else experiment)
-        except (ValueError,KeyError):return 'missing:' + str(token)
+        try:return Profile(document).resolve(token,None if experiment in ('phase_shifter','scan','micromotion','secular') else experiment)
+        except ValueError:return 'missing:'+str(token)
 
     def rebuild(self,*_):
         if self._loading:return
         self._loading=True
         try:
-            self.rows={};self.unused_defaults={};self.inputs.setRowCount(0);self.outputs.setRowCount(0)
-            name=self.target.currentData();document=self.documents.get(name)
-            experiment=self.experiment_name()
-            self.experiment.setVisible(experiment is None);self.experiment_label.setVisible(experiment is None)
-            if experiment=='setup':
-                self.experiment.hide();self.experiment_label.hide();self.reset.hide()
-                self.inputs.parentWidget().hide();self.outputs.parentWidget().hide()
-                self.status.setText('Setup의 FPGA 출력은 실험 조건의 장비·파라미터 행에서 지정합니다.')
-                self.update_preview();return
-            if document is None:
-                self.preview.setPlainText('FPGA 및 매핑 미지정');return
-            direct=self.direct_routes()
-            if direct:
-                for path,role,exp,token in direct:
-                    pin=self.overrides.get(name,{}).get(path,self.resolve(token,exp,document))
-                    title=(' / '.join(str(part) for part in path[1:-2])+' · ' if len(path)>3 else '')+ROLE_LABELS.get(role,role)
-                    self.add_row(path,title,pin,exp,role,document,direct=True)
-                if experiment=='ion_check':
-                    for role in ION_FIXED:self.add_row(('ion_check',role),role,self.resolve(role,experiment,document),experiment,role,document,direct=False)
-            else:
-                exp=experiment or self.experiment.currentData()
-                from .fpga_mapping import ROLES
-                for role in ROLES.get(exp,tuple(DEFAULT_ROLES)):
-                    pin=self.resolve(role,exp,document)
-                    self.add_row((exp,role),role,pin,exp,role,document,direct=False)
-            for table in (self.inputs,self.outputs):
-                table.setMinimumHeight(min(420,max(100,table.rowCount()*38+38)))
-            self.update_preview()
+            while self.layout_rows.count():
+                item=self.layout_rows.takeAt(0)
+                if item.widget():item.widget().deleteLater()
+            self.editors=[];self.rows={}
+            document=self.documents.get(self.target.currentData())
+            if document is None:return
+            worker=SimpleNamespace(profile=Profile(document))
+            for prefix,c,exp,mode in self.groups():
+                editor=MappingEditor(worker,exp,c,mode=mode);self.layout_rows.addWidget(editor)
+                self.editors.append((prefix,editor))
+                self.rows.update({prefix+path:box for path,box in editor.choices.items()})
+                editor.changed.connect(self.changed)
+            if not self.editors:
+                self.layout_rows.addWidget(W.QLabel('이 Workflow가 선언한 실험 매핑이 없습니다. 전체 FPGA 역할을 대신 표시하지 않습니다.'))
+            self.layout_rows.addStretch()
+            self.preview.setPlainText(json.dumps(document,ensure_ascii=False,indent=2))
         finally:self._loading=False
-
-    def add_row(self,key,title,selected,experiment,role,document,*,direct):
-        input_pin=role in ('PMT','TRIGGER','DETECTOR','COUNTER','ION_PMT1','ION_PMT2') if direct else ROLE_KINDS[role] == 'input'
-        table=self.inputs if input_pin else self.outputs;row=table.rowCount();table.insertRow(row)
-        combo=W.QComboBox();table.setItem(row,0,W.QTableWidgetItem(title));table.setCellWidget(row,1,combo)
-        combo.addItem('미지정 — 공통 별칭 선택 필요', None)
-        if direct and role in ('COUNTER','ION_PMT2'):combo.addItem('사용 안 함','')
-        for pin in PINS:
-            kind=capability(pin)
-            if ('input' in kind)!=input_pin:continue
-            allowed=(('counter' in kind) if input_pin else experiment=='fluorescence' or kind=='fast output') if direct else compatible(experiment,role,pin)
-            if direct and experiment in ('micromotion','secular') and role!='COUNTER':allowed='stopwatch' in kind
-            if direct and role=='MW':allowed=kind=='slow output'
-            if direct and experiment=='ion_check' and not input_pin:allowed='output' in kind
-            if direct and experiment=='phase_shifter' and not input_pin:
-                allowed=kind=='slow output' if role.startswith('PHASE ') else kind=='slow output' if role=='microwave' else 'output' in kind
-            combo.addItem(document['pins'][pin]+' ['+pin+']'+(' · 기능 미지원' if not allowed else ''),pin)
-            combo.model().item(combo.count()-1).setEnabled(allowed)
-            combo.setItemData(combo.count()-1,kind,QtCore.Qt.ToolTipRole)
-        if selected not in (None,'') and combo.findData(selected)<0:
-            combo.addItem(str(selected)+' · 별칭 연결 확인 필요',selected)
-            combo.model().item(combo.count()-1).setEnabled(False)
-        combo.setCurrentIndex(combo.findData(selected));self.rows[key]=combo
-
-        table.setItem(row,2,W.QTableWidgetItem(capability(selected) if selected in PINS else '미지정'))
-        def edit(*_):
-            if self._loading:return
-            name=self.target.currentData();pin=combo.currentData()
-            if pin not in (None,'') and pin not in PINS:return
-            if direct:self.overrides.setdefault(name,{})[key]=pin
-            else:self.documents[name]['role_bindings'].setdefault(experiment,{})[role]=document['pins'][pin] if pin else None
-            table.item(row,2).setText(capability(pin) if pin else '사용 안 함');self.update_preview();self.changed.emit()
-        combo.currentIndexChanged.connect(edit)
-
-    def update_preview(self):
-        name=self.target.currentData()
-        self.preview.setPlainText(json.dumps(self.documents.get(name,{}),ensure_ascii=False,indent=2))
 
     @editing_settings(False)
     def value(self,parameters):
         name=self.target.currentData();document=deepcopy(self.documents.get(name))
-        if document is None:raise ValueError('실행 FPGA를 연결하고 기본 매핑을 불러오세요.')
+        if document is None:raise ValueError('실행 FPGA의 저장된 공통 핀 설정이 필요합니다.')
         parameters=deepcopy(parameters)
-        for combo in self.rows.values():
-            index=combo.currentIndex()
-            if index<0 or not combo.model().item(index).isEnabled():
-                raise ValueError('저장된 별칭 연결을 확인하고 현재 FPGA의 공통 별칭을 선택하세요.')
-        for path,pin in self.overrides.get(name,{}).items():
-            if self.experiment_name()=='ion_check':continue
-            obj=parameters
-            for key in path[:-1]:obj=obj[key]
-            if self.experiment_name()=='scan':
-                from labremote.devices.fpga.mapping import physical
-                obj[path[-1]]=document['pins'].get(pin) if pin else None
-            elif self.experiment_name()=='phase_shifter':obj[path[-1]]=document['pins'].get(pin) if pin else None
-            else:obj[path[-1]]='signal:'+document['pins'][pin] if pin else pin
-        if self.experiment_name()=='ion_check':
-            chosen={path[-1]:self.overrides.get(name,{}).get(path,self.resolve(token,'ion_check',document))
-                    for path,role,exp,token in self.direct_routes()}
-            channels=parameters['settings'].setdefault('mapping',{})
-            routes=document['role_bindings'].setdefault('ion_check',{})
-            for key,pin in chosen.items():
-                canonical=channels.get(key) or ION_CHANNELS[key][1]
-                channels[key]=canonical if pin else None
-                if pin:routes[canonical]=document['pins'][pin]
-        profile=Profile(deepcopy(document))
-        for key,combo in self.rows.items():
-            index=combo.currentIndex()
-            if index<0 or not combo.model().item(index).isEnabled():
-                raise ValueError('실험 기능에 맞는 입력·출력 핀을 선택하세요.')
-        from labremote.devices.fpga.mapping import scope
+        for path,editor in self.editors:routing.put(parameters,path,editor.apply(routing.get(parameters,path,{})))
+        profile=Profile(document)
         experiment=self.experiment_name()
+        for prefix,c,exp,mode in self.groups():
+            current=routing.get(parameters,prefix)
+            with scope(profile,exp):routing.validate(current,exp,mode)
         if experiment=='ion_check':
             from labremote.ion_check import config
             with scope(profile,'ion_check'):
                 config.validate(parameters['settings'],require_thresholds=True)
-                used=[profile.view('ion_check').output_mapping[role] for role in config.output_levels(parameters['settings'])]
+                used=[OUTPUTS[role][0] for role in config.output_levels(parameters['settings'])]
                 if len(set(used))!=len(used):raise ValueError('Ion Check의 레이저·EOM·MW 출력은 서로 다른 핀을 사용해야 합니다.')
         elif self.direct_routes() and experiment in ('fluorescence','rabi','initialization','ramsey','spin_echo','spam'):
             from labremote.characterization import config, rabi, pulse_experiment

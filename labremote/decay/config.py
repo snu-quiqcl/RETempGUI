@@ -30,10 +30,10 @@ def time_from_display(key,value):
 
 MODES=('171_single','174_single','171_dual','174_dual')
 LABELS={'171_single':'171','174_single':'174','171_dual':'171 Interferometer','174_dual':'174 Interferometer'}
-from labremote.devices.fpga.mapping import ROLE_KINDS
-INPUTS=tuple(n for n,kind in ROLE_KINDS.items() if kind=='input')
-FAST=tuple(n for n,kind in ROLE_KINDS.items() if kind=='fast output')
-SLOW=('', 'AOMM', 'AOMB')
+from labremote.devices.fpga.mapping import ROLE_KINDS, RouteChoices
+INPUTS=RouteChoices(tuple(n for n,kind in ROLE_KINDS.items() if kind=='input'), 'stopwatch')
+FAST=RouteChoices(tuple(n for n,kind in ROLE_KINDS.items() if kind=='fast output'), 'fast')
+SLOW=RouteChoices(('', 'AOMM', 'AOMB'), 'slow output')
 CHOICES={'PMT1':INPUTS,'PMT2':INPUTS,'SYNC':INPUTS,'AOM':FAST,'TRIG':FAST,'EOM_7G1':FAST,'EOM_7G2':FAST,'EOM_2G':FAST,'AUX1':SLOW,'AUX2':SLOW}
 FIELDS=[('TIME_COOL','Cooling (10 ns clocks)',0,65535),('TIME_INIT','Initialization / 174 AOM hold (clocks)',5,65535),
  ('waiting_time_for_AOM_off','AOM off wait (clocks)',3,65535),('waiting_time_for_AOM_on','AOM on wait (clocks; single only)',3,65535),
@@ -57,12 +57,14 @@ def validate(c):
     if c['MAX_TIME_DIFFERENCE']%3:raise ValueError('Histogram bins must be a multiple of 3')
     if not 0<=c['SIGNAL_THRESHOLD']<=c['DECAY_THRESHOLD']<c['MAX_TIME_DIFFERENCE']:raise ValueError('Require acquisition lower bin <= decay boundary < histogram bins')
     r=c['roles']
-    if not isinstance(r,dict) or set(r)!=set(CHOICES) or any(r[k] not in choices for k,choices in CHOICES.items()):raise ValueError('Invalid FPGA role mapping')
+    from labremote.devices.fpga.routing import routes, validate as validate_routing
+    if not isinstance(r,dict) or set(r)-set(CHOICES):raise ValueError('Invalid FPGA role mapping')
+    if not EDITING.get():validate_routing(c,'decay')
     inputs=[r['SYNC'],r['PMT1']]+([r['PMT2']] if c['mode'].endswith('dual') else [])
-    if len(set(inputs))!=len(inputs):raise ValueError('PMT and SYNC inputs must be distinct')
+    if not EDITING.get() and len(set(inputs))!=len(inputs):raise ValueError('PMT and SYNC inputs must be distinct')
     if not EDITING.get() and len({getattr(hd, name+'_stopwatch_result') for name in inputs}) != len(inputs):raise ValueError('Decay input roles resolve to duplicate physical pins')
-    outputs=[r['AOM'],r['TRIG']]+([r[k] for k in ('EOM_7G1','EOM_7G2','EOM_2G')] if c['mode'].startswith('171') else [])+[r[k] for k in ('AUX1','AUX2') if r[k]]
-    if len(set(outputs))!=len(outputs):raise ValueError('Active output roles must be distinct')
+    outputs=[r['AOM'],r['TRIG']]+([r[k] for k in ('EOM_7G1','EOM_7G2','EOM_2G')] if c['mode'].startswith('171') else [])+[r[k] for k in ('AUX1','AUX2') if r.get(k)]
+    if not EDITING.get() and len(set(outputs))!=len(outputs):raise ValueError('Active output roles must be distinct')
     if not EDITING.get() and len({OUTPUTS[name][1:] for name in outputs}) != len(outputs):raise ValueError('Decay output roles resolve to duplicate physical pins')
     return deepcopy(c)
 
@@ -74,14 +76,14 @@ def load(chamber,mode,path=None):
 
 def hardware(c):
     h=SimpleNamespace(external_control_port=hd.external_control_port,Trigger_level=hd.Trigger_level)
-    for role in ('PMT1','PMT2','SYNC'):
+    for role in (('PMT1','PMT2','SYNC') if c['mode'].endswith('dual') else ('PMT1','SYNC')):
         for suffix in ('stopwatch_result','stopwatch_start','stopwatch_reset','stopwatch_stopped_TLI'):
             setattr(h,role+'_'+suffix,getattr(hd,c['roles'][role]+'_'+suffix))
-    for role in ('AOM','TRIG','EOM_7G1','EOM_7G2','EOM_2G'):setattr(h,role+'_out',OUTPUTS[c['roles'][role]][2])
+    for role in (('AOM','TRIG','EOM_7G1','EOM_7G2','EOM_2G') if c['mode'].startswith('171') else ('AOM','TRIG')):setattr(h,role+'_out',OUTPUTS[c['roles'][role]][2])
     return h
 
 def set_auxiliary(program,c,*,start):
     for i in (1,2):
-        name=c['roles']['AUX'+str(i)]
+        name=c['roles'].get('AUX'+str(i))
         if name:
             _,port,bit=OUTPUTS[name];program.set_output_port(port,[(bit,c[f'aux{i}_'+('start' if start else 'end')])])

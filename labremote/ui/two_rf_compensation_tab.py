@@ -67,6 +67,7 @@ class TwoRFCompensationPage(MicromotionPage):
         if hasattr(self,'two_fields'):
             try:
                 saved=two_rf_settings(chamber)
+                if 'trg_pin' in saved:self.mapping.set_settings(saved)
                 self._rf_settings_error=None
                 for key,box in self.two_fields.items():
                     if key in saved:box.setValue(saved[key])
@@ -185,7 +186,7 @@ class TwoRFCompensationPage(MicromotionPage):
     def select_point(self, event):pass
 
     def save_settings(self):
-        from labremote.devices.dac.model import atomic_json
+        from labremote.configuration.experiment_settings import save as atomic_json
         path,_ = W.QFileDialog.getSaveFileName(self,'Save Two-RF settings',str(two_rf_settings_path(self.chamber.currentText())),'JSON (*.json)')
         if path:
             try:atomic_json(path,self.value())

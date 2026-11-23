@@ -91,4 +91,4 @@ def settings_file(chamber):return settings_path(ROOT/(chamber+'.secular.json'))
 
 def load(chamber):
     path=settings_file(chamber)
-    return validate(json.loads(path.read_text(encoding='utf-8'))) if path.exists() else defaults(chamber)
+    return validate(__import__('labremote.configuration.experiment_settings',fromlist=['read']).read(path)) if path.exists() else defaults(chamber)

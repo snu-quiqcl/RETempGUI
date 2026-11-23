@@ -6,16 +6,17 @@ from labremote.characterization.config import read, save
 from labremote.devices.fpga.controller import hd,OUTPUTS
 
 ROOT=CONFIG_ROOT/'operations/ion_check'
-from labremote.devices.fpga.mapping import ROLE_KINDS, EDITING
-PMT_CHOICES=tuple(n for n in ROLE_KINDS if n.startswith('PMT'))
-LASER_CHOICES=tuple(n for n in ROLE_KINDS if n.startswith('AOM'))
+from labremote.devices.fpga.mapping import ROLE_KINDS, EDITING, RouteChoices
+PMT_CHOICES=RouteChoices(tuple(n for n in ROLE_KINDS if n.startswith('PMT')),'counter')
+LASER_CHOICES=RouteChoices(tuple(n for n in ROLE_KINDS if n.startswith('AOM')),'output')
 
 def default_mapping():
     return dict(pmt_1='PMTA',pmt_2='PMTC',laser_a='AOMA',laser_b='AOMB',laser_c='AOMC')
 
 def validate_mapping(value):
     if not isinstance(value,dict) or set(value)!=set(default_mapping()):raise ValueError('Invalid Ion Check channel mapping')
-    if value['pmt_1'] not in PMT_CHOICES or value['pmt_2'] not in (None,*PMT_CHOICES):raise ValueError('Select supported PMT inputs')
+    if EDITING.get():return deepcopy(value)
+    if value['pmt_1'] not in PMT_CHOICES or (value['pmt_2'] is not None and value['pmt_2'] not in PMT_CHOICES):raise ValueError('Select supported PMT inputs')
     if value['pmt_1']==value['pmt_2']:raise ValueError('PMT 1과 PMT 2는 서로 다른 입력을 선택하세요.')
     if not EDITING.get() and value['pmt_2'] is not None and getattr(hd,value['pmt_1']+'_counter_result') == getattr(hd,value['pmt_2']+'_counter_result'):
         raise ValueError('PMT roles resolve to the same physical input')
@@ -28,9 +29,12 @@ def pmt_names(c):return [c.get('mapping',default_mapping())[key] for key in ('pm
 
 def output_levels(c,a=1,b=0,d=1):
     mapping=c.get('mapping',default_mapping())
-    return {mapping['laser_a']:a,mapping['laser_b']:b,mapping['laser_c']:d,
-            'EOM_7GA1':a,'EOM_7GA2':a,'EOM_7GC1':d,'EOM_7GC2':d,
-            'EOM_2GA':0,'EOM_2GC':0,'MW_A':0,'MW_C':0}
+    levels={mapping['laser_a']:a,mapping['laser_b']:b,mapping['laser_c']:d}
+    fixed={'EOM_7GA1':a,'EOM_7GA2':a,'EOM_7GC1':d,'EOM_7GC2':d,
+           'EOM_2GA':0,'EOM_2GC':0,'MW_A':0,'MW_C':0}
+    levels.update({c.get('fpga_mapping',{}).get(role,role):level for role,level in fixed.items()})
+    return levels
+
 
 def defaults():
     from labremote.configuration.default_profiles import read_default
@@ -40,9 +44,12 @@ def validate(value,require_thresholds=False):
     value=deepcopy(value)
     if isinstance(value,dict) and type(value.get('schema_version')) is int and value['schema_version']==1 and set(value)==set(defaults())-{'mapping'}:
         value.update(schema_version=2,mapping=default_mapping())
-    if not isinstance(value,dict) or set(value)!=set(defaults()) or type(value['schema_version']) is not int or value['schema_version']!=2:
+    if not isinstance(value,dict) or set(value)-{'fpga_mapping'}!=set(defaults())-{'fpga_mapping'} or type(value['schema_version']) is not int or value['schema_version']!=2:
         raise ValueError('Invalid Ion Check settings schema')
     value['mapping']=validate_mapping(value['mapping'])
+    if not EDITING.get() and 'fpga_mapping' in value:
+        from labremote.devices.fpga.routing import validate as validate_routing
+        validate_routing(value,'ion_check')
     for key in ('exposure_us','settle_us','max_attempts'):
         if type(value[key]) is not int or not 1<=value[key]<=10000:raise ValueError(key+' must be 1..10000')
     for key,lo,hi in [('retry_delay_s',0,3600),('timeout_s',.1,600)]:

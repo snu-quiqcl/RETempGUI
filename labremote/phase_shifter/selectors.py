@@ -1,119 +1,32 @@
-"""Nickname selection component for FPGA / etc.
+"""Phase experiments use the shared mapping table, with common nicknames."""
+from types import SimpleNamespace
+from PyQt5 import QtCore
+from labremote.devices.fpga.mapping import CURRENT
+from labremote.devices.fpga import routing
+from labremote.ui.experiment_mapping import MappingEditor
 
-The caller supplies the same loaded hardware definition used by the sequencer.
-apply_to(parameters) returns the selected nicknames for build_program(..., hd).
-This widget performs no hardware writes.
-"""
-from copy import deepcopy
-
-from PyQt5 import QtCore, QtWidgets
-
-
-class PhaseShifterEtcTab(QtWidgets.QWidget):
-    selection_changed = QtCore.pyqtSignal()
-    roles = (('aom', 'AOM'), ('eom_7g_1', 'EOM 7G1'),
-             ('eom_7g_2', 'EOM 7G2'), ('eom_2g', 'EOM 2G'),
-             ('microwave', 'Microwave'))
-
-    def __init__(self, hd, parent=None):
-        super().__init__(parent)
-        self.hd = hd
-        root = QtWidgets.QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
-        signal_group = QtWidgets.QGroupBox('Experiment signals')
-        signal_form = QtWidgets.QFormLayout(signal_group)
-        phase_group = QtWidgets.QGroupBox('Phase bits · D0 = LSB, D11 = MSB')
-        phase_form = QtWidgets.QGridLayout(phase_group)
-        root.addWidget(signal_group)
-        root.addWidget(phase_group)
-        self.output_selectors = {}
-        for role, label in self.roles:
-            combo = QtWidgets.QComboBox()
-            self.output_selectors[role] = combo
-            signal_form.addRow(label, combo)
-        self.detector_selector = QtWidgets.QComboBox()
-        signal_form.addRow('PMT input', self.detector_selector)
-        self.phase_selectors = []
-        for i in range(12):
-            combo = QtWidgets.QComboBox()
-            self.phase_selectors.append(combo)
-            combo.setMinimumContentsLength(10)
-            combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToMinimumContentsLengthWithIcon)
-            column = 2 * (i // 6)
-            phase_form.addWidget(QtWidgets.QLabel(f'D{i}'), i % 6, column)
-            phase_form.addWidget(combo, i % 6, column + 1)
-        self.status = QtWidgets.QLabel()
-        self.status.setWordWrap(True)
-        root.addWidget(self.status)
-        root.addStretch()
-        self.set_hardware_definition(hd)
-        for combo in self._selectors():
-            combo.currentIndexChanged.connect(self._changed)
-        self._changed()
-
-    def _selectors(self):
-        return [*self.output_selectors.values(), self.detector_selector,
-                *self.phase_selectors]
-
-    def set_hardware_definition(self, hd):
-        """Refresh from a loaded definition; retain only still-valid selections."""
-        self.hd = hd
-        outputs = list(hd.output_mapping)
-        slow = [name for name, pin in hd.output_mapping.items()
-                if pin.startswith(('jc_', 'jd_'))]
-        fast = [name for name in outputs if name not in slow]
-        detectors = list(dict.fromkeys(name for name in hd.input_mapping.values()
-                         if all(hasattr(hd, name + suffix) for suffix in
-                                ('_counter_enable', '_counter_reset', '_counter_result'))))
-
-        def fill(combo, names):
-            previous = combo.currentData()
-            blocked = combo.blockSignals(True)
-            try:
-                combo.clear()
-                combo.addItem('— nickname 선택 —', None)
-                for name in names:
-                    combo.addItem(name, name)
-                index = combo.findData(previous) if previous is not None else 0
-                if index < 0:
-                    combo.addItem(str(previous) + ' · 별칭 연결 확인 필요', previous)
-                    index = combo.count()-1;combo.model().item(index).setEnabled(False)
-                combo.setCurrentIndex(index)
-            finally:
-                combo.blockSignals(blocked)
-
-        for role, combo in self.output_selectors.items():
-            fill(combo, slow if role == 'microwave' else outputs)
-        for combo in self.phase_selectors:
-            fill(combo, slow)
-        fill(self.detector_selector, detectors)
-        self._changed()
-
+class PhaseShifterEtcTab(MappingEditor):
+    selection_changed=QtCore.pyqtSignal()
+    def __init__(self,hd,parent=None):
+        state=CURRENT.get()
+        if state is None:raise ValueError('Select an FPGA before creating its mapping editor')
+        self.hd=hd
+        super().__init__(SimpleNamespace(profile=state[0]),'phase_shifter',
+                         dict(outputs={},phase_outputs=[None]*12,detector_nickname=None),parent=parent)
+        self.output_selectors={p[-1]:b for p,b in self.choices.items() if p[0]=='outputs'}
+        self.phase_selectors=[self.choices[('phase_outputs',i)] for i in range(12)]
+        self.detector_selector=self.choices[('detector_nickname',)]
+        self.changed.connect(self.selection_changed)
+    def set_hardware_definition(self,hd):
+        self.hd=hd
+        for box in self.choices.values():box.refresh()
     def selection(self):
-        selected = {role: combo.currentData()
-                    for role, combo in self.output_selectors.items()}
-        phase = [combo.currentData() for combo in self.phase_selectors]
-        detector = self.detector_selector.currentData()
-        if any(name is None for name in [*selected.values(), *phase, detector]):
-            raise ValueError('각 신호와 D0~D11, PMT의 nickname을 모두 선택하세요.')
-        if any(name not in self.hd.output_mapping for name in [*selected.values(),*phase]) or detector not in self.hd.input_mapping.values():
-            raise ValueError('저장된 공통 별칭이 없습니다. 현재 FPGA의 별칭을 다시 선택하세요.')
-        pins = [self.hd.output_mapping[name] for name in [*selected.values(), *phase]]
-        if len(pins) != len(set(pins)):
-            raise ValueError('동일한 실제 출력을 여러 신호에 중복 지정할 수 없습니다.')
-        return {'outputs': selected, 'phase_outputs': phase,
-                'detector_nickname': detector}
-
-    def apply_to(self, parameters):
-        result = deepcopy(parameters)
-        result.update(self.selection())
+        result=self.apply({})
+        from labremote.devices.fpga.mapping import EDITING
+        if EDITING.get():return result
+        routing.validate(result,'phase_shifter')
+        pins=[self.worker.profile.resolve(name) for name in [*result['outputs'].values(),*result['phase_outputs']]]
+        if len(pins)!=len(set(pins)):raise ValueError('동일한 실제 출력을 여러 역할에 중복 지정할 수 없습니다.')
         return result
-
-    def _changed(self, *_):
-        try:
-            self.selection()
-        except ValueError as exc:
-            self.status.setText(str(exc))
-        else:
-            self.status.setText('Nickname 선택 완료')
-        self.selection_changed.emit()
+    def apply_to(self,parameters):
+        result=dict(parameters);result.update(self.selection());return result

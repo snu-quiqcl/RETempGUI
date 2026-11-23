@@ -398,6 +398,8 @@ def build_sequence(basis='mw_detuned', *, half_pi_ea_us=40.55, half_pi_ec_us=35.
     return s
 
 
+from labremote.devices.fpga.routing import scoped
+@scoped('entanglement')
 def build_program(settings):
     from .config import validate
     c = validate(settings)

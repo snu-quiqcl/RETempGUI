@@ -167,7 +167,7 @@ class MicromotionRunner(WorkflowTask):
             points=[],valley=dict(valid=False,reason='Waiting for measured points'),
             cleanup='not_required',current_point=None,rf_test=None,
             metadata=dict(source_sha256=hashes,stopwatch_bin_ns=1.25,sequencer_clock_ns=10,outputs='Unchanged; no mode switching',
-                pins={k:config.PINS.get(c[k]) for k in ('trg_pin','pmt_pin','counter_pin')},
+                pins={k:config.PINS.get(c.get(k)) for k in (('counter_pin',) if mode=='input' else ('trg_pin','pmt_pin'))},
                 voltage_readback='DAC last-requested voltages, not physical readback',
                 phase_convention='H(t)=C[1+V*cos(omega*t+phase)]; phase=atan2(-B,A), wrapped to [-pi,pi), TRG-relative',
                 phase_units='radians; phase_se is local 1-SE from quadrature covariance',

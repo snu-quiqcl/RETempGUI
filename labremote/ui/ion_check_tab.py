@@ -23,16 +23,9 @@ class IonCheckTab(QtWidgets.QWidget):
         for label,callback in [('불러오기',self.load),('저장',self.save)]:
             button=QtWidgets.QPushButton(label);button.clicked.connect(callback);buttons.addWidget(button)
         form.addRow(buttons)
-        pin_group=QtWidgets.QGroupBox('입력·출력 핀 설정');form=QtWidgets.QFormLayout(pin_group);left.addWidget(pin_group)
-        for key,label in [('pmt_1','PMT 입력 1'),('pmt_2','PMT 입력 2'),('laser_a','Laser A (EA)'),('laser_b','Laser B (170)'),('laser_c','Laser C (EC)')]:
-            box=QtWidgets.QComboBox()
-            if key=='pmt_2':box.addItem('사용 안 함 · 입력 1만 측정',None)
-            if key.startswith('pmt'):
-                for name in config.PMT_CHOICES:box.addItem(name,name)
-            else:
-                for name in config.LASER_CHOICES:box.addItem(name,name)
-            self.mapping_fields[key]=box;form.addRow(label,box);box.currentIndexChanged.connect(self.mapping_changed)
-        text=QtWidgets.QLabel('두 PMT 선택 시 count를 합산합니다.\nA 단계: 7GA ON / C 단계: 7GC ON\n7G 출력은 기존 EA/EC 매핑을 사용합니다.');text.setWordWrap(True);form.addRow(text)
+        from .experiment_mapping import MappingEditor
+        self.mapping_editor=MappingEditor(worker,'ion_check',config.defaults(),parent=self);left.addWidget(self.mapping_editor)
+        self.mapping_editor.changed.connect(self.mapping_changed)
         form=measurement_form
         for key,label,lo,hi,value in [('exposure_us','노출 시간 (µs)',1,10000,1000),('settle_us','안정화 대기 (µs)',1,10000,100),
                                     ('threshold_a','Laser A threshold',0,65535,0),('threshold_b','Laser B threshold',0,65535,0),('threshold_c','Laser C threshold',0,65535,0)]:
@@ -81,19 +74,17 @@ class IonCheckTab(QtWidgets.QWidget):
     def populate(self,c):
         c=config.validate(c)
         for key,box in self.fields.items():box.setValue(c[key] if c[key] is not None else 0)
-        for key,box in self.mapping_fields.items():
-            with QtCore.QSignalBlocker(box):box.setCurrentIndex(box.findData(c['mapping'][key]))
+        self.mapping_editor.set_settings(c)
         self.mapping_changed()
 
     def mapping_changed(self,*_):
-        if len(self.mapping_fields)!=5:return
-        mapping={k:box.currentData() for k,box in self.mapping_fields.items()}
+        mapping=self.mapping_editor.apply({})['mapping']
         text=' + '.join(str(mapping[k]) for k in ('pmt_1','pmt_2') if mapping[k])
         self.note.setText(f'측정 설정: {text} · A={mapping["laser_a"]}, B={mapping["laser_b"]}, C={mapping["laser_c"]}\nB → A+7GA → C+7GC · 종료 시 선택한 A/C ON, B OFF · DAC swap 없이 측정 가능')
         if hasattr(self,'axis'):self.draw()
 
     def value(self,require_thresholds=False):
-        c=dict(schema_version=2,mapping={k:box.currentData() for k,box in self.mapping_fields.items()},**{k:box.value() for k,box in self.fields.items()})
+        c=self.mapping_editor.apply(dict(schema_version=2,**{k:box.value() for k,box in self.fields.items()}))
         for key in ('threshold_a','threshold_b','threshold_c'):
             if c[key]==0:c[key]=None
         return config.validate(c,require_thresholds)
@@ -164,7 +155,7 @@ class IonCheckTab(QtWidgets.QWidget):
 
     def draw(self):
         self.axis.clear()
-        c=self.run_settings or {'mapping':{k:box.currentData() for k,box in self.mapping_fields.items()}}
+        c=self.run_settings or self.mapping_editor.apply({})
         mapping=c.get('mapping',config.default_mapping())
         for key,color in [('a','#2874bd'),('b','#c58020'),('c','#8762ba')]:
             self.count_groups[key].setTitle(f'Laser {key.upper()} · {mapping["laser_"+key]}')

@@ -29,13 +29,16 @@ def serializable(value):
     return repr(value)
 
 def save(path,value):
+    from labremote.configuration.experiment_settings import plan
+    value=plan(value,encode=True)
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);temp=path.with_name(path.name+'.tmp')
     with temp.open('w',encoding='utf-8') as f:
         json.dump(serializable(value),f,ensure_ascii=False,indent=2,allow_nan=False);f.write('\n');f.flush();os.fsync(f.fileno())
     os.replace(temp,path)
 
 def read(path):
-    value=json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    from labremote.configuration.experiment_settings import plan
+    value=plan(json.loads(Path(path).read_text(encoding='utf-8-sig')),encode=False)
     if isinstance(value,dict) and value.get('storage_layout')=='group_common_v2':
         from .queue_archive import hydrate
         value=hydrate(value,Path(path).resolve().parent)

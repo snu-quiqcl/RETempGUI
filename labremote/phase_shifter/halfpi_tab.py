@@ -34,7 +34,10 @@ class HalfPiRamseyTab(PhaseShifterTab):
 
     def value(self):
         c=super().value();c.pop('calibration',None);c.pop('skip_unreliable',None)
-        if self.halfpi_source is None:raise ValueError('위상별 Rabi 결과 JSON을 먼저 선택하세요.')
+        if self.halfpi_source is None:
+            from labremote.devices.fpga.mapping import EDITING
+            if EDITING.get():return c
+            raise ValueError('위상별 Rabi 결과 JSON을 먼저 선택하세요.')
         c['halfpi_calibration']=self.halfpi_source
         return c
 

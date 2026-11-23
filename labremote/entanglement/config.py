@@ -47,12 +47,14 @@ def resolved_outputs(c=None):
     return {name: dict(pin=OUTPUTS[name][0], port=OUTPUTS[name][1], bit=OUTPUTS[name][2])
             for name in CLEANUP_LEVELS}
 
+from labremote.devices.fpga.routing import scoped
+@scoped('entanglement')
 def validate(c):
     if not EDITING.get():
         for roles, suffix in [(('PMTA','PMTC','SYNC'),'_stopwatch_result'), (('PMTFA','PMTFC'),'_counter_result')]:
             if len({getattr(hd, role+suffix) for role in roles}) != len(roles):
                 raise ValueError('Entanglement input roles must resolve to distinct physical inputs')
-    if not isinstance(c, dict) or set(c) != set(defaults()) or type(c['schema_version']) is not int or c['schema_version'] != 1:
+    if not isinstance(c, dict) or set(c)-{'fpga_mapping'} != set(defaults())-{'fpga_mapping'} or type(c['schema_version']) is not int or c['schema_version'] != 1:
         raise ValueError('Invalid entanglement settings schema')
     if c['basis'] not in ('zz', 'mw_detuned'):
         raise ValueError('Choose ZZ or MW detuned')

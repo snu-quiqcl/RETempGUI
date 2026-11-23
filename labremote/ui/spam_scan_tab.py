@@ -208,7 +208,9 @@ class SpamScanTab(W.QWidget):
         c = dict(schema_version=1, experiment='spam', chamber=self.chamber,
                  roles={role:box.route() for role, box in self.roles.items()})
         c.update({key:round(f.value()*100) if key in spam.times('spam') else f.value() for key,f in self.fields.items()})
-        return model.validate(dict(schema_version=1, experiment='spam_2d', spam=c, x=self.x.value(), y=self.y.value(), restore=self.restore.isChecked()))
+        value=dict(schema_version=1, experiment='spam_2d', spam=c, x=self.x.value(), y=self.y.value(), restore=self.restore.isChecked())
+        from labremote.devices.fpga.mapping import EDITING
+        return value if EDITING.get() else model.validate(value)
 
     def axis_changed(self):
         scanned = {a.parameter.currentData() for a in (self.x, self.y) if a.family.currentData() == 'spam'}

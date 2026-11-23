@@ -32,6 +32,9 @@ class EntanglementTab(QtWidgets.QWidget):
         self.phase_note=QtWidgets.QLabel(); self.phase_note.setWordWrap(True); form.addRow(self.phase_note)
         for box in self.fields.values():box.valueChanged.connect(self.update_trials)
         self.basis.currentIndexChanged.connect(self.update_trials)
+        from .experiment_mapping import MappingEditor
+        self.mapping=MappingEditor(worker,'entanglement',dict(basis='zz'),parent=self);form.addRow(self.mapping)
+        self.basis.currentIndexChanged.connect(lambda:self.mapping.set_settings(dict(self.mapping.apply({}),basis=self.basis.currentData())))
         mapping_note=QtWidgets.QLabel('Hardware: 이 FPGA의 실험 신호 매핑을 사용합니다.\nDecay: PMTA/PMTC + SYNC. State readout: PMTFA/PMTFC.\nBright = counts > threshold; 1=bright, 0=dark. Thresholds are saved with counts.\nStop: CCD EC=1/EA=0; MW OFF; AOMA/C/B/M ON; 7G ON; 2G OFF.')
         mapping_note.setWordWrap(True); form.addRow(mapping_note)
         for text,fn in [('Load settings',self.load),('Save settings',self.save),('Save settings as…',self.save_as)]:
@@ -80,12 +83,13 @@ class EntanglementTab(QtWidgets.QWidget):
 
     def populate(self,c):
         c=config.validate(c)
+        self.mapping.set_settings(c)
         for k,b in self.fields.items():b.setValue(c[k])
         self.basis.setCurrentIndex(self.basis.findData(c['basis'])); self.update_trials()
 
     def value(self):
-        return config.validate(dict(schema_version=1,basis=self.basis.currentData(),
-            **{k:b.value() for k,b in self.fields.items()}))
+        return config.validate(self.mapping.apply(dict(schema_version=1,basis=self.basis.currentData(),
+            **{k:b.value() for k,b in self.fields.items()})))
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load Entanglement settings',str(config.ROOT),'JSON (*.json)')

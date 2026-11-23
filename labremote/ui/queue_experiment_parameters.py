@@ -12,7 +12,7 @@ class ExperimentParameters(W.QWidget):
         note.setWordWrap(True);root.addWidget(note)
         scroll=W.QScrollArea();scroll.setWidgetResizable(True);root.addWidget(scroll)
         body=W.QWidget();scroll.setWidget(body);form=W.QFormLayout(body)
-        excluded={'schema_version','roles','mapping','phase_outputs','outputs','detector_nickname','trg_pin','pmt_pin','counter_pin','pmt','hardware_definition_module'}
+        excluded={'schema_version','fpga_mapping','roles','mapping','phase_outputs','outputs','detector_nickname','trg_pin','pmt_pin','counter_pin','pmt','hardware_definition_module'}
         for key,value in parameters.get('settings',{}).items():
             if key in excluded or type(value) not in (str,int,float,bool):continue
             widget=W.QCheckBox() if type(value) is bool else W.QLineEdit()

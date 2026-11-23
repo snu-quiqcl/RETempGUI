@@ -11,7 +11,8 @@ ROOT = CONFIG_ROOT / 'operations/hom'
 CLOCK_US = .01
 BIN_NS = 1.25
 from labremote.devices.fpga.mapping import ROLE_KINDS, EDITING
-INPUTS = tuple(n for n,kind in ROLE_KINDS.items() if kind=='input')
+from labremote.devices.fpga.mapping import RouteChoices
+INPUTS = RouteChoices(tuple(n for n,kind in ROLE_KINDS.items() if kind=='input'),'stopwatch')
 TIMES = {'TIME_1US', 'waiting_time_for_AOM_off', 'waiting_time_for_stopwatch'}
 FIELDS = [
  ('TIME_1US','Group cooling (µs)',5,65535),
@@ -52,7 +53,7 @@ def migrate(c):
 
 
 def resolved_outputs(c):
-    return {role:dict(name=name,pin=OUTPUTS[name][0],port=OUTPUTS[name][1],bit=OUTPUTS[name][2]) for role,name in c['outputs'].items()}
+    return {role:dict(name=name,pin=OUTPUTS[name][0],port=OUTPUTS[name][1],bit=OUTPUTS[name][2]) for role,name in c['outputs'].items() if role!='AOMB' or c['aomb_enabled']}
 
 
 def validate(c):
@@ -74,9 +75,10 @@ def validate(c):
     if len({getattr(hd, name+'_stopwatch_result') for name in r.values()}) != 3:
         raise ValueError('HOM input roles resolve to the same physical pin')
     out=c['outputs']
-    if not isinstance(out,dict) or set(out)!={'AOMA','AOMC','TRIG','AOMB'}:raise ValueError('Invalid HOM output mapping')
+    if not isinstance(out,dict) or set(out)-{'AOMA','AOMC','TRIG','AOMB'} or not {'AOMA','AOMC','TRIG'}<=set(out):raise ValueError('Invalid HOM output mapping')
     active=[]
     for role,name in out.items():
+        if role=='AOMB' and not c['aomb_enabled']:continue
         if not isinstance(name,str) or name not in OUTPUTS:raise ValueError('Unknown vendor output: '+role)
         pin,port,bit=OUTPUTS[name]
         if role!='AOMB' and port!=hd.external_control_port:raise ValueError(role+' needs the fast output port')

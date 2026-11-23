@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt5 import QtCore, QtWidgets as W
 from labremote.devices.fpga.mapping import bound_methods, signal_token
 from labremote.api.devices import device_api
-from labremote.devices.dac.model import atomic_json
+from labremote.configuration.experiment_settings import save as atomic_json
 from labremote.data_paths import tab_data_directory
 from labremote.micromotion.secular import config
 from labremote.micromotion.secular.plotting import draw
@@ -26,11 +26,8 @@ class SecularScanPage(W.QWidget):
         form.setRowWrapPolicy(W.QFormLayout.WrapAllRows);form.setFieldGrowthPolicy(W.QFormLayout.AllNonFixedFieldsGrow)
         self.chamber=W.QComboBox();self.chamber.addItems(['EC','EA']);form.addRow('Chamber / saved settings',self.chamber)
         self.source=W.QComboBox();self.source.setObjectName('secular_afg_source');form.addRow('Connected AFG2105',self.source)
-        for key,label,pins in [('trg_pin','Modulation SYNC',config.STOPWATCH_PINS),
-                               ('pmt_pin','PMT (count + timing)',tuple(p for p in config.STOPWATCH_PINS if p in config.COUNTER_PINS))]:
-            box=W.QComboBox();box.addItem('미지정 — 공통 별칭 선택 필요', None)
-            for pin in pins:box.addItem(config.PINS[pin]+' ['+pin+']',signal_token(pin))
-            box.setObjectName('secular_'+key);self.fields[key]=box;form.addRow(label,box)
+        from .experiment_mapping import MappingEditor
+        self.mapping=MappingEditor(worker,'secular',{},parent=self);form.addRow(self.mapping)
         for key,label,decimals in [
             ('start_khz','Start frequency (kHz)',3),('stop_khz','Stop frequency (kHz)',3),
             ('step_khz','Frequency step (kHz)',3),('amplitude_dbm','AFG amplitude (dBm)',6),
@@ -81,6 +78,7 @@ class SecularScanPage(W.QWidget):
 
     def populate(self,c):
         c=config.validate(c)
+        self.mapping.set_settings(c)
         self.chamber.blockSignals(True);self.chamber.setCurrentText(c['chamber']);self.chamber.blockSignals(False)
         for key,box in self.fields.items():
             if isinstance(box,W.QComboBox):
@@ -95,7 +93,7 @@ class SecularScanPage(W.QWidget):
     def value(self):
         c=dict(schema_version=1,chamber=self.chamber.currentText(),afg_name=self.source.currentData() or '')
         c.update({key:box.currentData() if isinstance(box,W.QComboBox) else box.value() for key,box in self.fields.items()})
-        c=config.validate(c)
+        c=config.validate(self.mapping.apply(c))
         for key in ('trg_pin','pmt_pin'):c[key]=signal_token(c[key])
         return c
 

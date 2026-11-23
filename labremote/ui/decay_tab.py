@@ -29,8 +29,9 @@ class DecayExperimentTab(QtWidgets.QWidget):
             self.fields[key]=box
             if key=='reference_tau_ns':box.hide()  # Keep old profiles readable; no fixed-lifetime curve.
             else:form.addRow(label,box)
-        for role,choices in config.CHOICES.items():
-            box=QtWidgets.QComboBox();box.addItems(choices);self.roles[role]=box;form.addRow(role,box)
+        from .experiment_mapping import MappingEditor
+        self.mapping=MappingEditor(worker,'decay',dict(mode=mode,roles={}),parent=self)
+        form.addRow(self.mapping)
         self.profile_buttons=[]
         for text,fn in [('Load settings / mapping',self.load),('Save settings / mapping',self.save),('Save as',self.save_as)]:
             b=QtWidgets.QPushButton(text);b.clicked.connect(fn);form.addRow(b);self.profile_buttons.append(b)
@@ -44,7 +45,7 @@ class DecayExperimentTab(QtWidgets.QWidget):
         self.status=QtWidgets.QLabel('Idle');self.status.setWordWrap(True);layout.addWidget(self.status)
         self.profile_note=QtWidgets.QLabel();self.profile_note.setWordWrap(True);layout.addWidget(self.profile_note)
         for key in ('SIGNAL_THRESHOLD','DECAY_THRESHOLD'):self.fields[key].valueChanged.connect(self.update_profile_note)
-        for key in ('PMT1','PMT2'):self.roles[key].currentTextChanged.connect(self.update_profile_note)
+        self.mapping.changed.connect(self.update_profile_note)
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
         self.figure=Figure(figsize=(14,12));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumSize(900,850);plot_scroll=QtWidgets.QScrollArea();plot_scroll.setWidgetResizable(True);plot_scroll.setWidget(self.canvas);layout.addWidget(plot_scroll,1);split.setSizes([420,900])
@@ -55,15 +56,16 @@ class DecayExperimentTab(QtWidgets.QWidget):
         self.settings_toggle=install_settings_toggle(split,scroll)
     def populate(self,c):
         for k,b in self.fields.items():b.setValue(config.time_to_display(k,c[k]))
-        for k,b in self.roles.items():b.setCurrentText(c['roles'][k])
+        self.mapping.set_settings(c)
         self.update_profile_note()
 
     def update_profile_note(self):
         lower=self.fields['SIGNAL_THRESHOLD'].value();start=self.fields['DECAY_THRESHOLD'].value()
-        channels=[self.roles['PMT1'].currentText()]+([self.roles['PMT2'].currentText()] if self.mode.endswith('dual') else [])
+        routes=self.mapping.apply({}).get('roles',{})
+        channels=[str(routes.get('PMT1'))]+([str(routes.get('PMT2'))] if self.mode.endswith('dual') else [])
         self.profile_note.setText(f"{self.chamber} · {self.mode} · Inputs: {', '.join(channels)} · "
             f"Communication {lower} bin = {lower*1.25:g} ns · Decay {start} bin = {start*1.25:g} ns")
-    def value(self):return config.validate(dict(schema_version=1,chamber=self.chamber,mode=self.mode,roles={k:b.currentText() for k,b in self.roles.items()},**{k:config.time_from_display(k,b.value()) for k,b in self.fields.items()}))
+    def value(self):return config.validate(self.mapping.apply(dict(schema_version=1,chamber=self.chamber,mode=self.mode,**{k:config.time_from_display(k,b.value()) for k,b in self.fields.items()})))
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load decay settings',str(config.ROOT),'JSON (*.json)')
         if path:
@@ -94,8 +96,7 @@ class DecayExperimentTab(QtWidgets.QWidget):
         self.run.setEnabled(w.ps is not None and not w.connection_error and not w._closing and not busy)
         self.stop.setEnabled(r.running() and (r.settings['settings']['chamber'],r.settings['settings']['mode'])==(self.chamber,self.mode))
         for b in (*self.fields.values(),*self.roles.values(),*self.profile_buttons):b.setEnabled(not r.running())
-        self.roles['PMT2'].setEnabled(not r.running() and self.mode.endswith('dual'))
-        for key in ('EOM_7G1','EOM_7G2','EOM_2G'):self.roles[key].setEnabled(not r.running() and self.mode.startswith('171'))
+        self.mapping.setEnabled(not r.running())
         self.fields['waiting_time_for_AOM_on'].setEnabled(not r.running() and self.mode.endswith('single'))
     def progress(self,label,state):
         r=self.worker.decay_runner

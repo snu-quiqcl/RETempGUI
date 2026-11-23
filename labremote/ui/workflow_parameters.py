@@ -72,6 +72,7 @@ class EntanglementParameters(QtWidgets.QWidget):
         value['fpga']=self.fpga.text().strip()
         settings=dict(schema_version=1,basis=self.basis.currentData(),
                       **{key:field.value() for key,field in self.fields.items()})
+        if 'fpga_mapping' in base.get('settings',{}):settings['fpga_mapping']=deepcopy(base['settings']['fpga_mapping'])
         if validate:
             if not value['fpga']:raise ValueError('FPGA 장비 이름을 입력하세요.')
             settings=config.validate(settings)
@@ -107,11 +108,6 @@ class IonCheckParameters(QtWidgets.QWidget):
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);layout.addWidget(scroll)
         body=QtWidgets.QWidget();scroll.setWidget(body);form=QtWidgets.QFormLayout(body)
         self.fpga=QtWidgets.QLineEdit('fpga_local',self);self.fpga.hide()
-        for key,label in [('pmt_1','PMT 입력 1'),('pmt_2','PMT 입력 2'),('laser_a','Laser A (EA)'),('laser_b','Laser B (170)'),('laser_c','Laser C (EC)')]:
-            box=QtWidgets.QComboBox()
-            if key=='pmt_2':box.addItem('사용 안 함 · 입력 1만 측정',None)
-            for name in (ion.PMT_CHOICES if key.startswith('pmt') else ion.LASER_CHOICES):box.addItem(name,name)
-            self.mapping_fields[key]=box;box.setParent(self);box.hide()
         for key,label,lo,hi in [('exposure_us','노출 시간 (µs)',1,10000),('settle_us','안정화 대기 (µs)',1,10000),('threshold_a','Laser A threshold',0,65535),('threshold_b','Laser B threshold',0,65535),('threshold_c','Laser C threshold',0,65535),('max_attempts','최대 측정 횟수 N (최초 포함)',1,10000),('retry_delay_s','재측정 간격 (s)',0,3600),('timeout_s','측정 timeout (s)',.1,600)]:
             box=QtWidgets.QDoubleSpinBox() if key.endswith('_s') else QtWidgets.QSpinBox();box.setRange(lo,hi);box.setKeyboardTracking(False)
             if key.endswith('_s'):box.setDecimals(2);box.setSingleStep(.1)
@@ -127,13 +123,14 @@ class IonCheckParameters(QtWidgets.QWidget):
         if not isinstance(name,str) or not name.strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
         self.fpga.setText(name)
         for key,box in self.fields.items():box.setValue(c[key] if c[key] is not None else 0)
-        for key,box in self.mapping_fields.items():box.setCurrentIndex(box.findData(c['mapping'][key]))
+        self.route_values=deepcopy(c['mapping']);self.fixed_routes=deepcopy(c.get('fpga_mapping',{}))
 
     @editing_settings()
     def parameters(self,base,validate=True):
         from labremote.ion_check import config as ion
         value=deepcopy(base);value['fpga']=self.fpga.text().strip()
-        c=dict(schema_version=2,mapping={k:b.currentData() for k,b in self.mapping_fields.items()},**{k:b.value() for k,b in self.fields.items()})
+        c=dict(schema_version=2,mapping=deepcopy(self.route_values),**{k:b.value() for k,b in self.fields.items()})
+        if self.fixed_routes:c['fpga_mapping']=deepcopy(self.fixed_routes)
         for k in ('threshold_a','threshold_b','threshold_c'):
             if c[k]==0:c[k]=None
         if validate:
@@ -250,6 +247,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         if self.editor is not None and kind!='setup':self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집')
         if kind=='setup':self.json.setParent(self);self.json.hide()
         self.mapping_preview=self.pin_settings.preview
+        if self.editor is not None and hasattr(self.editor,'settings_loaded'):
+            from labremote.devices.fpga.mapping import Profile
+            self.editor.profile_provider=lambda:Profile(self.pin_settings.documents[self.fpga_target.currentData()])
+            def loaded():
+                self.base=self.editor.parameters(self.base,validate=False)
+                self.pin_settings.set_parameters(self.base,replace_mapping=True)
+                self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
+            self.editor.settings_loaded.connect(loaded)
         self.reload=QtWidgets.QCheckBox('Python 소스를 현재 파일에서 다시 가져오기');layout.addWidget(self.reload)
         self.error=QtWidgets.QLabel();self.error.setWordWrap(True);self.error.setStyleSheet('color: #b42318');layout.addWidget(self.error)
         buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
@@ -305,7 +310,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
     @editing_settings()
     def switch_tab(self,index):
         if self.editor is None:
-            try:self.base=self.read_json();self.pin_settings.set_parameters(self.base);self.previous_tab=index;self.error.clear()
+            try:self.base=self.read_json();self.pin_settings.set_parameters(self.base,replace_mapping=True);self.previous_tab=index;self.error.clear()
             except Exception as exc:
                 with QtCore.QSignalBlocker(self.tabs):self.tabs.setCurrentIndex(self.previous_tab)
                 self.error.setText(str(exc))
@@ -317,7 +322,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             elif self.previous_tab==self.json_index:
                 value=self.read_json();self.editor.populate(value);self.base=value
             self.sync_setup_target(self.base)
-            self.pin_settings.set_parameters(self.base)
+            self.pin_settings.set_parameters(self.base,replace_mapping=self.previous_tab==self.json_index)
             self.previous_tab=index;self.error.clear()
         except Exception as exc:
             with QtCore.QSignalBlocker(self.tabs):self.tabs.setCurrentIndex(self.previous_tab)
@@ -330,11 +335,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
     @editing_settings()
     def load_settings(self,path):
         try:
-            settings=self.settings_config.load(path)
+            from labremote.devices.fpga.mapping import scope,Profile
+            document=self.pin_settings.documents.get(self.fpga_target.currentData())
+            if document is None:raise ValueError('Select an FPGA configuration first')
+            with scope(Profile(document)):settings=self.settings_config.load(path)
             base=self.read_json() if self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base,validate=False)
             base['settings']=settings;base.setdefault('fpga','fpga_local')
             self.editor.populate(base);self.base=base
-            self.pin_settings.set_parameters(base)
+            self.pin_settings.set_parameters(base,replace_mapping=True)
             self.json.setPlainText(json.dumps(base,ensure_ascii=False,indent=2))
             origin=path or self.settings_config.ROOT/self.settings_filename
             self.editor.info.setText('불러온 설정: '+str(origin) if Path(origin).exists() else '프로젝트 기본 설정을 불러왔습니다. 저장된 실험 설정 파일은 없습니다.')
@@ -349,7 +357,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 raise ValueError('FPGA · 핀 설정 탭에서 사용할 장비를 선택하세요.')
             parameters=self.read_json() if self.editor is None or self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
             self.sync_setup_target(parameters)
-            self.pin_settings.set_parameters(parameters)
+            self.pin_settings.set_parameters(parameters,replace_mapping=self.editor is None or self.tabs.currentIndex()==self.json_index)
             target=self.fpga_target.currentData();snapshot=None
             if target and (self.bindings_provider is not None or target in self.pin_settings.documents):
                 parameters,snapshot=self.pin_settings.value(parameters)

@@ -217,11 +217,6 @@ def load_profile(name):
     profile = Profile(document)
     if profile.device_id != name:
         raise ValueError('FPGA profile identity mismatch')
-    if path.exists() and (document.get('schema_version') == 1 or 'experiments' in document or not routes.exists()):
-        backup = path.with_suffix('.json.v1.bak')
-        if not backup.exists():
-            backup.write_bytes(path.read_bytes())
-        save_profile(profile)
     return profile
 
 
@@ -239,13 +234,15 @@ def save_profile(profile):
         document = json.loads(other.read_text(encoding='utf-8-sig'))
         if isinstance(document, dict) and document.get('device_id') and str(document.get('alias', '')).casefold() == profile.alias.casefold():
             raise ValueError('FPGA alias already used by ' + document['device_id'])
-    routes = role_settings_path(profile.device_id)
-    routes.parent.mkdir(parents=True, exist_ok=True)
-    temporary = routes.with_suffix('.tmp')
-    temporary.write_text(json.dumps(dict(schema_version=1, role_bindings=profile.document()['role_bindings']), ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    temporary.replace(routes)
+    document=profile.board_document()
+    if path.exists() and not role_settings_path(profile.device_id).exists():
+        original=json.loads(path.read_text(encoding='utf-8-sig'))
+        if 'experiments' in original or 'role_bindings' in original:
+            from labremote.configuration.settings_migration import backup_file
+            backup_file(path)
+            document['role_bindings']=profile.document()['role_bindings']
     temporary = path.with_suffix('.tmp')
-    temporary.write_text(json.dumps(profile.board_document(), ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    temporary.write_text(json.dumps(document, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     temporary.replace(path)
 
 
@@ -287,33 +284,30 @@ def snapshot():
 
 
 def settings_path(path):
-    """Keep first-device legacy settings; isolate subsequent device presets."""
-    path = Path(path)
-    state = CURRENT.get()
-    if state is None or not path.name.endswith('.json'):
-        return path
-    try:
-        relative = path.relative_to(CONFIG_ROOT / 'operations')
-    except ValueError:
-        return path
-    if state[0].device_id != 'fpga_local':
-        path = ROOT / 'settings' / state[0].device_id / relative
-    if path.exists():
-        original = json.loads(path.read_text(encoding='utf-8-sig'))
-        def migrate(value, field=None):
-            if isinstance(value, dict):
-                return {k: migrate(v, k) for k, v in value.items()} if field != 'roles' else {
-                    k: signal_token(v) if isinstance(v, str) and v in PINS else v for k, v in value.items()}
-            if field in ('trg_pin', 'pmt_pin', 'counter_pin', 'pmt') and isinstance(value, str) and value in PINS:
-                return signal_token(value)
-            return value
-        updated = migrate(original)
-        if updated != original:
-            backup = path.with_suffix('.json.physical.bak')
-            if not backup.exists():backup.write_bytes(path.read_bytes())
-            from labremote.runtime.json_storage import save_json
-            save_json(path, updated)
-    return path
+    """Canonical operation settings; previous locations are migration inputs only."""
+    path=Path(path);state=CURRENT.get()
+    if state is None or path.suffix!='.json':return path
+    try:relative=path.relative_to(CONFIG_ROOT/'operations')
+    except ValueError:return path
+    if relative.parts[0]=='fpga':return path
+    destination=CONFIG_ROOT/'operations/fpga'/state[0].device_id/relative
+    if not destination.exists():
+        old=ROOT/'settings'/state[0].device_id/relative
+        source=old if old.exists() else path
+        if source.exists():
+            from labremote.configuration.experiment_settings import read,save
+            from labremote.configuration.settings_migration import backup_file
+            value=read(source)
+            # Physical IDs from old direct routes retain exactly the same pin.
+            def migrate(value,field=None):
+                if isinstance(value,dict):return {k:migrate(v,k) for k,v in value.items()}
+                if isinstance(value,list):return [migrate(v,field) for v in value]
+                if isinstance(value,str) and value in PINS and field in ('PMT','AOM','MW','EOM_7G_1','EOM_7G_2','EOM_2G','trg_pin','pmt_pin','counter_pin','pmt'):
+                    return signal_token(value)
+                return value
+            backup_file(source)
+            save(destination,migrate(value),state[1],ui_state_imported=False)
+    return destination
 
 
 def write_snapshot(folder):
@@ -458,11 +452,6 @@ The same immutable profile is retained by a nested operation until it completes.
                 if __limit is not None:
                     # Qt normally drops surplus signal arguments for a slot.
                     args = args[:__limit]
-                if editor and __name=='start':
-                    routing=self.__dict__.get('fpga_role_mapping')
-                    if routing is not None and routing.dirty():
-                        self.status.setText('변경한 핀 매핑을 저장한 뒤 실행하세요.')
-                        return
                 worker = self.__dict__.get('worker')
                 if worker is None and __name == '__init__':
                     worker = kwargs.get('worker') or next((a for a in args if getattr(a, 'family', None) == 'fpga' and hasattr(a, 'profile')), None)
@@ -477,28 +466,15 @@ The same immutable profile is retained by a nested operation until it completes.
                 current = CURRENT.get()
                 if not qt_class and current is not None and current[0].device_id == profile.device_id:
                     profile = current[0]
+                if not qt_class and kind in ('entanglement','ion_check'):
+                    from .routing import settings_profile
+                    c=kwargs.get('settings') or getattr(self,'settings',{}).get('settings')
+                    profile=settings_profile(profile,kind,c)
                 with scope(profile, kind), editing_settings(qt_class and __name not in ('start', 'begin', 'validate_sequence', 'run_sequence')):
                     result = __fn(self, *args, **kwargs)
-                    if editor and __name == '__init__':
-                        from labremote.ui.pin_selector import PinSelector
-                        if kind == 'micromotion' or self.findChildren(PinSelector):
-                            # These tabs already map their actual sequencer roles
-                            # directly to common signals in their own settings.
-                            return result
-                        from labremote.ui.fpga_mapping import RoleMapping
-                        from PyQt5.QtWidgets import QGroupBox
-                        if any(g.title() == '이 실험의 FPGA 역할 매핑' for g in self.findChildren(QGroupBox)):
-                            return result
-                        self.fpga_role_mapping = RoleMapping(worker, kind, self)
-                        from PyQt5.QtWidgets import QFormLayout, QTabWidget
-                        panel = getattr(self, 'settings_panel', None)
-                        layout = panel.layout() if panel is not None and not isinstance(panel, QTabWidget) else self.layout()
-                        if isinstance(layout, QFormLayout):
-                            layout.insertRow(0, self.fpga_role_mapping)
-                        elif hasattr(layout, 'insertWidget'):
-                            layout.insertWidget(0, self.fpga_role_mapping)
-                        else:
-                            layout.addWidget(self.fpga_role_mapping)
+                    if qt_class and __name=='__init__' and type(self) is cls:
+                        from labremote.ui.mapping_persistence import bind
+                        bind(self)
                     return result
             setattr(cls, name, call)
         return cls

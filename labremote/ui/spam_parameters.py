@@ -2,11 +2,12 @@ from labremote.devices.fpga.mapping import editing_settings
 from labremote.ui.responsive import ScrollTabs
 """EA/EC Queue forms share the standalone SPAM field definitions and validation."""
 from copy import deepcopy
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from labremote.characterization import pulse_experiment as model,rabi,config
 
 
 class SpamParameters(QtWidgets.QWidget):
+    settings_loaded=QtCore.pyqtSignal()
     @editing_settings()
     def __init__(self):
         super().__init__();self.fields={};self.roles={};self.route_values={}
@@ -23,15 +24,12 @@ class SpamParameters(QtWidgets.QWidget):
             scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);body.addWidget(scroll)
             contents=QtWidgets.QWidget();scroll.setWidget(contents);grid=QtWidgets.QHBoxLayout(contents)
             measurement=QtWidgets.QGroupBox('측정 조건');inputs=QtWidgets.QFormLayout(measurement);grid.addWidget(measurement)
-            mapping=QtWidgets.QGroupBox('FPGA 역할 매핑');mapped=QtWidgets.QFormLayout(mapping);grid.addWidget(mapping);mapping.hide()
             self.fields[chamber]={};self.roles[chamber]={}
             for key,title,lo,hi,dec,step in model.fields('spam'):
                 field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
                 if dec:field.setDecimals(dec)
                 field.setRange(lo,hi);field.setSingleStep(step);field.setKeyboardTracking(False)
                 self.fields[chamber][key]=field;inputs.addRow(title,field)
-            for role,names in rabi.ROLE_CHOICES.items():
-                box=QtWidgets.QComboBox();box.addItems(names);self.roles[chamber][role]=box;mapped.addRow(role,box)
             self.populate_chamber(chamber,model.defaults('spam',chamber))
         self.info=QtWidgets.QLabel('불러오기는 Queue 편집값만 바꾸며, 기존 실험 설정 파일은 덮어쓰지 않습니다.');self.info.setWordWrap(True);layout.addWidget(self.info)
 
@@ -80,6 +78,8 @@ class SpamParameters(QtWidgets.QWidget):
     @editing_settings()
     def load_chamber(self,chamber,path=None):
         try:
-            self.populate_chamber(chamber,model.load('spam',chamber,path))
+            from labremote.devices.fpga.mapping import scope
+            with scope(self.profile_provider()):self.populate_chamber(chamber,model.load('spam',chamber,path))
+            self.settings_loaded.emit()
             self.info.setText(chamber+' 설정을 불러왔습니다: '+(str(path) if path else '저장된 실험 설정'))
         except Exception as exc:self.info.setText('설정 확인: '+str(exc))

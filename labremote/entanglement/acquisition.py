@@ -12,7 +12,15 @@ class CleanupError(ConnectionError):
     pass
 
 
-def cleanup(controller, c):
+def cleanup(controller,c):
+    from labremote.devices.fpga.mapping import CURRENT,scope
+    from labremote.devices.fpga.routing import settings_profile
+    state=CURRENT.get()
+    if state is None:return _cleanup(controller,c)
+    with scope(settings_profile(state[0],'entanglement',c),'entanglement'):
+        return _cleanup(controller,c)
+
+def _cleanup(controller, c):
     if controller.device is None:
         raise CleanupError('FPGA disconnected; output cleanup unconfirmed')
     controller.device.stop_sequencer()

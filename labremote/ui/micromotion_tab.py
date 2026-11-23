@@ -35,12 +35,8 @@ class MicromotionPage(W.QWidget):
             else:box.setParent(self.settings_panel);box.hide()
         self.chamber=W.QComboBox();self.chamber.addItems(['EC','EA']);form.addRow('Chamber',self.chamber)
         self.dac=W.QComboBox();add_field('Connected DAC',self.dac,mode=='scan')
-        for key,label,choices in [('trg_pin','TRG · RF reference',config.STOPWATCH_PINS),
-                                  ('pmt_pin','PMT · Photon',config.STOPWATCH_PINS),
-                                  ('counter_pin','RF test counter input',('',*config.COUNTER_PINS))]:
-            box=W.QComboBox();box.addItem('미지정 — 공통 별칭 선택 필요', None)
-            for pin in choices:box.addItem(config.PINS[pin]+' ['+pin+']' if pin else '사용 안 함',signal_token(pin))
-            self.fields[key]=box;add_field(label,box,(key=='counter_pin')==(mode=='input'))
+        from .experiment_mapping import MappingEditor
+        self.mapping=MappingEditor(worker,'micromotion',{},mode=mode,parent=self);form.addRow(self.mapping)
         pin_note=W.QLabel('Select the common nickname of the wired RF counter input.' if mode=='input' else 'TRG and PMT must be different stopwatch inputs. Cooling outputs remain unchanged.')
         pin_note.setWordWrap(True);form.addRow(pin_note)
         for key,label,lo,hi,decimals in [
@@ -115,7 +111,8 @@ class MicromotionPage(W.QWidget):
         return dict(settings=self.value(),mode=self.experiment_mode,points=[],valley=dict(valid=False,reason='Awaiting measurement'))
 
     def populate(self,c):
-        c=config.validate(c)
+        c=config.validate(c,mode=self.experiment_mode)
+        self.mapping.set_settings(c)
         for key,box in self.fields.items():
             if isinstance(box,W.QComboBox):
                 index=box.findData(c[key])
@@ -133,7 +130,7 @@ class MicromotionPage(W.QWidget):
         c=dict(schema_version=1,chamber=self.chamber.currentText(),use_ldac=self.ldac.isChecked(),
             **{key:box.currentData() if isinstance(box,W.QComboBox) else box.value() for key,box in self.fields.items()},
             **{key:[box.value() for box in boxes] for key,boxes in self.ranges.items()})
-        validated = config.validate(c, mode=self.experiment_mode)
+        validated = config.validate(self.mapping.apply(c), mode=self.experiment_mode)
         for key in ('trg_pin', 'pmt_pin', 'counter_pin'):
             validated[key] = signal_token(validated[key])
         return validated
@@ -144,7 +141,7 @@ class MicromotionPage(W.QWidget):
 
     def saved_settings(self,chamber):
         path=settings_path(config.ROOT/(chamber+'.'+self.experiment_mode+'.json'))
-        return config.load(path,chamber=chamber) if path.exists() else config.load(chamber=chamber)
+        return config.load(path,chamber=chamber,mode=self.experiment_mode) if path.exists() else config.load(chamber=chamber,mode=self.experiment_mode)
 
     def refresh_dacs(self,prefer=False):
         workers={key:bridge.worker for key,(family,bridge) in self.bindings().items() if family=='dac'}
@@ -271,7 +268,7 @@ class MicromotionPage(W.QWidget):
     def load_settings(self):
         path,_=W.QFileDialog.getOpenFileName(self,'Micromotion settings',str(config.ROOT),'JSON (*.json)')
         if path:
-            try:self.populate(config.load(path))
+            try:self.populate(config.load(path,mode=self.experiment_mode))
             except Exception as exc:self.status.setText(str(exc))
 
     def save_settings(self):

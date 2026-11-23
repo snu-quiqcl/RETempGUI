@@ -30,16 +30,10 @@ class HOMTab(QtWidgets.QWidget):
         self.trial_note=QtWidgets.QLabel(); self.trial_note.setWordWrap(True); form.addRow(self.trial_note)
         for key in ('run_number','inner_loop_number','outer_loop_in_fpga'):
             self.fields[key].valueChanged.connect(self.update_trials)
-        for role in ('PMTA','PMTC','SYNC'):
-            box=QtWidgets.QComboBox(); box.addItems(config.INPUTS); form.addRow(role+' input',box); self.inputs[role]=box
         self.aomb=QtWidgets.QCheckBox('Control AOMB'); form.addRow(self.aomb)
-        for role in ('AOMA','AOMC','TRIG','AOMB'):
-            box=QtWidgets.QComboBox()
-            from labremote.devices.fpga.mapping import ROLE_KINDS
-            box.addItems([name for name,kind in ROLE_KINDS.items() if kind=='fast output' or role=='AOMB' and kind=='slow output'])
-            self.outputs[role]=box; form.addRow(role+' output',box)
-        mapping_note=QtWidgets.QLabel('상단 실험 신호 매핑에서 이 FPGA의 핀을 선택합니다.')
-        mapping_note.setWordWrap(True); form.addRow(mapping_note)
+        from .experiment_mapping import MappingEditor
+        self.mapping=MappingEditor(worker,'hom',dict(aomb_enabled=False),parent=self);form.addRow(self.mapping)
+        self.aomb.toggled.connect(lambda enabled:self.mapping.set_settings(dict(self.mapping.apply({}),aomb_enabled=enabled)))
         for text,fn in [('Load settings',self.load),('Save settings',self.save),('Save settings as…',self.save_as)]:
             button=QtWidgets.QPushButton(text); button.clicked.connect(fn); form.addRow(button)
         right=QtWidgets.QWidget(); split.addWidget(right); layout=QtWidgets.QVBoxLayout(right)
@@ -73,17 +67,13 @@ class HOMTab(QtWidgets.QWidget):
     def populate(self,c):
         c=config.validate(c)
         for k,b in self.fields.items():b.setValue(c[k]*(config.CLOCK_US if k in config.TIMES else 1))
-        for group,boxes in (('inputs',self.inputs),('outputs',self.outputs)):
-            for k,box in boxes.items():
-                name=c[group][k]
-                if box.findText(name)<0:
-                    box.addItem(name);box.model().item(box.count()-1).setEnabled(False)
-                box.setCurrentText(name)
+        self.mapping.set_settings(c)
         self.aomb.setChecked(c['aomb_enabled']); self.update_trials()
 
     def value(self):
-        return config.validate(dict(schema_version=2,aomb_enabled=self.aomb.isChecked(),inputs={k:b.currentText() for k,b in self.inputs.items()},
-            outputs={k:box.currentText() for k,box in self.outputs.items()},**{k:config.from_display(k,b.value()) for k,b in self.fields.items()}))
+        return config.validate(self.mapping.apply(dict(schema_version=2,aomb_enabled=self.aomb.isChecked(),
+            **{k:config.from_display(k,b.value()) for k,b in self.fields.items()})))
+
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load HOM settings',str(config.ROOT),'JSON (*.json)')

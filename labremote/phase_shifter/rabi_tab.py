@@ -1,3 +1,4 @@
+from labremote.configuration.experiment_settings import read as read_settings, save as save_settings
 from labremote.configuration.preset_paths import experiment_preset_path
 """Phase/time Rabi scan setup and live plots."""
 import json
@@ -120,9 +121,9 @@ class PhaseRabiTab(W.QWidget):
         c['pulse_points']=len(times)
         self.calibration.set_table(c.get('calibration'));self.skip.setChecked(c.get('skip_unreliable',True))
         for k,b in self.fields.items():b.setValue(c[k]/b.property('scale') if isinstance(b,W.QDoubleSpinBox) else int(c[k]))
-        for role,box in self.mapping.output_selectors.items():box.setCurrentIndex(box.findData(c['outputs'][role]))
-        for box,name in zip(self.mapping.phase_selectors,c['phase_outputs']):box.setCurrentIndex(box.findData(name))
-        box=self.mapping.detector_selector;box.setCurrentIndex(box.findData(c['detector_nickname']));self.controls()
+        for role,box in self.mapping.output_selectors.items():box.setCurrentText(c['outputs'][role])
+        for box,name in zip(self.mapping.phase_selectors,c['phase_outputs']):box.setCurrentText(name)
+        box=self.mapping.detector_selector;box.setCurrentText(c['detector_nickname']);self.controls()
 
     def validate_sequence(self):
         try:rabi.validate(self.value());self.status.setText('검증 통과 · 매핑, 펄스 범위, 시퀀스 확인')
@@ -134,14 +135,14 @@ class PhaseRabiTab(W.QWidget):
             if path:
                 c.update(experiment='phase_rabi',settings_version=2)
                 Path(path).parent.mkdir(parents=True,exist_ok=True)
-                Path(path).write_text(json.dumps(c,ensure_ascii=False,indent=2),encoding='utf-8')
+                save_settings(path,c,'phase_shifter')
                 self.status.setText('위상별 Rabi 전용 설정 저장: '+path)
         except Exception as exc:self.status.setText(str(exc))
 
     def load(self):
         path,_=W.QFileDialog.getOpenFileName(self,'설정 불러오기','','JSON (*.json)')
         if path:
-            try:self.populate(json.loads(Path(path).read_text(encoding='utf-8-sig')))
+            try:self.populate(read_settings(path))
             except Exception as exc:self.status.setText(str(exc))
 
     def start(self):

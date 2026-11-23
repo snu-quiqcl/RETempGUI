@@ -1,3 +1,4 @@
+from labremote.configuration.experiment_settings import read as read_settings, save as save_settings
 from labremote.configuration.preset_paths import experiment_preset_path
 from labremote.devices.fpga.mapping import bound_methods
 """Manual phase hold UI. All writes run on the existing FPGA worker."""
@@ -17,29 +18,18 @@ class PhaseHoldTab(QtWidgets.QWidget):
         self.last_result = None
         self.output_uncertain = False
         root = QtWidgets.QHBoxLayout(self)
-        self.mapping_group = QtWidgets.QGroupBox('Hardware definition · nickname 선택')
-        grid = QtWidgets.QGridLayout(self.mapping_group)
-        root.addWidget(self.mapping_group, 2, QtCore.Qt.AlignTop)
-        self.selectors = []
-        names = [name for name, pin in config.hd.output_mapping.items()
-                 if pin.startswith(('jc_', 'jd_'))]
-        for i in range(12):
-            combo = QtWidgets.QComboBox()
-            combo.addItem('— nickname 선택 —', None)
-            for name in names:
-                combo.addItem(name, name)
-            self.selectors.append(combo)
-            col = (i // 6) * 2
-            grid.addWidget(QtWidgets.QLabel(f'D{i}'), i % 6, col)
-            grid.addWidget(combo, i % 6, col + 1)
-            combo.currentIndexChanged.connect(self.controls)
-        grid.addWidget(QtWidgets.QLabel('D0 = LSB · D11 = MSB'), 6, 0, 1, 4)
+        from labremote.ui.experiment_mapping import MappingEditor
+        self.mapping_group=MappingEditor(worker,'phase_shifter',dict(phase_outputs=[None]*12),parent=self)
+        root.addWidget(self.mapping_group,2,QtCore.Qt.AlignTop)
+        self.selectors=[self.mapping_group.choices[('phase_outputs',i)] for i in range(12)]
+        grid=self.mapping_group.layout()
+        self.mapping_group.changed.connect(self.controls)
         self.load_button = QtWidgets.QPushButton('설정 불러오기')
         self.save_button = QtWidgets.QPushButton('설정 저장')
         self.load_button.clicked.connect(self.load)
         self.save_button.clicked.connect(self.save)
-        grid.addWidget(self.load_button, 7, 0, 1, 2)
-        grid.addWidget(self.save_button, 7, 2, 1, 2)
+        grid.addWidget(self.load_button)
+        grid.addWidget(self.save_button)
         right = QtWidgets.QVBoxLayout()
         root.addLayout(right, 3)
         self.calibration = CalibrationSelector()
@@ -117,7 +107,7 @@ class PhaseHoldTab(QtWidgets.QWidget):
         self.settings_toggle=install_settings_toggle(split,scroll)
 
     def names(self):
-        return [combo.currentData() for combo in self.selectors]
+        return [combo.route() for combo in self.selectors]
 
     def invalidate(self, *_):
         self.output_uncertain = True
@@ -183,7 +173,7 @@ class PhaseHoldTab(QtWidgets.QWidget):
             path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '위상 고정 설정 저장', str(experiment_preset_path('phase_shifter','hold.json')), 'JSON (*.json)')
             if path:
                 Path(path).parent.mkdir(parents=True,exist_ok=True)
-                Path(path).write_text(json.dumps(dict(phase_angle_deg=self.angle.value(), phase_outputs=self.names(), calibration=self.calibration.active()), indent=2), encoding='utf-8')
+                save_settings(path,dict(phase_angle_deg=self.angle.value(),phase_outputs=self.names(),calibration=self.calibration.active()),'phase_shifter')
         except Exception as exc:
             self.status.setText(str(exc))
 
@@ -191,11 +181,11 @@ class PhaseHoldTab(QtWidgets.QWidget):
         path, _ = QtWidgets.QFileDialog.getOpenFileName(self, '위상 고정 / Ramsey 설정 불러오기', '', 'JSON (*.json)')
         if path:
             try:
-                value = json.loads(Path(path).read_text(encoding='utf-8-sig'))
+                value = read_settings(path)
                 hold.request(value['phase_angle_deg'], value['phase_outputs'], calibration=value.get('calibration'))
                 self.calibration.set_table(value.get('calibration'))
                 for combo, name in zip(self.selectors, value['phase_outputs']):
-                    combo.setCurrentIndex(combo.findData(name))
+                    combo.setCurrentText(name)
                 self.angle.setValue(value['phase_angle_deg'])
                 self.status.setText('설정 불러옴 · 적용 버튼을 눌러야 출력이 변경됩니다.')
             except Exception as exc:
@@ -221,11 +211,6 @@ class EtcTab(QtWidgets.QTabWidget):
         from .halfpi_tab import HalfPiRamseyTab
         self.halfpi_ramsey=HalfPiRamseyTab(worker,self)
         self.addTab(self.halfpi_ramsey,'Rabi 보정 Ramsey')
-        # Phase Rabi owns its mapping; never synchronize it with other experiments.
-        # Both modes address the same phase shifter, with one shared mapping.
-        for a, b in zip(self.ramsey.mapping.phase_selectors, self.hold.selectors):
-            a.currentIndexChanged.connect(lambda _, src=a, dst=b: dst.setCurrentIndex(max(0, dst.findData(src.currentData()))))
-            b.currentIndexChanged.connect(lambda _, src=b, dst=a: dst.setCurrentIndex(max(0, dst.findData(src.currentData()))))
 
     def shutdown(self):
         self.ramsey.shutdown()

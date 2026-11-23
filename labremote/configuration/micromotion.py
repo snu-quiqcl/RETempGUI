@@ -12,7 +12,8 @@ def two_rf_settings_path(chamber):
 def two_rf_settings(chamber):
     path = two_rf_settings_path(chamber)
     try:
-        value = json.loads(path.read_text(encoding='utf-8-sig'))
+        from .experiment_settings import read
+        value = read(path)
     except FileNotFoundError as exc:
         original=CONFIG_ROOT/'operations'/'micromotion'/(chamber+'.two_rf.json')
         if path!=original and original.exists():

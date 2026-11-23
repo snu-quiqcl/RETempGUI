@@ -261,6 +261,8 @@ class InputState(QtCore.QObject):
                     else:self.pending[key]=widget
                 except (TypeError,ValueError,RuntimeError) as error:self.report(key+': '+str(error));self.pending[key]=widget
         del blockers
+        from .mapping_persistence import restore_legacy
+        restore_legacy(self)
 
     def checkpoint(self):
         if not self.active or self._restoring or getattr(self.owner,'_closing',False):return
@@ -273,6 +275,10 @@ class InputState(QtCore.QObject):
             current=self.path.read_bytes() if self.path.exists() else None
             if current!=self._original:
                 self.report('Settings changed outside this window; reload before saving. Original retained.');return False
+            from .mapping_persistence import persist,views
+            for prefix,view in views(self.roots()):
+                try:persist(view)
+                except (OSError,ValueError,TypeError,KeyError) as exc:self.report(prefix+': 매핑 저장 보류: '+str(exc))
             values=dict(self.saved)
             for key,widget in self.fields().items():
                 value=value_of(widget)

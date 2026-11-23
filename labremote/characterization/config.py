@@ -17,13 +17,13 @@ PMTS=RouteChoices(PMTS, 'counter')
 
 
 def read(path):
-    from labremote.runtime.json_storage import read_json
-    return read_json(path)
+    from labremote.configuration.experiment_settings import read as read_settings
+    return read_settings(path)
 
 
 def save(path,value):
-    from labremote.runtime.json_storage import save_json
-    save_json(path,value)
+    from labremote.configuration.experiment_settings import save as save_settings
+    save_settings(path,value)
 
 
 def validate_settings(value):
@@ -44,7 +44,7 @@ def validate_settings(value):
 
 
 def validate_route(route):
-    if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or (route['AOM'] is not None and route['AOM'] not in AOMS):
+    if not isinstance(route,dict) or set(route)-{'PMT','AOM'} or route.get('PMT') not in PMTS:
         raise ValueError('Select a counter input and an output pin')
     return deepcopy(route)
 
@@ -53,7 +53,7 @@ def validate_roles(value):
     if not isinstance(value,dict) or value.get('schema_version')!=1 or value.get('setup')!='EC':raise ValueError('Expected EC setup mapping schema 1')
     if set(value.get('routes',{}))!={'EA','EC'}:raise ValueError('Both EA and EC mappings are required')
     for route in value['routes'].values():
-        if not isinstance(route,dict) or set(route)!={'PMT','AOM'} or route['PMT'] not in PMTS or (route['AOM'] is not None and route['AOM'] not in AOMS):raise ValueError('Select a counter input and an output pin')
+        if not isinstance(route,dict) or set(route)-{'PMT','AOM'} or route.get('PMT') not in PMTS:raise ValueError('Select a counter input and an output pin')
     return deepcopy(value)
 
 
@@ -62,7 +62,9 @@ def load_settings(chamber,path=None):
     local=settings_path(ROOT/f'fluorescence_{chamber}.json')
     value=validate_settings(read(path or (local if local.exists() else ROOT/f'fluorescence_{chamber}.json')))
     if value['chamber']!=chamber:raise ValueError('Settings chamber does not match this tab')
-    if 'roles' not in value:value['roles']=load_roles()['routes'][chamber]
+    if 'roles' not in value:
+        legacy=settings_path(ROOT/'fpga_roles.json')
+        value['roles']=validate_route(read(legacy if legacy.exists() else ROOT/'fpga_roles.json')['routes'][chamber])
     return value
 
 
@@ -88,6 +90,9 @@ def prepare(chamber,settings=None,settings_file=None,mapping_file=None):
     if settings is not None and settings_file is not None:raise ValueError('Choose settings or settings_file')
     config=load_settings(chamber,settings_file) if settings is None else validate_settings(settings)
     if config['chamber']!=chamber:raise ValueError('Chamber mismatch')
-    roles=load_roles(mapping_file) if mapping_file or 'roles' not in config else dict(schema_version=1,setup='EC',routes={c:dict(PMT='PMTFA' if c=='EA' else 'PMTFC',AOM='AOMA' if c=='EA' else 'AOMC') for c in ('EA','EC')})
-    if mapping_file is None and 'roles' in config:roles['routes'][chamber]=validate_route(config['roles'])
+    if mapping_file or 'roles' not in config:
+        path=mapping_file or settings_path(ROOT/'fpga_roles.json')
+        roles=read(path)
+        roles['routes'][chamber]=validate_route(roles['routes'][chamber])
+    else:roles=dict(schema_version=1,setup='EC',routes={chamber:validate_route(config['roles'])})
     return {'settings':config,'mapping':roles,'hardware_definition':hd.__name__}

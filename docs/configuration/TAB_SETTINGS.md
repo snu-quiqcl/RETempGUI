@@ -9,14 +9,14 @@
 | 내용 | 경로 |
 | --- | --- |
 | 장비 탭의 마지막 편집값 | `labremote/config/ui/tabs/<family>/<device_id>.json` |
-| 실험 탭의 마지막 편집값 | `labremote/config/ui/tabs/experiments/<group>/<page>/<fpga_id>.json` |
+| 실험 탭의 마지막 편집값 (FPGA 매핑 제외) | `labremote/config/ui/tabs/experiments/<group>/<page>/<fpga_id>.json` |
 | CCD·Workflow·Queue·Monitor·Flipper·공통 화면 | `labremote/config/ui/tabs/common/<root>.json` |
 | 기존 공통 저장값 | `labremote/config/ui/input_state.json` — 읽기 전용 이전 원본 |
 | 처음 사용하는 입력의 기본값 | `labremote/config/ui/input_defaults.json` |
 | 실험·DAC 타이밍 기본값 | `labremote/config/operations/defaults/*.json` |
 | Oven 선택·전압·전류·ramp/OFF 설정 | `labremote/config/operations/oven.json` |
-| 명시적으로 저장한 실험 preset | 기존 `labremote/config/operations/...` 및 `devices/fpga/settings/<fpga_id>/...` |
-| Two-RF preset | 기본 FPGA: `operations/micromotion/<EA\|EC>.two_rf.json`; 추가 FPGA: `devices/fpga/settings/<fpga_id>/micromotion/...` |
+| FPGA 실험 설정·매핑 | labremote/config/operations/fpga/<fpga_id>/<실험>/<파일>.json의 fpga_mapping 블록 |
+| Two-RF preset | operations/fpga/<fpga_id>/micromotion/<EA 또는 EC>.two_rf.json |
 | DAC preset·시퀀스 파일 | `labremote/config/presets/dac/`, `labremote/config/sequences/dac/` |
 | 저장한 Queue plan | `labremote/config/queues/` |
 | 보정 원본 및 복원용 불변 사본 | `labremote/data/calibration/`, `labremote/data/calibration/ui_snapshots/` |
@@ -24,9 +24,13 @@
 
 보고서의 제안 경로를 모두 새로운 운전 파일로 중복 생성하지 않고, **마지막 편집 상태**와 **사용자가 저장한 재사용 preset**을 구분했다. Queue의 자동 draft는 `ui/tabs/common/queue_tab.json`의 models에 저장된다. CCD의 acquisition/detection/view도 같은 방식으로 `ccd_tab.json`에 모인다. 기존 전문 preset 파일은 그대로 남고 Load/Save 기능도 유지한다. Phase Hold/Rabi/Ramsey/SPAM 2D의 Save 기본 경로도 선택한 FPGA로 분리하며, 보정 Ramsey는 `ramsey_calibrated.json`을 사용한다.
 
-숫자·문자열·선택·단위·체크박스·편집 가능한 표를 저장한다. 큐의 작업/그룹/반복/parameters/동결된 소스와 핀 매핑, DAC 시퀀스 행, 보정표 선택과 사용 여부, π/2 보정 결과 참조, CCD 보기 영역, 페이지별 FPGA 선택을 함께 저장한다. 탭 자동복원용 보정 원본은 data에 보존하고 config에는 경로와 SHA256을 기록한다. 기존 수동 preset과 Queue의 동결된 실행 조건은 재현성을 위해 기존 형식을 유지한다. 결과 표, 로그, 비밀번호, Python 소스 편집기는 일반 입력 저장 대상에서 제외한다. 소스 편집은 기존 Save/Cancel 절차를 유지한다. 장비·핀 매핑 편집 대화상자도 기존 Save/Cancel이 적용된다.
+숫자·문자열·선택·단위·체크박스·편집 가능한 표를 저장한다. 큐의 작업/그룹/반복/parameters/동결된 소스와 핀 매핑, DAC 시퀀스 행, 보정표 선택과 사용 여부, π/2 보정 결과 참조, CCD 보기 영역, 페이지별 FPGA 선택을 함께 저장한다. 탭 자동복원용 보정 원본은 data에 보존하고 config에는 경로와 SHA256을 기록한다. 기존 수동 preset과 Queue의 동결된 실행 조건은 재현성을 위해 기존 형식을 유지한다. 결과 표, 로그, 비밀번호, Python 소스 편집기는 일반 입력 저장 대상에서 제외한다. 소스 편집은 기존 Save/Cancel 절차를 유지한다. 공통 장비 핀 편집은 Save/Cancel을 유지한다. 실험 매핑은 실험 JSON 하나에 자동 저장하고 UI 입력 상태에는 다시 저장하지 않는다.
 
-## 우선순위와 보존
+## FPGA 매핑 이전 (2026-11-23)
+
+실험·Queue 공통 표와 정확한 역할 범위는 [FPGA 실험 창 안내](../FPGA_WORKSPACE_KO.md)를 따른다. 새 경로가 없는 경우 기존 해당 FPGA 설정을 먼저 사용하고, 없으면 기존 공통 실험 설정을 가져온다. 원본은 data/config_backups/fpga_mapping에 보존한다. 이전 UI 상태에만 남은 닉네임도 최초 복원 시 이전하며, 이후에는 실험 JSON이 기준이다. 기존 role_bindings는 구형 설정의 해석에만 사용하고 실험 편집으로 갱신하지 않는다.
+
+## 우선순위와 보존 (FPGA 매핑 이외의 화면 입력)
 
 1. 해당 탭의 마지막 편집값이 있으면 복원한다.
 2. 없으면 기존 `input_state.json`의 값을 읽는다. 숫자 슬롯 키도 새 페이지 식별자로 연결한다.

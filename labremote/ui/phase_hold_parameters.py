@@ -2,11 +2,12 @@
 from copy import deepcopy
 from pathlib import Path
 import json
-from PyQt5 import QtWidgets as W
+from PyQt5 import QtCore, QtWidgets as W
 from labremote.phase_shifter.calibration import CalibrationSelector, resolve, estimate_note
 
 
 class PhaseHoldParameters(W.QWidget):
+    settings_loaded=QtCore.pyqtSignal()
     def __init__(self):
         super().__init__();self.target=None
         root=W.QVBoxLayout(self);self.target_form=W.QFormLayout();root.addLayout(self.target_form)
@@ -45,8 +46,9 @@ class PhaseHoldParameters(W.QWidget):
         path,_=W.QFileDialog.getOpenFileName(self,'위상 고정 설정 불러오기','','JSON (*.json)')
         if not path:return
         try:
-            c=json.loads(Path(path).read_text(encoding='utf-8-sig'))
+            from labremote.configuration.experiment_settings import read
+            c=read(path)
             if not isinstance(c.get('phase_outputs'),list) or len(c['phase_outputs'])!=12:raise ValueError('D0~D11 설정 12개가 필요합니다.')
             resolve(c['phase_angle_deg'],c.get('calibration'))
-            self.populate({'settings':c});self.info.setText('불러온 위상 고정 설정: '+path)
+            self.populate({'settings':c});self.settings_loaded.emit();self.info.setText('불러온 위상 고정 설정: '+path)
         except Exception as exc:self.info.setText('설정 확인: '+str(exc))

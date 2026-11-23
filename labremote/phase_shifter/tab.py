@@ -1,3 +1,4 @@
+from labremote.configuration.experiment_settings import read as read_settings, save as save_settings
 from labremote.configuration.preset_paths import experiment_preset_path
 from labremote.ui.responsive import ScrollTabs
 from labremote.devices.fpga.mapping import bound_methods
@@ -263,11 +264,11 @@ class PhaseShifterTab(QtWidgets.QWidget):
         for key, field in self.fields.items():
             field.setValue(value[key]/field.property('scale') if isinstance(field, QtWidgets.QDoubleSpinBox) else value[key])
         for role, combo in self.mapping.output_selectors.items():
-            combo.setCurrentIndex(combo.findData(value['outputs'][role]))
+            combo.setCurrentText(value['outputs'][role])
         for combo, name in zip(self.mapping.phase_selectors, value['phase_outputs']):
-            combo.setCurrentIndex(combo.findData(name))
+            combo.setCurrentText(name)
         combo = self.mapping.detector_selector
-        combo.setCurrentIndex(combo.findData(value['detector_nickname']))
+        combo.setCurrentText(value['detector_nickname'])
         self.controls()
 
     def save(self):
@@ -276,7 +277,7 @@ class PhaseShifterTab(QtWidgets.QWidget):
             path, _ = QtWidgets.QFileDialog.getSaveFileName(self, '설정 저장', str(experiment_preset_path('phase_shifter','ramsey_calibrated.json' if hasattr(self,'halfpi_source') else 'ramsey.json')), 'JSON (*.json)')
             if path:
                 Path(path).parent.mkdir(parents=True,exist_ok=True)
-                Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf-8')
+                save_settings(path,value,'phase_shifter')
                 self.status.setText('설정 저장: ' + path)
         except Exception as exc:
             self.status.setText(str(exc))
@@ -285,7 +286,7 @@ class PhaseShifterTab(QtWidgets.QWidget):
         path, _ = QtWidgets.QFileDialog.getOpenFileName(self, '설정 불러오기', '', 'JSON (*.json)')
         if path:
             try:
-                self.populate(json.loads(Path(path).read_text(encoding='utf-8')))
+                self.populate(read_settings(path))
                 self.status.setText('설정 불러옴: ' + path)
             except Exception as exc:
                 self.status.setText(str(exc))

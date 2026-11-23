@@ -65,11 +65,12 @@ class MotorScanTab(QtWidgets.QWidget):
         form=QtWidgets.QGridLayout();form.setHorizontalSpacing(6);form.setVerticalSpacing(3);settings.addLayout(form)
         for column in range(2,6):form.setColumnStretch(column,1)
         self.x_motor=QtWidgets.QComboBox();self.y_motor=QtWidgets.QComboBox();self.z_motor=QtWidgets.QComboBox()
-        self.z_enabled=QtWidgets.QCheckBox('Z scan');self.channel=QtWidgets.QComboBox()
+        self.z_enabled=QtWidgets.QCheckBox('Z scan')
+        from .experiment_mapping import MappingEditor
+        self.mapping=MappingEditor(worker,'scan',dict(pmt=cfg.get('pmt')),parent=self)
+        settings.addWidget(self.mapping);self.channel=self.mapping.choices[('pmt',)]
         for box,default in zip((self.x_motor,self.y_motor,self.z_motor),self.defaults):
             box.addItem(default);box.setEnabled(False)
-        self.channel.addItem('미지정 — 공통 별칭 선택 필요', None)
-        for n,(name,pin) in INPUTS.items():self.channel.addItem(name,name)
         for col,title in enumerate(('Axis','Motor','Start (µm)','End (µm)','Step (µm)','Current (µm)')):
             form.addWidget(QtWidgets.QLabel(title),0,col)
         for row,(axis,box) in enumerate(zip('xyz',(self.x_motor,self.y_motor,self.z_motor)),1):
@@ -92,7 +93,6 @@ class MotorScanTab(QtWidgets.QWidget):
         self.load_btn=QtWidgets.QPushButton('Load scan setting');manual.addWidget(self.load_btn)
         self.load_btn.clicked.connect(self.load_scan_setting)
         acquisition=QtWidgets.QHBoxLayout();acquisition.setSpacing(6);settings.addLayout(acquisition)
-        acquisition.addWidget(QtWidgets.QLabel('PMT'));acquisition.addWidget(self.channel)
         for key,title,lo,hi,dec in [('exposure_ms','Exposure (ms)',.1,6000,1),('average','Average',1,100000,0),('settle_ms','Settle (ms)',0,60000,0)]:
             editor=QtWidgets.QDoubleSpinBox();editor.setDecimals(dec);editor.setRange(lo,hi);editor.setValue(cfg[key]);self.fields[key]=editor
             acquisition.addWidget(QtWidgets.QLabel(title));acquisition.addWidget(editor)
@@ -254,9 +254,10 @@ class MotorScanTab(QtWidgets.QWidget):
     def load_scan_file(self,path):
         try:
             if self.worker.scan_runners[self.number].running():raise ValueError('Stop scan before loading settings')
-            payload=json.loads(Path(path).read_text(encoding='utf-8-sig'))
+            from labremote.configuration.experiment_settings import read,unpack
+            payload=read(path)
             if not isinstance(payload,dict):raise ValueError('Expected a scan configuration object')
-            values=payload.get('configuration',payload)
+            values=unpack(payload.get('configuration',payload))
             if not isinstance(values,dict):raise ValueError('Invalid scan configuration')
             z=values.get('z_motor')
             if (values.get('x_motor'),values.get('y_motor'))!=self.defaults[:2] or z not in (None,self.defaults[2]):
@@ -269,7 +270,7 @@ class MotorScanTab(QtWidgets.QWidget):
             selected=values['pmt']
             if not isinstance(selected,str):raise ValueError('Legacy numeric PMT selection: select and save a common nickname')
             if selected.startswith('signal:'):selected=selected[7:]
-            index=self.channel.findData(selected)
+            self.channel.setCurrentText(selected);index=self.channel.currentIndex()
             if index<0:raise ValueError('Invalid saved PMT')
             from labremote.devices.fpga.scan_model import axis_points
             for axis in ('xyz' if z else 'xy'):
@@ -340,7 +341,7 @@ class MotorScanTab(QtWidgets.QWidget):
     def request(self):
         devices=Devices(self.bindings());x=devices.motor(self.x_motor.currentText());y=devices.motor(self.y_motor.currentText())
         settings={**self.scales,**{k:v.value() for k,v in self.fields.items()}};settings['average']=int(settings['average'])
-        settings.update(pmt=self.channel.currentData(),directory=self.directory.text(),scan=self.number)
+        settings.update(pmt=self.channel.route(),directory=self.directory.text(),scan=self.number)
         z=devices.motor(self.z_motor.currentText()) if self.z_enabled.isChecked() else None
         return x,y,settings,z
 

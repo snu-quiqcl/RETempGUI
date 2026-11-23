@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import numpy as np
 from labremote.devices.fpga.mapping import hd
-from labremote.devices.dac.model import atomic_json as save
+from labremote.configuration.experiment_settings import save
 
 from labremote.configuration.paths import CONFIG_ROOT
 ROOT=CONFIG_ROOT/'operations/micromotion'
@@ -38,13 +38,13 @@ def validate(settings, mode=None):
     if c.get('schema_version') != 1 or c.get('chamber') not in ('EA', 'EC'):
         raise ValueError('Invalid micromotion schema/chamber')
     if not EDITING.get():
-        pins = {key: resolve_signal(c.get(key)) for key in ('trg_pin','pmt_pin','counter_pin')}
+        pins = {key: resolve_signal(c.get(key)) for key in (('counter_pin',) if mode=='input' else ('trg_pin','pmt_pin'))}
         for key in (() if mode == 'input' else ('trg_pin', 'pmt_pin')):
             if pins[key] not in STOPWATCH_PINS:
                 raise ValueError(key + ': select a common nickname for a stopwatch input')
         if mode != 'input' and pins['trg_pin'] == pins['pmt_pin']:
             raise ValueError('TRG and PMT must use distinct inputs')
-        if pins['counter_pin'] not in (COUNTER_PINS if mode == 'input' else (None, '', *COUNTER_PINS)):
+        if mode == 'input' and pins['counter_pin'] not in COUNTER_PINS:
             raise ValueError('RF test needs a counter-capable common nickname')
     for key, low, high in [('rf_mhz', 1., 100.), ('timeout_s', 1., 3600.),
                           ('settle_s', 0., 60.), ('gate_us', .1, 500.)]:
@@ -79,6 +79,6 @@ def fit_indices(c):
     return np.arange(1, min(bins(c), int(math.ceil(1000*c['periods']/c['rf_mhz']/1.25))))
 
 
-def load(path=None, chamber='EC'):
+def load(path=None, chamber='EC',mode=None):
     path = Path(path or settings_path(ROOT / (chamber+'.json')))
-    return validate(json.loads(path.read_text(encoding='utf-8'))) if path.exists() else defaults(chamber)
+    return validate(__import__('labremote.configuration.experiment_settings',fromlist=['read']).read(path),mode=mode) if path.exists() else defaults(chamber)
