@@ -61,7 +61,7 @@ class FluorescenceTab(QtWidgets.QWidget):
     def populate(self,value):
         for key,field in self.fields.items():field.setValue(value[key])
         route=value.get('roles') or config.load_roles()['routes'][self.chamber]
-        self.mapping.set_settings(dict(value,roles=route));self.roles={'PMT':self.mapping.choices[('roles','PMT')]}
+        self.mapping.set_settings(dict(value,roles=route))
 
     def value(self):
         return config.validate_settings(self.mapping.apply(dict(schema_version=1,chamber=self.chamber,**{key:field.value() for key,field in self.fields.items()})))

@@ -15,7 +15,7 @@ class QueueFPGASettings(W.QWidget):
     def __init__(self,job,target,bindings_provider,kind=None):
         super().__init__();self.job=deepcopy(job);self.target=target;self.provider=bindings_provider;self.kind=kind
         self.parameters=deepcopy(job['parameters']);self.documents={k:Profile(v).document() for k,v in job.get('fpga_profiles',{}).items()}
-        self.editors=[];self.rows={};self._loading=False
+        self.editors=[];self._loading=False
         root=W.QVBoxLayout(self);self.target_row=W.QHBoxLayout();root.addLayout(self.target_row)
         self.target_row.addWidget(target);self.status=W.QLabel();self.target_row.addWidget(self.status)
         self.reset=W.QPushButton('현재 FPGA 설정 다시 읽기');self.target_row.addWidget(self.reset)
@@ -58,6 +58,11 @@ class QueueFPGASettings(W.QWidget):
         for path,editor in self.editors:
             routing.put(self.parameters,path,editor.apply(routing.get(self.parameters,path,{})))
 
+    @property
+    def rows(self):
+        # Optional rows and rebuilt editors have one authoritative owner.
+        return {prefix+path:box for prefix,editor in self.editors for path,box in editor.choices.items()}
+
     def set_parameters(self,parameters,*,replace_mapping=False):
         self.capture();new=deepcopy(parameters)
         # The conditions form does not own pin fields.
@@ -85,15 +90,14 @@ class QueueFPGASettings(W.QWidget):
         try:
             while self.layout_rows.count():
                 item=self.layout_rows.takeAt(0)
-                if item.widget():item.widget().deleteLater()
-            self.editors=[];self.rows={}
+                if item.widget():item.widget().hide();item.widget().deleteLater()
+            self.editors=[]
             document=self.documents.get(self.target.currentData())
             if document is None:return
             worker=SimpleNamespace(profile=Profile(document))
             for prefix,c,exp,mode in self.groups():
                 editor=MappingEditor(worker,exp,c,mode=mode);self.layout_rows.addWidget(editor)
                 self.editors.append((prefix,editor))
-                self.rows.update({prefix+path:box for path,box in editor.choices.items()})
                 editor.changed.connect(self.changed)
             if not self.editors:
                 self.layout_rows.addWidget(W.QLabel('이 Workflow가 선언한 실험 매핑이 없습니다. 전체 FPGA 역할을 대신 표시하지 않습니다.'))

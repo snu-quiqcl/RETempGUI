@@ -13,7 +13,7 @@ INPUTS=(W.QLineEdit,W.QAbstractSpinBox,W.QComboBox,W.QCheckBox,W.QRadioButton,W.
 
 
 def value_of(widget):
-    if widget.property('persistInput') is False:return None
+    if sip.isdeleted(widget) or widget.property('persistInput') is False:return None
     if isinstance(widget,W.QTableWidget):
         from .persistence_models import table_value
         return table_value(widget)
@@ -148,14 +148,18 @@ class InputState(QtCore.QObject):
         source_ids={id(getattr(w,'source',None)) for w in W.QApplication.allWidgets()} if not legacy else set()
         # Prefer stable Python attribute / dictionary keys (instrument, chamber, axis).
         for root_key,root in roots.items():
+            if sip.isdeleted(root):continue
             visited=set()
             def walk(value,key,depth=0):
                 if depth>12:return
                 if isinstance(value,W.QWidget) or (not legacy and value is root and isinstance(value,QtCore.QObject)):
+                    # Closed/replaced views can leave Python aliases behind;
+                    # check the Qt object's lifetime before any Qt call.
+                    if sip.isdeleted(value):return
                     if id(value) in visited or (value is not root and id(value) in root_ids):return
                     visited.add(id(value))
                     widget_root=root if isinstance(root,W.QWidget) else getattr(root,'tab',None)
-                    if value is not root and not (widget_root is not None and widget_root.isAncestorOf(value) or getattr(value,'owner',None) is self.owner):return
+                    if value is not root and not (widget_root is not None and not sip.isdeleted(widget_root) and widget_root.isAncestorOf(value) or getattr(value,'owner',None) is self.owner):return
                     if not legacy:
                         from .persistence_models import supported
                         if supported(value):self.model_widgets[key]=value
@@ -224,12 +228,15 @@ class InputState(QtCore.QObject):
         fields=self.fields()
         # Restore structured models before their individual view controls.
         from .persistence_models import restore as restore_model
-        for key,widget in self.model_widgets.items():
+        for key,widget in tuple(self.model_widgets.items()):
             if self.model_seen.get(key) is widget:continue
             self.model_seen[key]=widget
             if key in self.models:
                 try:restore_model(widget,self.models[key])
                 except Exception as exc:self.model_pending.add(key);self.report(key+': '+str(exc))
+        # Model restoration can replace controls collected by the first pass.
+        # Recollect before constructing blockers or wiring signals to them.
+        fields=self.fields()
         blockers=[QtCore.QSignalBlocker(widget) for widget in fields.values()]
         for key,widget in fields.items():
             if self.seen.get(key) is widget and key not in self.pending:continue

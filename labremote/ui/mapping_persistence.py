@@ -63,9 +63,7 @@ def bind(view):
             if type(view).__name__=='SpamScanTab':c=c['spam']
             for table in tables:
                 if not any(spec.path[0] in c for spec in routing.routes(table.experiment,c,table.mode,all_fields=True)):continue
-                normalized=routing.normalize(c,table.experiment,table.mode,view.worker.profile)
-                table._settings=deepcopy(normalized)
-                for route,box in table.choices.items():box.setCurrentText(routing.get(normalized,route))
+                table.set_settings(c)
     view._mapping_loaded_path=path
     view._mapping_revisions={path:path.read_bytes() if path.exists() else None}
     try:
@@ -151,15 +149,6 @@ def _restore_view(state,prefix,view):
                 except ValueError:pass
                 routing.put(target,spec.path,token);applied.append(key)
             table.set_settings(target)
-            if hasattr(view,'roles') and table.experiment in ('rabi','ramsey','spin_echo','spam','initialization','fluorescence'):
-                view.roles={p[-1]:box for p,box in table.choices.items() if p[0]=='roles'}
-            if type(view).__name__=='MotorScanTab':view.channel=table.choices[('pmt',)]
-            if table.experiment=='phase_shifter':
-                if hasattr(table,'output_selectors'):
-                    table.output_selectors={p[-1]:b for p,b in table.choices.items() if p[0]=='outputs'}
-                    table.phase_selectors=[table.choices[('phase_outputs',i)] for i in range(12)]
-                    table.detector_selector=table.choices[('detector_nickname',)]
-                if type(view).__name__=='PhaseHoldTab':view.selectors=[table.choices[('phase_outputs',i)] for i in range(12)]
         # Back up the source UI documents before retiring their mapping keys.
         if state.store is not None:
             sources={state.store.locations.get(('inputs',key)) for key in applied}

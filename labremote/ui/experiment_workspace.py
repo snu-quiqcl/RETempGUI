@@ -36,9 +36,10 @@ class ExperimentSlot(W.QWidget):
         panel=self.host.family_tabs['fpga'].get(self.selected)
         return panel.worker if panel else None
 
-    def bindings(self):
+    def bindings(self,name=None):
+        name=self.selected if name is None else name
         return {key:value for key,value in self.host._bindings().items()
-                if value[0]!='fpga' or value[1].worker.name==self.selected}
+                if value[0]!='fpga' or value[1].worker.name==name}
 
     def refresh(self):
         workers={n:p.worker for n,p in self.host.family_tabs['fpga'].items()}
@@ -86,17 +87,19 @@ class ExperimentSlot(W.QWidget):
             with QtCore.QSignalBlocker(self.choice):self.choice.setCurrentIndex(self.choice.findData(self.selected))
             return
         previous=self.current
+        previous_selection=self.selected
+        cached=self.views.get(name);signature=self._pin_signatures.get(name)
+        created=None
         try:
             if name is not None:
                 worker=self.host.family_tabs['fpga'][name].worker
                 if not connected(worker):raise ConnectionError('FPGA 연결을 확인하세요.')
-                if name in self.views and self._pin_signatures.get(name)!=worker.profile.document()['pins']:
-                    stale=self.views.pop(name)
-                    self.selection.setParent(self)
-                    for timer in stale.findChildren(QtCore.QTimer):timer.stop()
-                    stale.hide();stale.deleteLater()
-                if name not in self.views:
-                    with scope(worker.profile):view=self.factory(worker,self.bindings)
+                if cached is None or signature!=worker.profile.document()['pins']:
+                    # Keep the old view alive until its replacement is ready.
+                    # Each view's provider stays bound to its own FPGA, including
+                    # during construction and while another view is selected.
+                    with scope(worker.profile):view=self.factory(worker,lambda name=name:self.bindings(name))
+                    created=view
                     if hasattr(view,'fpga_selector'):
                         view.fixed_fpga=name;view.fpga_selector.hide()
                     if hasattr(view,'queue'):view.queue.hide()
@@ -117,13 +120,28 @@ class ExperimentSlot(W.QWidget):
             if target is not None:
                 self.root.addWidget(target);target.show();self.dock_selector(target)
         except Exception as exc:
+            if created is not None:
+                if cached is None:self.views.pop(name,None);self._pin_signatures.pop(name,None)
+                else:self.views[name]=cached;self._pin_signatures[name]=signature
+                self.selection.setParent(self);self.root.insertWidget(0,self.selection)
+                self.current=previous;self.selected=previous_selection
+                if previous is not None:
+                    self.root.addWidget(previous);previous.show();self.dock_selector(previous)
+                self._dispose_view(created)
             self._selection_error=f'{name} · 실험 설정 불러오기 실패: {type(exc).__name__}: {exc}'
             with QtCore.QSignalBlocker(self.choice):self.choice.setCurrentIndex(self.choice.findData(self.selected))
             self.info.setText(self._selection_error)
             self.empty.setText('실험 화면을 열지 못했습니다. 위 오류를 확인하세요.')
             return
+        if created is not None and cached is not None:self._dispose_view(cached)
         self._selection_error=None
         self.refresh()
+
+    def _dispose_view(self,view):
+        # UI replacement must not cancel the worker's hardware operations.
+        for timer in view.findChildren(QtCore.QTimer):timer.stop()
+        self.root.removeWidget(view)
+        view.hide();view.deleteLater()
 
     def dock_selector(self,view):
         # Existing sequence settings/results stay intact; place selector above

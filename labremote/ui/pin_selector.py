@@ -14,6 +14,7 @@ class PinSelector(W.QComboBox):
         self.setProperty('persistInput',False)
         self._token = None
         self._document = None
+        self._filters = None
         self.currentIndexChanged.connect(self._selected)
         self.refresh()
 
@@ -34,18 +35,26 @@ class PinSelector(W.QComboBox):
     def setCurrentText(self, token):
         try:pin = self.physical_pin(token)
         except (ValueError, KeyError):pin = 'missing'
-        index = self.findData(pin)
-        if index < 0:
-            self.addItem(str(token) + ' · 별칭 연결 확인 필요', 'missing')
-            index = self.count()-1
-            self.model().item(index).setEnabled(False)
-        with QtCore.QSignalBlocker(self):self.setCurrentIndex(index)
+        with QtCore.QSignalBlocker(self):
+            index = self.findData(pin) if pin != 'missing' else -1
+            missing = self.findData('missing')
+            if index < 0:
+                text = str(token) + ' · 별칭 연결 확인 필요'
+                if missing < 0:
+                    self.addItem(text, 'missing');missing = self.count()-1
+                else:self.setItemText(missing,text)
+                index = missing
+                self.model().item(index).setEnabled(False)
+            elif missing >= 0:
+                self.removeItem(missing);index = self.findData(pin)
+            self.setCurrentIndex(index)
         self._token = (('' if self.raw_names else 'signal:') + self.worker.profile.document()['pins'][pin]) if pin and pin != 'missing' else (token if pin == 'missing' else None)
         self.routeChanged.emit()
 
     def refresh(self):
         document = self.worker.profile.document()
-        if document == self._document:return
+        filters=(self.input_pin,self.fast_only,self.slow_only,self.feature,self.raw_names)
+        if document == self._document and filters == self._filters:return
         token = self._token
         with QtCore.QSignalBlocker(self):
             self.clear()
@@ -63,5 +72,6 @@ class PinSelector(W.QComboBox):
                 item.setEnabled(not reason)
                 item.setToolTip(kind+(' · '+reason if reason else ''))
         self._document = document
+        self._filters = filters
         if token is not None:self.setCurrentText(token)
         else:self._selected(self.currentIndex())
