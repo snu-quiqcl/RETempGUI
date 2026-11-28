@@ -20,13 +20,13 @@ def cleanup(controller,c):
     with scope(settings_profile(state[0],'entanglement',c),'entanglement'):
         return _cleanup(controller,c)
 
-def _cleanup(controller, c):
+def _cleanup(controller, c, levels=None):
     if controller.device is None:
         raise CleanupError('FPGA disconnected; output cleanup unconfirmed')
     controller.device.stop_sequencer()
     s = SequencerProgram()
     ports = {}
-    for name, level in CLEANUP_LEVELS.items():
+    for name, level in (CLEANUP_LEVELS if levels is None else levels).items():
         _, port, bit = OUTPUTS[name]
         ports.setdefault(port, []).append((bit, level))
     # Stop all photon counters, including interrupted state readout.
@@ -73,9 +73,12 @@ def decode(rows, c):
         indices=dict(group=group,fpga_loop=loop,inner_trial=inner),state_words=flat[480:])
 
 
-def run(controller, c, cancelled, on_rows, on_batch, on_cleanup=lambda status: None, on_event=lambda event: None):
+def run(controller, c, cancelled, on_rows, on_batch, on_cleanup=lambda status: None, on_event=lambda event: None, *, backend=None):
     controller._idle(); d = controller.device
-    expected = 163
+    expected = 163 if backend is None else backend.expected_rows
+    build = build_program if backend is None else backend.build_program
+    clean = cleanup if backend is None else backend.cleanup
+    decode_rows = decode if backend is None else backend.decode
     def check():
         if cancelled.is_set():raise OperationCancelled('Entanglement cancelled')
     def length():
@@ -83,7 +86,7 @@ def run(controller, c, cancelled, on_rows, on_batch, on_cleanup=lambda status: N
         if type(n) is not int or not 0<=n<=65535:raise ValueError('Invalid FIFO length')
         return n
     try:
-        check(); cleanup(controller,c)
+        check(); clean(controller,c)
         for batch in range(c['batches']):
             check()
             clock=time.perf_counter()
@@ -102,7 +105,7 @@ def run(controller, c, cancelled, on_rows, on_batch, on_cleanup=lambda status: N
                 stale=timed('stale_flush',length)
                 while stale:
                     check(); size=min(stale,500); timed('stale_flush',d.read_fifo_data,size); stale-=size
-                program=build_program(c); record['upload_started_at']=stamp()
+                program=build(c); record['upload_started_at']=stamp()
                 timed('upload',program.program,show=False,target=d); record['upload_finished_at']=stamp()
                 check(); timed('start_commands',d.auto_mode); timed('start_commands',d.start_sequencer)
                 record['sequencer_started_at']=stamp()
@@ -127,7 +130,7 @@ def run(controller, c, cancelled, on_rows, on_batch, on_cleanup=lambda status: N
                     if status=='stopped':break
                     time.sleep(.001)
                 check()
-                data=decode(rows,c)
+                data=decode_rows(rows,c)
                 on_batch(dict(data,batch=batch,elapsed_s=time.perf_counter()-clock,sequence_elapsed_s=time.perf_counter()-start))
                 record['status']='completed'
             except BaseException as exc:
@@ -142,14 +145,14 @@ def run(controller, c, cancelled, on_rows, on_batch, on_cleanup=lambda status: N
                 record['timings_s']['communication_calls']=sum(record['timings_s'].values())
                 on_event(dict(record,event='finished'))
     except BaseException as original:
-        try:cleanup(controller,c)
+        try:clean(controller,c)
         except Exception as exc:
             on_cleanup('failed')
             raise CleanupError(f'Entanglement cleanup failed: {exc}; original: {original}') from exc
         on_cleanup('completed')
         raise
     else:
-        try:cleanup(controller,c)
+        try:clean(controller,c)
         except Exception as exc:
             on_cleanup('failed')
             raise CleanupError(f'Entanglement cleanup failed: {exc}') from exc

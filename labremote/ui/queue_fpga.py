@@ -8,7 +8,7 @@ from labremote.devices.fpga import routing
 from .experiment_mapping import MappingEditor
 
 KINDS = {'SpamScanTab':'spam','SecularScanPage':'secular','TwoRFCompensationPage':'micromotion','MotorScanTab':'scan','FluorescenceTab':'fluorescence','RabiTab':'rabi','DecayExperimentTab':'decay',
-         'HOMTab':'hom','EntanglementTab':'entanglement','IonCheckTab':'ion_check',
+         'HOMTab':'hom','EntanglementTab':'entanglement','EntanglementNoMirrorTab':'entanglement_no_mirror','IonCheckTab':'ion_check',
          'MicromotionPage':'micromotion','PhaseShifterTab':'phase_shifter','PhaseHoldTab':'phase_shifter','PhaseRabiTab':'phase_shifter','HalfPiRamseyTab':'phase_shifter'}
 class QueueFPGASettings(W.QWidget):
     changed=QtCore.pyqtSignal()
@@ -42,7 +42,7 @@ class QueueFPGASettings(W.QWidget):
     def experiment_name(self):
         p=self.parameters
         if p.get('kind')=='PulseExperimentTab':return p.get('experiment_kind','ramsey')
-        return KINDS.get(p.get('kind')) or {'ion':'ion_check','spam':'spam','entanglement':'entanglement','phase_hold':'phase_shifter','setup':'setup'}.get(self.kind)
+        return KINDS.get(p.get('kind')) or {'ion':'ion_check','spam':'spam','entanglement':'entanglement','entanglement_no_mirror':'entanglement_no_mirror','phase_hold':'phase_shifter','setup':'setup'}.get(self.kind)
 
     def groups(self):
         p=self.parameters;c=p.get('settings',{});exp=self.experiment_name()
@@ -153,7 +153,7 @@ class QueueFPGASettings(W.QWidget):
                     from labremote.experiments.phase_shifter.rabi import validate
                     validate(c)
                 else:config.validate(c)
-        elif experiment in ('hom','entanglement','decay'):
+        elif experiment in ('hom','entanglement','entanglement_no_mirror','decay'):
             from importlib import import_module
             model=import_module('labremote.experiments.'+experiment+'.config')
             with scope(profile,experiment):model.validate(parameters['settings'])

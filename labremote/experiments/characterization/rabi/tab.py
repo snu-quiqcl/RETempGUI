@@ -14,6 +14,8 @@ class RabiTab(QtWidgets.QWidget):
         super().__init__(parent);self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
         self.fields={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
         self.live_plot=None;self.live_revision=0
+        from labremote.ui.result_loader import ResultLoader
+        self.result_loader=ResultLoader(self)
         root=QtWidgets.QVBoxLayout(self)
         note=QtWidgets.QLabel(worker.name+' · '+chamber+' microwave Rabi · MW 주파수·출력은 외부 설정 · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1)
@@ -90,6 +92,7 @@ class RabiTab(QtWidgets.QWidget):
         if path:self.directory.setText(path)
 
     def start(self):
+        self.result_loader.cancel()
         try:
             c=self.value()
             if not self.directory.text().strip():raise ValueError('결과 저장 폴더를 지정하세요.')
@@ -111,6 +114,7 @@ class RabiTab(QtWidgets.QWidget):
     def progress(self,label,state):
         if label!='RABI' or state.get('chamber')!=self.chamber or state.get('run_id')!=self.worker.rabi_runner.state.get('run_id'):return
         if self.run_id!=state['run_id']:
+            self.result_loader.cancel()
             self.live_plot=None;self.live_revision=0
             self.live={};self.live_axis=None;self.live_lines={};self.rendered_id=None;self.summary.clear()
         self.run_id=state['run_id'];self.status.setText(f"{state.get('phase','')} · {state.get('points',0)}/{state.get('total','?')} · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
@@ -150,5 +154,7 @@ class RabiTab(QtWidgets.QWidget):
             try:
                 report=config.read(path)
                 if report['chamber']!=self.chamber:raise ValueError('Result chamber differs from tab')
-                self.show_result(config.read(Path(path).parent/'analysis.json'),report);self.status.setText(path)
+                self.status.setText('합산 결과 계산 중…')
+                def ready(data):self.show_result(data,report);self.status.setText(path)
+                self.result_loader.start(lambda:rabi.load_analysis(Path(path).parent),ready,self.status.setText)
             except Exception as exc:self.status.setText(str(exc))

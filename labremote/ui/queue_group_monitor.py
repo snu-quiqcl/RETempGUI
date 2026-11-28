@@ -125,9 +125,14 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         for i,((chamber,profile),records) in enumerate(profiles.items()):
             valid=[r for r in records if r['status']=='completed']
             label=chamber+(' · '+profile[:4] if sum(k[0]==chamber for k in profiles)>1 else '')
-            ax.plot([r['cycle'] for r in valid],[100*r['analysis']['spam_fidelity'] if r['analysis'].get('spam_fidelity') is not None else np.nan for r in valid],'o-',label=label,ms=4)
-            pooled=pool_spam([r['analysis'] for r in valid]);f=pooled['spam_fidelity']
-            summaries.append(label+' '+(f'{f:.2%}' if f is not None else '—'))
+            from labremote.experiments.characterization.shared.pulse_model import detector_data
+            from labremote.experiments.characterization.rabi.model import detector_label
+            pooled=detector_data(pool_spam([r['analysis'] for r in valid]))
+            for role,channel in pooled.items():
+                named=label+(' · '+detector_label(role) if len(pooled)>1 else '')
+                values=[detector_data(r['analysis']).get(role,{}).get('spam_fidelity') for r in valid]
+                ax.plot([r['cycle'] for r in valid],[100*v if v is not None else np.nan for v in values],'o-',label=named,ms=4)
+                f=channel['spam_fidelity'];summaries.append(named+' '+(f'{f:.2%}' if f is not None else '—'))
         excluded=sum(r['status']!='completed' for r in self.selected_records())
         self.summary.setText('누적 fidelity: '+(' / '.join(summaries) or '대기')+f'\n상태별 오류/수신 수 합산 후 두 상태 동일 가중 · 미완료 실행 제외 {excluded}')
         ax.set(xlabel='Group cycle',ylabel='SPAM fidelity (%)');ax.grid(alpha=.2)

@@ -245,6 +245,7 @@ class SpamScanRunner(WorkflowTask):
                 columns = ['ix', 'iy', 'x', 'y', 'status', *model.METRICS, 'folder', 'error',
                            *[prefix+key for key in ('x','y') for prefix in ('requested_','planned_','command_','readback_')],
                            'x_source','y_source']
+                if c['spam'].get('detector_count',1)==2:columns += [prefix+key for prefix in ('pmt2_','sum_') for key in model.METRICS]
                 writer = csv.DictWriter(stream, columns)
                 writer.writeheader()
                 for p in points:
@@ -253,9 +254,14 @@ class SpamScanRunner(WorkflowTask):
                 if not queue_archive_active():
                     from matplotlib.figure import Figure
                     from matplotlib.backends.backend_agg import FigureCanvasAgg
-                    figure = Figure(figsize=(9, 6)); FigureCanvasAgg(figure)
+                    figure = Figure(figsize=(15, 6) if c['spam'].get('detector_count',1)==2 else (9,6)); FigureCanvasAgg(figure)
                     model.draw_map(figure, c, points, axis_values=axes)
                     figure.savefig(folder / 'heatmap.png', dpi=140)
+                    if c['spam'].get('detector_count',1)==2:
+                        figure.set_size_inches(9,6)
+                        for role,name in (('PMT','pmt1'),('PMT2','pmt2'),('SUM','sum')):
+                            model.draw_map(figure,c,points,axis_values=axes,detector=role)
+                            figure.savefig(folder/('heatmap_'+name+'.png'),dpi=140)
             except Exception as exc:
                 # Raw/point records are already durable even if plotting fails.
                 report['plot_error'] = str(exc)

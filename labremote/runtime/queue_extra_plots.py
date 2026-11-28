@@ -22,7 +22,11 @@ def merge_points(rows):
     for row in rows:
         key=row['index']
         if key not in merged:merged[key]=deepcopy(row);continue
-        dst=merged[key];dst['counts'].extend(row['counts'])
+        dst=merged[key]
+        if isinstance(dst['counts'],dict):
+            if not isinstance(row['counts'],dict) or set(dst['counts'])!=set(row['counts']):raise ValueError('Cannot pool different detector channels')
+            for role in dst['counts']:dst['counts'][role].extend(row['counts'][role])
+        else:dst['counts'].extend(row['counts'])
         for name in ('attempts','successes','received_rows'):
             if name in row:dst[name]+=row[name]
         if 'complete' in row:dst['complete']=dst['complete'] and row['complete']
@@ -39,7 +43,7 @@ def export(root,steps,partial):
         for path in sorted([*folder.rglob('result.json'),*folder.rglob('results.json')]):
             if path in seen:continue
             seen.add(path);doc=read_json(path);kind=doc.get('experiment');base=path.parent
-            if kind in ('entanglement','spam') or 'dac' in doc:continue
+            if kind in ('entanglement','entanglement_no_mirror','spam') or 'dac' in doc:continue
             cfg=doc.get('configuration',{})
             if (base/'configuration.json').exists():cfg=read_json(base/'configuration.json')
             c=doc.get('settings',cfg.get('settings',cfg))

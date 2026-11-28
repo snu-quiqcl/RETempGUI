@@ -34,27 +34,32 @@ class PulseRunner(WorkflowTask):
         c=self.settings['settings'];chamber=c['chamber'];kind=self.kind
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+'_'+chamber+'_'+self.handle.request_id);folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
         names=['pulse_experiment.py',kind+'_sequence.py']+(['spin_echo_analysis.py','ramsey_sequence.py'] if kind=='spin_echo' else ['ramsey_fit.py'] if kind=='ramsey' else ['initialization_analysis.py'] if kind=='initialization' else [])
+        if kind=='spam':names.append('detector_comparison.py')
         source_root=Path(__file__).resolve().parents[1]
-        source_paths={'pulse_experiment.py':Path(model.__file__),kind+'_sequence.py':source_root/kind/'sequence.py',
+        source_paths={'detector_comparison.py':source_root.parent/'detector_comparison.py','pulse_experiment.py':Path(model.__file__),kind+'_sequence.py':source_root/kind/'sequence.py',
                       'spin_echo_analysis.py':source_root/'spin_echo/analysis.py','ramsey_sequence.py':source_root/'ramsey/sequence.py',
                       'ramsey_fit.py':source_root/'ramsey/analysis.py','initialization_analysis.py':source_root/'initialization/analysis.py'}
         config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={n:hashlib.sha256(source_paths[n].read_bytes()).hexdigest() for n in names}))
         from labremote.experiments.characterization.shared.live_pulse import LiveSummary
-        live=LiveSummary(kind,c)
+        if kind=='spam':
+            from labremote.experiments.characterization.spam.live import LiveSummary as SpamSummary
+            live=SpamSummary(c)
+        else:live=LiveSummary(kind,c)
         records={};error=None;total=c['N_init_control'] if kind=='initialization' else c['max_precession_count'] if kind in ('ramsey','spin_echo') else 2*c['N_repeat']
         self.publish(chamber=chamber,phase='Starting',folder=str(folder),points=0,total=total)
         try:
             with (folder/'raw_fifo.csv').open('w',newline='',encoding='utf-8') as stream:
-                writer=csv.writer(stream);writer.writerow(['batch','condition','fifo_0','fifo_1','photon_count','tag','valid'])
+                writer=csv.writer(stream);writer.writerow(['batch','condition','shot','count_pmt1','count_pmt2','tag','valid'] if c.get('detector_count',1)==2 else ['batch','condition','fifo_0','fifo_1','photon_count','tag','valid'])
                 def rows(batch,condition,values,valid):writer.writerows([[batch,condition,*r,int(valid)] for r in values]);stream.flush()
                 def record(value):
                     records[value['index']]=deepcopy(value)
                     snapshot=live.add(value)
-                    self.publish(**({'live':snapshot} if snapshot is not None else {}),phase='Measuring',points=sum(r['complete'] for r in records.values()),received_samples=sum(len(r['counts']) for r in records.values()))
+                    self.publish(**({'live':snapshot} if snapshot is not None else {}),phase='Measuring',points=sum(r['complete'] for r in records.values()),received_samples=sum(len(rabi.counts_by_detector(r['counts'])['PMT']) for r in records.values()))
                 self.call(DeviceAPI(self.worker,group=self.group)._submit(self.label+'_ACQUIRE',lambda w:run(w.raw_device.controller,kind,c,Cancellation(),rows,record)))
         except Exception as exc:error=exc
         values=[records[i] for i in sorted(records)]
         report=dict(experiment=kind,chamber=chamber,run_id=self.handle.request_id,folder=str(folder),microwave_control='external',frequency_hz=self.settings['frequency_hz'],completed_points=sum(r['complete'] for r in values),expected_points=total,error=str(error) if error else '')
+        if kind=='spam':report['detector_count']=c.get('detector_count',1)
         data=None
         try:
             config.save(folder/'points.json',values);self.publish(phase='Analyzing / saving')
@@ -64,7 +69,10 @@ class PulseRunner(WorkflowTask):
                 if kind in ('ramsey','spin_echo','initialization'):
                     writer.writerow(['time_s','received_shots','bright_shots','population','population_error']);writer.writerows(zip(data['time_s'],data['shot_counts'],data['bright_counts'],data['population'],data['population_error']))
                 else:
-                    columns=['condition','N_attempts','N_success','N_received','N_error','success_probability','spam_error','conditional_fidelity'];writer.writerow(columns);writer.writerows([[s[k] for k in columns] for s in data['states']])
+                    columns=['condition','N_attempts','N_success','N_received','N_error','success_probability','spam_error','conditional_fidelity']
+                    dual=c.get('detector_count',1)==2;writer.writerow((['detector'] if dual else [])+columns)
+                    for role,channel in model.detector_data(data).items():
+                        writer.writerows([([role] if dual else [])+[state[k] for k in columns] for state in channel['states']])
             if not queue_archive_active():
                 from matplotlib.figure import Figure
                 from matplotlib.backends.backend_agg import FigureCanvasAgg

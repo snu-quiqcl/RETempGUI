@@ -17,6 +17,7 @@ def destination(view):
     elif name=='DecayExperimentTab':rel=f'decay/{ch}_{view.mode}.json'
     elif name=='HOMTab':rel='hom/hom.json'
     elif name=='EntanglementTab':rel='entanglement/entanglement.json'
+    elif name=='EntanglementNoMirrorTab':rel='entanglement_no_mirror/entanglement_no_mirror.json'
     elif name=='IonCheckTab':rel='ion_check/ion_check.json'
     elif name in ('MicromotionPage','TwoRFCompensationPage'):rel=f"micromotion/{ch}.{('two_rf' if name=='TwoRFCompensationPage' else view.experiment_mode)}.json"
     elif name=='SecularScanPage':rel=f'micromotion/{ch}.secular.json'

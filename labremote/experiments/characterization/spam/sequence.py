@@ -17,15 +17,21 @@ def build_program(qubit_control_index, config, hd):
     AOM = hd.AOM_out
     MAX_DATA_MEMORY = 1024
     MAX_REG = 32
-    MAX_DATA = N_average
+    dual = config.get("detector_count",1)==2
+    MAX_DATA = N_average*(2 if dual else 1)
+    if MAX_DATA>MAX_DATA_MEMORY:raise ValueError("SPAM batch exceeds FPGA data memory")
     temp_R = reg[0]
     memory_pointer_R = reg[1]
     AOM_cooling_R = reg[2]
     microwave_condition_R = reg[4]
     count_microwave_R = reg[5]
     count_measured_PMT_R = reg[6]
+    count_measured_PMT2_R = reg[7]
     run_counter_R = reg[8]
     transfer1_R = reg[12]
+    transfer2_R = reg[13]
+    resets=[hd.PMT_counter_reset]+([hd.PMT2_counter_reset] if dual else [])
+    enables=[hd.PMT_counter_enable]+([hd.PMT2_counter_enable] if dual else [])
     transfer_pointer_R = reg[10]
     s = SequencerProgram()
     s.set_output_port(hd.MW_port, [(MW_12G, 0)])
@@ -55,21 +61,31 @@ def build_program(qubit_control_index, config, hd):
     s.set_output_port(hd.MW_port, [(MW_12G, 1)], 'Start pi pulse')
     s.repeat_microwave = s.wait_n_clocks(T_mw_time - 7, '1US=')
     s.set_output_port(hd.MW_port, [(MW_12G, 0)], 'Stop pi pulse')
-    s.final_detection = s.trigger_out([hd.PMT_counter_reset], 'Reset single counter')
-    s.set_output_port(hd.counter_control_port, [(hd.PMT_counter_enable, 1)], 'Start counter')
+    s.final_detection = s.trigger_out(resets, 'Reset counters')
+    s.set_output_port(hd.counter_control_port, [(bit, 1) for bit in enables], 'Start counters')
     s.set_output_port(hd.external_control_port, [(EOM_14G_1, 0), (EOM_14G_2, 0), (AOM, 1)], 'Start Detection')
     s.wait_n_clocks(T_det, 'Detecting')
-    s.set_output_port(hd.counter_control_port, [(hd.PMT_counter_enable, 0)], 'Stop counter')
+    s.set_output_port(hd.counter_control_port, [(bit, 0) for bit in enables], 'Stop counters')
     s.read_counter(count_measured_PMT_R, hd.PMT_counter_result)
+    if dual:s.read_counter(count_measured_PMT2_R,hd.PMT2_counter_result)
     s.set_output_port(hd.external_control_port, [(EOM_14G_1, 1), (EOM_14G_2, 1), (AOM, 1)], 'Start Detection')
     s.add(run_counter_R, run_counter_R, 1, 'run_counter_R++')
     s.store_data = s.store_word_to_memory(memory_pointer_R, count_measured_PMT_R, 'store count')
     s.add(memory_pointer_R, memory_pointer_R, 1, 'go to next frame')
+    if dual:
+        s.store_word_to_memory(memory_pointer_R,count_measured_PMT2_R)
+        s.add(memory_pointer_R,memory_pointer_R,1)
     s.decide_repeat = s.branch_if_less_than('trial', run_counter_R, N_average)
     s.set_output_port(hd.external_control_port, [(EOM_14G_1, 1), (EOM_14G_2, 1), (AOM, 1)], 'Cooling during transfer')
     s.load_immediate(transfer_pointer_R, 0, 'Readout address; memory_pointer_R retains N_success')
+    if dual:s.load_immediate(run_counter_R,0)
     s.transfer_repeat = s.load_word_from_memory(transfer1_R, transfer_pointer_R)
-    s.write_to_fifo(memory_pointer_R, transfer_pointer_R, transfer1_R, 10)
+    if dual:
+        s.add(transfer_pointer_R,transfer_pointer_R,1)
+        s.load_word_from_memory(transfer2_R,transfer_pointer_R)
+        s.write_to_fifo(run_counter_R,transfer1_R,transfer2_R,11)
+        s.add(run_counter_R,run_counter_R,1)
+    else:s.write_to_fifo(memory_pointer_R, transfer_pointer_R, transfer1_R, 10)
     s.add(transfer_pointer_R, transfer_pointer_R, 1)
     s.branch_if_less_than('transfer_repeat', transfer_pointer_R, MAX_DATA)
     s.stop()

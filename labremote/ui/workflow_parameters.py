@@ -11,8 +11,9 @@ from labremote.runtime.workflow_queue import freeze_job, validate_plan
 
 class EntanglementParameters(QtWidgets.QWidget):
     @editing_settings()
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, config_module=config):
         super().__init__(parent)
+        self.config_module=config_module
         layout=QtWidgets.QVBoxLayout(self)
         bar=QtWidgets.QHBoxLayout();layout.addLayout(bar)
         self.load_button=QtWidgets.QPushButton('설정 파일 불러오기…')
@@ -37,7 +38,7 @@ class EntanglementParameters(QtWidgets.QWidget):
                 'pi_ea_us':'EA π 시간 (µs)','pi_ec_us':'EC π 시간 (µs)',
                 'batches':'Batches / workflow','groups_per_loop':'Groups / FPGA loop',
                 'inner_trials':'Trials / group','fpga_loops':'FPGA loops / batch'}
-        for key,label,lo,hi,decimals in config.FIELDS:
+        for key,label,lo,hi,decimals in self.config_module.FIELDS:
             field=QtWidgets.QDoubleSpinBox() if decimals else QtWidgets.QSpinBox()
             if decimals:field.setDecimals(decimals)
             field.setRange(lo,hi);field.setKeyboardTracking(False)
@@ -50,12 +51,12 @@ class EntanglementParameters(QtWidgets.QWidget):
         self.summary=QtWidgets.QLabel();self.summary.setWordWrap(True);layout.addWidget(self.summary)
         self.basis.currentIndexChanged.connect(self.update_summary)
         for field in self.fields.values():field.valueChanged.connect(self.update_summary)
-        self.populate({'fpga':'fpga_local','settings':config.defaults()})
+        self.populate({'fpga':'fpga_local','settings':self.config_module.defaults()})
 
     @editing_settings()
     def populate(self,parameters):
         if not isinstance(parameters,dict):raise ValueError('Parameters must be a JSON object')
-        settings=config.validate(parameters['settings'])
+        settings=self.config_module.validate(parameters['settings'])
         name=parameters.get('fpga','fpga_local')
         if not isinstance(name,str) or not name.strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
         self.fpga.setText(name)
@@ -72,10 +73,11 @@ class EntanglementParameters(QtWidgets.QWidget):
         value['fpga']=self.fpga.text().strip()
         settings=dict(schema_version=1,basis=self.basis.currentData(),
                       **{key:field.value() for key,field in self.fields.items()})
+        if self.config_module.__name__.endswith('entanglement_no_mirror.config'):settings['experiment']='entanglement_no_mirror'
         if 'fpga_mapping' in base.get('settings',{}):settings['fpga_mapping']=deepcopy(base['settings']['fpga_mapping'])
         if validate:
             if not value['fpga']:raise ValueError('FPGA 장비 이름을 입력하세요.')
-            settings=config.validate(settings)
+            settings=self.config_module.validate(settings)
         value['settings']=settings
         return value
 
@@ -85,9 +87,9 @@ class EntanglementParameters(QtWidgets.QWidget):
         for key in ('detuning_hz','phase_magnitude_deg','pi_ea_us','pi_ec_us'):self.fields[key].setEnabled(mw)
         try:
             c=self.parameters({},validate=True)['settings']
-            note=f"Workflow 1회 = {c['batches']:,} batches · 최대 {config.nominal_trials(c):,} attempts / batch"
+            note=f"Workflow 1회 = {c['batches']:,} batches · 최대 {self.config_module.nominal_trials(c):,} attempts / batch"
             if mw:
-                p=config.phase_values(c)
+                p=self.config_module.phase_values(c)
                 note+=f"\n펄스 시작 시간차 {p['start_gap_us']:.2f} µs · 상대 위상 변화 {p['drive_phase_deg']:.3f}°"
             else:note+='\nZZ: 분석 MW 펄스를 사용하지 않습니다.'
             self.summary.setText(note+'\nRF/MW 주파수·출력은 별도 설정합니다. 그룹 반복 N과 batches는 별개입니다.')
@@ -215,8 +217,11 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             from .setup_parameters import SetupParameters
             self.editor=SetupParameters(bindings_provider);self.tabs.addTab(self.editor,'장비 · 파라미터 설정')
             if not self.base:self.base=self.editor.defaults()
-        elif kind=='entanglement':
-            self.editor=EntanglementParameters();self.tabs.addTab(self.editor,'얽힘 설정 · devices.parameters')
+        elif kind in ('entanglement','entanglement_no_mirror'):
+            if kind=='entanglement_no_mirror':
+                from labremote.experiments.entanglement_no_mirror import config as no_mirror
+                self.settings_config=no_mirror;self.settings_filename='entanglement_no_mirror.json'
+            self.editor=EntanglementParameters(config_module=self.settings_config);self.tabs.addTab(self.editor,'얽힘 설정 · devices.parameters')
             load_bar=QtWidgets.QHBoxLayout()
             load_bar.addWidget(self.editor.load_button);load_bar.addWidget(self.editor.saved_button);load_bar.addStretch()
             layout.insertLayout(1,load_bar)
@@ -229,7 +234,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             self.editor=SpamParameters();self.tabs.addTab(self.editor,'SPAM 설정 · devices.parameters')
         if not self.base:
             try:
-                if kind in ('entanglement','ion'):self.base={'fpga':'fpga_local','settings':self.settings_config.load()}
+                if kind in ('entanglement','entanglement_no_mirror','ion'):self.base={'fpga':'fpga_local','settings':self.settings_config.load()}
                 elif kind=='spam':
                     self.base=self.editor.defaults()
             except Exception as exc:profile_error=str(exc)

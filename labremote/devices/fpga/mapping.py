@@ -31,7 +31,7 @@ ROLE_KINDS = {**dict.fromkeys(_INPUT_ROLES, 'input'),
 for _role in _INPUT_ROLES:
     DEFAULT_ROLES.setdefault(_role, None)
 EXPERIMENTS = ('spin_echo', 'fluorescence', 'rabi', 'ramsey', 'spam', 'initialization', 'decay',
-               'hom', 'entanglement', 'ion_check', 'micromotion', 'phase_shifter')
+               'hom', 'entanglement', 'entanglement_no_mirror', 'ion_check', 'micromotion', 'phase_shifter')
 CURRENT = ContextVar('fpga_mapping', default=None)
 EDITING = ContextVar('fpga_settings_editor', default=False)
 
@@ -71,7 +71,7 @@ def compatible(experiment, role, pin):
         if experiment == 'ion_check' and role in ('AOMA','AOMB','AOMC') or experiment == 'hom' and role == 'AOMB':
             return hasattr(physical, pin + '_out')
         return capability(pin) == required
-    stopwatch = role == 'SYNC' or experiment in ('hom','decay','micromotion') or experiment == 'entanglement' and role in ('PMTA','PMTC')
+    stopwatch = role == 'SYNC' or experiment in ('hom','decay','micromotion') or experiment in ('entanglement','entanglement_no_mirror') and role in ('PMTA','PMTC')
     suffix = '_stopwatch_result' if stopwatch else '_counter_result'
     return hasattr(physical, pin + suffix)
 
@@ -460,13 +460,13 @@ The same immutable profile is retained by a nested operation until it completes.
                     return __fn(self, *args, **kwargs)
                 if not qt_class:
                     profile = FROZEN.get().get(profile.device_id, profile)
-                kind = self.__dict__.get('kind', 'ramsey') if experiment == 'pulse' else experiment
+                kind = self.__dict__.get('kind', 'ramsey') if experiment == 'pulse' else getattr(type(self),'mapping_experiment',experiment)
                 if experiment == 'pulse' and __name == '__init__':
                     kind = inspect.signature(__fn).bind(self, *args, **kwargs).arguments.get('kind', kind)
                 current = CURRENT.get()
                 if not qt_class and current is not None and current[0].device_id == profile.device_id:
                     profile = current[0]
-                if not qt_class and kind in ('entanglement','ion_check'):
+                if not qt_class and kind in ('entanglement','entanglement_no_mirror','ion_check'):
                     from .routing import settings_profile
                     c=kwargs.get('settings') or getattr(self,'settings',{}).get('settings')
                     profile=settings_profile(profile,kind,c)

@@ -10,7 +10,7 @@ class SpamParameters(QtWidgets.QWidget):
     settings_loaded=QtCore.pyqtSignal()
     @editing_settings()
     def __init__(self):
-        super().__init__();self.fields={};self.roles={};self.route_values={}
+        super().__init__();self.fields={};self.roles={};self.route_values={};self.detector_counts={}
         layout=QtWidgets.QVBoxLayout(self);form=QtWidgets.QFormLayout();layout.addLayout(form)
         self.fpga=QtWidgets.QLineEdit('fpga_local');form.addRow('FPGA 장비',self.fpga)
         note=QtWidgets.QLabel('Workflow 1회: EA SPAM → EC SPAM. 각 챔버 설정을 이 Queue 항목에 저장합니다.\nMW 주파수·출력은 외부에서 설정합니다. 시간 입력 단위는 µs입니다.');note.setWordWrap(True);layout.addWidget(note)
@@ -55,7 +55,7 @@ class SpamParameters(QtWidgets.QWidget):
         c=model.validate('spam',c)
         if c['chamber']!=chamber:raise ValueError(chamber+'용 설정 파일을 선택하세요.')
         for key,field in self.fields[chamber].items():field.setValue(c[key]/100 if key in model.times('spam') else c[key])
-        self.route_values[chamber]=deepcopy(c['roles'])
+        self.route_values[chamber]=deepcopy(c['roles']);self.detector_counts[chamber]=c['detector_count']
 
     @editing_settings()
     def populate(self,parameters):
@@ -66,7 +66,7 @@ class SpamParameters(QtWidgets.QWidget):
     def parameters(self,base,validate=True):
         p=deepcopy(base);p['fpga']=self.fpga.text().strip();p['settings']={}
         for ch in ('EA','EC'):
-            c=dict(schema_version=1,experiment='spam',chamber=ch,roles=deepcopy(self.route_values[ch]))
+            c=dict(schema_version=2,experiment='spam',chamber=ch,roles=deepcopy(self.route_values[ch]),detector_count=self.detector_counts[ch])
             for key,field in self.fields[ch].items():c[key]=round(field.value()*100) if key in model.times('spam') else field.value()
             p['settings'][ch]=c
         return self.validate_parameters(p) if validate else p

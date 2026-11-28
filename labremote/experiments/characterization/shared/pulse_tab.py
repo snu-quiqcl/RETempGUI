@@ -12,15 +12,15 @@ from labremote.experiments.characterization.shared import config, pulse_model as
 class PulseExperimentTab(QtWidgets.QWidget):
     def __init__(self,worker,kind,chamber,bindings,parent=None):
         super().__init__(parent);self.kind=kind;self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
-        self.live_plot=None;self.live_revision=0;self.fields={};self.roles={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
+        self.live_plot=None;self.live_revision=0;self.fields={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
         root=QtWidgets.QVBoxLayout(self)
         mw_note='MW 펄스 미사용 · 시작/종료 시 MW OFF' if kind=='initialization' else 'MW 주파수·출력은 외부 설정'
-        note=QtWidgets.QLabel('EC FPGA · '+chamber+' '+model.title(kind)+' · '+mw_note+' · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
+        note=QtWidgets.QLabel(worker.name+' · '+chamber+' '+model.title(kind)+' · '+mw_note+' · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
         split=QtWidgets.QSplitter();root.addWidget(split,1)
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(330);split.addWidget(scroll)
         settings=self.settings_panel=QtWidgets.QWidget();scroll.setWidget(settings);left=QtWidgets.QVBoxLayout(settings)
         from labremote.experiments.characterization.shared.pulse_controls import pin_controls
-        mapping,self.roles=pin_controls(worker,kind,settings);left.addWidget(mapping)
+        self.mapping,_=pin_controls(worker,kind,settings);left.addWidget(self.mapping)
         form=QtWidgets.QFormLayout();left.addLayout(form)
         for key,title,lo,hi,dec,step in model.fields(kind):
             field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
@@ -56,13 +56,19 @@ class PulseExperimentTab(QtWidgets.QWidget):
         self.timer=QtCore.QTimer(self);self.timer.setInterval(500);self.timer.timeout.connect(self.controls);self.timer.start()
         worker.task_progress.connect(self.progress);self.controls()
 
+    @property
+    def roles(self):return {path[-1]:box for path,box in self.mapping.choices.items()}
+
     def populate(self,value):
+        value=model.validate(self.kind,value)
+        self.mapping.set_settings(value)
         for key,field in self.fields.items():field.setValue(value[key]*.01 if key in model.times(self.kind) else value[key])
         for role,box in self.roles.items():box.setCurrentText(value['roles'][role])
 
     def value(self):
         values={k:round(f.value()*100) if k in model.times(self.kind) else f.value() for k,f in self.fields.items()}
-        return model.validate(self.kind,dict(schema_version=1,experiment=self.kind,chamber=self.chamber,roles={r:b.route() for r,b in self.roles.items()},**values))
+        c=self.mapping.apply(dict(schema_version=2 if self.kind=='spam' else 1,experiment=self.kind,chamber=self.chamber,roles={},**values))
+        return model.validate(self.kind,c)
 
     def load(self):
         path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load '+model.title(self.kind)+' settings',str(config.ROOT),'JSON (*.json)')
@@ -102,6 +108,7 @@ class PulseExperimentTab(QtWidgets.QWidget):
         busy=self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks)
         self.start_button.setEnabled(self.config_valid and self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing and not busy)
         self.stop_button.setEnabled(active and runner.settings['settings']['chamber']==self.chamber)
+        self.mapping.setEnabled(not active)
         for field in (*self.fields.values(),*self.roles.values(),*self.config_buttons):field.setEnabled(not active)
 
     def progress(self,label,state):
@@ -121,7 +128,11 @@ class PulseExperimentTab(QtWidgets.QWidget):
             if data['revision']>self.live_revision:
                 try:
                     from labremote.experiments.characterization.shared.live_pulse import LivePlot
-                    if self.live_plot is None:self.live_plot=LivePlot(self.figure,self.kind)
+                    if self.live_plot is None:
+                        if self.kind=='spam':
+                            from labremote.experiments.characterization.spam.live import LivePlot as SpamPlot
+                            self.live_plot=SpamPlot(self.figure,data)
+                        else:self.live_plot=LivePlot(self.figure,self.kind)
                     self.live_plot.update(data);self.canvas.draw_idle();self.live_revision=data['revision']
                     unit='상태별 배치' if self.kind=='spam' else '측정점'
                     detail='누적 히스토그램·오류율' if self.kind=='spam' else '피팅은 수집 종료 후'

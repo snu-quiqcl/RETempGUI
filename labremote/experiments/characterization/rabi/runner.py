@@ -36,8 +36,9 @@ class RabiRunner(WorkflowTask):
         c=self.settings['settings'];chamber=c['chamber']
         folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Rabi_'+chamber+'_'+self.handle.request_id)
         folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
-        source_paths={'rabi.py':Path(rabi.__file__),'rabi_sequence.py':Path(__file__).with_name('sequence.py')}
-        config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={name:hashlib.sha256(source_paths[name].read_bytes()).hexdigest() for name in ('rabi.py','rabi_sequence.py')}))
+        source_paths={'rabi.py':Path(rabi.__file__),'rabi_sequence.py':Path(__file__).with_name('sequence.py'),
+                      'detector_comparison.py':Path(__file__).resolve().parents[2]/'detector_comparison.py'}
+        config.save(folder/'configuration.json',dict(**self.settings,run_id=self.handle.request_id,fpga=self.worker.name,hardware_definition=hd.__name__,clock_ns=10,source_sha256={name:hashlib.sha256(source_paths[name].read_bytes()).hexdigest() for name in source_paths}))
         from labremote.experiments.characterization.rabi.live import LiveSummary
         live=LiveSummary(c)
         dual=c.get('detector_count',1)==2

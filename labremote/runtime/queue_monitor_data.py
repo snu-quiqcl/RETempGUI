@@ -16,7 +16,7 @@ def kinds(job):
         for node in ast.walk(tree):
             if isinstance(node,ast.Call):
                 name=getattr(node.func,'attr',getattr(node.func,'id',''))
-                found.update({'run_ion_check':'ion','run_spam':'spam','run_entanglement':'ent'}.get(name, '').split())
+                found.update({'run_ion_check':'ion','run_spam':'spam','run_entanglement':'ent','run_entanglement_no_mirror':'ent'}.get(name, '').split())
     except (ValueError,SyntaxError):pass
     if Path(job.get('filename','')).name=='ion_check_workflow.py':found.add('ion')
     return sorted(found) or ['generic']
@@ -38,6 +38,12 @@ def settings_key(settings):
 
 def pool_spam(analyses):
     """Pool sufficient statistics per target, then equally weight the two targets."""
+    if any(a.get('detector_count',1)==2 for a in analyses):
+        from labremote.experiments.characterization.shared.pulse_model import detector_data
+        prepared=[detector_data(a) for a in analyses]
+        roles=[role for role in ('PMT','PMT2','SUM') if any(role in a for a in prepared)]
+        channels={role:pool_spam([a[role] for a in prepared if role in a]) for role in roles}
+        return dict(channels['PMT'],detector_count=2,detectors=channels)
     states=[]
     for condition in (0,1):
         rows=[s for a in analyses for s in a['states'] if s['condition']==condition]
@@ -157,9 +163,12 @@ class ResultStore:
                 identity=(kind,d.get('run_id') or d.get('folder') or str(base))
                 if identity in seen:continue
                 previous=len(output)
-                if kind=='entanglement':
-                    from labremote.experiments.entanglement.config import validate
-                    c=validate(d['configuration']['settings'])
+                if kind in ('entanglement','entanglement_no_mirror'):
+                    from importlib import import_module
+                    validate=import_module('labremote.experiments.'+kind+'.config').validate
+                    from labremote.devices.fpga.mapping import editing_settings
+                    # Saved results validate numeric settings without a connected/live FPGA.
+                    with editing_settings():c=validate(d['configuration']['settings'])
                     batches=[b['measurement'] for b in d['batches'] if b['status']=='completed']
                     # Failed/aborted FPGA batches are excluded, including during live reads.
                     output.append(dict(kind='ent',settings=c,batches=batches,status=d['status'],path=str(path),

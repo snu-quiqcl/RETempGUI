@@ -639,6 +639,11 @@ class FPGAAPI(DeviceAPI):
 
     def stop_entanglement(self):return self.worker.entanglement_runner.cancel()
 
+    def run_entanglement_no_mirror(self,*,settings=None,settings_file=None,directory=None):
+        return self.worker.entanglement_no_mirror_runner.start(settings=settings,settings_file=settings_file,directory=directory,parent=self.group)
+
+    def stop_entanglement_no_mirror(self):return self.worker.entanglement_no_mirror_runner.cancel()
+
 
     def run_initialization(self,chamber,*,settings=None,settings_file=None,directory=None):
         return self.worker.initialization_runner.start(chamber,settings=settings,settings_file=settings_file,directory=directory,parent=self.group)

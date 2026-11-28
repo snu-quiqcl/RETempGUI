@@ -20,27 +20,37 @@ from labremote.experiments.entanglement.storage import measurement
 
 @bound_methods('entanglement')
 class EntanglementRunner(WorkflowTask):
+    config_module=config
+    experiment='entanglement'
+    mapping_experiment='entanglement'
+
     def __init__(self,worker):
-        super().__init__(worker,'ENTANGLEMENT'); self.exclusive_fpga=True; self.result=None
+        super().__init__(worker,self.experiment.upper()); self.exclusive_fpga=True; self.result=None
 
     def start(self,*,settings=None,settings_file=None,directory=None,parent=None):
         from labremote.runtime.characterization_guard import join_completed
         join_completed((self.worker,))
         if settings is not None and settings_file is not None:raise ValueError('Choose settings or settings_file')
+        config=self.config_module
         c=config.load(settings_file) if settings is None else config.validate(settings)
         with _TASK_LOCK:
-            return self.launch(self._execute,(self.worker,),dict(settings=c,directory=str(tab_data_directory(directory,'entanglement'))),parent)
+            return self.launch(self._execute,(self.worker,),dict(settings=c,directory=str(tab_data_directory(directory,self.experiment))),parent)
 
     def _execute(self):
         from labremote.devices.fpga.adapter import Cancellation
-        from labremote.experiments.entanglement.acquisition import run
+        from importlib import import_module
+        config=self.config_module
+        run=import_module(config.__package__+'.acquisition').run
         started_at=datetime.now().astimezone().isoformat(timespec='milliseconds'); run_clock=time.perf_counter()
         c=self.settings['settings']; folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_Entanglement_'+self.handle.request_id[:8])
         folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder); source=folder if queue_archive_active() else folder/'source'
         if not queue_archive_active():source.mkdir()
         files={p.name:p for p in (Path(__file__).with_name(name) for name in ["__init__.py","acquisition.py","config.py","plotting.py","runner.py","sequence.py","storage.py"])}
         files['entanglement_tab.py']=Path(__file__).with_name('tab.py')
+        if self.experiment!='entanglement':
+            files.update({'no_mirror_'+p.name:p for p in Path(config.__file__).parent.glob('*.py')})
         # Queue archives its own workflow.py; standalone must not require that wrapper.
+        files['detector_comparison.py']=Path(__file__).resolve().parents[1]/'detector_comparison.py'
         files['decay_fit_source.py']=Path(__file__).resolve().parents[1]/'decay/plotting.py'
         files['hardware_definition.py']=Path(config.hd.__file__)
         files['HardwareDefinition_v4_05.py']=Path(config.hd.__file__).with_name('HardwareDefinition_v4_05.py')
@@ -54,8 +64,11 @@ class EntanglementRunner(WorkflowTask):
             arrival_histogram_scope='All stopwatch arrivals in [0,120) bins, including before cutoff; FIFO protocol 2. No individual photon-pair records.',
             normalization='Decay counts integrate each channel from its own cutoff through bin 119, divided by actual attempted trials. No SYNC validation. Herald probability = successes / all completed-batch attempts, including exhausted batches. Aborted/failed batches excluded. Bright iff counts > configured per-ion threshold. Geometric distribution uses attempt counts and logarithmic bins, not PC wall time.',
             timing_note='Timezone-aware PC timestamps; durations use a monotonic clock. Communication timings measure host API calls including software/driver overhead (upload includes encoding); not pure wire latency or FPGA photon event timestamps.')
+        if self.experiment=='entanglement_no_mirror':
+            metadata.update(readout_order=['ea','ec'],readout_rule='PMT1 + PMT2 > per-ion threshold',ccd_control='untouched',fifo_protocol=3)
+            metadata['arrival_histogram_scope']=metadata['arrival_histogram_scope'].replace('protocol 2','protocol 3')
         acc=Accumulator(c); error=None; cleanup_status='unknown'; batch_records=[]; fits={}
-        report=dict(schema_version=2,experiment='entanglement',run_id=self.handle.request_id,folder=str(folder),
+        report=dict(schema_version=2,experiment=self.experiment,run_id=self.handle.request_id,folder=str(folder),
             started_at=started_at,finished_at=None,elapsed_s=0.,status='running',error='',
             completed_batches=0,expected_batches=c['batches'],batch_in_progress=None,aborted_batches=0,
             cleanup_status='unknown',continue_allowed=False)
@@ -101,7 +114,7 @@ class EntanglementRunner(WorkflowTask):
                         batch_records[-1].update(event); report['batch_in_progress']=None
                     raw.flush(); os.fsync(raw.fileno()); checkpoint()
                     self.publish(aborted_batches=report['aborted_batches'],batch_in_progress=report['batch_in_progress'])
-                self.call(DeviceAPI(self.worker,group=self.group)._submit('ENTANGLEMENT_ACQUIRE',
+                self.call(DeviceAPI(self.worker,group=self.group)._submit(self.experiment.upper()+'_ACQUIRE',
                     lambda w:run(w.raw_device.controller,c,Cancellation(),rows,received,cleaned,on_event=batch_event)))
         except Exception as exc:
             error=exc

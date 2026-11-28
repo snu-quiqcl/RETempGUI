@@ -4,6 +4,7 @@ import math
 from copy import deepcopy
 from types import SimpleNamespace
 import numpy as np
+from labremote.experiments.detector_comparison import comparison_roles, comparison_counts, LABELS, COLORS, histogram_steps
 from scipy.optimize import curve_fit
 from labremote.experiments.characterization.shared import config
 from labremote.devices.fpga.controller import hd, OUTPUTS
@@ -117,15 +118,16 @@ def counts_by_detector(counts):
 
 
 def detector_label(role):
-    return 'PMT 2' if role=='PMT2' else 'PMT 1'
+    return LABELS[role]
 
 
 def analyze(points,c,frequency_hz=None):
-    result=[];last={role:[] for role in detector_roles(c)}
+    result=[];last={role:[] for role in comparison_roles(c)}
     if points:
         times=[p['index']*c['T_mw_step']*.01 for p in points]
-        for role in detector_roles(c):
-            rows=[counts_by_detector(p['counts'])[role] for p in points]
+        paired=[comparison_counts(p['counts']) for p in points]
+        for role in comparison_roles(c):
+            rows=[counts[role] for counts in paired]
             pop=[sum(n>=c['N_threshold'] for n in counts)/len(counts) for counts in rows]
             result.append(dict(detector=role,frequency_hz=frequency_hz,time_us=times,population=pop,
                 mean_count=[float(np.mean(counts)) for counts in rows],
@@ -133,28 +135,36 @@ def analyze(points,c,frequency_hz=None):
                 fit=fit(times,pop),contrast=float(max(pop)-min(pop)),original_visibility=float((1+max(pop)-min(pop))/2)))
             last[role]=rows[-1]
     return dict(curves=result,last_counts=last['PMT'],last_counts_by_detector=last,
-                detector_count=len(last),threshold=c['N_threshold'])
+                detector_count=len(detector_roles(c)),threshold=c['N_threshold'])
+
+
+def load_analysis(folder):
+    """Reanalyze older paired archives in memory; never overwrite saved results."""
+    from pathlib import Path
+    folder=Path(folder);data=config.read(folder/'analysis.json')
+    if data.get('detector_count',1)==2 and not any(c.get('detector')=='SUM' for c in data['curves']):
+        if (folder/'points.json').is_file() and (folder/'configuration.json').is_file():
+            saved=config.read(folder/'configuration.json')
+            data=analyze(config.read(folder/'points.json'),saved['settings'],saved.get('frequency_hz'))
+    return data
 
 
 def draw_dual(figure,data):
-    axes=figure.subplots(2,2,squeeze=False)
-    for column,role in enumerate(('PMT','PMT2')):
-        hist,osc=axes[:,column];color='C'+str(column)
-        counts=data.get('last_counts_by_detector',{}).get(role,[])
-        if counts:
-            values,bins=np.unique(counts,return_counts=True);hist.bar(values,bins,color=color)
-        hist.axvline(data['threshold'],color='r',linestyle='--')
-        hist.set(title=detector_label(role),xlabel='Photon counts',ylabel='Counts')
-        for curve in (c for c in data['curves'] if c.get('detector')==role):
-            x=np.asarray(curve['time_us'])
-            osc.errorbar(x,curve['population'],yerr=curve['population_sem'],fmt='o-',color=color,label=detector_label(role))
-            f=curve['fit']
-            if f['valid']:
-                t=np.linspace(0,x[-1],300)
-                osc.plot(t,f['amplitude']*np.sin(np.pi*f['frequency_hz']*t*1e-6)**2+f['offset'],'--',color=color,label='Fit')
-            osc.legend(fontsize=7)
-        osc.grid(True,alpha=.3)
-        osc.set(xlabel='Nominal microwave pulse time (us)',ylabel='Bright population',ylim=(-.05,1.05))
+    hist,osc=figure.subplots(2,1)
+    channels=comparison_counts(data.get('last_counts_by_detector',{'PMT':data.get('last_counts',[])}))
+    for role,counts in channels.items():
+        hist.step(*histogram_steps(counts),where="mid",color=COLORS[role],label=detector_label(role))
+    hist.axvline(data['threshold'],color='0.4',linestyle='--',label='Shared threshold')
+    hist.set(xlabel='Photon counts / shot',ylabel='Shots',title='Last point: individual PMTs and paired sum');hist.legend(fontsize=8)
+    for curve in data['curves']:
+        role=curve['detector'];color=COLORS[role];x=np.asarray(curve['time_us'])
+        osc.errorbar(x,curve['population'],yerr=curve['population_sem'],fmt='o-',color=color,label=detector_label(role),markersize=3)
+        f=curve['fit']
+        if f['valid']:
+            t=np.linspace(0,x[-1],300)
+            osc.plot(t,f['amplitude']*np.sin(np.pi*f['frequency_hz']*t*1e-6)**2+f['offset'],'--',color=color,label=detector_label(role)+' fit')
+    osc.legend(fontsize=8);osc.grid(True,alpha=.3)
+    osc.set(xlabel='Nominal microwave pulse time (us)',ylabel='Bright population',ylim=(-.05,1.05))
     figure.tight_layout()
 
 

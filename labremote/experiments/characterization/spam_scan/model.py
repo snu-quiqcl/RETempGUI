@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 from decimal import Decimal, ROUND_HALF_UP, ROUND_CEILING, ROUND_FLOOR, localcontext
 import math
 import numpy as np
+from labremote.experiments.detector_comparison import LABELS
 from labremote.experiments.characterization.shared import pulse_model as spam
 
 
@@ -203,7 +204,8 @@ def validate(value):
         raise ValueError('Invalid SPAM 2D Scan settings')
     if value['schema_version'] != 1 or value['experiment'] != 'spam_2d' or type(value['restore']) is not bool:
         raise ValueError('Invalid SPAM 2D Scan schema')
-    spam.validate('spam', value['spam'])
+    value=deepcopy(value)
+    value['spam']=spam.validate('spam', value['spam'])
     xs, ys = axis_values(value['x']), axis_values(value['y'])
     if identity(value['x']) == identity(value['y']):
         raise ValueError('X와 Y에 같은 파라미터를 선택할 수 없습니다.')
@@ -217,7 +219,32 @@ def validate(value):
     return deepcopy(value)
 
 
+def load_archive(folder):
+    """Rebuild missing sum metrics from paired old point data, in memory only."""
+    from pathlib import Path
+    from labremote.experiments.characterization.shared import config
+    from labremote.devices.fpga.mapping import editing_settings
+    folder=Path(folder).resolve();report=config.read(folder/'result.json')
+    configuration=config.read(folder/'configuration.json')
+    with editing_settings():settings=validate(configuration['settings'])
+    records=config.read(folder/'points.json')
+    if settings['spam'].get('detector_count',1)==2:
+        for point in records:
+            if point['status']!='completed' or 'sum_spam_fidelity' in point.get('metrics',{}):continue
+            if not point.get('folder'):continue
+            child=(folder/point['folder']).resolve()
+            if not child.is_relative_to(folder):raise ValueError('Invalid point folder')
+            analysis=child/'analysis.json'
+            if analysis.is_file():point['metrics']=metrics(config.read(analysis))
+    return report,dict(settings=settings,records=records,folder=str(folder),axis_values=configuration.get('axis_values'))
+
 def metrics(data):
+    if data.get('detector_count',1)==2:
+        channels=spam.detector_data(data)
+        out=metrics(channels['PMT'])
+        for role,prefix in (('PMT2','pmt2_'),('SUM','sum_')):
+            if role in channels:out.update({prefix+key:value for key,value in metrics(channels[role]).items()})
+        return out
     out = {key: data[key] for key in ('average_spam_error', 'spam_fidelity')}
     for state in data['states']:
         out['error_' + str(state['condition'])] = state['spam_error']
@@ -225,47 +252,48 @@ def metrics(data):
     return out
 
 
-def matrix(settings, records, metric):
+def matrix(settings, records, metric, detector='PMT'):
+    key={'PMT':'','PMT2':'pmt2_','SUM':'sum_'}[detector]+metric
     result = np.full((settings['y']['points'], settings['x']['points']), np.nan)
     for point in records:
-        value = point.get('metrics', {}).get(metric)
+        value = point.get('metrics', {}).get(key)
         if point['status'] == 'completed' and value is not None:
             result[point['iy'], point['ix']] = value * 100
     return result
 
 
-def draw_map(figure, settings, records, metric='average_spam_error', selected=None, axis_values=None):
+def draw_map(figure, settings, records, metric='average_spam_error', selected=None, axis_values=None, detector=None):
     from matplotlib.patches import Rectangle
+    if detector is None:detector='ALL' if settings['spam'].get('detector_count',1)==2 else 'PMT'
+    roles=('PMT','PMT2','SUM') if detector=='ALL' else (detector,)
     axes = plot_values(settings, records, axis_values)
     xs, ys = axes['x'], axes['y']
     def edges(values):
         values = np.asarray(values, dtype=float)
-        # Rounded VVA steps need not be uniform. Bound each cell by the
-        # midpoint between its actual neighboring device values.
         return np.r_[values[0] - (values[1]-values[0])/2,
                      (values[:-1]+values[1:])/2,
                      values[-1] + (values[-1]-values[-2])/2]
     xe, ye = edges(xs), edges(ys)
-    figure.clear()
-    ax = figure.add_subplot(111)
-    cmap = __import__('matplotlib').colormaps['viridis'].copy()
-    cmap.set_bad('#e3e7eb')
-    z = np.ma.masked_invalid(matrix(settings, records, metric))
-    plot = ax.pcolormesh(xe, ye, z, cmap=cmap, shading='flat', vmin=0,
-                         vmax=100 if 'success' in metric or metric == 'spam_fidelity' else max(1, float(z.max()) if z.count() else 1))
-    figure.colorbar(plot, ax=ax, label=METRICS[metric])
-    ax.set(xlabel=label(settings['x']), ylabel=label(settings['y']), title='SPAM 2D Scan')
-    if settings['x']['family'] == 'dds4' and settings['x']['parameter'] == 'vva' and len(xs) <= 21:
-        ax.set_xticks(xs)
-    if settings['y']['family'] == 'dds4' and settings['y']['parameter'] == 'vva' and len(ys) <= 21:
-        ax.set_yticks(ys)
-    for point in records:
-        if point['status'] != 'completed':
-            ax.plot(point.get('x') if point.get('x') is not None else point.get('requested_x'),
-                    point.get('y') if point.get('y') is not None else point.get('requested_y'), 'rx', markersize=9)
-    if selected is not None:
-        ix, iy = selected
-        ax.add_patch(Rectangle((xe[ix], ye[iy]), xe[ix+1]-xe[ix], ye[iy+1]-ye[iy],
-                               fill=False, edgecolor='white', linewidth=2))
-    figure.subplots_adjust(left=.14, right=.94, bottom=.20, top=.91)
-    return ax
+    figure.clear();panels=figure.subplots(1,len(roles),squeeze=False)[0]
+    cmap = __import__('matplotlib').colormaps['viridis'].copy();cmap.set_bad('#e3e7eb')
+    matrices=[np.ma.masked_invalid(matrix(settings,records,metric,role)) for role in roles]
+    maximum=100 if 'success' in metric or metric=='spam_fidelity' else max([1]+[float(z.max()) for z in matrices if z.count()])
+    for ax,role,z in zip(panels,roles,matrices):
+        plot=ax.pcolormesh(xe,ye,z,cmap=cmap,shading='flat',vmin=0,vmax=maximum)
+        ax.set(xlabel=label(settings['x']),ylabel=label(settings['y']),title=LABELS[role])
+        if settings['x']['family']=='dds4' and settings['x']['parameter']=='vva' and len(xs)<=21:ax.set_xticks(xs)
+        if settings['y']['family']=='dds4' and settings['y']['parameter']=='vva' and len(ys)<=21:ax.set_yticks(ys)
+        for point in records:
+            if point['status']!='completed':
+                ax.plot(point.get('x') if point.get('x') is not None else point.get('requested_x'),
+                        point.get('y') if point.get('y') is not None else point.get('requested_y'),'rx',markersize=9)
+        if selected is not None:
+            ix,iy=selected
+            ax.add_patch(Rectangle((xe[ix],ye[iy]),xe[ix+1]-xe[ix],ye[iy+1]-ye[iy],fill=False,edgecolor='white',linewidth=2))
+        if len(roles)>1:
+            ax.tick_params(labelsize=8);ax.xaxis.label.set_size(8);ax.yaxis.label.set_size(8)
+    figure.subplots_adjust(left=.09 if len(roles)>1 else .14,right=.86,bottom=.23,top=.85,wspace=.42)
+    colorbar=figure.add_axes([.90,.23,.02,.62])
+    figure.colorbar(plot,cax=colorbar,label=METRICS[metric])
+    figure.suptitle('SPAM 2D Scan · shared color scale' if len(roles)>1 else 'SPAM 2D Scan')
+    return list(panels) if detector=='ALL' else panels[0]

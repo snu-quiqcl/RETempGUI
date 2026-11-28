@@ -9,7 +9,7 @@ def suggested(job):
         for node in ast.walk(ast.parse(job.get('source', ''))):
             if isinstance(node, ast.Call):
                 name = getattr(node.func, 'attr', getattr(node.func, 'id', ''))
-                kind = {'run_ion_check':'ion', 'run_spam':'spam', 'run_entanglement':'ent'}.get(name)
+                kind = {'run_ion_check':'ion', 'run_spam':'spam', 'run_entanglement':'ent','run_entanglement_no_mirror':'ent'}.get(name)
                 if kind: found.add(kind)
     except (ValueError, SyntaxError): pass
     if job.get('filename', '').replace('\\', '/').endswith('/ion_check_workflow.py'): found.add('ion')

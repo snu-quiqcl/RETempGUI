@@ -9,7 +9,7 @@ def infer(c,hint=None):
     if 'spam' in c and isinstance(c['spam'],dict):return 'spam_2d'
     if 'phase_outputs' in c:return 'phase_shifter'
     if 'mapping' in c and 'exposure_us' in c:return 'ion_check'
-    if 'basis' in c and 'groups_per_loop' in c:return 'entanglement'
+    if 'basis' in c and 'groups_per_loop' in c:return 'entanglement_no_mirror' if c.get('experiment')=='entanglement_no_mirror' else 'entanglement'
     if 'aomb_enabled' in c and 'inputs' in c:return 'hom'
     if 'mode' in c and 'roles' in c and str(c['mode']).startswith(('171','174')):return 'decay'
     if 'trg_pin' in c or 'counter_pin' in c:return 'secular' if 'start_khz' in c else 'micromotion'

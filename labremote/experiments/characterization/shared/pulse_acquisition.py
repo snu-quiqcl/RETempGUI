@@ -12,12 +12,13 @@ def run(controller,kind,c,cancelled,on_rows,on_record):
         n=d.fifo_data_length()
         if type(n) is not int or not 0<=n<=65535:raise RuntimeError('Invalid FIFO length')
         return n
-    def collect(program,expected,batch,condition,consume):
+    def collect(program,expected,batch,condition,consume,deadline=None,offset=0):
         check();stale=length()
         while stale:
             check();size=min(500,stale);d.read_fifo_data(size);stale-=size
         program.program(show=False,target=d);check();d.auto_mode();d.start_sequencer()
-        received=0;deadline=time.monotonic()+c['timeout_s']
+        received=0
+        if deadline is None:deadline=time.monotonic()+c['timeout_s']
         while True:
             check()
             if time.monotonic()>deadline:raise TimeoutError(kind+' acquisition timeout')
@@ -31,7 +32,8 @@ def run(controller,kind,c,cancelled,on_rows,on_record):
                 if not isinstance(rows,list) or len(rows)!=size or any(not isinstance(r,(list,tuple)) or len(r)!=4 for r in rows):raise RuntimeError('Malformed FIFO rows')
                 valid=received+size<=expected and all(all(type(v) is int and 0<=v<=65535 for v in r) for r in rows)
                 valid=valid and consume(rows,received,False)
-                on_rows(batch,condition,rows,valid)
+                archived=[[r[0]+offset if type(r[0]) is int else r[0],*r[1:]] for r in rows] if offset else rows
+                on_rows(batch,condition,archived,valid)
                 if not valid:raise RuntimeError('Unexpected '+kind+' FIFO indices/tag/success count')
                 consume(rows,received,True);received+=size;available-=size
             if state=='stopped':break
@@ -58,6 +60,20 @@ def run(controller,kind,c,cancelled,on_rows,on_record):
             from labremote.experiments.characterization.spam.sequence import build_program
             for batch in range(c['N_repeat']):
                 for condition in (0,1):
+                    if c.get('detector_count',1)==2:
+                        record=dict(index=batch*2+condition,batch=batch,condition=condition,attempts=c['N_average'],successes=0,received_rows=0,counts={'PMT':[],'PMT2':[]},complete=False)
+                        deadline=time.monotonic()+c['timeout_s']
+                        # Two words per shot; preserve the requested shot count and condition order.
+                        for offset in range(0,c['N_average'],512):
+                            sub=dict(c,N_average=min(512,c['N_average']-offset))
+                            def consume(rows,received,apply):
+                                if not apply:return all(r[0]==received+i and r[3]==11 for i,r in enumerate(rows))
+                                record['counts']['PMT'].extend(r[1] for r in rows)
+                                record['counts']['PMT2'].extend(r[2] for r in rows)
+                                record['received_rows']+=len(rows);record['successes']=record['received_rows']
+                                record['complete']=record['received_rows']==c['N_average'];on_record(record)
+                            collect(build_program(condition,sub,h),sub['N_average'],batch,condition,consume,deadline,offset)
+                        continue
                     record=dict(index=batch*2+condition,batch=batch,condition=condition,attempts=c['N_average'],successes=None,received_rows=0,counts=[],complete=False)
                     def consume(rows,received,apply):
                         success=record['successes'] if record['successes'] is not None else rows[0][0]

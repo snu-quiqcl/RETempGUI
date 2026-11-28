@@ -1,6 +1,7 @@
 """Decay fitting, herald probability and censored attempt statistics."""
 from copy import deepcopy
 from collections import Counter
+from labremote.experiments.detector_comparison import COLORS as PMT_COLORS, LABELS as PMT_LABELS, histogram_steps
 import numpy as np
 from labremote.experiments.decay.plotting import fit_decay
 from functools import lru_cache
@@ -50,6 +51,7 @@ class Accumulator:
         self.config=c; self.a=np.zeros(120,dtype=np.int64); self.c=self.a.copy()
         self.coincidence=np.zeros(240,dtype=np.int64); self.attempts=0; self.heralds=0
         self.readout_counts={'ea':Counter(),'ec':Counter()}
+        self.readout_individual={ion:{role:Counter() for role in ('PMT1','PMT2')} for ion in ('ea','ec')}
         self.states=[0]*4; self.batches=[]; self.latest=None; self.elapsed=0.
 
     def add(self, b):
@@ -59,6 +61,8 @@ class Accumulator:
             self.states[int(b['state_label'],2)]+=1
             for ion in ('ea','ec'):
                 self.readout_counts[ion][int(b['state_counts'][ion])]+=1
+                for role,value in b.get('state_counts_by_pmt',{}).get(ion,{}).items():
+                    self.readout_individual[ion][role][int(value)]+=1
         self.latest=deepcopy(b)
         counts=decay_counts(b,self.config)
         self.batches.append(dict(batch=b['batch'],attempts=b['attempts'],heralded=b['heralded'],
@@ -73,14 +77,19 @@ class Accumulator:
             result[ion]=dict(photon_counts=values,frequencies=[counts[v] for v in values],
                 bin_width_counts=1,unlisted_bins_frequency=0,threshold=threshold,
                 bright_rule='counts > threshold',readouts=total,dark=dark,bright=total-dark,
-                detection_us=self.config['detection_us'])
+                detection_us=self.config['detection_'+ion+'_us'] if self.config.get('experiment')=='entanglement_no_mirror' else self.config['detection_us'])
         return result
+
+    def individual_histograms(self):
+        return {ion:{role:dict(photon_counts=sorted(counts),frequencies=[counts[v] for v in sorted(counts)],readouts=sum(counts.values()))
+                     for role,counts in detectors.items()} for ion,detectors in self.readout_individual.items()}
 
     def data(self):
         n=self.attempts
         counts=decay_counts(dict(a=self.a,c=self.c),self.config); a=counts['a']; c=counts['c']
         return dict(a=self.a.tolist(),c=self.c.tolist(),coincidence=self.coincidence.tolist(),
             state_readout_histograms=self.readout_histograms(),
+            **(dict(state_readout_histograms_by_pmt=self.individual_histograms()) if self.config.get('experiment')=='entanglement_no_mirror' else {}),
             attempts=n,heralds=self.heralds,states=self.states.copy(),batches=deepcopy(self.batches),latest=deepcopy(self.latest),
             decay_reference=decay_reference(dict(a=self.a,c=self.c,attempts=n),self.config),
             metrics=dict(p_herald=self.heralds/n if n else None,p_pmta=a/n if n else None,
@@ -102,7 +111,7 @@ class EntanglementPlot:
         self.figure=figure; self.config=c; figure.clear()
         self.axes=figure.subplots(4,2).ravel(); self.probability_axis=self.axes[3].twinx()
         self.fits={};self.reuse_artists=reuse_artists;self.artists={};self.used=set();self.legends={};self.initialized=False
-        figure.subplots_adjust(left=.08,right=.9,bottom=.055,top=.94,hspace=.62,wspace=.38)
+        figure.subplots_adjust(left=.08,right=.9,bottom=.10 if c.get('experiment')=='entanglement_no_mirror' else .055,top=.94,hspace=.62,wspace=.38)
 
     def line(self,ax,key,x,y,**kwargs):
         if not self.reuse_artists:return ax.plot(x,y,**kwargs)
@@ -215,20 +224,30 @@ class EntanglementPlot:
             threshold=hist['threshold']; n=hist['readouts']
             x=np.asarray(hist['photon_counts'],dtype=int)
             colors=np.where(x<=threshold,'#7594b6','#df983d')
-            self.bars(ax,'readout',x,hist['frequencies'],width=.88,color=colors,zorder=3)
+            comparison=self.config.get('experiment')=='entanglement_no_mirror'
+            maximum=max(hist['frequencies'],default=0);right=int(x.max())+1 if len(x) else 0
+            if comparison:
+                channels=d.get('state_readout_histograms_by_pmt',{}).get(ion,{})
+                for role,key in (('PMT','PMT1'),('PMT2','PMT2'),('SUM',None)):
+                    channel=hist if key is None else channels.get(key)
+                    if channel is None:continue
+                    xx,yy=histogram_steps(channel['photon_counts'],channel['frequencies'])
+                    self.line(ax,role,xx,yy,drawstyle='steps-mid',color=PMT_COLORS[role],lw=1.6,label=PMT_LABELS[role])
+                    maximum=max(maximum,max(yy,default=0));right=max(right,max(xx,default=0))
+            else:self.bars(ax,'readout',x,hist['frequencies'],width=.88,color=colors,zorder=3)
             self.line(ax,'threshold',[threshold+.5]*2,[0,1],transform=ax.get_xaxis_transform(),color='#c34747',ls='--',lw=1.5,
-                label=f'Threshold: counts > {threshold} is bright')
+                label=f'Sum > {threshold}: bright' if comparison else f'Threshold: counts > {threshold} is bright')
             if n:
                 text=f"0 / dark: {hist['dark']} ({hist['dark']/n:.1%})\n1 / bright: {hist['bright']} ({hist['bright']/n:.1%})"
             else:text='No completed state readouts'
             self.text(ax,'readout summary',.97,.95,text,ha='right',va='top',transform=ax.transAxes,fontsize=8,
                 bbox=dict(facecolor='white',alpha=.85,edgecolor='none'))
-            ax.set(title=ion.upper()+' state readout histogram',xlabel='Readout photon counts / detection',ylabel='Number of readouts')
-            ax.set_xlim(-.65,max(10,threshold+2,int(x.max())+1 if len(x) else 0))
-            ax.set_ylim(0,max(1,max(hist['frequencies'],default=0)*1.25))
+            ax.set(title=ion.upper()+' state readout histogram',xlabel='Photon counts / detection (state from sum)' if comparison else 'Readout photon counts / detection',ylabel='Number of readouts')
+            ax.set_xlim(-.65,max(10,threshold+2,right))
+            ax.set_ylim(0,max(1,maximum*1.25))
             ax.xaxis.set_major_locator(MaxNLocator(integer=True,nbins=9))
             ax.yaxis.set_major_locator(MaxNLocator(integer=True,nbins=6))
-            self.legend(ax,loc='upper center',bbox_to_anchor=(.5,-.23),fontsize=7,frameon=False)
+            self.legend(ax,loc='upper center',bbox_to_anchor=(.5,-.23),fontsize=7,frameon=False,ncol=2 if comparison else 1)
         for identity,artist in self.artists.items():
             if identity not in self.used and hasattr(artist,'set_visible'):artist.set_visible(False)
         self.initialized=True

@@ -3,6 +3,7 @@ from labremote.devices.fpga.mapping import settings_path
 import math
 from copy import deepcopy
 import numpy as np
+from labremote.experiments.detector_comparison import comparison_roles, comparison_counts, paired_sum
 from labremote.experiments.characterization.shared import config; from labremote.experiments.characterization.rabi import model as rabi
 from labremote.experiments.characterization.ramsey.analysis import fit_ramsey, population_and_error
 
@@ -10,7 +11,12 @@ KINDS=('ramsey','spam','initialization','spin_echo')
 def title(kind):return {'spin_echo':'Spin Echo','ramsey':'Ramsey','spam':'SPAM','initialization':'Initialization'}[kind]
 def defaults(kind,chamber):
     from labremote.configuration.default_profiles import read_default
-    return read_default(kind+'_'+chamber)
+    value=read_default(kind+'_'+chamber)
+    if kind=='spam':
+        value['schema_version']=2
+        value.setdefault('detector_count',1)
+        value['roles'].setdefault('PMT2',None)
+    return value
 
 def times(kind):
     if kind=='spin_echo':return times('ramsey')
@@ -33,7 +39,16 @@ def fields(kind):
 
 def validate(kind,value):
     if not isinstance(value,dict) or value.get('chamber') not in ('EA','EC'):raise ValueError('Invalid chamber')
-    if set(value)!=set(defaults(kind,value['chamber'])) or value['schema_version']!=1 or value['experiment']!=kind:raise ValueError('Invalid experiment settings/schema')
+    value=deepcopy(value)
+    if kind=='spam':
+        if value.get('schema_version')==1:
+            value.setdefault('detector_count',1);value['schema_version']=2
+        if type(value.get('detector_count')) is not int or value['detector_count'] not in (1,2):
+            raise ValueError('Select 1 or 2 PMTs')
+        if not isinstance(value.get('roles'),dict):raise ValueError('Invalid SPAM roles')
+        value['roles'].setdefault('PMT2',None)
+        if value['detector_count']==1:value['roles']['PMT2']=None
+    if set(value)!=set(defaults(kind,value['chamber'])) or value['schema_version']!=(2 if kind=='spam' else 1) or value['experiment']!=kind:raise ValueError('Invalid experiment settings/schema')
     for key,_,low,high,dec,_ in fields(kind):
         v=value[key]
         if key in times(kind):low=round(low*100);high=round(high*100);dec=0
@@ -41,7 +56,7 @@ def validate(kind,value):
     if kind=='spin_echo':
         value=deepcopy(value);value['precession_time']+=value['precession_time']%2
     roles=value['roles']
-    rabi.validate_roles(roles)
+    rabi.validate_roles(roles,detector_count=value.get('detector_count',1) if kind=='spam' else 1)
     shots=value['N_average']*(value['N_init_control'] if kind=='initialization' else value['max_precession_count'] if kind in ('ramsey','spin_echo') else 2*value['N_repeat'])
     if shots>2000000:raise ValueError('Maximum 2,000,000 attempts')
     c=value
@@ -73,13 +88,42 @@ def clean(value):
     if isinstance(value,(list,tuple)):return [clean(v) for v in value]
     return value
 
+def detector_data(data):
+    """Legacy/single results remain readable without inventing a second channel."""
+    channels=dict(data.get('detectors',{'PMT':data}))
+    if 'PMT2' not in channels or 'SUM' in channels:return channels
+    first,second=channels['PMT'],channels['PMT2']
+    if not all('counts' in state for channel in (first,second) for state in channel['states']):return channels
+    if first['threshold']!=second['threshold']:raise ValueError('Paired PMTs require one shared threshold')
+    states=[];other={state['condition']:state for state in second['states']}
+    for state in first['states']:
+        counts=paired_sum(state['counts'],other[state['condition']]['counts'])
+        n=len(counts);bright=sum(v>=first['threshold'] for v in counts)
+        errors=bright if state['condition']==0 else n-bright;rate=errors/n if n else None
+        states.append(dict(state,counts=counts,N_received=n,N_bright=bright,N_error=errors,
+            population=bright/n if n else None,spam_error=rate,conditional_fidelity=1-rate if rate is not None else None,
+            histogram=np.bincount(np.asarray(counts,dtype=np.int64),minlength=40).tolist()))
+    errors=[state['spam_error'] for state in states]
+    average=sum(errors)/len(errors) if errors and all(v is not None for v in errors) else None
+    channels['SUM']=dict(first,states=states,average_spam_error=average,spam_fidelity=1-average if average is not None else None)
+    return channels
+
+
 def analyze(kind,records,c):
+    if kind=='spam' and c.get('detector_count',1)==2:
+        channels={}
+        paired=[comparison_counts(row['counts']) for row in records]
+        for role in comparison_roles(c):
+            single=[dict(row,counts=counts[role]) for row,counts in zip(records,paired)]
+            channels[role]=analyze(kind,single,dict(c,detector_count=1))
+        # Keep the legacy scalar view as PMT 1, with explicit independent channels.
+        return dict(channels['PMT'],detector_count=2,detectors=channels)
     if kind=='spin_echo':
-        from labremote.experiments.characterization.spin_echo.analysis import analyze
-        return clean(analyze(records,c))
+        from labremote.experiments.characterization.spin_echo.analysis import analyze as analyze_single
+        return clean(analyze_single(records,c))
     if kind=='initialization':
-        from labremote.experiments.characterization.initialization.analysis import analyze
-        return clean(analyze(records,c))
+        from labremote.experiments.characterization.initialization.analysis import analyze as analyze_single
+        return clean(analyze_single(records,c))
     if kind=='ramsey':
         rows=[r for r in records if r['counts']];t=np.array([r['index']*c['precession_time']*1e-8 for r in rows]);n=np.array([len(r['counts']) for r in rows]);k=np.array([sum(v>=c['N_threshold'] for v in r['counts']) for r in rows])
         p,e=population_and_error(k,n) if rows else (np.array([]),np.array([]))
@@ -103,6 +147,9 @@ def analyze(kind,records,c):
 
 def draw(figure,data):
     figure.clear()
+    if data.get('detector_count',1)==2 and data['experiment']=='spam':
+        from labremote.experiments.characterization.spam.live import LivePlot, display_data
+        plot=LivePlot(figure,display_data(data));plot.update(display_data(data));return
     if data['experiment']=='initialization':
         from labremote.experiments.characterization.initialization.analysis import draw
         draw(figure,data);return
@@ -120,6 +167,8 @@ def draw(figure,data):
     figure.subplots_adjust(left=.12,right=.97,bottom=.09,top=.96,hspace=.45)
 
 def summary(data):
+    if data.get('detector_count',1)==2 and data['experiment']=='spam':
+        return '\n\n'.join(rabi.detector_label(role)+'\n'+summary(channel) for role,channel in detector_data(data).items())
     if data['experiment']=='spin_echo':
         f=data['fit']
         return (f"T2 echo = {f['t2_echo_s']:.6g} s" if f.get('t2_resolved') else 'T2 echo unresolved')+' · '+f.get('message','')

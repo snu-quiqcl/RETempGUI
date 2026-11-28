@@ -61,7 +61,7 @@ def execute(devices):
     if kind=='HalfPiRamseyTab':return api.run_phase_shifter(settings=c,directory=directory).wait()
     if kind=='PhaseRabiTab':return api.run_phase_rabi(settings=c,directory=directory).wait()
     if kind=='PhaseHoldTab':return api.hold_phase(**c).wait()
-    methods={'HOMTab':'run_hom','EntanglementTab':'run_entanglement','IonCheckTab':'run_ion_check',
+    methods={'HOMTab':'run_hom','EntanglementTab':'run_entanglement','EntanglementNoMirrorTab':'run_entanglement_no_mirror','IonCheckTab':'run_ion_check',
             'FluorescenceTab':'run_fluorescence','RabiTab':'run_rabi','DecayExperimentTab':'run_decay',
             'PulseExperimentTab':'run_'+p.get('experiment_kind','ramsey')}
     if kind not in methods:raise ValueError('Unsupported Queue experiment: '+str(kind))

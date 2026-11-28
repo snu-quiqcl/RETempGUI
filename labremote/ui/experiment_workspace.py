@@ -213,6 +213,9 @@ class ExperimentWorkspace(ScrollTabs):
             for mode in MODES:self.add_slot(pages,LABELS[mode],lambda w,b,c=chamber,m=mode:DecayExperimentTab(w,c,m,host))
         self.add_slot(self,'HOM',lambda w,b:HOMTab(w,host))
         self.add_slot(self,'Entanglement',lambda w,b:EntanglementTab(w,host))
+        self.setTabText(self.indexOf(self.slots[-1]),'RE with flip mirror')
+        from labremote.experiments.entanglement_no_mirror.tab import EntanglementNoMirrorTab
+        self.add_slot(self,'RE without flip mirror',lambda w,b:EntanglementNoMirrorTab(w,host))
         self.add_slot(self,'Ion Check',lambda w,b:IonCheckTab(w,host))
         self.add_slot(self,'Micromotion',lambda w,b:MicromotionTab(w,b,host))
         self.add_slot(self,'etc',lambda w,b:EtcTab(w,host))

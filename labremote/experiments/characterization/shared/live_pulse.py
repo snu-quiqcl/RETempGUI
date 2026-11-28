@@ -33,10 +33,11 @@ class LiveSummary:
 
 
 class LivePlot:
-    def __init__(self,figure,kind):
-        self.kind=kind;figure.clear()
+    def __init__(self,figure,kind,axes=None):
+        self.kind=kind
+        if axes is None:figure.clear()
         if kind=='spam':
-            hist,error=figure.subplots(2,1)
+            hist,error=figure.subplots(2,1) if axes is None else axes
             self.hist_bars=[]
             self.hist_labels=('No MW pulse / target 0','π pulse / target 1')
             hist.set(xlabel='Measured photon number',ylabel='Counts (log scale)',title='Population histogram',yscale='log',ylim=(.5,10))

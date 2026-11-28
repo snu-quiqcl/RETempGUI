@@ -39,7 +39,7 @@ def routes(experiment,c,mode=None,*,all_fields=False):
     def add(path,role,feature,use='측정',optional=False):out.append(Route(tuple(path),role,feature,use,optional))
     if experiment in ('rabi','ramsey','spin_echo','spam','initialization','fluorescence'):
         selected=list(PULSE) if experiment!='fluorescence' else ['PMT']
-        if experiment=='rabi' and (all_fields or c.get('detector_count',1)==2):selected.insert(1,'PMT2')
+        if experiment in ('rabi','spam') and (all_fields or c.get('detector_count',1)==2):selected.insert(1,'PMT2')
         for role in selected:
             counter=role in ('PMT','PMT2')
             add(('roles',role),role,'counter' if counter else 'slow output' if role=='MW' else 'fast output',
@@ -57,8 +57,9 @@ def routes(experiment,c,mode=None,*,all_fields=False):
         for role in ('PMTA','PMTC','SYNC'):add(('inputs',role),role,'stopwatch')
         for role in ('AOMA','AOMC','TRIG'):add(('outputs',role),role,'fast output','측정·종료 복구')
         if all_fields or c.get('aomb_enabled'):add(('outputs','AOMB'),'AOMB','output','시작·종료 출력')
-    elif experiment=='entanglement':
+    elif experiment in ('entanglement','entanglement_no_mirror'):
         for role in ENT:
+            if experiment=='entanglement_no_mirror' and role.startswith('CCD_'):continue
             feature=('stopwatch' if role in ('PMTA','PMTC','SYNC') else 'counter') if ROLE_KINDS[role]=='input' else ROLE_KINDS[role]
             use='시작·종료 OFF' if role.startswith('MW_') and c.get('basis')=='zz' else '측정·종료 복구' if 'output' in feature else '측정'
             add(('fpga_mapping',role),role,feature,use)
@@ -122,12 +123,13 @@ def validate(c,experiment,mode=None):
 
 def settings_profile(profile,experiment,c):
     """Old fixed-role sequencers execute the settings snapshot, not live bindings."""
-    if experiment not in ('entanglement','ion_check') or not isinstance(c,dict):return profile
+    if experiment not in ('entanglement','entanglement_no_mirror','ion_check') or not isinstance(c,dict):return profile
     values=c.get('fpga_mapping')
     if not isinstance(values,dict):return profile # old saved workflows
     doc=profile.document()
     target=doc['role_bindings'][experiment]
-    for role in (ENT if experiment=='entanglement' else ION_FIXED):
+    for role in (ENT if experiment in ('entanglement','entanglement_no_mirror') else ION_FIXED):
+        if experiment=='entanglement_no_mirror' and role.startswith('CCD_'):continue
         token=values.get(role)
         pin=profile.resolve(token,None)
         target[role]=doc['pins'][pin] if pin else None

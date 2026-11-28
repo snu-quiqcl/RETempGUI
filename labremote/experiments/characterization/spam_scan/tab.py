@@ -142,8 +142,10 @@ class SpamScanTab(W.QWidget):
         super().__init__(parent)
         self.worker, self.chamber, self.bindings = worker, chamber, bindings
         self.api = device_api(worker)
-        self.fields, self.roles = {}, {}
+        self.fields = {}
         self.dataset = None; self.selected = None; self.run_id = None; self.revision = None
+        from labremote.ui.result_loader import ResultLoader
+        self.result_loader=ResultLoader(self)
         root = W.QVBoxLayout(self)
         title = W.QLabel(f'<b>SPAM 2D Scan · {chamber}</b> — 두 파라미터를 바꾸며 SPAM을 측정합니다.')
         title.setWordWrap(True); root.addWidget(title)
@@ -160,7 +162,7 @@ class SpamScanTab(W.QWidget):
             field.setRange(lo, hi); field.setSingleStep(step); field.setKeyboardTracking(False)
             self.fields[key] = field; form.addRow(title, field)
         from labremote.experiments.characterization.shared.pulse_controls import pin_controls
-        mapping, self.roles = pin_controls(worker, 'spam', self.settings_panel); left.addWidget(mapping)
+        self.mapping, _ = pin_controls(worker, 'spam', self.settings_panel); left.addWidget(self.mapping)
         self.restore = W.QCheckBox('종료 / 중단 후 축 장비값 복원'); self.restore.setChecked(True); left.addWidget(self.restore)
         note = W.QLabel('DDS VVA는 광파워(mW)가 아닌 제어값입니다.\nThreshold는 스캔 전체에서 고정합니다.\nRF 출력 ON/OFF는 기존 장비 화면에서 설정하세요.'); note.setWordWrap(True); left.addWidget(note)
         for title, callback in [('2D 설정 불러오기', self.load), ('2D 설정 저장', self.save)]:
@@ -178,6 +180,10 @@ class SpamScanTab(W.QWidget):
         browse = W.QPushButton('저장 폴더'); browse.clicked.connect(self.choose_folder); row.addWidget(browse); self.browse = browse
         self.status = W.QLabel('대기 중'); self.status.setWordWrap(True); right.addWidget(self.status)
         self.progress_bar = W.QProgressBar(); right.addWidget(self.progress_bar)
+        self.detector = W.QComboBox();self.detector.addItem('PMT 1 / PMT 2 / 합산 함께 보기','ALL')
+        self.detector.addItem('PMT 1','PMT');self.detector.addItem('PMT 2','PMT2');self.detector.addItem('PMT 1 + PMT 2','SUM')
+        self.detector.setProperty('persistInput',False);self.detector.setVisible(False)
+        self.detector.currentIndexChanged.connect(self.redraw);right.addWidget(self.detector)
         self.metric = W.QComboBox()
         for key, title in model.METRICS.items(): self.metric.addItem(title, key)
         self.metric.currentIndexChanged.connect(self.redraw); right.addWidget(self.metric)
@@ -200,13 +206,17 @@ class SpamScanTab(W.QWidget):
         bindings = self.bindings() if callable(self.bindings) else self.bindings
         return {(family, bridge.worker.name): bridge.worker for family, bridge in bindings.values()}
 
+    @property
+    def roles(self):return {path[-1]:box for path,box in self.mapping.choices.items()}
+
     def populate_spam(self, c):
+        c=spam.validate('spam',c)
+        self.mapping.set_settings(c)
         for key, field in self.fields.items(): field.setValue(c[key]/100 if key in spam.times('spam') else c[key])
         for role, box in self.roles.items(): box.setCurrentText(c['roles'][role])
 
     def value(self):
-        c = dict(schema_version=1, experiment='spam', chamber=self.chamber,
-                 roles={role:box.route() for role, box in self.roles.items()})
+        c = self.mapping.apply(dict(schema_version=2, experiment='spam', chamber=self.chamber, roles={}))
         c.update({key:round(f.value()*100) if key in spam.times('spam') else f.value() for key,f in self.fields.items()})
         value=dict(schema_version=1, experiment='spam_2d', spam=c, x=self.x.value(), y=self.y.value(), restore=self.restore.isChecked())
         from labremote.devices.fpga.mapping import EDITING
@@ -234,6 +244,7 @@ class SpamScanTab(W.QWidget):
         if not active: self.axis_changed()
 
     def start(self):
+        self.result_loader.cancel()
         try:
             c = self.value()
             if not self.directory.text().strip(): raise ValueError('결과 저장 폴더를 지정하세요.')
@@ -252,6 +263,7 @@ class SpamScanTab(W.QWidget):
         runner = self.worker.spam_scan_runner
         if label != 'SPAM_2D_SCAN' or state.get('chamber') != self.chamber or state.get('run_id') != runner.state.get('run_id'): return
         if self.run_id != state['run_id']:
+            self.result_loader.cancel()
             self.selected = None; self.revision = None
         self.run_id = state['run_id']
         self.status.setText(f"{state.get('phase', '')} · {state.get('points', 0)}/{state.get('total', 0)} · {state.get('folder', '')}" + (' · ' + state['error'] if state.get('error') else ''))
@@ -268,11 +280,16 @@ class SpamScanTab(W.QWidget):
 
     def redraw(self):
         if self.dataset is None: return
-        self.map_axis = model.draw_map(self.figure, self.dataset['settings'], self.dataset['records'], self.metric.currentData(), self.selected,self.dataset.get('axis_values'))
+        dual=self.dataset['settings']['spam'].get('detector_count',1)==2
+        if not dual or self.detector.isHidden():
+            with QtCore.QSignalBlocker(self.detector):self.detector.setCurrentIndex(self.detector.findData('ALL' if dual else 'PMT'))
+        self.detector.setVisible(dual)
+        self.map_axis = model.draw_map(self.figure, self.dataset['settings'], self.dataset['records'], self.metric.currentData(), self.selected,self.dataset.get('axis_values'),self.detector.currentData())
+        self.map_axes=self.map_axis if isinstance(self.map_axis,list) else [self.map_axis]
         self.canvas.draw_idle(); self.show_selected()
 
     def select_cell(self, event):
-        if self.dataset is None or event.inaxes is not getattr(self, 'map_axis', None) or event.xdata is None: return
+        if self.dataset is None or event.inaxes not in getattr(self, 'map_axes', []) or event.xdata is None: return
         axes = model.plot_values(self.dataset['settings'],self.dataset['records'],self.dataset.get('axis_values'))
         self.selected = (int(np.argmin(abs(np.array(axes['x']) - event.xdata))),
                          int(np.argmin(abs(np.array(axes['y']) - event.ydata))))
@@ -292,20 +309,19 @@ class SpamScanTab(W.QWidget):
             folder = Path(self.dataset['folder']).resolve()
             child = (folder / p['folder']).resolve()
             if not child.is_relative_to(folder): raise ValueError('Invalid point folder')
-            data = config.read(child / 'analysis.json')
-            ax = self.hist_figure.add_subplot(111)
-            for state, color in zip(data['states'], ('#2474e8', '#f59438')):
-                counts = np.asarray(state['counts'], dtype=int)
-                bins = np.bincount(np.minimum(counts, 40), minlength=41)
-                ax.bar(np.arange(41), bins, color=color, alpha=.65, label=f"State {state['condition']}")
-            ax.axvline(data['threshold'], color=ax.xaxis.label.get_color(), linestyle='--', label='Threshold')
-            maximum = max((max(s['counts'], default=0) for s in data['states']), default=0)
-            ax.set(xlabel='Photon counts (40 = overflow)', ylabel='Samples', xlim=(-.5, min(40, max(10, maximum))+1))
-            ax.legend(fontsize=8); self.hist_figure.subplots_adjust(left=.16, right=.98, bottom=.27, top=.95)
-            def percent(v): return 'N/A' if v is None else f'{100*v:.3f}%'
-            lines = [title, 'Average error: ' + percent(data['average_spam_error']), 'Fidelity: ' + percent(data['spam_fidelity'])]
-            for s in data['states']:
-                lines.append(f"State {s['condition']}: {percent(s['spam_error'])}\nAccepted / attempts: {s['N_success']} / {s['N_attempts']}\nReceived: {s['N_received']}")
+            channels=spam.detector_data(config.read(child/'analysis.json'))
+            mode=self.detector.currentData()
+            if mode!='ALL':channels={mode:channels[mode]}
+            from labremote.experiments.characterization.spam.live import draw_histograms
+            from labremote.experiments.detector_comparison import LABELS
+            draw_histograms(self.hist_figure,channels)
+            def percent(v):return 'N/A' if v is None else f'{100*v:.3f}%'
+            lines=[title]
+            for role,data in channels.items():
+                lines.append(LABELS[role]+': Fidelity '+percent(data['spam_fidelity'])+' / error '+percent(data['average_spam_error']))
+                for state in data['states']:
+                    lines.append(f"  State {state['condition']}: {percent(state['spam_error'])} · {state['N_received']} shots")
+            lines.append('Shared threshold: '+str(next(iter(channels.values()))['threshold']))
             if p.get('error'): lines.append(p['error'])
             self.summary.setText('\n'.join(lines))
         except Exception as exc: self.summary.setText(title + '\n' + str(exc))
@@ -338,15 +354,16 @@ class SpamScanTab(W.QWidget):
         try:
             report = config.read(path); folder = Path(path).parent
             if report['experiment'] != 'spam_2d' or report['chamber'] != self.chamber: raise ValueError('다른 실험 / 챔버의 결과입니다.')
-            configuration = config.read(folder / 'configuration.json')
-            settings = model.validate(configuration['settings'])
-            self.dataset = dict(settings=settings, records=config.read(folder / 'points.json'), folder=str(folder),axis_values=configuration.get('axis_values'))
-            self.selected = None
-            if self.dataset['records']:
-                p = self.dataset['records'][0]; self.selected = (p['ix'], p['iy'])
-            self.hist_figure.clear(); self.hist_canvas.draw_idle(); self.summary.clear()
-            self.redraw(); self.status.setText(report['status'] + ' · ' + path)
-            self.progress_bar.setRange(0, report['expected_points']); self.progress_bar.setValue(report['completed_points'])
+            self.status.setText('합산 결과 불러오는 중…')
+            def ready(value):
+                report,self.dataset=value
+                self.selected=None
+                if self.dataset['records']:
+                    p=self.dataset['records'][0];self.selected=(p['ix'],p['iy'])
+                self.hist_figure.clear();self.hist_canvas.draw_idle();self.summary.clear()
+                self.redraw();self.status.setText(report['status']+' · '+path)
+                self.progress_bar.setRange(0,report['expected_points']);self.progress_bar.setValue(report['completed_points'])
+            self.result_loader.start(lambda:model.load_archive(folder),ready,self.status.setText)
         except Exception as exc: self.status.setText(str(exc))
 
     def export_image(self):
@@ -356,4 +373,4 @@ class SpamScanTab(W.QWidget):
             try: self.figure.savefig(path, dpi=160); self.status.setText('저장됨: ' + path)
             except Exception as exc: self.status.setText(str(exc))
 
-    def shutdown(self): self.timer.stop()
+    def shutdown(self): self.timer.stop();self.result_loader.cancel()

@@ -33,6 +33,8 @@ class FPGAWorker(AcquisitionWorker):
         self.ion_check_runner=IonCheckRunner(self)
         from labremote.experiments.entanglement.runner import EntanglementRunner
         self.entanglement_runner=EntanglementRunner(self)
+        from labremote.experiments.entanglement_no_mirror.runner import EntanglementNoMirrorRunner
+        self.entanglement_no_mirror_runner=EntanglementNoMirrorRunner(self)
         from labremote.experiments.micromotion.runner import MicromotionRunner
         self.micromotion_runner=MicromotionRunner(self)
         from labremote.experiments.micromotion.two_rf import TwoRFRunner
