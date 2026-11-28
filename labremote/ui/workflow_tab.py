@@ -11,13 +11,18 @@ class WorkflowThread(QtCore.QThread):
     result_ready = QtCore.pyqtSignal(object)
     error_ready = QtCore.pyqtSignal(str, bool)
 
-    def __init__(self, source, filename, bindings, parent=None):
+    def __init__(self, source, filename, bindings, parent=None, *, job=None):
         super().__init__(parent)
         self.source, self.filename = source, filename
         self.bindings = dict(bindings)
         from labremote.devices.fpga.mapping import profiles_from_bindings
         self.fpga_profiles = profiles_from_bindings(self.bindings)
         self.fpga_id=next(iter(self.fpga_profiles)) if len(self.fpga_profiles)==1 else None
+        from copy import deepcopy
+        self.parameters=deepcopy(job['parameters']) if job else {}
+        if job:
+            self.fpga_profiles=deepcopy(job.get('fpga_profiles',self.fpga_profiles))
+            self.fpga_id=job.get('fpga_id',self.fpga_id)
         from labremote.runtime.jobs import CancellationToken
         self.stop_event = CancellationToken()
 
@@ -26,7 +31,7 @@ class WorkflowThread(QtCore.QThread):
             if self.stop_event.is_set(): raise OperationCancelled('Stopped before loading workflow')
             from labremote.runtime.workflow_result import workflow_session
             with workflow_session(), load_workflow(self.source, self.filename) as workflow:
-                result = run_workflow(self.bindings, workflow, stop_event=self.stop_event, fpga_profiles=self.fpga_profiles,fpga_id=self.fpga_id)
+                result = run_workflow(self.bindings, workflow, stop_event=self.stop_event, fpga_profiles=self.fpga_profiles,fpga_id=self.fpga_id,parameters=self.parameters)
             self.result_ready.emit(result)
         except Exception as error:
             self.error_ready.emit(f'{type(error).__name__}: {error}', isinstance(error, OperationCancelled))
@@ -43,6 +48,7 @@ class WorkflowTab(QtWidgets.QWidget):
         self.thread = None
         self.last_result = None
         self.filename = None
+        self.re_jobs={}
         self.workflow_root = Path(__file__).resolve().parents[1] / 'workflow'
         layout = QtWidgets.QVBoxLayout(self)
         self.fpga_selector=QtWidgets.QComboBox()
@@ -75,6 +81,8 @@ class WorkflowTab(QtWidgets.QWidget):
         self.run_button = QtWidgets.QPushButton('저장 후 실행')
         self.stop_button = QtWidgets.QPushButton('중단')
         for button in (self.save_button, self.save_as_button, self.run_button, self.stop_button): row.addWidget(button)
+        self.conditions_button=QtWidgets.QPushButton('실험 설정 · 핀 매핑');row.addWidget(self.conditions_button)
+        self.conditions_button.clicked.connect(self.configure_re)
         self.queue_button=QtWidgets.QPushButton('Queue에 추가');row.addWidget(self.queue_button)
         self.queue_button.clicked.connect(self.add_to_queue)
         row.addStretch(1)
@@ -91,6 +99,7 @@ class WorkflowTab(QtWidgets.QWidget):
         self.run_button.clicked.connect(self.start)
         self.stop_button.clicked.connect(self.cancel)
         self.source.document().modificationChanged.connect(self._modified)
+        self.source.textChanged.connect(lambda:self.conditions_button.setEnabled(not self.still_running() and bool(self.re_experiment())))
         self.save_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence.Save, self)
         self.save_shortcut.setContext(QtCore.Qt.WidgetWithChildrenShortcut)
         self.save_shortcut.activated.connect(self.save_code)
@@ -111,6 +120,62 @@ class WorkflowTab(QtWidgets.QWidget):
                 for title,name in items:self.fpga_selector.addItem(title,name)
                 self.fpga_selector.setCurrentIndex(max(0,self.fpga_selector.findData(selected)))
 
+    def re_experiment(self):
+        from labremote.runtime.re_workflows import experiment
+        return experiment(dict(source=self.source.toPlainText(),filename=self.filename or ''))
+
+    def builtin(self):
+        from labremote.runtime.re_workflows import entries
+        return self.filename is not None and any(Path(self.filename)==path.resolve() for _,path in entries())
+
+    def current_job(self):
+        from copy import deepcopy
+        from labremote.runtime.experiment_jobs import source_job
+        from labremote.runtime.re_workflows import SPECS,saved_parameters
+        from labremote.runtime.monitor_config import suggested
+        exp=self.re_experiment()
+        selected=self.fixed_fpga or self.fpga_selector.currentData()
+        worker=next((b.worker for f,b in self.bindings_provider().values()
+                     if f=='fpga' and b.worker.name==selected),None)
+        if exp and worker is None:raise ValueError('실행할 FPGA를 먼저 선택하세요.')
+        cached=self.re_jobs.get((self.filename,selected))
+        parameters=deepcopy(cached['parameters']) if cached else saved_parameters(exp,worker.profile) if exp else {}
+        job=source_job(self.source.toPlainText(),self.filename or 'workflow.py',
+                       SPECS[exp]['title'] if exp else 'Workflow',parameters,worker.profile if worker else None)
+        if cached:
+            job['fpga_profiles']=deepcopy(cached['fpga_profiles'])
+            job['monitor']=deepcopy(cached['monitor'])
+        else:job['monitor']=suggested(job)
+        return job
+
+    def configure_re(self):
+        if self.still_running() or not self.re_experiment():return False
+        try:
+            from labremote.ui.workflow_parameters import WorkflowJobDialog
+            from labremote.runtime.re_workflows import model
+            from labremote.devices.fpga.mapping import Profile,scope,settings_path
+            dialog=WorkflowJobDialog(self.current_job(),self,bindings_provider=self.bindings_provider)
+            try:
+                dialog.setWindowTitle('Workflow · 실험 설정과 핀 매핑')
+                dialog.editor.info.setText('적용하면 선택한 FPGA의 해당 실험 설정에 저장합니다. 이미 추가한 Queue 항목은 변경하지 않습니다.')
+                dialog.pin_settings.note.setText('역할과 닉네임 연결을 해당 실험 설정에 저장합니다. FPGA 공통 배선 설정은 변경하지 않습니다.')
+                button=dialog.findChild(QtWidgets.QDialogButtonBox).button(QtWidgets.QDialogButtonBox.Ok)
+                button.setText('실험 설정 저장 · Workflow에 적용')
+                if dialog.exec_()!=QtWidgets.QDialog.Accepted:return False
+                job=dialog.job
+            finally:dialog.deleteLater()
+            exp=self.re_experiment();target=job['parameters']['fpga']
+            if self.fixed_fpga and target!=self.fixed_fpga:raise ValueError('현재 실험 화면의 FPGA와 선택한 FPGA가 다릅니다.')
+            c=model(exp)
+            with scope(Profile(job['fpga_profiles'][target]),exp):
+                c.save_settings(settings_path(c.ROOT/(exp+'.json')),job['parameters']['settings'])
+            self.re_jobs[self.filename,target]=job
+            self.fpga_selector.setCurrentIndex(self.fpga_selector.findData(target))
+            self.status.setText('실험 설정·핀 매핑 저장됨 · '+target)
+            return True
+        except Exception as exc:self.status.setText(str(exc));return False
+
+
     def add_to_queue(self):
         try:
             if self.still_running():raise RuntimeError('실행 완료 후 Queue에 추가하세요.')
@@ -125,7 +190,14 @@ class WorkflowTab(QtWidgets.QWidget):
             selected=self.fixed_fpga or self.fpga_selector.currentData()
             worker=next((bridge.worker for family,bridge in self.bindings_provider().values() if family=='fpga' and bridge.worker.name==selected),None)
             if selected and worker is None:raise ValueError('선택한 FPGA를 연결하세요.')
-            job=source_job(self.source.toPlainText(),self.filename or 'workflow.py','Workflow',{},worker.profile if worker else None)
+            job=self.current_job()
+            if self.re_experiment():
+                from labremote.ui.workflow_parameters import WorkflowJobDialog
+                dialog=WorkflowJobDialog(job,self,bindings_provider=self.bindings_provider)
+                try:
+                    if dialog.exec_()!=QtWidgets.QDialog.Accepted:return
+                    job=dialog.job
+                finally:dialog.deleteLater()
             from labremote.runtime.workflow_queue import validate_plan, target_fpga
             import ast
             uses_fpga=any(isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute) and node.func.attr=='fpga' for node in ast.walk(ast.parse(job['source'])))
@@ -157,7 +229,9 @@ class WorkflowTab(QtWidgets.QWidget):
         with QtCore.QSignalBlocker(self.file_picker):
             self.file_picker.clear()
             files = sorted(p for p in self.workflow_root.glob('*.py') if not p.name.startswith('_'))
-            for path in files: self.file_picker.addItem(path.name, str(path.resolve()))
+            from labremote.runtime.re_workflows import entries
+            for name,path in entries():self.file_picker.addItem(name,str(path.resolve()))
+            for path in files:self.file_picker.addItem(path.name,str(path.resolve()))
         target = previous or (str(self.workflow_root / 'read_windfreak.py') if (self.workflow_root / 'read_windfreak.py').exists()
                               else self.file_picker.itemData(0))
         if target: self.load_path(target, check_unsaved=False)
@@ -202,6 +276,7 @@ class WorkflowTab(QtWidgets.QWidget):
 
     def save_code(self):
         if self.still_running(): return False
+        if self.builtin():return True
         if self.filename is None: return self.save_as()
         try: self._write(self.filename)
         except OSError as error:
@@ -243,9 +318,18 @@ class WorkflowTab(QtWidgets.QWidget):
         if not bindings:
             self.status.setText('실행 불가: 먼저 사용할 장비를 연결하세요.')
             return
+        job=None
+        if self.re_experiment():
+            selected=self.fixed_fpga or self.fpga_selector.currentData()
+            if (self.filename,selected) not in self.re_jobs and not self.configure_re():return
+            try:
+                job=self.current_job()
+                selected=job['parameters']['fpga']
+                bindings={key:value for key,value in self.bindings_provider().items() if value[0] in SUPPORTED_FAMILIES and (value[0]!='fpga' or value[1].worker.name==selected)}
+            except Exception as exc:self.status.setText(str(exc));return
         if not self.save_code(): return
         # Neither later disk edits nor another file selection can change this run.
-        self.thread = WorkflowThread(source, self.filename, bindings, self)
+        self.thread = WorkflowThread(source, self.filename, bindings, self,job=job)
         self.thread.result_ready.connect(self._result)
         self.thread.error_ready.connect(self._error)
         self.thread.finished.connect(self._finished)
@@ -257,7 +341,11 @@ class WorkflowTab(QtWidgets.QWidget):
     def _editing(self, enabled):
         for widget in (self.file_picker, self.load_button, self.reload_button, self.save_button, self.save_as_button):
             widget.setEnabled(enabled)
-        self.source.setReadOnly(not enabled)
+        self.source.setReadOnly(not enabled or self.builtin())
+        self.save_button.setEnabled(enabled and not self.builtin())
+        self.run_button.setText('실행' if self.builtin() else '저장 후 실행')
+        self.conditions_button.setEnabled(enabled and bool(self.re_experiment()))
+        self.queue_button.setEnabled(enabled)
         self.run_button.setEnabled(enabled and self.filename is not None)
         self.stop_button.setEnabled(not enabled)
 

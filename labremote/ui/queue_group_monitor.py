@@ -3,6 +3,7 @@ from labremote.ui.responsive import ScrollTabs
 from copy import deepcopy
 import json
 import numpy as np
+from labremote.runtime.monitor_config import is_ent
 from PyQt5 import QtCore,QtWidgets
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -34,12 +35,12 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         self.mode.addItems(['그룹 누적','최신 회차','회차 선택']);row.addWidget(self.mode);row.addWidget(self.cycle);row.addStretch()
         self.mode.setCurrentIndex(1 if slot.get('monitor',{}).get('view')=='latest' else 0)
         self.mode.currentIndexChanged.connect(self.draw);self.cycle.currentIndexChanged.connect(self.draw)
-        self.figure,self.canvas=chart(self.layout_,1150 if self.kind=='ent' else 400)
+        self.figure,self.canvas=chart(self.layout_,1150 if is_ent(self.kind) else 400)
         self.draw_pending=False
-        if self.kind=='ent':
+        if is_ent(self.kind):
             from labremote.experiments.entanglement.view import EntanglementView
             self.live_view=EntanglementView(self,self.figure,self.canvas,self.summary.setText)
-        if self.kind=='ent':self.canvas.setMinimumWidth(950)
+        if is_ent(self.kind):self.canvas.setMinimumWidth(950)
         self.update_slot(slot)
 
     def update_slot(self,slot):
@@ -53,7 +54,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         if signature is None:signature=json.dumps(slot,sort_keys=True,ensure_ascii=False)
         if signature==self.signature:return
         self.signature=signature
-        if self.kind in ('ent','ion','spam'):
+        if is_ent(self.kind) or self.kind in ('ion','spam'):
             selected=self.cycle.currentData()
             with QtCore.QSignalBlocker(self.cycle):
                 self.cycle.clear()
@@ -83,12 +84,12 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         self.draw_pending=False
         try:
             self.cycle.setEnabled(self.mode.currentIndex()==2)
-            if self.kind!='ent':self.figure.clear()
+            if not is_ent(self.kind):self.figure.clear()
             if self.kind=='ion':self.draw_ion()
             elif self.kind=='spam':self.draw_spam()
             else:self.draw_ent()
-            if self.kind!='ent':self.figure.tight_layout(pad=1.5)
-            if self.kind!='ent':self.canvas.draw_idle()
+            if not is_ent(self.kind):self.figure.tight_layout(pad=1.5)
+            if not is_ent(self.kind):self.canvas.draw_idle()
         except Exception as exc:self.summary.setText('결과 표시 오류: '+str(exc))
 
     def showEvent(self,event):
@@ -143,7 +144,9 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         from labremote.experiments.entanglement.config import defaults
         c,d=self.ent_data()
         if d is None:
-            c=defaults();d=Accumulator(c).data()
+            from labremote.runtime.re_workflows import model
+            experiment='entanglement_no_mirror' if self.kind=='ent_without_mirror' else 'entanglement'
+            c=self.slot.get('preview_settings') or model(experiment).defaults();d=Accumulator(c).data()
             self.summary.setText('얽힘 결과 대기 · 완료된 FPGA batch만 누적')
         else:
             basis='ZZ' if c['basis']=='zz' else f"MW detuned · phase {c['phase_magnitude_deg']:g}°"
@@ -276,7 +279,7 @@ class GroupDashboard(QtWidgets.QWidget):
                 if r['kind']=='ion' and r['samples']:parts.append(r['samples'][-1]['decision']+f" ({len(r['samples'])} measurements)")
                 elif r['kind']=='spam':
                     f=r['analysis'].get('spam_fidelity');parts.append(r['chamber']+' '+(f'{f:.2%}' if f is not None else '—'))
-                elif r['kind']=='ent':parts.append(r['_summary'] if '_summary' in r else f"{sum(b['heralded'] for b in r['batches'])} herald / {sum(b['attempts'] for b in r['batches']):,} trials")
+                elif is_ent(r['kind']):parts.append(r['_summary'] if '_summary' in r else f"{sum(b['heralded'] for b in r['batches'])} herald / {sum(b['attempts'] for b in r['batches']):,} trials")
             if not parts:parts=[s.get('result',{}).get('reason',s.get('reason',''))]
             values=[s.get('group_iteration',s['job_repeat']),s['name'],s['job_repeat'],s['status'],' · '.join(parts),f"{s['elapsed_s']:.2f}" if 'elapsed_s' in s else '']
             for col,v in enumerate(values):

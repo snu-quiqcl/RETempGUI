@@ -23,31 +23,12 @@ class EntanglementParameters(QtWidgets.QWidget):
         self.info.setWordWrap(True);layout.addWidget(self.info)
         scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);layout.addWidget(scroll,1)
         body=QtWidgets.QWidget();scroll.setWidget(body);grid=QtWidgets.QGridLayout(body)
-        groups={}
-        for title,row,col in [('장비 · 측정 basis',0,0),('측정 횟수',0,1),('시퀀스 시간',1,0),('검출 · 판정',1,1)]:
-            box=QtWidgets.QGroupBox(title);form=QtWidgets.QFormLayout(box);grid.addWidget(box,row,col)
-            groups[title]=form
-        self.fpga=QtWidgets.QLineEdit('fpga_local');groups['장비 · 측정 basis'].addRow('FPGA 장비',self.fpga)
-        self.basis=QtWidgets.QComboBox();self.basis.addItem('ZZ basis','zz');self.basis.addItem('MW detuned','mw_detuned')
-        groups['장비 · 측정 basis'].addRow('측정 basis',self.basis)
-        self.fields={}
-        phase={'detuning_hz','phase_magnitude_deg','pi_ea_us','pi_ec_us'}
-        counts={'batches','groups_per_loop','inner_trials','fpga_loops','timeout_s'}
-        detection={'decay_lower_a','decay_lower_c','coincidence_half_window_bins','detection_us','threshold_ea','threshold_ec'}
-        labels={'phase_magnitude_deg':'위상 크기 (deg)','detuning_hz':'MW detuning (Hz)',
-                'pi_ea_us':'EA π 시간 (µs)','pi_ec_us':'EC π 시간 (µs)',
-                'batches':'Batches / workflow','groups_per_loop':'Groups / FPGA loop',
-                'inner_trials':'Trials / group','fpga_loops':'FPGA loops / batch'}
-        for key,label,lo,hi,decimals in self.config_module.FIELDS:
-            field=QtWidgets.QDoubleSpinBox() if decimals else QtWidgets.QSpinBox()
-            if decimals:field.setDecimals(decimals)
-            field.setRange(lo,hi);field.setKeyboardTracking(False)
-            if key.startswith('pi_'):field.setSingleStep(.02)
-            elif key=='mirror_wait_ms':field.setSingleStep(.5)
-            elif key=='phase_magnitude_deg':field.setSingleStep(30)
-            elif key.endswith('_us'):field.setSingleStep(.01)
-            section='장비 · 측정 basis' if key in phase else '측정 횟수' if key in counts else '검출 · 판정' if key in detection else '시퀀스 시간'
-            groups[section].addRow(labels.get(key,label),field);self.fields[key]=field
+        form=QtWidgets.QFormLayout();grid.addLayout(form,0,0)
+        self.fpga=QtWidgets.QLineEdit('fpga_local');form.addRow('FPGA 장비',self.fpga)
+        from labremote.experiments.entanglement.parameters import add_fields,readout_note
+        self.basis,self.fields=add_fields(form,self.config_module)
+        experiment='entanglement_no_mirror' if self.config_module.__name__.endswith('entanglement_no_mirror.config') else 'entanglement'
+        note=QtWidgets.QLabel(readout_note(experiment));note.setWordWrap(True);layout.addWidget(note)
         self.summary=QtWidgets.QLabel();self.summary.setWordWrap(True);layout.addWidget(self.summary)
         self.basis.currentIndexChanged.connect(self.update_summary)
         for field in self.fields.values():field.valueChanged.connect(self.update_summary)
@@ -82,7 +63,7 @@ class EntanglementParameters(QtWidgets.QWidget):
         return value
 
     @editing_settings()
-    def update_summary(self):
+    def update_summary(self,*_):
         mw=self.basis.currentData()=='mw_detuned'
         for key in ('detuning_hz','phase_magnitude_deg','pi_ea_us','pi_ec_us'):self.fields[key].setEnabled(mw)
         try:
@@ -147,7 +128,9 @@ class MonitorSettings(QtWidgets.QWidget):
         from labremote.runtime.monitor_config import settings
         value=settings(job);form=QtWidgets.QFormLayout(self)
         self.kind=QtWidgets.QComboBox()
-        for label,key in [('없음','none'),('Ion Check','ion'),('SPAM','spam'),('RE','ent')]:self.kind.addItem(label,key)
+        from labremote.runtime.monitor_config import LABELS
+        for key,label in LABELS.items():
+            if key!='ent' or value['kind']=='ent':self.kind.addItem(label,key)
         self.kind.setCurrentIndex(self.kind.findData(value['kind']))
         self.title=QtWidgets.QLineEdit(value['title']);self.title.setPlaceholderText('비워 두면 Workflow 이름 사용')
         self.view=QtWidgets.QComboBox();self.view.addItem('그룹 누적','cumulative');self.view.addItem('최신 회차','latest')
@@ -182,6 +165,8 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             kind={'queue_entanglement.py':'entanglement','re.py':'entanglement','ion_checks.py':'ion','ion_check.py':'ion','spam.py':'spam'}.get(Path(job['filename']).name)
         if self.base.get('kind')=='PhaseHoldTab':kind='phase_hold'
         if self.base.get('kind')=='IonCheckTab':kind='ion'
+        from labremote.runtime.re_workflows import experiment
+        kind=experiment(job) or kind
         self.kind=kind
         profile_error=''
         self.setWindowTitle('Queue 항목 편집');self.resize(1000,860)
@@ -206,11 +191,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         if migration_note:
             notice=QtWidgets.QLabel(migration_note);notice.setWordWrap(True);layout.insertWidget(1,notice)
         self.editor=None;self.settings_config=config;self.settings_filename='entanglement.json'
+        if kind=='entanglement_no_mirror':
+            from labremote.experiments.entanglement_no_mirror import config as no_mirror
+            self.settings_config=no_mirror;self.settings_filename='entanglement_no_mirror.json'
         if kind=='phase_hold':
             from labremote.experiments.phase_shifter.hold_parameters import PhaseHoldParameters
             self.editor=PhaseHoldParameters();self.tabs.addTab(self.editor,'실험 조건')
             if not self.base:self.base=self.editor.defaults()
-        elif self.base.get('kind') and isinstance(self.base.get('settings'),dict) and kind!='ion':
+        elif self.base.get('kind') and isinstance(self.base.get('settings'),dict) and kind not in ('ion','entanglement','entanglement_no_mirror'):
             from .queue_experiment_parameters import ExperimentParameters
             self.editor=ExperimentParameters(self.base);self.tabs.addTab(self.editor,'실험 조건')
         elif kind=='setup':
@@ -234,7 +222,11 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             self.editor=SpamParameters();self.tabs.addTab(self.editor,'SPAM 설정 · devices.parameters')
         if not self.base:
             try:
-                if kind in ('entanglement','entanglement_no_mirror','ion'):self.base={'fpga':'fpga_local','settings':self.settings_config.load()}
+                if kind in ('entanglement','entanglement_no_mirror') and job.get('fpga_profiles',{}).get(self.original_fpga):
+                    from labremote.runtime.re_workflows import saved_parameters
+                    from labremote.devices.fpga.mapping import Profile
+                    self.base=saved_parameters(kind,Profile(job['fpga_profiles'][self.original_fpga]))
+                elif kind in ('entanglement','entanglement_no_mirror','ion'):self.base={'fpga':self.original_fpga or 'fpga_local','settings':self.settings_config.load()}
                 elif kind=='spam':
                     self.base=self.editor.defaults()
             except Exception as exc:profile_error=str(exc)
@@ -302,6 +294,15 @@ class WorkflowJobDialog(QtWidgets.QDialog):
 
     def update_fpga_preview(self,*_):
         target=self.fpga_target.currentData()
+        if (self.kind in ('entanglement','entanglement_no_mirror') and 'settings' not in self.job['parameters']
+                and target and target!=getattr(self,'_seeded_re_target',None) and target in self.pin_settings.documents):
+            try:
+                from labremote.runtime.re_workflows import saved_parameters
+                from labremote.devices.fpga.mapping import Profile
+                self.base=saved_parameters(self.kind,Profile(self.pin_settings.documents[target]))
+                self.editor.populate(self.base);self.pin_settings.set_parameters(self.base,replace_mapping=True)
+                self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2));self._seeded_re_target=target
+            except Exception as exc:self.error.setText(str(exc))
         from labremote.runtime.workflow_queue import requires_fpga
         self.fpga_target.setItemText(0,'FPGA 선택 필요' if requires_fpga(dict(self.job,parameters=self.base)) else 'FPGA 미사용')
         if self.bindings_provider is not None and hasattr(self.editor,'fpga'):

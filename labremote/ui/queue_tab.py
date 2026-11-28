@@ -24,12 +24,18 @@ class QueueTab(QtWidgets.QWidget):
         layout=QtWidgets.QVBoxLayout(self);layout.addWidget(QtWidgets.QLabel('각 작업은 독립된 main(devices) workflow입니다. 추가한 Python 소스와 JSON 변수를 사본으로 보관합니다.'))
         row=QtWidgets.QHBoxLayout();layout.addLayout(row);self.edit_buttons=[]
         for label,fn in [('Workflow 추가',self.add_file),('편집',self.edit_job),('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('Queue 불러오기',self.load_plan),('Queue 저장',self.save_plan)]:
-            b=QtWidgets.QPushButton(label);b.clicked.connect(fn);row.addWidget(b);self.edit_buttons.append(b)
+            b=QtWidgets.QPushButton(label)
+            if label=='Workflow 추가':self.install_workflow_menu(b)
+            else:b.clicked.connect(fn)
+            row.addWidget(b);self.edit_buttons.append(b)
         self.table=QtWidgets.QTableWidget(0,7);self.table.setHorizontalHeaderLabels(['Workflow','반복','실패 정책','파일','Monitor','실행 FPGA','핀 매핑'])
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents);self.table.horizontalHeader().setStretchLastSection(True);layout.addWidget(self.table,1)
         row=QtWidgets.QHBoxLayout();layout.addLayout(row)
         for label,fn in [('선택 항목 묶기',self.group_selected),('그룹 해제',self.ungroup),('복제',self.duplicate),('선택 그룹 안에 추가',lambda:self.add_file(top_level=False))]:
-            button=QtWidgets.QPushButton(label);button.clicked.connect(fn);row.addWidget(button);self.edit_buttons.append(button)
+            button=QtWidgets.QPushButton(label)
+            if label=='선택 그룹 안에 추가':self.install_workflow_menu(button,top_level=False)
+            else:button.clicked.connect(fn)
+            row.addWidget(button);self.edit_buttons.append(button)
         row.addWidget(QtWidgets.QLabel('Workflow 추가는 그룹 밖에 추가합니다. 그룹 안에 넣으려면 그룹을 선택하고 ‘선택 그룹 안에 추가’를 누르세요.'))
         self._row_refs=[]
         self.table.cellDoubleClicked.connect(lambda *_:self.edit_job())
@@ -59,9 +65,9 @@ class QueueTab(QtWidgets.QWidget):
                 target=target_fpga(j)
                 if target:label+=' · '+target
             values=(label,j['repeat'],j['on_failure'],f"{len(j['jobs'])} workflows" if is_group(j) else j['filename'])
-            from labremote.runtime.monitor_config import settings
+            from labremote.runtime.monitor_config import settings,LABELS
             m=settings(j) if not is_group(j) else None
-            values+=('—' if m is None else {'none':'없음','ion':'Ion Check','spam':'SPAM','ent':'RE'}[m['kind']]+(' · '+m['title'] if m['title'] else ''),)
+            values+=('—' if m is None else LABELS[m['kind']]+(' · '+m['title'] if m['title'] else ''),)
             if is_group(j):values+=('항목별 지정','항목별 저장')
             else:
                 from labremote.runtime.workflow_queue import requires_fpga
@@ -124,16 +130,27 @@ class QueueTab(QtWidgets.QWidget):
             validate_plan(dict(schema_version=2,repeat=self.repeat.value(),jobs=candidate))
             items[i]=group;self.dirty=True;self.refresh(ref)
         except Exception as exc:self.status.setText('설정 오류: '+str(exc))
-    def add_file(self,checked=False,*,top_level=True):
+    def install_workflow_menu(self,button,*,top_level=True):
+        from labremote.runtime.re_workflows import entries,SPECS
+        menu=QtWidgets.QMenu(button)
+        for experiment,(_,path) in zip(SPECS,entries()):
+            action=menu.addAction(SPECS[experiment]['title'])
+            action.triggered.connect(lambda checked=False,p=path:self.add_file(top_level=top_level,path=str(p)))
+        menu.addSeparator();menu.addAction('Python 파일에서 추가…',lambda:self.add_file(top_level=top_level))
+        button.setMenu(menu)
+
+    def add_file(self,checked=False,*,top_level=True,path=None):
         if self.still_running():return
         selected=self.selected()
         top=selected[2][0] if selected else None
         if not top_level and (top is None or not is_group(self.jobs[top])):
             self.status.setText('Workflow를 추가할 Repeat Group을 선택해 주세요.');return
-        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Add workflow',str(Path(__file__).resolve().parents[1]/'workflow'),'Python (*.py)')
+        if path is None:path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Add workflow',str(Path(__file__).resolve().parents[1]/'workflow'),'Python (*.py)')
         if path:
             try:
-                job=freeze_job(path)
+                from labremote.runtime.re_workflows import entries
+                name=next((name for name,p in entries() if p.resolve()==Path(path).resolve()),None)
+                job=freeze_job(path,name=name)
                 from labremote.runtime.workflow_queue import target_fpga
                 target=target_fpga(job)
                 if target:

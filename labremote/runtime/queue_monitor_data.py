@@ -6,20 +6,13 @@ import json
 import os
 from pathlib import Path
 from .workflow_queue import expand_steps, workflow_jobs,validate_plan
+from .monitor_config import is_ent, result_kind, matches
 
 
 def kinds(job):
     """Inspect source without importing it. Unknown workflows retain a generic panel."""
-    found=set()
-    try:
-        tree=ast.parse(job.get('source',''))
-        for node in ast.walk(tree):
-            if isinstance(node,ast.Call):
-                name=getattr(node.func,'attr',getattr(node.func,'id',''))
-                found.update({'run_ion_check':'ion','run_spam':'spam','run_entanglement':'ent','run_entanglement_no_mirror':'ent'}.get(name, '').split())
-    except (ValueError,SyntaxError):pass
-    if Path(job.get('filename','')).name=='ion_check_workflow.py':found.add('ion')
-    return sorted(found) or ['generic']
+    from .monitor_config import detected
+    return sorted(detected(job)) or ['generic']
 
 
 def preview(plan):
@@ -59,7 +52,7 @@ def pool_ent(records):
     if not records:return None,None
     c=records[0]['settings'];acc=Accumulator(c)
     for record in records:
-        if record['settings']!=c:raise ValueError('Different entanglement settings cannot be pooled')
+        if record['settings']!=c or record.get('fpga')!=records[0].get('fpga'):raise ValueError('Different entanglement settings or FPGA cannot be pooled')
         for b in record['batches']:
             acc.add(dict(b,batch=len(acc.batches)))
     return c,acc.data()
@@ -75,12 +68,13 @@ class EntPool:
         if not records:
             self.__init__();return self.value
         c=records[0]['settings']
-        if any(r['settings']!=c for r in records):raise ValueError('Different entanglement settings cannot be pooled')
+        if any(r['settings']!=c or r.get('fpga')!=records[0].get('fpga') for r in records):raise ValueError('Different entanglement settings or FPGA cannot be pooled')
         batches=[b for r in records for b in r['batches']]
-        prefix=(self.settings==c and len(batches)>=len(self.batches)
+        identity=(c,records[0].get('fpga'))
+        prefix=(self.settings==identity and len(batches)>=len(self.batches)
                 and all(a is b or a==b for a,b in zip(self.batches,batches)))
         if prefix and len(batches)==len(self.batches):return self.value
-        if not prefix:self.acc=Accumulator(c);self.batches=[];self.settings=c
+        if not prefix:self.acc=Accumulator(c);self.batches=[];self.settings=deepcopy(identity)
         for b in batches[len(self.batches):]:self.acc.add(dict(b,batch=len(self.acc.batches)))
         self.batches=batches;self.value=(c,self.acc.data())
         return self.value
@@ -137,7 +131,7 @@ class ResultStore:
         self.revision+=1
         for record in result:
             record['_revision']=self.revision
-            if record['kind']=='ent':
+            if is_ent(record['kind']):
                 record['_summary']=f"{sum(b['heralded'] for b in record['batches'])} herald / {sum(b['attempts'] for b in record['batches']):,} trials"
         if not errors:self.record_cache[key]=(signature,result)
         else:self.record_cache.pop(key,None)
@@ -171,7 +165,7 @@ class ResultStore:
                     with editing_settings():c=validate(d['configuration']['settings'])
                     batches=[b['measurement'] for b in d['batches'] if b['status']=='completed']
                     # Failed/aborted FPGA batches are excluded, including during live reads.
-                    output.append(dict(kind='ent',settings=c,batches=batches,status=d['status'],path=str(path),
+                    output.append(dict(kind=result_kind(kind),fpga=d['configuration'].get('fpga'),settings=c,batches=batches,status=d['status'],path=str(path),
                                        excluded=sum(b['status']!='completed' for b in d['batches'])))
                 elif kind=='spam':
                     c=self.read(base/'configuration.json')['settings'];a=self.read(base/'analysis.json')
@@ -220,17 +214,20 @@ class ResultStore:
             monitor=monitors.get(jid,{})
             if not expected:continue
             for kind in expected:
-                group['slots'].setdefault((jid,kind,''),dict(job_id=jid,name=monitor.get('title') or job['name'],monitor=monitor,kind=kind,profile='',records=[]))
+                group['slots'].setdefault((jid,kind,''),dict(job_id=jid,name=monitor.get('title') or job['name'],monitor=monitor,kind=kind,profile='',records=[],preview_settings=deepcopy(job.get('parameters',{}).get('settings'))))
             if step['status'] in ('pending','skipped'):continue
             records=self.records(state,step,warnings)
-            if not any(r['kind'] in expected for r in records) and step['status']=='completed':
+            if not any(matches(e,r['kind']) for e in expected for r in records) and step['status']=='completed':
                 warnings.append(f'{step["step_id"]} · 완료된 workflow의 측정 결과 파일을 찾지 못했습니다.')
             for record in records:
                 kind=record['kind']
-                if kind not in expected:
+                if not any(matches(e,kind) for e in expected):
                     warnings.append(f'{step["step_id"]} · Monitor 종류와 결과 종류가 다릅니다: {expected[0]} / {kind}')
                     continue
-                profile=settings_key(record['settings'])
+                if is_ent(kind) and not record.get('fpga'):
+                    from .workflow_queue import target_fpga
+                    record=dict(record,fpga=target_fpga(job))
+                profile=settings_key(dict(settings=record['settings'],fpga=record.get('fpga'))) if is_ent(kind) else settings_key(record['settings'])
                 slot=group['slots'].setdefault((jid,kind,profile),dict(job_id=jid,name=monitor.get('title') or job['name'],monitor=monitor,kind=kind,profile=profile,records=[]))
                 record=dict(record,step_id=step['step_id'],cycle=step.get('group_iteration',step['job_repeat']),
                             job_repeat=step['job_repeat'],step_status=step['status'])
@@ -240,7 +237,7 @@ class ResultStore:
             slots=group['slots']
             for key in list(slots):
                 jid,kind,profile=key
-                if not profile and any(k[0]==jid and k[1]==kind and k[2] for k in slots):del slots[key]
+                if not profile and any(k[0]==jid and matches(kind,k[1]) and k[2] for k in slots):del slots[key]
                 elif kind=='generic' and any(k[0]==jid and k[1]!='generic' for k in slots):del slots[key]
             # SPAM EA/EC have distinct settings; keep them in one workflow panel,
             # but retain profile identity for independent weighted statistics.
@@ -257,7 +254,7 @@ class ResultStore:
                 # Small GUI revision token; never serialize all photon histograms there.
                 slot['_signature']=(slot['name'],slot['variant'],json.dumps(slot['monitor'],sort_keys=True),
                     tuple((r['path'],r['_revision'],r['cycle'],r['step_id'],r['step_status']) for r in slot['records']))
-                if slot['kind']=='ent':
+                if is_ent(slot['kind']):
                     cycles={}
                     for record in slot['records']:cycles.setdefault(record['cycle'],[]).append(record)
                     views={}

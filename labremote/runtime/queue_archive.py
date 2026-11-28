@@ -6,6 +6,7 @@ from pathlib import Path
 import hashlib
 import json
 import threading
+from .monitor_config import is_ent
 
 LAYOUT='group_common_v2'
 CURRENT=ContextVar('queue_archive',default=None)
@@ -85,7 +86,8 @@ def hydrate(state,root=None):
             job['fpga_profiles']={name:deepcopy(profiles[key]) for name,key in job.pop('fpga_profile_refs',{}).items()}
         if doc['ungrouped']:items.update((j['id'],j) for j in group['jobs'])
         else:items[group['id']]=group
-    state['plan']=dict(state['plan_metadata'],jobs=[items[key] for key in state['job_order']])
+    from labremote.configuration.experiment_settings import plan as decode_plan
+    state['plan']=decode_plan(dict(state['plan_metadata'],jobs=[items[key] for key in state['job_order']]),encode=False)
     state['folder']=str(root)
     return state
 
@@ -110,7 +112,7 @@ def finalize_ready(state,force=False):
             for record in store.records(state,step,warnings):
                 if record['kind']=='spam' and 'run_spam_scan' in jobs.get(step['job_id'],{}).get('source',''):continue
                 from .queue_monitor_data import settings_key
-                profile='' if record['kind']=='spam' else settings_key(record['settings'])
+                profile='' if record['kind']=='spam' else settings_key(dict(settings=record['settings'],fpga=record.get('fpga'))) if is_ent(record['kind']) else settings_key(record['settings'])
                 slot=slots.setdefault((step['job_id'],record['kind'],profile),dict(job_id=step['job_id'],kind=record['kind'],profile=profile,records=[]))
                 slot['records'].append(dict(record,cycle=step.get('group_iteration',step['job_repeat'])))
         for slot in slots.values():slot['variant']=sum(s['job_id']==slot['job_id'] and s['kind']==slot['kind'] for s in slots.values())>1
@@ -135,7 +137,7 @@ def export_group(snapshot,partial):
             directory=root/step['directory']
             if directory.name.startswith('run_'):directory=directory.parent
             directory=directory.parent
-            if slot['kind']=='ent':
+            if is_ent(slot['kind']):
                 from labremote.experiments.entanglement.plotting import EntanglementPlot
                 c,data=pool_ent(records)
                 if not data['batches']:continue

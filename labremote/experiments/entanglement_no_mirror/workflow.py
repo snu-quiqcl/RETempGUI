@@ -6,4 +6,4 @@ def main(devices):
     if not p.get('fpga') or not p.get('settings'):
         raise ValueError('RE without flip mirror requires FPGA and frozen settings')
     return devices.fpga(p['fpga']).run_entanglement_no_mirror(
-        settings=p['settings'],directory=devices.run_directory).wait()
+        settings=p['settings'],directory=devices.run_directory or p.get('directory')).wait()

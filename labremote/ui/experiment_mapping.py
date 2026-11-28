@@ -87,6 +87,8 @@ class MappingEditor(W.QGroupBox):
                     box.refresh()
                     box.setCurrentText(routing.get(self._settings,spec.path))
                 self.table.item(row,0).setText('PMT1' if self.experiment in ('rabi','spam') and spec.role=='PMT' else spec.role)
+                if self.experiment=='entanglement' and spec.role in ('PMTFA','PMTFC'):
+                    self.table.item(row,0).setText('EA readout PMT' if spec.role=='PMTFA' else 'EC readout PMT')
                 if self.experiment=='entanglement_no_mirror' and spec.role in ('PMTFA','PMTFC'):
                     self.table.item(row,0).setText('Readout PMT 1' if spec.role=='PMTFA' else 'Readout PMT 2')
                 self.table.item(row,4).setText(spec.use)

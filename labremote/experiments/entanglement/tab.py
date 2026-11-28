@@ -17,7 +17,7 @@ class EntanglementTab(QtWidgets.QWidget):
     mapping_experiment='entanglement'
     title='RE with flip mirror'
     settings_tags={}
-    workflow_path=PROJECT_ROOT/'labremote/workflow/queue_entanglement.py'
+    workflow_path=Path(__file__).with_name('workflow.py')
     mapping_note='Hardware: 이 FPGA의 실험 신호 매핑을 사용합니다.\nDecay: PMTA/PMTC + SYNC. State readout: PMTFA/PMTFC.\nBright = counts > threshold; 1=bright, 0=dark.\nStop: CCD EC=1/EA=0; MW OFF; AOMA/C/B/M ON; 7G ON; 2G OFF.'
 
     def __init__(self,worker,parent=None):
@@ -28,15 +28,8 @@ class EntanglementTab(QtWidgets.QWidget):
         split=QtWidgets.QSplitter(); root.addWidget(split,1)
         scroll=QtWidgets.QScrollArea(); scroll.setWidgetResizable(True); scroll.setMinimumWidth(355); split.addWidget(scroll)
         self.settings_panel=QtWidgets.QWidget(); scroll.setWidget(self.settings_panel); form=QtWidgets.QFormLayout(self.settings_panel)
-        self.basis=QtWidgets.QComboBox(); self.basis.addItem('ZZ basis','zz'); self.basis.addItem('MW detuned','mw_detuned'); form.addRow('Measurement basis',self.basis)
-        for key,label,lo,hi,decimals in self.config_module.FIELDS:
-            box=QtWidgets.QDoubleSpinBox() if decimals else QtWidgets.QSpinBox()
-            if decimals:box.setDecimals(decimals)
-            box.setRange(lo,hi); box.setKeyboardTracking(False)
-            if key.startswith('pi_'):box.setSingleStep(.02)
-            elif key=='mirror_wait_ms':box.setSingleStep(.5)
-            elif key.endswith('_us'):box.setSingleStep(.01)
-            form.addRow(label,box); self.fields[key]=box
+        from .parameters import add_fields
+        self.basis,self.fields=add_fields(form,self.config_module)
         self.trial_note=QtWidgets.QLabel(); self.trial_note.setWordWrap(True); form.addRow(self.trial_note)
         self.phase_note=QtWidgets.QLabel(); self.phase_note.setWordWrap(True); form.addRow(self.phase_note)
         for box in self.fields.values():box.valueChanged.connect(self.update_trials)

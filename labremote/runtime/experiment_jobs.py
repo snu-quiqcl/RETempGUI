@@ -17,6 +17,7 @@ def source_job(source,filename,name,parameters,profile):
 def make_job(view,worker,title):
     from labremote.ui.workflow_tab import WorkflowTab
     if isinstance(view,WorkflowTab):
+        if view.re_experiment():return view.current_job()
         return source_job(view.source.toPlainText(),view.filename or 'workflow.py',title,{},worker.profile)
     # Composite pages share one FPGA selection but freeze the active sub-page.
     if type(view).__name__ in ('MicromotionTab','EtcTab'):view=view.currentWidget()
