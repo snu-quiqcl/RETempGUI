@@ -307,30 +307,41 @@ def wait(seconds):
         threading.Event().wait(min(remaining, .05))
 
 
+def device_parameter_spec(family, path, instrument_name, *, spec=None):
+    """The same PC-owned bounds for editors, preflight and parameter writes."""
+    spec = spec or registry().get(family, path)
+    if not instrument_name:
+        return spec
+    from labremote.configuration.device_config import load_device_config, optional_number, sg_power_cap_dbm
+    lower = upper = None
+    if family == 'windfreak' and path.endswith('power_dbm'):
+        c = load_device_config(family, instrument_name)
+        upper = optional_number(c, 'channels', path.split('.')[0].removeprefix('channel_'), 'limits', 'max_power_dbm')
+    elif family == 'sg384' and path in ('bnc_power_dbm', 'n_power_dbm'):
+        upper = sg_power_cap_dbm(load_device_config(family, instrument_name), path.split('_')[0].upper())
+    elif family == 'keithley' and path.endswith(('.target_voltage', '.target_current', '.voltage_limit')):
+        c = load_device_config(family, instrument_name)
+        key = 'max_current_a' if path.endswith('target_current') else 'max_voltage_v'
+        upper = optional_number(c, 'channels', path.split('.')[0].upper(), 'limits', key)
+    elif family == 'mdt' and path in ('x.voltage', 'y.voltage', 'z.voltage'):
+        c = load_device_config(family, instrument_name)
+        lower = optional_number(c, 'limits', 'min_voltage')
+        upper = optional_number(c, 'limits', 'max_voltage')
+    if lower is not None:
+        spec = replace(spec, minimum=max(lower, spec.minimum) if spec.minimum is not None else lower)
+    if upper is not None:
+        spec = replace(spec, maximum=min(upper, spec.maximum) if spec.maximum is not None else upper)
+    if spec.minimum is not None and spec.maximum is not None and spec.minimum > spec.maximum:
+        raise ValueError(f'{instrument_name} / {path}: inconsistent configured limits')
+    return spec
+
+
 class ManagedParameter:
     def __init__(self, target, identity, family, path, library=LIBRARY, spec=None, device=None):
         self.target, self.identity, self.family, self.path = target, identity, family, path
         self.device = device
         self.key = (identity, path)
-        self.spec = spec or registry().get(family, path)
-        if spec is None and family == 'windfreak' and path.endswith('power_dbm'):
-            from labremote.configuration.device_config import load_rf_device_config, optional_number
-            config = load_rf_device_config(family, identity[-1])
-            cap = optional_number(config, 'channels', path.split('.')[0].removeprefix('channel_'),
-                                  'limits', 'max_power_dbm')
-            if cap is not None:
-                self.spec = replace(self.spec, maximum=min(cap, self.spec.maximum) if self.spec.maximum is not None else cap)
-        if spec is None and family == 'sg384' and path in ('bnc_power_dbm', 'n_power_dbm'):
-            from labremote.configuration.device_config import load_rf_device_config, sg_power_cap_dbm
-            cap = sg_power_cap_dbm(load_rf_device_config(family, identity[-1]), path.split('_')[0].upper())
-            if cap is not None:
-                self.spec = replace(self.spec, maximum=min(cap, self.spec.maximum))
-        if spec is None and family=='keithley' and path.endswith(('.target_voltage','.target_current','.voltage_limit')):
-            from labremote.configuration.device_config import load_rf_device_config,optional_number
-            config=load_rf_device_config(family,identity[-1])
-            key='max_current_a' if path.endswith('target_current') else 'max_voltage_v'
-            cap=optional_number(config,'channels',path.split('.')[0].upper(),'limits',key)
-            if cap is not None:self.spec=replace(self.spec,maximum=min(cap,self.spec.maximum))
+        self.spec = spec or device_parameter_spec(family, path, identity[-1])
         if family == 'fpga' and path.startswith('outputs.'):
             from labremote.devices.fpga.mapping import OUTPUTS
             name = path.split('.', 1)[1]

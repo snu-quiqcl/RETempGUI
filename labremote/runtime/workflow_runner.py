@@ -17,14 +17,19 @@ def _run_workflow(bindings, workflow, *, on_event=None, stop_event=None, paramet
     group = WorkflowGroup(stop_event, on_event)
     group.owner.cancellation=group.stop
     devices = Devices(bindings, group=group, single_fpga=True, fpga_id=fpga_id)
-    if fpga_id is not None:devices.fpga(fpga_id)
+    selected_fpga=devices.fpga(fpga_id) if fpga_id is not None else None
     from copy import deepcopy
     devices.parameters=deepcopy(parameters or {})
     devices.run_directory=run_directory
     devices.queue_context=deepcopy(queue_context or {})
     try:
         if group.stop.is_set():raise OperationCancelled("Workflow cancelled before execution")
-        value=workflow(devices)
+        from contextlib import nullcontext
+        from labremote.devices.fpga.mapping import FROZEN,scope
+        # Frozen workflows also validate pins before submitting their first API call.
+        profile=FROZEN.get().get(selected_fpga.worker.name,selected_fpga.worker.profile) if selected_fpga is not None else None
+        with scope(profile) if profile is not None else nullcontext():
+            value=workflow(devices)
         group.finish()
         from .workflow_result import normalize
         return normalize(value)

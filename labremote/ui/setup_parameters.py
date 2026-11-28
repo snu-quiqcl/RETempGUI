@@ -1,12 +1,20 @@
-"""Offline editor: connected bindings supply names; no hardware calls on edit."""
+"""Offline editor: selected device profiles and execution bounds, without I/O."""
 from copy import deepcopy
+import json
 from PyQt5 import QtCore,QtWidgets
 from labremote.runtime.setup_workflow import catalogue,validate
+from labremote.configuration.device_config import operation_config
 
 
 class SetupParameters(QtWidgets.QWidget):
-    def __init__(self,bindings_provider=None):
-        super().__init__();self.bindings_provider=bindings_provider or (lambda:{});self.rows=[];self.available=[];self.catalogs={}
+    changed=QtCore.pyqtSignal()
+
+    def __init__(self,bindings_provider=None,*,profiles=None):
+        super().__init__();self.bindings_provider=bindings_provider or (lambda:{})
+        self.rows=[];self.available=[];self.workers={};self.catalogs={}
+        self._saved_profiles=deepcopy(profiles or {})
+        self.profiles_provider=lambda:self._saved_profiles
+        self.device_note=''
         layout=QtWidgets.QVBoxLayout(self);bar=QtWidgets.QHBoxLayout();layout.addLayout(bar)
         self.add_button=QtWidgets.QPushButton('설정 추가');bar.addWidget(self.add_button);self.add_button.clicked.connect(self.add_row)
         for title,callback in [('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('연결 장비 새로고침',self.refresh_devices)]:
@@ -23,36 +31,43 @@ class SetupParameters(QtWidgets.QWidget):
     @staticmethod
     def defaults():return dict(schema_version=1,steps=[],settle_s=1.)
 
-    def options(self,family):
-        if family not in self.catalogs:self.catalogs[family]=catalogue(family)
-        return self.catalogs[family]
+    def profile_documents(self):
+        from labremote.devices.fpga.mapping import Profile
+        documents={name:w.profile.document() for (family,name),w in self.workers.items()
+                   if family=='fpga' and isinstance(getattr(w,'profile',None),Profile)}
+        # A Queue snapshot wins over the currently connected board configuration.
+        documents.update(deepcopy(self.profiles_provider() or {}))
+        return documents
 
-    def refresh_devices(self):
+    def options(self,family,device=''):
+        document=self.profile_documents().get(device) if family=='fpga' else None
+        key=(family,device,json.dumps(document,sort_keys=True))
+        if key not in self.catalogs:self.catalogs[key]=catalogue(family,device,profile=document)
+        return self.catalogs[key]
+
+    def refresh_devices(self,*_):
+        self.workers={};warnings=[]
         try:
-            bindings=self.bindings_provider()
-            names=set();warnings=[]
-            for key,binding in bindings.items():
+            for key,binding in self.bindings_provider().items():
                 try:
                     family,bridge=binding;w=bridge.worker
                     connected=w.available if family=='ccd' else w.ps is not None
-                    if connected and not w.connection_error and not w._closing and w.name:names.add((family,w.name))
+                    if connected and not w.connection_error and not w._closing and w.name:self.workers[family,w.name]=w
                 except Exception as exc:warnings.append(f'{key}: {exc}')
-            self.available=sorted(names)
-            note='장비 선택 → 파라미터 선택 → 값 설정. 연결 해제된 기존 선택은 유지됩니다.'
-            if warnings:note+='\n일부 장비 목록 확인: '+'; '.join(warnings)
-            elif not names:note+='\n현재 GUI에 연결된 장비가 없습니다.'
-            self.info.setText(note)
-        except Exception as exc:self.available=[];self.info.setText('연결 목록 확인: '+str(exc))
+        except Exception as exc:warnings.append(str(exc))
+        self.available=sorted(self.workers)
+        self.device_note='일부 장비 목록 확인: '+'; '.join(warnings) if warnings else '' if self.available else '현재 GUI에 연결된 장비가 없습니다.'
         self.render()
 
     def populate(self,parameters):
-        p=validate(parameters,allow_empty=True);self.rows=deepcopy(p['steps']);self.settle.setValue(p['settle_s']);self.render()
+        p=validate(parameters,allow_empty=True,check_settings=False)
+        self.rows=deepcopy(p['steps']);self.settle.setValue(p['settle_s']);self.render()
 
     def parameters(self,base,validate=True):
         p=dict(schema_version=1,steps=deepcopy(self.rows),settle_s=self.settle.value())
         if validate:
             from labremote.runtime.setup_workflow import validate as check
-            check(p)
+            check(p,profiles=self.profile_documents())
         return p
 
     def add_row(self,*_):
@@ -60,25 +75,61 @@ class SetupParameters(QtWidgets.QWidget):
 
     def remove(self):
         row=self.table.currentRow()
-        if 0<=row<len(self.rows):self.rows.pop(row);self.render(min(row,len(self.rows)-1))
+        if 0<=row<len(self.rows):
+            self.rows.pop(row);self.render(min(row,len(self.rows)-1));self.changed.emit()
 
     def move(self,offset):
         row=self.table.currentRow();other=row+offset
-        if 0<=row<len(self.rows) and 0<=other<len(self.rows):self.rows[row],self.rows[other]=self.rows[other],self.rows[row];self.render(other)
+        if 0<=row<len(self.rows) and 0<=other<len(self.rows):
+            self.rows[row],self.rows[other]=self.rows[other],self.rows[row];self.render(other)
 
     def change_device(self,row,key):
         if key is None:return
-        self.rows[row].update(family=key[0],device=key[1],parameter='',value=None);self.render(row)
-        if not self.options(key[0]):self.info.setText('이 장비에는 범용 Setup에 연결된 설정 항목이 없습니다. 전용 장비 탭을 사용하세요.')
+        self.rows[row].update(family=key[0],device=key[1],parameter='',value=None)
+        self.render(row);self.changed.emit()
 
     def change_parameter(self,row,path):
         if not path:return
-        spec=self.options(self.rows[row]['family'])[path].spec
+        spec=self.options(self.rows[row]['family'],self.rows[row]['device'])[path].spec
         value=spec.choices[0] if spec.choices else False if spec.kind=='bool' else max(0,spec.minimum or 0)
+        if not spec.choices and spec.kind!='bool' and spec.maximum is not None:value=min(value,spec.maximum)
         if spec.kind=='int':value=int(value)
         self.rows[row].update(parameter=path,value=value);self.render(row)
 
+    def change_value(self,row,value):
+        self.rows[row]['value']=value
+        self.update_status()
+
+    def update_status(self):
+        notes=[self.device_note] if self.device_note else []
+        for i,row in enumerate(self.rows):
+            if not row['family']:continue
+            options=self.options(row['family'],row['device'])
+            if not options:
+                notes.append(row['device']+(': FPGA 공통 핀 설정을 불러오세요.' if row['family']=='fpga' else ': 이 장비에는 범용 Setup에 연결된 설정 항목이 없습니다. 전용 장비 탭을 사용하세요.'))
+            setting=options.get(row['parameter'])
+            if row['parameter'] and setting is None:
+                notes.append(f"{row['device']}: 저장된 출력/파라미터를 현재 설정에서 찾을 수 없습니다: {row['parameter']}")
+            if setting:
+                problem=''
+                try:setting.spec.validate(row['value'],request=True)
+                except Exception as exc:problem=str(exc);notes.append(f"{row['device']} / {row['parameter']}: {problem}")
+                field=self.table.cellWidget(i,3)
+                if field is not None:
+                    field.setStyleSheet('color: #b42318' if problem else '')
+                    field.setToolTip(f'허용 범위: {setting.spec.minimum} .. {setting.spec.maximum} {setting.spec.unit}'+('\n'+problem if problem else ''))
+        self.info.setText('\n'.join(dict.fromkeys(notes)) if notes else '장비 선택 → 파라미터 선택 → 값 설정. 연결 해제된 기존 선택은 유지됩니다.')
+
+    def refresh_profiles(self,*_):
+        self.render(self.table.currentRow())
+
     def render(self,select=None):
+        self.catalogs={}
+        try:
+            with operation_config():self._render_rows(select)
+        except Exception as exc:self.info.setText('Setup 설정 확인: '+str(exc))
+
+    def _render_rows(self,select):
         self.table.setRowCount(0);self.table.setRowCount(len(self.rows))
         for i,row in enumerate(self.rows):
             self.table.setItem(i,0,QtWidgets.QTableWidgetItem(str(i+1)))
@@ -88,9 +139,13 @@ class SetupParameters(QtWidgets.QWidget):
             if row['device'] and key not in self.available:device.addItem(row['device']+' · 연결 안 됨',key)
             device.setCurrentIndex(next((n for n in range(device.count()) if device.itemData(n)==key),0));self.table.setCellWidget(i,1,device)
             device.currentIndexChanged.connect(lambda _,i=i,b=device:self.change_device(i,b.currentData()))
-            param=QtWidgets.QComboBox();param.addItem('파라미터 선택…','');options=self.options(row['family']) if row['family'] else {}
-            for path in options:param.addItem(path.removeprefix('outputs.'),path)
-            if row['parameter'] and row['parameter'] not in options:param.addItem(row['parameter']+' · 지원 안 됨',row['parameter'])
+            param=QtWidgets.QComboBox();param.addItem('파라미터 선택…','')
+            options=self.options(*key) if row['family'] else {}
+            for path,setting in options.items():
+                title=path.removeprefix('outputs.')+(f' [{setting.pin}]' if setting.pin else '')
+                param.addItem(title,path)
+            if row['parameter'] and row['parameter'] not in options:
+                param.addItem(row['parameter']+' · 확인 필요',row['parameter'])
             param.setCurrentIndex(max(0,param.findData(row['parameter'])));param.setEnabled(bool(options));self.table.setCellWidget(i,2,param)
             param.currentIndexChanged.connect(lambda _,i=i,b=param:self.change_parameter(i,b.currentData()))
             setting=options.get(row['parameter'])
@@ -101,10 +156,15 @@ class SetupParameters(QtWidgets.QWidget):
                     for value in (spec.choices or (False,True)):
                         label=('ON' if value else 'OFF') if spec.kind=='bool' else f'Position {value}' if row['family']=='flip' else str(value)
                         field.addItem(label,value)
-                    field.setCurrentIndex(field.findData(row['value']));field.currentIndexChanged.connect(lambda _,i=i,b=field:self.rows[i].update(value=b.currentData()))
+                    field.setCurrentIndex(field.findData(row['value']));field.currentIndexChanged.connect(lambda _,i=i,b=field:self.change_value(i,b.currentData()))
                 else:
-                    field=QtWidgets.QDoubleSpinBox();field.setDecimals(0 if spec.kind=='int' else 9);field.setRange(-1e100,1e100);field.setKeyboardTracking(False);field.setValue(row['value'])
-                    field.valueChanged.connect(lambda v,i=i,kind=spec.kind:self.rows[i].update(value=int(v) if kind=='int' else v))
-                field.setToolTip(f'허용 범위: {spec.minimum} .. {spec.maximum} {spec.unit}');self.table.setCellWidget(i,3,field)
-                self.table.setItem(i,4,QtWidgets.QTableWidgetItem(spec.unit or '—'))
+                    field=QtWidgets.QDoubleSpinBox();field.setDecimals(0 if spec.kind=='int' else 9)
+                    lo=spec.minimum if spec.minimum is not None else -1e100
+                    hi=spec.maximum if spec.maximum is not None else 1e100
+                    value=row['value'] if type(row['value']) in (int,float) else 0
+                    # Display an invalid saved value faithfully; never silently clamp it.
+                    field.setRange(min(lo,value),max(hi,value));field.setKeyboardTracking(False);field.setValue(value)
+                    field.valueChanged.connect(lambda v,i=i,kind=spec.kind:self.change_value(i,int(v) if kind=='int' else v))
+                self.table.setCellWidget(i,3,field);self.table.setItem(i,4,QtWidgets.QTableWidgetItem(spec.unit or '—'))
+        self.update_status()
         if select is not None and 0<=select<len(self.rows):self.table.selectRow(select)

@@ -203,7 +203,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             self.editor=ExperimentParameters(self.base);self.tabs.addTab(self.editor,'실험 조건')
         elif kind=='setup':
             from .setup_parameters import SetupParameters
-            self.editor=SetupParameters(bindings_provider);self.tabs.addTab(self.editor,'장비 · 파라미터 설정')
+            self.editor=SetupParameters(bindings_provider,profiles=job.get('fpga_profiles'));self.tabs.addTab(self.editor,'장비 · 파라미터 설정')
             if not self.base:self.base=self.editor.defaults()
         elif kind in ('entanglement','entanglement_no_mirror'):
             if kind=='entanglement_no_mirror':
@@ -239,7 +239,9 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         if kind=='phase_hold':
             self.pin_settings.target_row.removeWidget(self.fpga_target)
             self.editor.target_form.insertRow(0,'실행 FPGA',self.fpga_target);self.editor.target=self.fpga_target
-        elif kind=='setup':self.fpga_target.hide()
+        elif kind=='setup':
+            self.fpga_target.hide()
+            self.editor.profiles_provider=lambda:self.pin_settings.documents
         self.monitor=MonitorSettings(job);self.monitor_index=self.tabs.addTab(self.monitor,'Monitor')
         if self.editor is not None and kind!='setup':self.json_index=self.tabs.addTab(self.json,'JSON · 고급 편집')
         if kind=='setup':self.json.setParent(self);self.json.hide()
@@ -282,7 +284,18 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         self.pin_settings.set_parameters(self.base)
         self.sync_setup_target(self.base)
         self.update_fpga_preview()
+        if kind=='setup':
+            self.editor.changed.connect(self.sync_setup_editor)
+            self.pin_settings.changed.connect(self.editor.refresh_profiles)
         if profile_error:self.error.setText('저장된 측정 설정을 확인하세요: '+profile_error)
+
+    def sync_setup_editor(self):
+        try:
+            self.base=self.editor.parameters(self.base,validate=False)
+            self.sync_setup_target(self.base)
+            self.pin_settings.set_parameters(self.base)
+            self.error.clear()
+        except Exception as exc:self.error.setText(str(exc))
 
     def sync_setup_target(self,parameters):
         if self.kind!='setup':return
@@ -375,7 +388,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 if isinstance(self.editor,(ExperimentParameters,PhaseHoldParameters)):pass
                 elif isinstance(self.editor,SetupParameters):
                     from labremote.runtime.setup_workflow import validate
-                    validate(parameters)
+                    validate(parameters,profiles=self.pin_settings.documents)
                 elif isinstance(self.editor,SpamParameters):self.editor.validate_parameters(parameters)
                 else:
                     # pin_settings.value() already checked the selected FPGA snapshot.

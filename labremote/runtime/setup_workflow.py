@@ -2,8 +2,8 @@
 from copy import deepcopy
 import math
 from dataclasses import dataclass,replace
-from labremote.runtime.parameters import ParameterRegistry
-from labremote.configuration.paths import registry_paths
+from labremote.runtime.parameters import registry, device_parameter_spec
+from labremote.configuration.device_config import operation_config
 
 
 @dataclass(frozen=True)
@@ -13,18 +13,24 @@ class Setting:
     method: str
     channel: object = None
     prefix: tuple = ()
+    pin: str | None = None
 
 
-def catalogue(family):
-    policy=ParameterRegistry(registry_paths());result={}
-    def add(path,method,channel=None,prefix=(),choices=None):
-        spec=policy.get(family,path)
+def catalogue(family, device="", *, profile=None):
+    policy=registry();result={}
+    def add(path,method,channel=None,prefix=(),choices=None,pin=None):
+        spec=device_parameter_spec(family,path,device,spec=policy.get(family,path))
         if not spec.writable:return
         if choices is not None:spec=replace(spec,choices=choices)
-        result[path]=Setting(path,spec,method,channel,prefix)
+        result[path]=Setting(path,spec,method,channel,prefix,pin)
     if family=='fpga':
-        from labremote.devices.fpga.controller import OUTPUTS
-        for name in OUTPUTS:add('outputs.'+name,'set_output',prefix=(name,))
+        from labremote.devices.fpga.mapping import Profile
+        profile=profile or fpga_profile(device)
+        if profile is None:return result
+        if not isinstance(profile,Profile):profile=Profile(profile)
+        if device and profile.device_id!=device:raise ValueError('FPGA profile identity mismatch: '+device)
+        for name,pin in profile.view().output_mapping.items():
+            add('outputs.'+name,'set_output',prefix=(name,),pin=pin)
     elif family=='flip':add('position','move',choices=(1,2))
     elif family=='windfreak':
         for ch in ('A','B'):
@@ -48,7 +54,19 @@ def catalogue(family):
     return result
 
 
-def validate(parameters,allow_empty=False):
+def fpga_profile(device, profiles=None):
+    from labremote.devices.fpga.mapping import Profile,FROZEN,CURRENT
+    value=(profiles or {}).get(device) or FROZEN.get().get(device)
+    state=CURRENT.get()
+    if value is None and state is not None and (not device or state[0].device_id==device):value=state[0]
+    if value is None:return None
+    value=value if isinstance(value,Profile) else Profile(value)
+    if device and value.device_id!=device:raise ValueError('FPGA profile identity mismatch: '+device)
+    return value
+
+
+@operation_config()
+def validate(parameters,allow_empty=False,*,profiles=None,check_settings=True):
     p=deepcopy(parameters)
     if not isinstance(p,dict) or set(p)!={'schema_version','steps','settle_s'} or p['schema_version']!=1 or type(p['schema_version']) is not int:raise ValueError('Invalid setup settings schema')
     rows=p['steps']
@@ -59,8 +77,13 @@ def validate(parameters,allow_empty=False):
         try:
             if not isinstance(row,dict) or set(row)!={'family','device','parameter','value'}:raise ValueError('Invalid setup row')
             if any(not isinstance(row[k],str) or not row[k].strip() for k in ('family','device','parameter')):raise ValueError('장비와 파라미터를 선택하세요.')
-            if row['family'] not in catalogs:catalogs[row['family']]=catalogue(row['family'])
-            setting=catalogs[row['family']].get(row['parameter'])
+            if not check_settings:continue
+            key=(row['family'],row['device'])
+            if key not in catalogs:
+                profile=fpga_profile(row['device'],profiles) if row['family']=='fpga' else None
+                if row['family']=='fpga' and profile is None:raise ValueError('FPGA 공통 핀 설정이 필요합니다: '+row['device'])
+                catalogs[key]=catalogue(*key,profile=profile)
+            setting=catalogs[key].get(row['parameter'])
             if setting is None:raise ValueError('지원하지 않는 설정: '+row['family']+'.'+row['parameter'])
             setting.spec.validate(row['value'],request=True)
         except Exception as exc:raise ValueError(f'설정 {index}: {exc}') from exc
@@ -78,26 +101,34 @@ def migrate_legacy(name,parameters):
     elif name=='spam_setup.py':rows=[row('fpga',fpga,'outputs.CCD_EA',False),row('fpga',fpga,'outputs.CCD_EC',True)]
     else:raise ValueError('Not a legacy setup workflow')
     if set(p)-{'fpga','flippers','settle_s'}:raise ValueError('기존 Setup에 사용자 변수가 있습니다. 새 setup.py 항목에서 설정을 확인해 주세요.')
-    return validate(dict(schema_version=1,steps=rows,settle_s=p.get('settle_s',1.)))
+    return validate(dict(schema_version=1,steps=rows,settle_s=p.get('settle_s',1.)),check_settings=False)
 
 
+@operation_config()
 def execute(devices):
     from labremote.api.devices import device_api
     from labremote.runtime.workflow_result import WorkflowResult
     from labremote.runtime.errors import OperationCancelled
-    p=validate(devices.parameters);prepared=[];completed=[];current=None
+    p=validate(devices.parameters,check_settings=False);prepared=[];completed=[];current=None
+    from labremote.devices.fpga.mapping import FROZEN,scope
+    from contextlib import nullcontext
     # Resolve only listed devices before writing. This is not a global busy check.
     for row in p['steps']:
         worker=devices._resolve_worker(row['family'],row['device'])
         if worker.ps is None or worker.connection_error or worker._closing:raise ConnectionError('Setup device disconnected: '+row['device'])
-        setting=catalogue(row['family'])[row['parameter']]
-        prepared.append((row,setting,worker))
+        profile=FROZEN.get().get(worker.name,worker.profile) if row['family']=='fpga' else None
+        settings=catalogue(row['family'],worker.name,profile=profile)
+        setting=settings.get(row['parameter'])
+        if setting is None:raise ValueError('지원하지 않는 설정: '+worker.name+' / '+row['parameter'])
+        setting.spec.validate(row['value'],request=True)
+        prepared.append((row,setting,worker,profile))
     try:
-        for index,(row,setting,worker) in enumerate(prepared,1):
+        for index,(row,setting,worker,profile) in enumerate(prepared,1):
             current=dict(index=index,**row);devices.wait(0)
-            api=device_api(worker,channel=setting.channel,group=devices.group)
-            if setting.method=='on_off':handle=(api.on if row['value'] else api.off)()
-            else:handle=getattr(api,setting.method)(*setting.prefix,row['value'])
+            with scope(profile) if profile is not None else nullcontext():
+                api=device_api(worker,channel=setting.channel,group=devices.group)
+                if setting.method=='on_off':handle=(api.on if row['value'] else api.off)()
+                else:handle=getattr(api,setting.method)(*setting.prefix,row['value'])
             handle.wait();completed.append(dict(current,status='completed'))
         current=None;devices.wait(p['settle_s'])
     except OperationCancelled:raise
