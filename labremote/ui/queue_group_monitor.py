@@ -37,7 +37,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         self.figure,self.canvas=chart(self.layout_,1150 if self.kind=='ent' else 400)
         self.draw_pending=False
         if self.kind=='ent':
-            from .entanglement_view import EntanglementView
+            from labremote.experiments.entanglement.view import EntanglementView
             self.live_view=EntanglementView(self,self.figure,self.canvas,self.summary.setText)
         if self.kind=='ent':self.canvas.setMinimumWidth(950)
         self.update_slot(slot)
@@ -96,7 +96,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         if self.draw_pending:self.draw()
 
     def draw_ion(self):
-        from labremote.ion_check.config import LABELS,pmt_names,default_mapping
+        from labremote.experiments.ion_check.config import LABELS, pmt_names, default_mapping
         ax=self.figure.subplots();records=self.selected_records()
         settings=records[0]['settings'] if records else {}
         mapping=settings.get('mapping',default_mapping())
@@ -134,8 +134,8 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         if profiles:ax.legend(fontsize=8)
 
     def draw_ent(self):
-        from labremote.entanglement.plotting import EntanglementPlot,Accumulator
-        from labremote.entanglement.config import defaults
+        from labremote.experiments.entanglement.plotting import EntanglementPlot, Accumulator
+        from labremote.experiments.entanglement.config import defaults
         c,d=self.ent_data()
         if d is None:
             c=defaults();d=Accumulator(c).data()
@@ -146,7 +146,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         self.live_view.submit(d,c)
 
     def open_full(self):
-        from labremote.entanglement.plotting import EntanglementPlot
+        from labremote.experiments.entanglement.plotting import EntanglementPlot
         c,d=self.ent_data()
         if d is None:return
         dialog=QtWidgets.QDialog(self);dialog.setWindowTitle(self.title()+' · '+self.mode.currentText());dialog.resize(1150,850)

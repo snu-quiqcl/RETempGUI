@@ -14,34 +14,34 @@ class FPGAWorker(AcquisitionWorker):
         self._claimed_port = None
         super().__init__()
         self.name = name
-        from labremote.runtime.motor_scan_runner import MotorScanRunner
+        from labremote.experiments.motor_scan.runner import MotorScanRunner
         self.scan_runners={number:MotorScanRunner(self,number) for number in range(1,5)}
-        from labremote.characterization.runner import FluorescenceRunner
+        from labremote.experiments.characterization.fluorescence.runner import FluorescenceRunner
         self.fluorescence_runner=FluorescenceRunner(self)
-        from labremote.characterization.rabi_runner import RabiRunner
+        from labremote.experiments.characterization.rabi.runner import RabiRunner
         self.rabi_runner=RabiRunner(self)
-        from labremote.characterization.pulse_runner import PulseRunner
-        from labremote.decay.runner import DecayRunner
+        from labremote.experiments.characterization.shared.pulse_runner import PulseRunner
+        from labremote.experiments.decay.runner import DecayRunner
         self.decay_runner=DecayRunner(self)
-        from labremote.hom.runner import HOMRunner
+        from labremote.experiments.hom.runner import HOMRunner
         self.hom_runner=HOMRunner(self)
-        from labremote.phase_shifter.runner import PhaseShifterRunner
+        from labremote.experiments.phase_shifter.runner import PhaseShifterRunner
         self.phase_shifter_runner=PhaseShifterRunner(self)
-        from labremote.phase_shifter.rabi_runner import PhaseRabiRunner
+        from labremote.experiments.phase_shifter.rabi_runner import PhaseRabiRunner
         self.phase_rabi_runner=PhaseRabiRunner(self)
-        from labremote.ion_check.runner import IonCheckRunner
+        from labremote.experiments.ion_check.runner import IonCheckRunner
         self.ion_check_runner=IonCheckRunner(self)
-        from labremote.entanglement.runner import EntanglementRunner
+        from labremote.experiments.entanglement.runner import EntanglementRunner
         self.entanglement_runner=EntanglementRunner(self)
-        from labremote.micromotion.runner import MicromotionRunner
+        from labremote.experiments.micromotion.runner import MicromotionRunner
         self.micromotion_runner=MicromotionRunner(self)
-        from labremote.micromotion.two_rf import TwoRFRunner
+        from labremote.experiments.micromotion.two_rf import TwoRFRunner
         self.two_rf_runner=TwoRFRunner(self)
-        from labremote.micromotion.secular.runner import SecularRunner
+        from labremote.experiments.micromotion.secular.runner import SecularRunner
         self.secular_runner=SecularRunner(self)
         self.spin_echo_runner=PulseRunner(self,'spin_echo')
         self.ramsey_runner=PulseRunner(self,'ramsey');self.spam_runner=PulseRunner(self,'spam');self.initialization_runner=PulseRunner(self,'initialization')
-        from labremote.characterization.spam_scan_runner import SpamScanRunner
+        from labremote.experiments.characterization.spam_scan.runner import SpamScanRunner
         self.spam_scan_runner=SpamScanRunner(self)
 
     def reserve_fpga(self, owner):

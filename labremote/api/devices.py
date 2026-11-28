@@ -593,7 +593,7 @@ class FPGAAPI(DeviceAPI):
         return self.worker.phase_rabi_runner.start(settings,directory=directory,parent=self.group)
 
     def hold_phase(self,phase_angle_deg,phase_outputs,calibration=None):
-        from labremote.phase_shifter import hold
+        from labremote.experiments.phase_shifter import hold
         from labremote.devices.fpga.adapter import Cancellation
         from labremote.devices.fpga.mapping import scope,FROZEN
         with scope(FROZEN.get().get(self.worker.name,self.worker.profile)):

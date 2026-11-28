@@ -21,6 +21,12 @@ class MappingEditor(W.QGroupBox):
         root=W.QVBoxLayout(self)
         self.options=W.QHBoxLayout();root.addLayout(self.options)
         self.optional={}
+        if experiment=='rabi':
+            self.detector_count=W.QComboBox()
+            self.detector_count.addItem('PMT 1개',1);self.detector_count.addItem('PMT 2개',2)
+            self.detector_count.setProperty('persistInput',False)
+            self.options.addWidget(W.QLabel('검출기'));self.options.addWidget(self.detector_count)
+            self.detector_count.currentIndexChanged.connect(self.detectors_changed)
         for role,path in ([('PMT2',('mapping','pmt_2'))] if experiment=='ion_check' else
                           [('AUX1',('roles','AUX1')),('AUX2',('roles','AUX2'))] if experiment=='decay' else []):
             box=W.QCheckBox(role+' 사용');box.setProperty('persistInput',False)
@@ -37,6 +43,12 @@ class MappingEditor(W.QGroupBox):
         note.setWordWrap(True);root.addWidget(note)
         if c is not None:self.set_settings(c)
 
+    def detectors_changed(self):
+        if self._loading:return
+        c=self.apply(self._settings)
+        routing.put(c,('roles','PMT2'),self._selectors[('roles','PMT2')].route())
+        self.set_settings(c);self.changed.emit()
+
     def option_changed(self,role,enabled):
         if self._loading:return
         c=self.apply(self._settings);path=self.optional[role][1]
@@ -48,6 +60,9 @@ class MappingEditor(W.QGroupBox):
         self._loading=True
         try:
             self._settings=routing.normalize(c,self.experiment,self.mode,self.worker.profile)
+            if self.experiment=='rabi':
+                with QtCore.QSignalBlocker(self.detector_count):
+                    self.detector_count.setCurrentIndex(self.detector_count.findData(c.get('detector_count',1)))
             for role,(box,path) in self.optional.items():
                 with QtCore.QSignalBlocker(box):box.setChecked((options or {}).get(role,bool(routing.get(c,path))))
             specs=routing.routes(self.experiment,self._settings,self.mode,all_fields=True)
@@ -71,7 +86,7 @@ class MappingEditor(W.QGroupBox):
                     box.feature=spec.feature;box.input_pin='output' not in spec.feature
                     box.refresh()
                     box.setCurrentText(routing.get(self._settings,spec.path))
-                self.table.item(row,0).setText(spec.role)
+                self.table.item(row,0).setText('PMT1' if self.experiment=='rabi' and spec.role=='PMT' else spec.role)
                 self.table.item(row,4).setText(spec.use)
                 self._route_changed(spec.path)
             self.choices.clear()
@@ -92,6 +107,10 @@ class MappingEditor(W.QGroupBox):
         for spec in routing.routes(self.experiment,self._settings,self.mode,all_fields=True):
             routing.put(result,spec.path,routing.get(self._settings,spec.path))
         for path,box in self.choices.items():routing.put(result,path,box.route())
+        if self.experiment=='rabi':
+            result['detector_count']=self.detector_count.currentData()
+            # Keep the hidden selector alive, but an inactive PMT is never run.
+            if result['detector_count']==1:routing.put(result,('roles','PMT2'),None)
         for role,(box,path) in self.optional.items():
             if not box.isChecked():routing.put(result,path,None)
         return result

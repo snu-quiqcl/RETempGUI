@@ -1,0 +1,89 @@
+from labremote.devices.fpga.mapping import settings_path, EDITING
+import math
+from copy import deepcopy
+from types import SimpleNamespace
+from labremote.experiments.characterization.shared.config import read, save
+from labremote.configuration.paths import CONFIG_ROOT
+from labremote.devices.fpga.controller import hd, OUTPUTS
+
+ROOT=CONFIG_ROOT/'operations/decay'
+SEQUENCER_CLOCK_US = 0.01
+TIME_LABELS = {
+    'TIME_COOL': 'Cooling (µs)',
+    'TIME_INIT': 'Initialization / 174 AOM hold (µs)',
+    'waiting_time_for_AOM_off': 'AOM off wait (µs)',
+    'waiting_time_for_AOM_on': 'AOM on wait (µs; single only)',
+    'waiting_time_for_stopwatch': 'Stopwatch wait (µs)',
+}
+
+def time_to_display(key,value):
+    return value*SEQUENCER_CLOCK_US if key in TIME_LABELS else value
+
+def time_from_display(key,value):
+    if key not in TIME_LABELS:return value
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value):
+        raise ValueError('Invalid time: '+key)
+    clocks=round(value/SEQUENCER_CLOCK_US)
+    if not math.isclose(value,clocks*SEQUENCER_CLOCK_US,abs_tol=1e-9,rel_tol=0):
+        raise ValueError('Time must be a multiple of 0.01 µs: '+key)
+    return int(clocks)
+
+MODES=('171_single','174_single','171_dual','174_dual')
+LABELS={'171_single':'171','174_single':'174','171_dual':'171 Interferometer','174_dual':'174 Interferometer'}
+from labremote.devices.fpga.mapping import ROLE_KINDS, RouteChoices
+INPUTS=RouteChoices(tuple(n for n,kind in ROLE_KINDS.items() if kind=='input'), 'stopwatch')
+FAST=RouteChoices(tuple(n for n,kind in ROLE_KINDS.items() if kind=='fast output'), 'fast')
+SLOW=RouteChoices(('', 'AOMM', 'AOMB'), 'slow output')
+CHOICES={'PMT1':INPUTS,'PMT2':INPUTS,'SYNC':INPUTS,'AOM':FAST,'TRIG':FAST,'EOM_7G1':FAST,'EOM_7G2':FAST,'EOM_2G':FAST,'AUX1':SLOW,'AUX2':SLOW}
+FIELDS=[('TIME_COOL','Cooling (10 ns clocks)',0,65535),('TIME_INIT','Initialization / 174 AOM hold (clocks)',5,65535),
+ ('waiting_time_for_AOM_off','AOM off wait (clocks)',3,65535),('waiting_time_for_AOM_on','AOM on wait (clocks; single only)',3,65535),
+ ('waiting_time_for_stopwatch','Stopwatch wait (sequencer clocks)',4,65535),('MAX_TIME_DIFFERENCE','Histogram bins (multiple of 3)',3,510),
+ ('SIGNAL_THRESHOLD','Communication threshold (bin)',0,509),('DECAY_THRESHOLD','Decay threshold (bin)',0,509),
+ ('run_number','Cooling groups / FPGA outer loop',1,65535),('outer_loop_in_fpga','FPGA outer loops / batch',1,65535),
+ ('wo_cooling_number','Pulse trials / cooling group',1,65535),('outer_loop','PC batches',1,10000),
+ ('timeout_s','Timeout / batch (s)',1,3600),('reference_tau_ns','Legacy reference lifetime (unused)',.01,1000),
+ ('aux1_start','AUX1 start level',0,1),('aux1_end','AUX1 cleanup level',0,1),('aux2_start','AUX2 start level',0,1),('aux2_end','AUX2 cleanup level',0,1)]
+
+def defaults(chamber,mode):
+    from labremote.configuration.default_profiles import read_default
+    return read_default('decay_'+chamber+'_'+mode)
+
+def validate(c):
+    if not isinstance(c,dict) or c.get('chamber') not in ('EA','EC') or c.get('mode') not in MODES:raise ValueError('Invalid decay profile')
+    if set(c)!=set(defaults(c['chamber'],c['mode'])) or c['schema_version']!=1:raise ValueError('Invalid decay schema')
+    for key,_,lo,hi in FIELDS:
+        v=c[key]
+        if isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) or not lo<=v<=hi or (key not in ('timeout_s','reference_tau_ns') and type(v) is not int):raise ValueError('Invalid '+key)
+    if c['MAX_TIME_DIFFERENCE']%3:raise ValueError('Histogram bins must be a multiple of 3')
+    if not 0<=c['SIGNAL_THRESHOLD']<=c['DECAY_THRESHOLD']<c['MAX_TIME_DIFFERENCE']:raise ValueError('Require acquisition lower bin <= decay boundary < histogram bins')
+    r=c['roles']
+    from labremote.devices.fpga.routing import routes, validate as validate_routing
+    if not isinstance(r,dict) or set(r)-set(CHOICES):raise ValueError('Invalid FPGA role mapping')
+    if not EDITING.get():validate_routing(c,'decay')
+    inputs=[r['SYNC'],r['PMT1']]+([r['PMT2']] if c['mode'].endswith('dual') else [])
+    if not EDITING.get() and len(set(inputs))!=len(inputs):raise ValueError('PMT and SYNC inputs must be distinct')
+    if not EDITING.get() and len({getattr(hd, name+'_stopwatch_result') for name in inputs}) != len(inputs):raise ValueError('Decay input roles resolve to duplicate physical pins')
+    outputs=[r['AOM'],r['TRIG']]+([r[k] for k in ('EOM_7G1','EOM_7G2','EOM_2G')] if c['mode'].startswith('171') else [])+[r[k] for k in ('AUX1','AUX2') if r.get(k)]
+    if not EDITING.get() and len(set(outputs))!=len(outputs):raise ValueError('Active output roles must be distinct')
+    if not EDITING.get() and len({OUTPUTS[name][1:] for name in outputs}) != len(outputs):raise ValueError('Decay output roles resolve to duplicate physical pins')
+    return deepcopy(c)
+
+def load(chamber,mode,path=None):
+    local=settings_path(ROOT/f'{chamber}_{mode}.json')
+    c=validate(read(path or (local if local.exists() else ROOT/f'{chamber}_{mode}.json')))
+    if (c['chamber'],c['mode'])!=(chamber,mode):raise ValueError('Profile differs from this tab')
+    return c
+
+def hardware(c):
+    h=SimpleNamespace(external_control_port=hd.external_control_port,Trigger_level=hd.Trigger_level)
+    for role in (('PMT1','PMT2','SYNC') if c['mode'].endswith('dual') else ('PMT1','SYNC')):
+        for suffix in ('stopwatch_result','stopwatch_start','stopwatch_reset','stopwatch_stopped_TLI'):
+            setattr(h,role+'_'+suffix,getattr(hd,c['roles'][role]+'_'+suffix))
+    for role in (('AOM','TRIG','EOM_7G1','EOM_7G2','EOM_2G') if c['mode'].startswith('171') else ('AOM','TRIG')):setattr(h,role+'_out',OUTPUTS[c['roles'][role]][2])
+    return h
+
+def set_auxiliary(program,c,*,start):
+    for i in (1,2):
+        name=c['roles'].get('AUX'+str(i))
+        if name:
+            _,port,bit=OUTPUTS[name];program.set_output_port(port,[(bit,c[f'aux{i}_'+('start' if start else 'end')])])

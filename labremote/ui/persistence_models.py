@@ -64,7 +64,7 @@ def restore(widget,value):
                         slot.choice.addItem(slot.selected+' · 연결 끊김',slot.selected);index=slot.choice.count()-1
                     slot.choice.setCurrentIndex(max(0,index))
     elif kind=='CalibrationSelector':
-        from labremote.phase_shifter.calibration import rows
+        from labremote.experiments.phase_shifter.calibration import rows
         snapshot=unarchive(value['snapshot'],'csv')
         if snapshot is not None:rows(snapshot)
         with QtCore.QSignalBlocker(widget),QtCore.QSignalBlocker(widget.mode):
@@ -84,7 +84,7 @@ def restore(widget,value):
         snapshot=unarchive(value['source'],'json')
         if snapshot is None:widget.halfpi_source=None
         else:
-            from labremote.phase_shifter.halfpi import knots
+            from labremote.experiments.phase_shifter.halfpi import knots
             knots(snapshot)
             with QtCore.QSignalBlocker(widget):widget.set_source(snapshot)
     elif kind=='ccd_view':

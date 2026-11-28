@@ -38,9 +38,12 @@ def routes(experiment,c,mode=None,*,all_fields=False):
     out=[]
     def add(path,role,feature,use='측정',optional=False):out.append(Route(tuple(path),role,feature,use,optional))
     if experiment in ('rabi','ramsey','spin_echo','spam','initialization','fluorescence'):
-        for role in PULSE if experiment!='fluorescence' else ('PMT',):
-            add(('roles',role),role,'counter' if role=='PMT' else 'slow output' if role=='MW' else 'fast output',
-                '시작·종료 OFF' if experiment=='initialization' and role=='MW' else '측정·종료 복구' if role!='PMT' else '측정')
+        selected=list(PULSE) if experiment!='fluorescence' else ['PMT']
+        if experiment=='rabi' and (all_fields or c.get('detector_count',1)==2):selected.insert(1,'PMT2')
+        for role in selected:
+            counter=role in ('PMT','PMT2')
+            add(('roles',role),role,'counter' if counter else 'slow output' if role=='MW' else 'fast output',
+                '시작·종료 OFF' if experiment=='initialization' and role=='MW' else '측정' if counter else '측정·종료 복구')
         if all_fields and experiment=='fluorescence':add(('roles','AOM'),'AOM','output','미사용')
     elif experiment=='decay':
         selected=['PMT1','SYNC','AOM','TRIG']

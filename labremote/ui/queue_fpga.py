@@ -117,13 +117,13 @@ class QueueFPGASettings(W.QWidget):
             current=routing.get(parameters,prefix)
             with scope(profile,exp):routing.validate(current,exp,mode)
         if experiment=='ion_check':
-            from labremote.ion_check import config
+            from labremote.experiments.ion_check import config
             with scope(profile,'ion_check'):
                 config.validate(parameters['settings'],require_thresholds=True)
                 used=[OUTPUTS[role][0] for role in config.output_levels(parameters['settings'])]
                 if len(set(used))!=len(used):raise ValueError('Ion Check의 레이저·EOM·MW 출력은 서로 다른 핀을 사용해야 합니다.')
         elif self.direct_routes() and experiment in ('fluorescence','rabi','initialization','ramsey','spin_echo','spam'):
-            from labremote.characterization import config, rabi, pulse_experiment
+            from labremote.experiments.characterization.shared import config, pulse_model as pulse_experiment; from labremote.experiments.characterization.rabi import model as rabi
             groups=parameters['settings'].values() if self.kind=='spam' and set(parameters['settings'])=={'EA','EC'} else [parameters['settings']]
             if parameters.get('kind')=='SpamScanTab':groups=[parameters['settings']['spam']]
             with scope(profile,experiment):
@@ -132,29 +132,29 @@ class QueueFPGASettings(W.QWidget):
                     elif experiment=='rabi':rabi.validate(settings)
                     else:pulse_experiment.validate(experiment,settings)
                 if parameters.get('kind')=='SpamScanTab':
-                    from labremote.characterization.spam_scan import validate
+                    from labremote.experiments.characterization.spam_scan.model import validate
                     validate(parameters['settings'])
         elif experiment=='secular':
-            from labremote.micromotion.secular.config import validate
+            from labremote.experiments.micromotion.secular.config import validate
             with scope(profile):validate(parameters['settings'])
         elif experiment=='micromotion':
-            from labremote.micromotion.config import validate
+            from labremote.experiments.micromotion.config import validate
             with scope(profile):
                 if parameters.get('kind')=='TwoRFCompensationPage':
-                    from labremote.micromotion.two_rf import validate as validate_two_rf
+                    from labremote.experiments.micromotion.two_rf import validate as validate_two_rf
                     validate_two_rf(parameters['settings'])
                 else:validate(parameters['settings'], mode=parameters.get('mode', 'correlation'))
         elif experiment=='phase_shifter':
-            from labremote.phase_shifter import config,hold
+            from labremote.experiments.phase_shifter import config, hold
             with scope(profile):
                 c=parameters['settings']
                 if self.kind=='phase_hold' or self.parameters.get('kind')=='PhaseHoldTab':hold.request(c['phase_angle_deg'],c['phase_outputs'],calibration=c.get('calibration'))
                 elif self.parameters.get('kind')=='PhaseRabiTab':
-                    from labremote.phase_shifter.rabi import validate
+                    from labremote.experiments.phase_shifter.rabi import validate
                     validate(c)
                 else:config.validate(c)
         elif experiment in ('hom','entanglement','decay'):
             from importlib import import_module
-            model=import_module('labremote.'+experiment+'.config')
+            model=import_module('labremote.experiments.'+experiment+'.config')
             with scope(profile,experiment):model.validate(parameters['settings'])
         return parameters,profile.document()

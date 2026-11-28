@@ -1,0 +1,143 @@
+from labremote.ui.responsive import FlowLayout
+from labremote.ui.pin_selector import PinSelector
+from labremote.devices.fpga.mapping import settings_path
+from labremote.devices.fpga.mapping import bound_methods
+from pathlib import Path
+from labremote.data_paths import characterization_directory
+from PyQt5 import QtCore, QtWidgets
+from labremote.api.devices import device_api
+from labremote.experiments.characterization.shared import config, pulse_model as model; from labremote.experiments.characterization.rabi import model as rabi
+
+@bound_methods('pulse', editor=True)
+class PulseExperimentTab(QtWidgets.QWidget):
+    def __init__(self,worker,kind,chamber,bindings,parent=None):
+        super().__init__(parent);self.kind=kind;self.worker=worker;self.chamber=chamber;self.bindings=bindings;self.api=device_api(worker)
+        self.live_plot=None;self.live_revision=0;self.fields={};self.roles={};self.run_id=None;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.config_buttons=[]
+        root=QtWidgets.QVBoxLayout(self)
+        mw_note='MW 펄스 미사용 · 시작/종료 시 MW OFF' if kind=='initialization' else 'MW 주파수·출력은 외부 설정'
+        note=QtWidgets.QLabel('EC FPGA · '+chamber+' '+model.title(kind)+' · '+mw_note+' · 종료/중단: FPGA MW gate LOW, 선택 광로 cooling 상태 복귀');note.setWordWrap(True);root.addWidget(note)
+        split=QtWidgets.QSplitter();root.addWidget(split,1)
+        scroll=QtWidgets.QScrollArea();scroll.setWidgetResizable(True);scroll.setMinimumWidth(330);split.addWidget(scroll)
+        settings=self.settings_panel=QtWidgets.QWidget();scroll.setWidget(settings);left=QtWidgets.QVBoxLayout(settings)
+        from labremote.experiments.characterization.shared.pulse_controls import pin_controls
+        mapping,self.roles=pin_controls(worker,kind,settings);left.addWidget(mapping)
+        form=QtWidgets.QFormLayout();left.addLayout(form)
+        for key,title,lo,hi,dec,step in model.fields(kind):
+            field=QtWidgets.QDoubleSpinBox() if dec else QtWidgets.QSpinBox()
+            if dec:field.setDecimals(dec)
+            field.setRange(lo,hi);field.setSingleStep(step);self.fields[key]=field;form.addRow(title,field)
+        if kind=='spin_echo':
+            self.echo_note=QtWidgets.QLabel();self.echo_note.setWordWrap(True);left.addWidget(self.echo_note)
+            def echo_values():
+                ticks=round(self.fields['precession_time'].value()*100);ticks+=ticks%2
+                self.echo_note.setText(f"π = {2*self.fields['half_pi_time'].value():.2f} us (자동) · 적용 Echo step = {ticks/100:.2f} us\n총 자유진화 시간 τ, 각 대기 τ/2 · 동일 위상\nτ=0은 연속 2π pulse 기준점")
+            self.fields['precession_time'].valueChanged.connect(echo_values);self.fields['half_pi_time'].valueChanged.connect(echo_values);echo_values()
+        for title,callback in [('조건·매핑 불러오기',self.load),('조건·매핑 저장',self.save),('다른 이름으로 저장',self.save_as)]:
+            button=QtWidgets.QPushButton(title);button.clicked.connect(callback);left.addWidget(button);self.config_buttons.append(button)
+        left.addStretch()
+        result=QtWidgets.QWidget();right=QtWidgets.QVBoxLayout(result);split.addWidget(result);split.setSizes([350,750])
+        row=FlowLayout();right.addLayout(row)
+        self.start_button=QtWidgets.QPushButton('Run '+chamber+' '+model.title(kind));self.stop_button=QtWidgets.QPushButton('Stop / save partial')
+        self.start_button.clicked.connect(self.start);self.stop_button.clicked.connect(getattr(self.api,"stop_"+kind));row.addWidget(self.start_button);row.addWidget(self.stop_button)
+        self.directory=QtWidgets.QLineEdit(str(characterization_directory(None, chamber, kind)));right.addWidget(self.directory)
+        row=QtWidgets.QHBoxLayout();right.addLayout(row)
+        for title,callback in [('저장 폴더',self.choose_folder),('이전 결과 열기',self.load_result)]:
+            button=QtWidgets.QPushButton(title);button.clicked.connect(callback);row.addWidget(button)
+        self.status=QtWidgets.QLabel('대기 중');self.status.setWordWrap(True);right.addWidget(self.status)
+        self.summary=QtWidgets.QLabel();self.summary.setWordWrap(True);right.addWidget(self.summary)
+        from matplotlib.figure import Figure
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+        self.figure=Figure(figsize=(8,9));self.canvas=FigureCanvasQTAgg(self.figure);self.canvas.setMinimumSize(300,400);right.addWidget(self.canvas,1)
+        from labremote.ui.experiment_sidebar import install_settings_toggle
+        self.settings_toggle=install_settings_toggle(split,scroll)
+        self.config_valid=False
+        try:self.populate(model.load(kind,chamber));self.config_valid=True
+        except Exception as exc:self.status.setText(str(exc))
+        self.timer=QtCore.QTimer(self);self.timer.setInterval(500);self.timer.timeout.connect(self.controls);self.timer.start()
+        worker.task_progress.connect(self.progress);self.controls()
+
+    def populate(self,value):
+        for key,field in self.fields.items():field.setValue(value[key]*.01 if key in model.times(self.kind) else value[key])
+        for role,box in self.roles.items():box.setCurrentText(value['roles'][role])
+
+    def value(self):
+        values={k:round(f.value()*100) if k in model.times(self.kind) else f.value() for k,f in self.fields.items()}
+        return model.validate(self.kind,dict(schema_version=1,experiment=self.kind,chamber=self.chamber,roles={r:b.route() for r,b in self.roles.items()},**values))
+
+    def load(self):
+        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Load '+model.title(self.kind)+' settings',str(config.ROOT),'JSON (*.json)')
+        if path:
+            try:self.populate(model.load(self.kind,self.chamber,path));self.config_valid=True;self.status.setText('불러옴: '+path)
+            except Exception as exc:self.status.setText(str(exc))
+
+    def save(self):
+        try:
+            path=settings_path(config.ROOT/f'{self.kind}_{self.chamber}.json');config.save(path,self.value());self.config_valid=True;self.status.setText('저장됨: '+str(path))
+        except Exception as exc:self.status.setText(str(exc))
+
+    def save_as(self):
+        path,_=QtWidgets.QFileDialog.getSaveFileName(self,'Save '+model.title(self.kind)+' settings',str(settings_path(config.ROOT/f'{self.kind}_{self.chamber}.json')),'JSON (*.json)')
+        if path:
+            try:config.save(path,self.value());self.status.setText('저장됨: '+path)
+            except Exception as exc:self.status.setText(str(exc))
+
+    def choose_folder(self):
+        path=QtWidgets.QFileDialog.getExistingDirectory(self,'Result folder',self.directory.text())
+        if path:self.directory.setText(path)
+
+    def start(self):
+        try:
+            c=self.value()
+            if not self.directory.text().strip():raise ValueError('결과 저장 폴더를 지정하세요.')
+            handle=getattr(self.api,"run_"+self.kind)(self.chamber,settings=c,directory=self.directory.text())
+            if handle.done.is_set() and handle.error:raise handle.error
+            self.live_plot=None;self.live_revision=0
+            self.run_id=handle.request_id;self.rendered_id=None;self.live={};self.live_axis=None;self.live_lines={};self.figure.clear();self.canvas.draw_idle();self.summary.clear();self.status.setText('Starting · '+self.run_id)
+        except Exception as exc:self.status.setText(str(exc))
+        self.controls()
+
+    def controls(self):
+        for box in self.roles.values():box.refresh()
+        runner=getattr(self.worker,self.kind+"_runner");active=runner.running()
+        busy=self.worker.has_requests() or self.worker.waveform_runner.running() or any(t.running() for t in self.worker._background_tasks)
+        self.start_button.setEnabled(self.config_valid and self.worker.ps is not None and not self.worker.connection_error and not self.worker._closing and not busy)
+        self.stop_button.setEnabled(active and runner.settings['settings']['chamber']==self.chamber)
+        for field in (*self.fields.values(),*self.roles.values(),*self.config_buttons):field.setEnabled(not active)
+
+    def progress(self,label,state):
+        runner=getattr(self.worker,self.kind+'_runner')
+        if label!=self.kind.upper() or state.get('chamber')!=self.chamber or state.get('run_id')!=runner.state.get('run_id'):return
+        if self.run_id!=state['run_id']:
+            self.live_plot=None;self.live_revision=0
+            self.rendered_id=None;self.figure.clear();self.canvas.draw_idle();self.summary.clear()
+        self.run_id=state['run_id'];self.status.setText(f"{state.get('phase','')} · {state.get('points',0)}/{state.get('total','?')} · {state.get('received_samples',0)} received · {state.get('folder','')}"+(' · '+state['error'] if state.get('error') else ''))
+        if state.get('analysis') is not None and self.rendered_id!=self.run_id:
+            try:self.show_result(state['analysis'],state['result'])
+            except Exception as exc:self.status.setText('Result saved; display error: '+str(exc))
+            self.rendered_id=self.run_id
+
+        elif state.get('live') is not None and self.rendered_id!=self.run_id:
+            data=state['live']
+            if data['revision']>self.live_revision:
+                try:
+                    from labremote.experiments.characterization.shared.live_pulse import LivePlot
+                    if self.live_plot is None:self.live_plot=LivePlot(self.figure,self.kind)
+                    self.live_plot.update(data);self.canvas.draw_idle();self.live_revision=data['revision']
+                    unit='상태별 배치' if self.kind=='spam' else '측정점'
+                    detail='누적 히스토그램·오류율' if self.kind=='spam' else '피팅은 수집 종료 후'
+                    self.summary.setText(f"{self.chamber} · {data['revision']}/{state.get('total','?')} {unit} 완료 · 매 {unit} 갱신 · {detail}")
+                except Exception as exc:self.status.setText('Live display error: '+str(exc))
+
+    def show_result(self,data,report):
+        self.live_plot=None;self.live_revision=0
+        model.draw(self.figure,data);self.canvas.draw_idle()
+        self.summary.setText(f"{report['chamber']} {model.title(self.kind)} · {report['status']} · {report['completed_points']} complete points/batches\n"+model.summary(data))
+
+    def load_result(self):
+        path,_=QtWidgets.QFileDialog.getOpenFileName(self,'Open '+model.title(self.kind)+' result',self.directory.text(),'Result (result.json)')
+        if path:
+            try:
+                report=config.read(path)
+                if report['chamber']!=self.chamber or report.get('experiment')!=self.kind:raise ValueError('Result chamber differs from tab')
+                self.show_result(config.read(Path(path).parent/'analysis.json'),report);self.status.setText(path)
+            except Exception as exc:self.status.setText(str(exc))

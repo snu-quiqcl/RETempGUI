@@ -16,8 +16,8 @@ if str(ROOT) not in sys.path:
 
 def build_plan(root=ROOT, repeat=3, thresholds=(None, None, None), max_attempts=3):
     from labremote.runtime.workflow_queue import freeze_job, make_group, validate_plan
-    from labremote.characterization import pulse_experiment
-    from labremote.entanglement import config as entanglement
+    from labremote.experiments.characterization.shared import pulse_model as pulse_experiment
+    from labremote.experiments.entanglement import config as entanglement
     if type(repeat) is not int or not 1 <= repeat <= 256:
         raise ValueError('repeat must be 1..256 (39 workflows per sweep; 10000-step limit)')
     if type(max_attempts) is not int or not 1 <= max_attempts <= 10000:

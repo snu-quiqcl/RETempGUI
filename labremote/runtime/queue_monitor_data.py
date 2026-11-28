@@ -49,7 +49,7 @@ def pool_spam(analyses):
 
 
 def pool_ent(records):
-    from labremote.entanglement.plotting import Accumulator
+    from labremote.experiments.entanglement.plotting import Accumulator
     if not records:return None,None
     c=records[0]['settings'];acc=Accumulator(c)
     for record in records:
@@ -65,7 +65,7 @@ class EntPool:
         self.settings=None;self.batches=[];self.acc=None;self.value=(None,None)
 
     def update(self,records):
-        from labremote.entanglement.plotting import Accumulator
+        from labremote.experiments.entanglement.plotting import Accumulator
         if not records:
             self.__init__();return self.value
         c=records[0]['settings']
@@ -158,7 +158,7 @@ class ResultStore:
                 if identity in seen:continue
                 previous=len(output)
                 if kind=='entanglement':
-                    from labremote.entanglement.config import validate
+                    from labremote.experiments.entanglement.config import validate
                     c=validate(d['configuration']['settings'])
                     batches=[b['measurement'] for b in d['batches'] if b['status']=='completed']
                     # Failed/aborted FPGA batches are excluded, including during live reads.

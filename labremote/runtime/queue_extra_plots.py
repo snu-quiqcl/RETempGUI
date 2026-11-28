@@ -8,7 +8,7 @@ from .queue_monitor_data import settings_key
 from .queue_archive import save_figure
 
 def hom_fits(data,c):
-    from labremote.decay.plotting import fit_decay
+    from labremote.experiments.decay.plotting import fit_decay
     output={};m=c['MAX_TIME_DIFFERENCE']
     for key,src in [('accumulated',data),('latest_batch',data.get('latest') or dict(a=[0]*m,c=[0]*m))]:
         a=np.asarray(src['a']);b=np.asarray(src['c']);fits={};t=np.arange(m)*1.25
@@ -54,7 +54,7 @@ def export(root,steps,partial):
     for key,rows in buckets.items():
         job,kind,profile=key;c=rows[0][2];fig=Figure(figsize=(12,12));FigureCanvasAgg(fig)
         if kind=='hom':
-            from labremote.hom.plotting import Accumulator,HOMPlot
+            from labremote.experiments.hom.plotting import Accumulator, HOMPlot
             acc=Accumulator(c)
             for path,d,_,cfg in rows:
                 for b in d['batches']:
@@ -64,8 +64,8 @@ def export(root,steps,partial):
             if not acc.batches:continue
             HOMPlot(fig,c).update(acc.data())
         elif kind=='decay':
-            from labremote.decay.storage import load_result
-            from labremote.decay.plotting import Accumulator,DecayPlot
+            from labremote.experiments.decay.storage import load_result
+            from labremote.experiments.decay.plotting import Accumulator, DecayPlot
             acc=Accumulator(c)
             for path,d,_,cfg in rows:
                 _,_,data=load_result(path)
@@ -77,13 +77,13 @@ def export(root,steps,partial):
             points=merge_points([p for path,d,_,cfg in rows if d['status']=='completed' for p in read_json(path.parent/'points.json')])
             if not points:continue
             if kind=='rabi':
-                from labremote.characterization.rabi import analyze,draw
+                from labremote.experiments.characterization.rabi.model import analyze, draw
                 draw(fig,analyze(points,c,rows[0][3].get('frequency_hz')))
             else:
-                from labremote.characterization.pulse_experiment import analyze,draw
+                from labremote.experiments.characterization.shared.pulse_model import analyze, draw
                 draw(fig,analyze(kind,points,c))
         elif kind=='fluorescence':
-            from labremote.characterization.fluorescence import analyze,draw
+            from labremote.experiments.characterization.fluorescence.model import analyze, draw
             counts=[]
             for path,d,_,cfg in rows:
                 with np.load(path.parent/'analysis.npz') as data:counts.extend(data['counts'].tolist())
@@ -103,8 +103,8 @@ def export(root,steps,partial):
                 mesh=ax.pcolormesh(xs,ys,plane,shading='auto');fig.colorbar(mesh,ax=ax,label='Sum of per-run mean counts')
                 ax.set(xlabel='X (um)',ylabel='Y (um)',title=f'Plane {index}')
         elif kind=='micromotion':
-            from labremote.micromotion.analysis import fit_histogram,fit_valley
-            from labremote.micromotion.plotting import draw
+            from labremote.experiments.micromotion.analysis import fit_histogram, fit_valley
+            from labremote.experiments.micromotion.plotting import draw
             doc=deepcopy(rows[0][1]);points={}
             if doc.get('mode')=='input':
                 counts=[v for _,d,_,_ in rows for v in (d.get('rf_test') or {}).get('counts',[])]
@@ -123,7 +123,7 @@ def export(root,steps,partial):
                 doc['points']=list(points.values());doc['valley']=fit_valley(doc['points']) if doc.get('mode')=='scan' else {'valid':False}
             draw(fig,doc)
         elif kind=='spam_2d':
-            from labremote.characterization import spam_scan as model,pulse_experiment
+            from labremote.experiments.characterization.spam_scan import model as model; from labremote.experiments.characterization.shared import pulse_model as pulse_experiment
             points={};axes=rows[0][3]['axis_values']
             for path,d,_,cfg in rows:
                 if cfg['axis_values']!=axes:raise ValueError('SPAM scan axes differ')

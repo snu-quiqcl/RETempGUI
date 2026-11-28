@@ -188,7 +188,7 @@ class AuxiliaryTab(QtWidgets.QWidget):
             self.pid_tab=PIDTab(self.worker,bindings,self)
             self.automation_tabs.addTab(self.pid_tab,'OSA PID')
         else:
-            from labremote.ui.motor_scan_tab import MotorScanTab
+            from labremote.experiments.motor_scan.tab import MotorScanTab
             self.automation_tabs.addTab(self.input_tab,'Input counts')
             self.scan_tabs=[MotorScanTab(self.worker,bindings,n,self) for n in range(1,5)]
             for panel in self.scan_tabs:self.automation_tabs.addTab(panel,panel.title)

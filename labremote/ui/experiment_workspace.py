@@ -183,18 +183,18 @@ class ExperimentSlot(W.QWidget):
 class ExperimentWorkspace(ScrollTabs):
     def __init__(self,host):
         super().__init__();self.host=host;self.slots=[]
-        from .motor_scan_tab import MotorScanTab,SCAN_TABS
-        from .daily_characterization import FluorescenceTab
-        from .rabi_tab import RabiTab
-        from .pulse_experiment_tab import PulseExperimentTab
-        from .spam_scan_tab import SpamScanTab
-        from .decay_tab import DecayExperimentTab
-        from labremote.decay.config import MODES,LABELS
-        from .hom_tab import HOMTab
-        from .entanglement_tab import EntanglementTab
-        from .ion_check_tab import IonCheckTab
-        from .micromotion_tab import MicromotionTab
-        from labremote.phase_shifter.hold_tab import EtcTab
+        from labremote.experiments.motor_scan.tab import MotorScanTab, SCAN_TABS
+        from labremote.experiments.characterization.fluorescence.tab import FluorescenceTab
+        from labremote.experiments.characterization.rabi.tab import RabiTab
+        from labremote.experiments.characterization.shared.pulse_tab import PulseExperimentTab
+        from labremote.experiments.characterization.spam_scan.tab import SpamScanTab
+        from labremote.experiments.decay.tab import DecayExperimentTab
+        from labremote.experiments.decay.config import MODES, LABELS
+        from labremote.experiments.hom.tab import HOMTab
+        from labremote.experiments.entanglement.tab import EntanglementTab
+        from labremote.experiments.ion_check.tab import IonCheckTab
+        from labremote.experiments.micromotion.tab import MicromotionTab
+        from labremote.experiments.phase_shifter.hold_tab import EtcTab
         def group(title):
             tabs=ScrollTabs();tabs.settings_group=title;self.addTab(tabs,title);return tabs
         scan=group('Scan')

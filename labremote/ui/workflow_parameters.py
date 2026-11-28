@@ -5,7 +5,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
-from labremote.entanglement import config
+from labremote.experiments.entanglement import config
 from labremote.runtime.workflow_queue import freeze_job, validate_plan
 
 
@@ -99,7 +99,7 @@ class IonCheckParameters(QtWidgets.QWidget):
     @editing_settings()
     def __init__(self):
         super().__init__()
-        from labremote.ion_check import config as ion
+        from labremote.experiments.ion_check import config as ion
         self.fields={};self.mapping_fields={}
         layout=QtWidgets.QVBoxLayout(self);bar=QtWidgets.QHBoxLayout();layout.addLayout(bar)
         self.load_button=QtWidgets.QPushButton('설정 파일 불러오기…');self.saved_button=QtWidgets.QPushButton('저장된 Ion Check 설정 불러오기')
@@ -118,7 +118,7 @@ class IonCheckParameters(QtWidgets.QWidget):
 
     @editing_settings()
     def populate(self,parameters):
-        from labremote.ion_check import config as ion
+        from labremote.experiments.ion_check import config as ion
         c=ion.validate(parameters['settings']);name=parameters.get('fpga','fpga_local')
         if not isinstance(name,str) or not name.strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
         self.fpga.setText(name)
@@ -127,7 +127,7 @@ class IonCheckParameters(QtWidgets.QWidget):
 
     @editing_settings()
     def parameters(self,base,validate=True):
-        from labremote.ion_check import config as ion
+        from labremote.experiments.ion_check import config as ion
         value=deepcopy(base);value['fpga']=self.fpga.text().strip()
         c=dict(schema_version=2,mapping=deepcopy(self.route_values),**{k:b.value() for k,b in self.fields.items()})
         if self.fixed_routes:c['fpga_mapping']=deepcopy(self.fixed_routes)
@@ -205,7 +205,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             notice=QtWidgets.QLabel(migration_note);notice.setWordWrap(True);layout.insertWidget(1,notice)
         self.editor=None;self.settings_config=config;self.settings_filename='entanglement.json'
         if kind=='phase_hold':
-            from .phase_hold_parameters import PhaseHoldParameters
+            from labremote.experiments.phase_shifter.hold_parameters import PhaseHoldParameters
             self.editor=PhaseHoldParameters();self.tabs.addTab(self.editor,'실험 조건')
             if not self.base:self.base=self.editor.defaults()
         elif self.base.get('kind') and isinstance(self.base.get('settings'),dict) and kind!='ion':
@@ -221,11 +221,11 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             load_bar.addWidget(self.editor.load_button);load_bar.addWidget(self.editor.saved_button);load_bar.addStretch()
             layout.insertLayout(1,load_bar)
         elif kind=='ion':
-            from labremote.ion_check import config as ion
+            from labremote.experiments.ion_check import config as ion
             self.settings_config=ion;self.settings_filename='ion_check.json'
             self.editor=IonCheckParameters();self.tabs.addTab(self.editor,'Ion Check 설정 · devices.parameters')
         elif kind=='spam':
-            from .spam_parameters import SpamParameters
+            from labremote.experiments.characterization.spam.parameters import SpamParameters
             self.editor=SpamParameters();self.tabs.addTab(self.editor,'SPAM 설정 · devices.parameters')
         if not self.base:
             try:
@@ -363,9 +363,9 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 parameters,snapshot=self.pin_settings.value(parameters)
             if self.editor is not None:
                 from .setup_parameters import SetupParameters
-                from .spam_parameters import SpamParameters
+                from labremote.experiments.characterization.spam.parameters import SpamParameters
                 from .queue_experiment_parameters import ExperimentParameters
-                from .phase_hold_parameters import PhaseHoldParameters
+                from labremote.experiments.phase_shifter.hold_parameters import PhaseHoldParameters
                 if isinstance(self.editor,(ExperimentParameters,PhaseHoldParameters)):pass
                 elif isinstance(self.editor,SetupParameters):
                     from labremote.runtime.setup_workflow import validate
