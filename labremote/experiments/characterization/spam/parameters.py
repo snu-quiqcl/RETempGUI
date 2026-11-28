@@ -15,6 +15,7 @@ class SpamParameters(W.QWidget):
         self.fields={};self._pending_legacy=None
         layout=W.QVBoxLayout(self);form=W.QFormLayout();layout.addLayout(form)
         self.fpga=W.QLineEdit();form.addRow('FPGA 장비',self.fpga)
+        self.fpga.setPlaceholderText('FPGA · 핀 설정 탭에서 장비를 선택하세요.')
         note=W.QLabel('이 항목의 핀 매핑과 측정 변수 한 세트로 SPAM을 실행합니다. 이름은 위에서 자유롭게 지정하세요.\n'
                       '측정 전후 지정한 냉각 출력으로 복귀합니다. Flip mirror·CCD는 제어하지 않습니다.\n'
                       'MW 주파수·출력은 외부에서 설정합니다. 시간 입력 단위는 µs입니다.')
@@ -57,7 +58,7 @@ class SpamParameters(W.QWidget):
             self.legacy_box.show();self.measurement.hide()
             self.info.setText('이전 항목에 두 설정이 있습니다. 사용할 설정 한 세트를 가져오세요. 적용 전 원본 Queue는 바뀌지 않습니다.')
             return
-        p=self.validate_parameters(parameters);c=p['settings']
+        p=workflow_config.parameters(parameters,require_fpga=False);c=p['settings']
         self.fpga.setText(p.get('fpga','fpga_local'))
         self._pending_legacy=None;self._parameters=p;self._settings=deepcopy(c)
         for key,field in self.fields.items():
@@ -67,7 +68,9 @@ class SpamParameters(W.QWidget):
     @editing_settings()
     def parameters(self,base,validate=True):
         if self._pending_legacy is not None:
-            raise ValueError('이전 Queue에서 사용할 설정 한 세트를 먼저 가져오세요.')
+            if validate:raise ValueError('이전 Queue에서 사용할 설정 한 세트를 먼저 가져오세요.')
+            # Keep both legacy sets intact while navigating to device/pin settings.
+            return dict(deepcopy(self._pending_legacy),fpga=self.fpga.text().strip())
         p=deepcopy(base);p.pop('chamber',None)
         p['fpga']=self.fpga.text().strip();c=deepcopy(self._settings)
         for key,field in self.fields.items():
@@ -79,7 +82,8 @@ class SpamParameters(W.QWidget):
     @editing_settings()
     def import_legacy(self,chamber):
         try:
-            p=workflow_config.parameters(self._pending_legacy,legacy_chamber=chamber)
+            draft=dict(self._pending_legacy,fpga=self.fpga.text().strip())
+            p=workflow_config.parameters(draft,legacy_chamber=chamber,require_fpga=False)
             self.populate(p);self.settings_loaded.emit()
             self.info.setText('기존 '+chamber+'의 변수·핀 설정 한 세트를 가져왔습니다. 이름은 직접 지정하세요.')
         except Exception as exc:self.info.setText('설정 확인: '+str(exc))

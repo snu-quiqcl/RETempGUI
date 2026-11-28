@@ -354,6 +354,9 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 value=self.read_json();self.editor.populate(value);self.base=value
                 if self.kind=='spam' and self.editor._pending_legacy is None:
                     self.base=self.editor.parameters(self.base,validate=False)
+            if self.kind=='spam' and self.bindings_provider is not None:
+                # The selector owns the target, including an unfinished selection.
+                self.base['fpga']=self.fpga_target.currentData() or ''
             self.sync_setup_target(self.base)
             self.pin_settings.set_parameters(self.base,replace_mapping=self.previous_tab==self.json_index)
             if self.kind=='spam':
@@ -394,7 +397,9 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             if self.kind!='setup' and self.bindings_provider is not None and self.fpga_target.currentData() is None and requires_fpga(dict(self.job,parameters=self.base)):
                 raise ValueError('FPGA · 핀 설정 탭에서 사용할 장비를 선택하세요.')
             parameters=self.read_json() if self.editor is None or self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
-            if self.kind=='spam':parameters=self.editor.validate_parameters(parameters)
+            if self.kind=='spam':
+                if self.bindings_provider is not None:parameters['fpga']=self.fpga_target.currentData() or ''
+                parameters=self.editor.validate_parameters(parameters)
             self.sync_setup_target(parameters)
             self.pin_settings.set_parameters(parameters,replace_mapping=self.editor is None or self.tabs.currentIndex()==self.json_index)
             target=self.fpga_target.currentData();snapshot=None

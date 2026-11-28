@@ -12,11 +12,13 @@ def paired(parameters):
     return isinstance(settings,dict) and set(settings)=={'EA','EC'}
 
 
-def parameters(value, *, legacy_chamber=None):
+def parameters(value, *, legacy_chamber=None, require_fpga=True):
     if not isinstance(value,dict):raise ValueError('Parameters must be an object')
     result=deepcopy(value)
     name=result.get('fpga','fpga_local')
-    if not isinstance(name,str) or not name.strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
+    # An unfinished UI draft must still be able to reach the device selector.
+    # Runtime callers keep strict validation by default.
+    if not isinstance(name,str) or (require_fpga and not name.strip()):raise ValueError('FPGA 장비 이름을 입력하세요.')
     settings=result.get('settings')
     selected=legacy_chamber or result.get('chamber')
     if paired(result):
