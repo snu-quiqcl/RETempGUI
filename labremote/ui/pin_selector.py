@@ -8,6 +8,8 @@ class PinSelector(W.QComboBox):
     routeChanged=QtCore.pyqtSignal()
     def __init__(self, worker, experiment, *, input_pin=False, fast_only=False, slow_only=False, feature=None, raw_names=False):
         super().__init__();bounded_combo(self)
+        from .widgets.input_wheel import install_input_wheel_guard
+        install_input_wheel_guard()
         self.worker, self.experiment = worker, experiment
         self.input_pin, self.fast_only, self.slow_only = input_pin, fast_only, slow_only
         self.feature,self.raw_names=feature,raw_names

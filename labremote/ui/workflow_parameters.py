@@ -148,6 +148,10 @@ class WorkflowJobDialog(QtWidgets.QDialog):
     @editing_settings()
     def __init__(self,job,parent=None,*,bindings_provider=None):
         super().__init__(parent)
+        from .widgets.input_wheel import install_input_wheel_guard
+        install_input_wheel_guard()
+        # The Queue job owns this draft; global form restoration must not overwrite it.
+        self.setProperty('persistInput',False)
         self.job=deepcopy(job);self.base=deepcopy(job['parameters']);self.previous_tab=0
         self.bindings_provider=bindings_provider
         migration_note=''

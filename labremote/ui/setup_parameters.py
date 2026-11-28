@@ -11,6 +11,10 @@ class SetupParameters(QtWidgets.QWidget):
 
     def __init__(self,bindings_provider=None,*,profiles=None):
         super().__init__();self.bindings_provider=bindings_provider or (lambda:{})
+        from .widgets.input_wheel import install_input_wheel_guard
+        install_input_wheel_guard()
+        self._rendering=False
+        self.setProperty('persistInput',False)
         self.rows=[];self.available=[];self.workers={};self.catalogs={}
         self._saved_profiles=deepcopy(profiles or {})
         self.profiles_provider=lambda:self._saved_profiles
@@ -19,6 +23,7 @@ class SetupParameters(QtWidgets.QWidget):
         self.add_button=QtWidgets.QPushButton('설정 추가');bar.addWidget(self.add_button);self.add_button.clicked.connect(self.add_row)
         for title,callback in [('삭제',self.remove),('위',lambda:self.move(-1)),('아래',lambda:self.move(1)),('연결 장비 새로고침',self.refresh_devices)]:
             b=QtWidgets.QPushButton(title);b.clicked.connect(callback);bar.addWidget(b)
+            if title in ('위','아래'):b.setToolTip('선택한 설정 행 전체를 '+title+'로 이동합니다. 장비·출력·설정값은 함께 이동합니다.')
         bar.addStretch();self.table=QtWidgets.QTableWidget(0,5);self.table.setHorizontalHeaderLabels(['순서','장비','파라미터 / 출력','설정값','단위'])
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows);self.table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection);self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table.verticalHeader().hide()
@@ -72,6 +77,7 @@ class SetupParameters(QtWidgets.QWidget):
 
     def add_row(self,*_):
         self.rows.append(dict(family='',device='',parameter='',value=None));self.render(len(self.rows)-1)
+        self.table.scrollToItem(self.table.item(len(self.rows)-1,0))
 
     def remove(self):
         row=self.table.currentRow()
@@ -82,14 +88,18 @@ class SetupParameters(QtWidgets.QWidget):
         row=self.table.currentRow();other=row+offset
         if 0<=row<len(self.rows) and 0<=other<len(self.rows):
             self.rows[row],self.rows[other]=self.rows[other],self.rows[row];self.render(other)
+            self.table.scrollToItem(self.table.item(other,0))
 
     def change_device(self,row,key):
-        if key is None:return
+        key=key or ('','')
+        if key==(self.rows[row]['family'],self.rows[row]['device']):return
         self.rows[row].update(family=key[0],device=key[1],parameter='',value=None)
         self.render(row);self.changed.emit()
 
     def change_parameter(self,row,path):
-        if not path:return
+        if path==self.rows[row]['parameter']:return
+        if not path:
+            self.rows[row].update(parameter='',value=None);self.render(row);return
         spec=self.options(self.rows[row]['family'],self.rows[row]['device'])[path].spec
         value=spec.choices[0] if spec.choices else False if spec.kind=='bool' else max(0,spec.minimum or 0)
         if not spec.choices and spec.kind!='bool' and spec.maximum is not None:value=min(value,spec.maximum)
@@ -98,6 +108,7 @@ class SetupParameters(QtWidgets.QWidget):
 
     def change_value(self,row,value):
         self.rows[row]['value']=value
+        self.table.selectRow(row)
         self.update_status()
 
     def update_status(self):
@@ -123,48 +134,105 @@ class SetupParameters(QtWidgets.QWidget):
     def refresh_profiles(self,*_):
         self.render(self.table.currentRow())
 
+    def eventFilter(self,watched,event):
+        if event.type() in (QtCore.QEvent.FocusIn,QtCore.QEvent.MouseButtonPress) and not self._rendering:
+            row=watched.property('setupRow')
+            if row is not None and 0<=row<len(self.rows):self.table.selectRow(row)
+        return super().eventFilter(watched,event)
+
+    def _field(self,row,column,kind):
+        field=self.table.cellWidget(row,column)
+        if isinstance(field,kind):return field
+        # Discarded controls may still have queued events until Qt deletes them.
+        # Callbacks below accept only the control currently installed in this cell.
+        field=kind();field.setProperty('setupRow',row);field.installEventFilter(self)
+        if isinstance(field,QtWidgets.QAbstractSpinBox):
+            field.lineEdit().setProperty('setupRow',row);field.lineEdit().installEventFilter(self)
+            field.setKeyboardTracking(False)
+            field.valueChanged.connect(lambda value,i=row,b=field:self._value_changed(i,b,value))
+        else:
+            field.currentIndexChanged.connect(lambda _,i=row,c=column,b=field:self._choice_changed(i,c,b))
+        self.table.setCellWidget(row,column,field)
+        return field
+
+    def _choice_changed(self,row,column,field):
+        if self._rendering or row>=len(self.rows) or self.table.cellWidget(row,column) is not field:return
+        self.table.selectRow(row)
+        value=field.currentData()
+        if column==1:self.change_device(row,value)
+        elif column==2:self.change_parameter(row,value)
+        else:self.change_value(row,value)
+
+    def _value_changed(self,row,field,value):
+        if self._rendering or row>=len(self.rows) or self.table.cellWidget(row,3) is not field:return
+        if field.property('integerValue'):value=int(value)
+        self.change_value(row,value)
+
+    @staticmethod
+    def _fill_combo(field,entries,selected):
+        with QtCore.QSignalBlocker(field):
+            old=[(field.itemText(i),field.itemData(i)) for i in range(field.count())]
+            if old!=entries:
+                field.clear()
+                for label,value in entries:field.addItem(label,value)
+            # Qt's findData does not reliably compare Python tuple identities.
+            field.setCurrentIndex(next((i for i in range(field.count()) if field.itemData(i)==selected),-1))
+
     def render(self,select=None):
-        self.catalogs={}
+        if self._rendering:return
+        if select is None:select=self.table.currentRow()
+        bars=(self.table.verticalScrollBar(),self.table.horizontalScrollBar())
+        positions=[bar.value() for bar in bars]
+        self.catalogs={};self._rendering=True
         try:
             with operation_config():self._render_rows(select)
         except Exception as exc:self.info.setText('Setup 설정 확인: '+str(exc))
+        finally:
+            self._rendering=False
+            for bar,position in zip(bars,positions):bar.setValue(position)
 
     def _render_rows(self,select):
-        self.table.setRowCount(0);self.table.setRowCount(len(self.rows))
+        # Keep controls alive when values, profiles or row order change.
+        self.table.setRowCount(len(self.rows))
         for i,row in enumerate(self.rows):
             self.table.setItem(i,0,QtWidgets.QTableWidgetItem(str(i+1)))
-            device=QtWidgets.QComboBox();device.addItem('장비 선택…',None)
             key=(row['family'],row['device'])
-            for f,n in self.available:device.addItem(f'{n} ({f})',(f,n))
-            if row['device'] and key not in self.available:device.addItem(row['device']+' · 연결 안 됨',key)
-            device.setCurrentIndex(next((n for n in range(device.count()) if device.itemData(n)==key),0));self.table.setCellWidget(i,1,device)
-            device.currentIndexChanged.connect(lambda _,i=i,b=device:self.change_device(i,b.currentData()))
-            param=QtWidgets.QComboBox();param.addItem('파라미터 선택…','')
+            device=self._field(i,1,QtWidgets.QComboBox)
+            entries=[('장비 선택…',None)]+[(f'{n} ({f})',(f,n)) for f,n in self.available]
+            if row['device'] and key not in self.available:entries.append((row['device']+' · 연결 안 됨',key))
+            self._fill_combo(device,entries,key if row['device'] else None)
+            param=self._field(i,2,QtWidgets.QComboBox)
             options=self.options(*key) if row['family'] else {}
+            entries=[('파라미터 선택…','')]
             for path,setting in options.items():
                 title=path.removeprefix('outputs.')+(f' [{setting.pin}]' if setting.pin else '')
-                param.addItem(title,path)
+                entries.append((title,path))
             if row['parameter'] and row['parameter'] not in options:
-                param.addItem(row['parameter']+' · 확인 필요',row['parameter'])
-            param.setCurrentIndex(max(0,param.findData(row['parameter'])));param.setEnabled(bool(options));self.table.setCellWidget(i,2,param)
-            param.currentIndexChanged.connect(lambda _,i=i,b=param:self.change_parameter(i,b.currentData()))
+                entries.append((row['parameter']+' · 확인 필요',row['parameter']))
+            self._fill_combo(param,entries,row['parameter']);param.setEnabled(bool(options))
             setting=options.get(row['parameter'])
             if setting:
                 spec=setting.spec
                 if spec.kind=='bool' or spec.choices:
-                    field=QtWidgets.QComboBox()
+                    field=self._field(i,3,QtWidgets.QComboBox);entries=[]
                     for value in (spec.choices or (False,True)):
                         label=('ON' if value else 'OFF') if spec.kind=='bool' else f'Position {value}' if row['family']=='flip' else str(value)
-                        field.addItem(label,value)
-                    field.setCurrentIndex(field.findData(row['value']));field.currentIndexChanged.connect(lambda _,i=i,b=field:self.change_value(i,b.currentData()))
+                        entries.append((label,value))
+                    self._fill_combo(field,entries,row['value'])
                 else:
-                    field=QtWidgets.QDoubleSpinBox();field.setDecimals(0 if spec.kind=='int' else 9)
-                    lo=spec.minimum if spec.minimum is not None else -1e100
-                    hi=spec.maximum if spec.maximum is not None else 1e100
-                    value=row['value'] if type(row['value']) in (int,float) else 0
-                    # Display an invalid saved value faithfully; never silently clamp it.
-                    field.setRange(min(lo,value),max(hi,value));field.setKeyboardTracking(False);field.setValue(value)
-                    field.valueChanged.connect(lambda v,i=i,kind=spec.kind:self.change_value(i,int(v) if kind=='int' else v))
-                self.table.setCellWidget(i,3,field);self.table.setItem(i,4,QtWidgets.QTableWidgetItem(spec.unit or '—'))
+                    field=self._field(i,3,QtWidgets.QDoubleSpinBox)
+                    with QtCore.QSignalBlocker(field):
+                        field.setProperty('integerValue',spec.kind=='int')
+                        field.setDecimals(0 if spec.kind=='int' else 9)
+                        lo=spec.minimum if spec.minimum is not None else -1e100
+                        hi=spec.maximum if spec.maximum is not None else 1e100
+                        value=row['value'] if type(row['value']) in (int,float) else 0
+                        # Display an invalid saved value faithfully; never silently clamp it.
+                        field.setRange(min(lo,value),max(hi,value));field.setValue(value)
+                field.show();self.table.setItem(i,4,QtWidgets.QTableWidgetItem(spec.unit or '—'))
+            else:
+                field=self.table.cellWidget(i,3)
+                if field is not None:field.hide()
+                self.table.setItem(i,4,QtWidgets.QTableWidgetItem(''))
         self.update_status()
         if select is not None and 0<=select<len(self.rows):self.table.selectRow(select)

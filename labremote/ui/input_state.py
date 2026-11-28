@@ -12,8 +12,16 @@ LOG=logging.getLogger(__name__)
 INPUTS=(W.QLineEdit,W.QAbstractSpinBox,W.QComboBox,W.QCheckBox,W.QRadioButton,W.QPlainTextEdit,W.QTextEdit,W.QSlider,W.QTableWidget,W.QAbstractButton,W.QGroupBox)
 
 
+def persists_input(widget):
+    """Transactional dialogs own their drafts, including every child control."""
+    while isinstance(widget,W.QWidget):
+        if sip.isdeleted(widget) or widget.property('persistInput') is False:return False
+        widget=widget.parentWidget()
+    return True
+
+
 def value_of(widget):
-    if sip.isdeleted(widget) or widget.property('persistInput') is False:return None
+    if sip.isdeleted(widget) or not persists_input(widget):return None
     if isinstance(widget,W.QTableWidget):
         from .persistence_models import table_value
         return table_value(widget)
@@ -155,7 +163,7 @@ class InputState(QtCore.QObject):
                 if isinstance(value,W.QWidget) or (not legacy and value is root and isinstance(value,QtCore.QObject)):
                     # Closed/replaced views can leave Python aliases behind;
                     # check the Qt object's lifetime before any Qt call.
-                    if sip.isdeleted(value):return
+                    if sip.isdeleted(value) or isinstance(value,W.QWidget) and not persists_input(value):return
                     if id(value) in visited or (value is not root and id(value) in root_ids):return
                     visited.add(id(value))
                     widget_root=root if isinstance(root,W.QWidget) else getattr(root,'tab',None)

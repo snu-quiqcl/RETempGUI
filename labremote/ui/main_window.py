@@ -22,6 +22,8 @@ class WheelToMainScroll(QtCore.QObject):
     def __init__(self, scroll, content, parent=None):
         super().__init__(parent)
         self.scroll, self.content = scroll, content
+        from .widgets.input_wheel import install_input_wheel_guard
+        install_input_wheel_guard()
 
     def eventFilter(self, watched, ev):
         if ev.type() != QtCore.QEvent.Wheel or (ev.modifiers() & QtCore.Qt.ControlModifier):
