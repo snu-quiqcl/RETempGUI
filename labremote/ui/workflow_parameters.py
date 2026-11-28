@@ -162,7 +162,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             self.job.update(filename=replacement['filename'],source=replacement['source'],sha256=replacement['sha256'])
             job=self.job
             migration_note='기존 설정을 범용 setup으로 변환했습니다. 적용하면 같은 이름의 Queue 항목에 저장합니다. 취소하면 변경하지 않습니다.'
-        from labremote.runtime.workflow_ui import editor_kind
+        from labremote.runtime.workflow_ui import editor_kind,spam_uses_chamber_settings
         kind=editor_kind(job['source'])
         # Compatibility for frozen Queue sources created before declarations existed.
         if kind is None:
@@ -172,6 +172,9 @@ class WorkflowJobDialog(QtWidgets.QDialog):
         from labremote.runtime.re_workflows import experiment
         kind=experiment(job) or kind
         self.kind=kind
+        self.spam_migration=kind=='spam' and spam_uses_chamber_settings(job['source'])
+        if self.spam_migration:
+            migration_note='이전 SPAM 코드가 저장된 항목입니다. 변수 한 세트와 현재 Python 소스로 갱신해 적용합니다. 항목 이름은 자유롭게 지정하세요. 취소하면 원본은 유지됩니다.'
         profile_error=''
         self.setWindowTitle('Queue 항목 편집');self.resize(1000,860)
         layout=QtWidgets.QVBoxLayout(self);form=QtWidgets.QFormLayout();layout.addLayout(form)
@@ -259,16 +262,18 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
             self.editor.settings_loaded.connect(loaded)
         self.reload=QtWidgets.QCheckBox('Python 소스를 현재 파일에서 다시 가져오기');layout.addWidget(self.reload)
+        self.reload.setChecked(self.spam_migration)
         self.error=QtWidgets.QLabel();self.error.setWordWrap(True);self.error.setStyleSheet('color: #b42318');layout.addWidget(self.error)
         buttons=QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
         buttons.button(QtWidgets.QDialogButtonBox.Ok).setText('Queue 항목에 적용');buttons.button(QtWidgets.QDialogButtonBox.Cancel).setText('취소')
         buttons.accepted.connect(self.accept);buttons.rejected.connect(self.reject);layout.addWidget(buttons)
+        populated=False
         if self.editor is not None:
             try:
                 if not self.base:
                     self.base=self.editor.defaults() if kind=='spam' else {'fpga':'fpga_local','settings':self.settings_config.load()}
                     self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
-                self.editor.populate(self.base)
+                self.editor.populate(self.base);populated=True
             except Exception as exc:
                 self.tabs.setCurrentIndex(self.json_index);self.previous_tab=self.json_index
                 self.error.setText('기존 설정을 확인하거나 설정 파일을 불러오세요: '+str(exc))
@@ -285,6 +290,9 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             self.editor.fpga.setToolTip('FPGA · 핀 설정 탭에서 변경하세요.')
         self.fpga_target.currentIndexChanged.connect(self.update_fpga_preview)
         self.refresh_mapping.toggled.connect(lambda checked:self.pin_settings.load_defaults() if checked else None)
+        if kind=='spam' and populated and self.editor._pending_legacy is None:
+            self.base=self.editor.parameters(self.base,validate=False)
+            self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
         self.pin_settings.set_parameters(self.base)
         self.sync_setup_target(self.base)
         self.update_fpga_preview()
@@ -344,8 +352,15 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
             elif self.previous_tab==self.json_index:
                 value=self.read_json();self.editor.populate(value);self.base=value
+                if self.kind=='spam' and self.editor._pending_legacy is None:
+                    self.base=self.editor.parameters(self.base,validate=False)
             self.sync_setup_target(self.base)
             self.pin_settings.set_parameters(self.base,replace_mapping=self.previous_tab==self.json_index)
+            if self.kind=='spam':
+                # Keep the single settings form synchronized with the pin editor.
+                self.base=deepcopy(self.pin_settings.parameters)
+                self.editor.populate(self.base)
+                self.json.setPlainText(json.dumps(self.base,ensure_ascii=False,indent=2))
             self.previous_tab=index;self.error.clear()
         except Exception as exc:
             with QtCore.QSignalBlocker(self.tabs):self.tabs.setCurrentIndex(self.previous_tab)
@@ -379,6 +394,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
             if self.kind!='setup' and self.bindings_provider is not None and self.fpga_target.currentData() is None and requires_fpga(dict(self.job,parameters=self.base)):
                 raise ValueError('FPGA · 핀 설정 탭에서 사용할 장비를 선택하세요.')
             parameters=self.read_json() if self.editor is None or self.tabs.currentIndex()==self.json_index else self.editor.parameters(self.base)
+            if self.kind=='spam':parameters=self.editor.validate_parameters(parameters)
             self.sync_setup_target(parameters)
             self.pin_settings.set_parameters(parameters,replace_mapping=self.editor is None or self.tabs.currentIndex()==self.json_index)
             target=self.fpga_target.currentData();snapshot=None
@@ -393,7 +409,7 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                 elif isinstance(self.editor,SetupParameters):
                     from labremote.runtime.setup_workflow import validate
                     validate(parameters,profiles=self.pin_settings.documents)
-                elif isinstance(self.editor,SpamParameters):self.editor.validate_parameters(parameters)
+                elif isinstance(self.editor,SpamParameters):parameters=self.editor.validate_parameters(parameters)
                 else:
                     # pin_settings.value() already checked the selected FPGA snapshot.
                     with editing_settings():
@@ -401,8 +417,14 @@ class WorkflowJobDialog(QtWidgets.QDialog):
                         else:self.settings_config.validate(parameters['settings'])
                     if not isinstance(parameters.get('fpga'),str) or not parameters['fpga'].strip():raise ValueError('FPGA 장비 이름을 입력하세요.')
             job=deepcopy(self.job)
+            if self.spam_migration and not self.reload.isChecked():
+                raise ValueError('이전 SPAM 코드를 변수 한 세트로 실행하려면 Python 소스 갱신을 선택하세요.')
             if self.reload.isChecked():
                 fresh=freeze_job(job['filename']);job.update(source=fresh['source'],sha256=fresh['sha256'])
+            if self.kind=='spam':
+                from labremote.runtime.workflow_ui import spam_uses_chamber_settings
+                if spam_uses_chamber_settings(job['source']):
+                    raise ValueError('현재 Python 파일도 챔버별 설정을 요구합니다. 공통 SPAM으로 수정된 spam.py로 갱신하세요.')
             job['monitor']=self.monitor.value()
             job.update(name=self.name.text().strip(),repeat=self.repeat.value(),on_failure=self.policy.currentText(),parameters=parameters)
             target=self.fpga_target.currentData()

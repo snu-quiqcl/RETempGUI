@@ -156,7 +156,7 @@ def export_group(snapshot,partial):
                     figure=Figure(figsize=(9,10));FigureCanvasAgg(figure)
                     draw(figure,analyze('spam',points,rows[0]['settings']))
                     variant=sum(ch==chamber for ch,p in profiles)>1
-                    name=prefix+'_'+chamber+('_'+profile if variant else '')+'.png'
+                    name=prefix+('_'+chamber if chamber else '')+('_'+profile if variant else '')+'.png'
                     save_figure(figure,directory/name,partial);paths.append(str((directory/name).relative_to(root)))
             elif slot['kind']=='ion':
                 figure=Figure(figsize=(9,5));FigureCanvasAgg(figure);ax=figure.subplots()

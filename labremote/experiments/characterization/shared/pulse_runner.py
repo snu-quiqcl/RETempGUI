@@ -20,8 +20,12 @@ class PulseRunner(WorkflowTask):
     def start(self,chamber,*,settings=None,settings_file=None,directory=None,frequency_hz=None,parent=None):
         if self.handle is not None and self.handle.done.is_set():self.join()
         if settings is not None and settings_file is not None:raise ValueError('Choose settings or settings_file')
+        if self.kind=='spam' and chamber is None and settings is None:
+            if settings_file is None:raise ValueError('SPAM requires one explicit settings set')
+            from labremote.experiments.characterization.spam.config import parameters
+            settings=parameters(dict(settings=config.read(settings_file)))['settings']
         c=model.load(self.kind,chamber,settings_file) if settings is None else model.validate(self.kind,settings)
-        if c['chamber']!=chamber:raise ValueError('Experiment chamber mismatch')
+        if c.get('chamber')!=chamber:raise ValueError('Experiment chamber mismatch')
         from labremote.runtime.characterization_guard import join_completed
         join_completed((self.worker,))
         request=dict(settings=c,frequency_hz=rabi.validate_frequency(frequency_hz),microwave_control='external',directory=str(characterization_directory(directory, chamber, self.kind)))
@@ -31,8 +35,8 @@ class PulseRunner(WorkflowTask):
         from labremote.experiments.characterization.shared.pulse_acquisition import run
         from labremote.devices.fpga.adapter import Cancellation
         from labremote.devices.fpga.controller import hd
-        c=self.settings['settings'];chamber=c['chamber'];kind=self.kind
-        folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+'_'+chamber+'_'+self.handle.request_id);folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
+        c=self.settings['settings'];chamber=c.get('chamber');kind=self.kind
+        folder=Path(self.settings['directory'])/(datetime.now().strftime('%Y%m%d_%H%M%S')+'_'+kind+('_'+chamber if chamber else '')+'_'+self.handle.request_id);folder=compact_run_folder(folder); folder.mkdir(parents=True,exist_ok=queue_archive_active()); write_snapshot(folder)
         names=['pulse_experiment.py',kind+'_sequence.py']+(['spin_echo_analysis.py','ramsey_sequence.py'] if kind=='spin_echo' else ['ramsey_fit.py'] if kind=='ramsey' else ['initialization_analysis.py'] if kind=='initialization' else [])
         if kind=='spam':names.append('detector_comparison.py')
         source_root=Path(__file__).resolve().parents[1]

@@ -169,7 +169,7 @@ class ResultStore:
                                        excluded=sum(b['status']!='completed' for b in d['batches'])))
                 elif kind=='spam':
                     c=self.read(base/'configuration.json')['settings'];a=self.read(base/'analysis.json')
-                    output.append(dict(kind='spam',settings=c,analysis=a,chamber=d['chamber'],status=d['status'],path=str(path)))
+                    output.append(dict(kind='spam',settings=c,analysis=a,chamber=d.get('chamber'),status=d['status'],path=str(path)))
                 elif 'samples' in d and 'dac' in d:
                     output.append(dict(kind='ion',settings=d['settings'],samples=d['samples'],status=d['status'],path=str(path)))
                 if len(output)>previous:seen.add(identity)

@@ -73,6 +73,8 @@ def _dated_experiment_directory(directory, category, *parts):
 
 
 def characterization_directory(directory, chamber, experiment):
+    if chamber is None and experiment=='spam':
+        return _dated_experiment_directory(directory, 'characterization', 'spam')
     if chamber not in ('EA', 'EC'):
         raise ValueError('Invalid chamber')
     if experiment not in ('fluorescence', 'rabi', 'spin_echo', 'ramsey', 'spam', 'initialization', 'spam_2d'):

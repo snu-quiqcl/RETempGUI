@@ -14,7 +14,7 @@ def infer(c,hint=None):
     if 'mode' in c and 'roles' in c and str(c['mode']).startswith(('171','174')):return 'decay'
     if 'trg_pin' in c or 'counter_pin' in c:return 'secular' if 'start_khz' in c else 'micromotion'
     if 'pmt' in c and ('scan' in c or 'x_start_um' in c):return 'scan'
-    if 'roles' in c and 'chamber' in c:
+    if 'roles' in c and ('chamber' in c or c.get('experiment')=='spam'):
         if 'exposure_ms' in c:return 'fluorescence'
         return c.get('experiment') or hint or 'rabi'
     if 'fpga_mapping' in c and c['fpga_mapping'].get('schema_version')==1:return c['fpga_mapping']['experiment']

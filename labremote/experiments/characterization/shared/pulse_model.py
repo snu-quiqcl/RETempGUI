@@ -11,11 +11,16 @@ KINDS=('ramsey','spam','initialization','spin_echo')
 def title(kind):return {'spin_echo':'Spin Echo','ramsey':'Ramsey','spam':'SPAM','initialization':'Initialization'}[kind]
 def defaults(kind,chamber):
     from labremote.configuration.default_profiles import read_default
-    value=read_default(kind+'_'+chamber)
+    generic=kind=='spam' and chamber is None
+    value=read_default(kind+'_'+('EA' if generic else chamber))
     if kind=='spam':
         value['schema_version']=2
         value.setdefault('detector_count',1)
         value['roles'].setdefault('PMT2',None)
+        if generic:
+            # Reuse configured timing defaults, without choosing any ion's pins.
+            value.pop('chamber')
+            value['roles']=dict.fromkeys(value['roles'])
     return value
 
 def times(kind):
@@ -38,7 +43,9 @@ def fields(kind):
         ('N_threshold','Bright threshold (>=)',0,65535,0,1),('timeout_s','Timeout / scan (s)' if kind=='ramsey' else 'Timeout / batch (s)',.1,3600,1,1)]
 
 def validate(kind,value):
-    if not isinstance(value,dict) or value.get('chamber') not in ('EA','EC'):raise ValueError('Invalid chamber')
+    if not isinstance(value,dict):raise ValueError('Invalid experiment settings')
+    generic=kind=='spam' and 'chamber' not in value
+    if not generic and value.get('chamber') not in ('EA','EC'):raise ValueError('Invalid chamber')
     value=deepcopy(value)
     if kind=='spam':
         if value.get('schema_version')==1:
@@ -48,7 +55,7 @@ def validate(kind,value):
         if not isinstance(value.get('roles'),dict):raise ValueError('Invalid SPAM roles')
         value['roles'].setdefault('PMT2',None)
         if value['detector_count']==1:value['roles']['PMT2']=None
-    if set(value)!=set(defaults(kind,value['chamber'])) or value['schema_version']!=(2 if kind=='spam' else 1) or value['experiment']!=kind:raise ValueError('Invalid experiment settings/schema')
+    if set(value)!=set(defaults(kind,value.get('chamber'))) or value['schema_version']!=(2 if kind=='spam' else 1) or value['experiment']!=kind:raise ValueError('Invalid experiment settings/schema')
     for key,_,low,high,dec,_ in fields(kind):
         v=value[key]
         if key in times(kind):low=round(low*100);high=round(high*100);dec=0

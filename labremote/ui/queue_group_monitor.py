@@ -125,7 +125,7 @@ class WorkflowPanel(QtWidgets.QGroupBox):
         summaries=[]
         for i,((chamber,profile),records) in enumerate(profiles.items()):
             valid=[r for r in records if r['status']=='completed']
-            label=chamber+(' · '+profile[:4] if sum(k[0]==chamber for k in profiles)>1 else '')
+            label=(chamber or self.slot['name'])+(' · '+profile[:4] if sum(k[0]==chamber for k in profiles)>1 else '')
             from labremote.experiments.characterization.shared.pulse_model import detector_data
             from labremote.experiments.characterization.rabi.model import detector_label
             pooled=detector_data(pool_spam([r['analysis'] for r in valid]))
@@ -278,7 +278,7 @@ class GroupDashboard(QtWidgets.QWidget):
             for r in records:
                 if r['kind']=='ion' and r['samples']:parts.append(r['samples'][-1]['decision']+f" ({len(r['samples'])} measurements)")
                 elif r['kind']=='spam':
-                    f=r['analysis'].get('spam_fidelity');parts.append(r['chamber']+' '+(f'{f:.2%}' if f is not None else '—'))
+                    f=r['analysis'].get('spam_fidelity');parts.append((r['chamber'] or s['name'])+' '+(f'{f:.2%}' if f is not None else '—'))
                 elif is_ent(r['kind']):parts.append(r['_summary'] if '_summary' in r else f"{sum(b['heralded'] for b in r['batches'])} herald / {sum(b['attempts'] for b in r['batches']):,} trials")
             if not parts:parts=[s.get('result',{}).get('reason',s.get('reason',''))]
             values=[s.get('group_iteration',s['job_repeat']),s['name'],s['job_repeat'],s['status'],' · '.join(parts),f"{s['elapsed_s']:.2f}" if 'elapsed_s' in s else '']

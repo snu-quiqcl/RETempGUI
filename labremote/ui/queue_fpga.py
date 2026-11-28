@@ -46,7 +46,7 @@ class QueueFPGASettings(W.QWidget):
 
     def groups(self):
         p=self.parameters;c=p.get('settings',{});exp=self.experiment_name()
-        if self.kind=='spam' and set(c)=={'EA','EC'}:return [(('settings',ch),c[ch],exp,None) for ch in ('EA','EC')]
+        if self.kind=='spam' and set(c)=={'EA','EC'}:return []  # Import one legacy set before editing pins.
         if p.get('kind')=='SpamScanTab':return [(('settings','spam'),c.get('spam',{}),'spam',None)]
         if exp and exp!='setup':return [(('settings',),c,exp,p.get('mode',p.get('experiment_mode')))]
         # Custom workflows must declare their experiment settings explicitly.
@@ -124,7 +124,7 @@ class QueueFPGASettings(W.QWidget):
                 if len(set(used))!=len(used):raise ValueError('Ion Check의 레이저·EOM·MW 출력은 서로 다른 핀을 사용해야 합니다.')
         elif self.direct_routes() and experiment in ('fluorescence','rabi','initialization','ramsey','spin_echo','spam'):
             from labremote.experiments.characterization.shared import config, pulse_model as pulse_experiment; from labremote.experiments.characterization.rabi import model as rabi
-            groups=parameters['settings'].values() if self.kind=='spam' and set(parameters['settings'])=={'EA','EC'} else [parameters['settings']]
+            groups=[parameters['settings']]
             if parameters.get('kind')=='SpamScanTab':groups=[parameters['settings']['spam']]
             with scope(profile,experiment):
                 for settings in groups:
